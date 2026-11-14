@@ -1,0 +1,20 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "check-incomplete",
+    "details": {
+      "check_ids": [
+        "CHK-<new>"
+      ]
+    },
+    "message": "this check request never finished",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

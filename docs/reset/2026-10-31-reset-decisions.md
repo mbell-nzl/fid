@@ -412,6 +412,120 @@ the planning lane authority rule. Kernel tests attach an isolated legacy
 test workflow through the journal; its first started state is `building`.
 There is no production bypass or new dependency.
 
+Mark approved these details for **1.5a5**, on 14 November 2026:
+
+1. **Named checks.** `fid check <name>... --hold <id> --actor <a>
+   --idempotency-key <k>` requires names in this slice; no names gives
+   `invalid-argument`, asking to name the checks. 1.5a6 supplies the lane's
+   required set when names are omitted. Unknown names give `invalid-argument`
+   with the defined names in `allowed`, before execution. Names are deduplicated
+   and executed in name order, including names the lane does not require.
+2. **Preconditions and policy.** The exact hold must be current for this actor
+   and worktree, and its task must be `in_progress` with a lane. The lane must
+   have a `checks` key; missing gives `checks-not-configured` (precondition,
+   exit 4, subject the task, details `{lane}`), naming `[lanes.<lane>]`, merging
+   `.fid.toml` and `git fetch` as the repair. Explicit `checks = []` is set up.
+   Policy must be readable (`policy-unavailable`), and a changed effective
+   digest writes a snapshot under the write lock.
+3. **Output (Q6 A).** On a terminal, the child's output appears as it arrives,
+   with controls escaped. JSON captures it and emits one final `check.execute`
+   envelope, with `{task_id, checks}`; each summary has `id`, `name`, `outcome`,
+   nullable `exit_code`, `counts`, `reasons` and `artifact_ids`. No streaming
+   JSON protocol is added. Human output announces each check and its outcome,
+   says whether it counts for hand-off, and lists each `Kept <path>`.
+4. **Several checks (Q21 A).** An ordinary unsuccessful check does not stop the
+   rest. A takeover, lost hold or fid error stops execution, leaving later names
+   recorded as not started. All passing and counting gives exit 0. Unsuccessful
+   checks give `check-unsuccessful`, the existing exit-8 category, with
+   `{check_ids, outcomes}` for those checks. If all passed but some do not count,
+   `check-not-qualified` is precondition / exit 4, with `{check_ids, reasons}`.
+   Failure envelopes have no `result`; their IDs lead to the records.
+5. **Start and result (Q17).** The start lands under the write lock before
+   spawning; the lock is released while the child executes. It records ID,
+   task, exact hold, actor, name, resolved argv, timeout, inherited environment
+   names, listed Artifacts, the definition digest, policy snapshot, time and
+   HEAD/tree/dirty observation. Ignored files do not make it dirty. Process ID
+   and start identity are recorded as soon as known. The result records finish
+   time; `passed`, `failed`, `timed-out`, `cancelled`, `spawn-failed` or `signaled`;
+   exit code and signal; the second tree observation; bounded output digest,
+   16 KiB excerpt, total byte count and truncation flag (10 MiB capture); the
+   resolved executable and its file digest, OS, architecture and fid version;
+   and kept/refused files with their paths and refusal reasons.
+6. **Qualification.** A result counts only if it passed, started with nothing
+   uncommitted, the tree did not change, ownership was still current at the end,
+   and every listed file was kept. The reasons are `tree-dirty`, `tree-changed`,
+   `ownership-lost` and `artifact-not-kept`. The definition digest covers argv,
+   timeout, inherited environment names and listed Artifacts, excluding
+   `defined_by`, `when_changed` and unrelated policy settings.
+7. **Environment (Q7 + Q23 A).** Inherit only set `CI`, `GOCACHE`, `GOMODCACHE`,
+   `GOPATH`, `HOME`, `LANG`, `LC_ALL`, `PATH`, `TMPDIR`, `XDG_CACHE_HOME`. Record
+   a digest of their resolved values, never the values. Resolve the executable
+   with that PATH. Execution uses argv without an implicit shell, at the
+   worktree root. There are no `env` or `secrets` keys in 1.5a.
+8. **Kept files (Q8 A).** Each check may list `artifacts = ["coverage.out"]`.
+   These are plain worktree-relative paths, not globs. The reader, effective
+   policy/digest, snapshots and replay validation carry them. After successful
+   and unsuccessful checks, retain each safe regular file in the existing
+   content-addressed Artifact store: inside the worktree, no symlink escaping
+   it, unchanged while copied, at most 64 MB per file, with no configurable
+   limit. Missing/refused files give `artifact-not-kept`. Export, import and V8
+   preserve both records and bytes. The ceiling keeps these Artifacts below
+   GitHub's 100 MB per-file backup limit.
+9. **Timeout and renewal (Q9 A).** Each check uses its own positive timeout,
+   without the old runner's ten-minute cap. Timeout stops the whole process
+   group and records `timed-out`. While the child executes, renew its exact
+   hold every five minutes, one Event each, with heartbeat semantics. Refused
+   renewal stops the child and later checks, records `ownership-lost`, and
+   returns `hold-not-current`.
+10. **Unfinished earlier checks (Q22 A).** Before spawning, inspect every start
+    on this task without a result, using same-machine PID plus start identity.
+    A stopped process permits a fresh check, warning `⚠ CHK-100001 never
+    finished; its process has stopped`; the old start remains unfinished. A
+    live process gives `check-still-running` (conflict / exit 4), details
+    `{check_id, pid}`, suggesting waiting or stopping that PID and checking
+    again. A lapse does not prove the process stopped.
+11. **Retries and show.** A same-key repeat never spawns and returns its recorded
+    response. An interrupted keyed request gives `check-incomplete` (conflict /
+    exit 4), details `{check_ids}`, without inventing a result. `fid show` adds
+    Checks: each name's latest result, plus unfinished starts; JSON includes
+    the full selected records. Every new Event family joins both catalogs,
+    replay/import validation and V8 in this PR. No kernel record is created or
+    needed. Required-set evaluation, `when_changed`, hand-off, CI results and
+    replacing the old Artifact/export fixtures stay with their later tasks.
+
+Builder's storage choices for 1.5a5: projection version 7 forces a journal
+rebuild of older derived caches, and migration 25 adds `check_requests`,
+`check_starts`, `check_processes`, `check_results` and `check_files`. Check IDs
+use `CHK-` and the existing unused-ID generator. The first start reserves its
+retry key and records the ordered requested names atomically; later starts and
+results advance that same retry state. Each start names the snapshot matching
+the effective policy resolved for that invocation. The final result completes the response
+and records the names not started on an ownership stop or cancellation. A
+refusal between completed checks uses `check.stopped` to retain the original
+response without another start or result. Starts/results are immutable, and no terminal observation is manufactured after a fid error.
+The start also records the owning fid process. An internal pipe handshake
+keeps the child from executing the check until its PID/start identity is
+journaled. If fid dies before granting permission, pipe EOF ends the launcher
+without executing the check, so an unrecorded child identity cannot hide
+continuing work. The private descriptors close before exec, which preserves
+the recorded PID and start identity. Machine identity uses `/etc/machine-id`
+on Linux, falling back to the hostname (with distinct `machine-id:` and
+`hostname:` prefixes). Linux records its boot ID separately from machine
+identity and records process start ticks; other Unix systems use the hostname
+and process start time, with an empty boot ID. An unfinished start on this
+machine from a different boot has stopped and permits a fresh check with the
+usual warning; a different or uninspectable machine still refuses. The retry
+lookup and first-start admission share one lock acquisition. A refusal between
+checks is recorded under the lock that observes it; the result and its retry
+response are committed together. An
+inspection error is a fid error, never evidence that a process stopped.
+`check.started`, `check.process-started`, `check.result-recorded`,
+`check.hold-renewed`, `check.artifact-kept`, `check.artifact-refused` and
+`check.stopped` are the new families. The shared file publication/verification helpers move out of the
+old executor into `artifactstore`; lean checks do not import the old executor.
+An omitted or empty Artifact list has the same meaning; its optional effective
+encoding preserves snapshots recorded before this schema addition.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

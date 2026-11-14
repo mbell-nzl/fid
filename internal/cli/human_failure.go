@@ -161,6 +161,8 @@ func humanRepository(value any) string {
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodeChecksNotConfigured, CodeCheckStillRunning:
+		return failure.NextAction
 	case CodeTransitionNotPermitted:
 		return failure.NextAction
 	case CodeLaneNotSet:

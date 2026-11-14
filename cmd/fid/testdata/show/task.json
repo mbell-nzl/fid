@@ -29,6 +29,7 @@
         "status_category": "unstarted"
       }
     ],
+    "checks": [],
     "children": [
       {
         "id": "FID-aa01b2",

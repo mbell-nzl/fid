@@ -1,0 +1,5 @@
+● Checking lean…
+⚠ lean passed, but doesn't count: the tree changed
+  Kept coverage.out
+error: checks passed, but some don't count for hand-off
+reason: check-not-qualified; check_ids=CHK-<new>, reasons=tree-changed

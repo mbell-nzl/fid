@@ -81,6 +81,8 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "fid ready":
 		return "ready.get"
+	case "fid check":
+		return "check.execute"
 	case "fid start":
 		return "task.start"
 	case "fid heartbeat":
@@ -116,7 +118,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 103 || len(groups) != 29 {
+	if len(leaves) != 104 || len(groups) != 29 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -143,6 +145,10 @@ func grammarClassRows(t *testing.T) []grammarRow {
 			value = "extra"
 			allowed = []string{"no arguments"}
 			message = strings.TrimPrefix(cmd.CommandPath(), "fid ") + " accepts no arguments"
+		}
+		if cmd.CommandPath() == "fid check" {
+			rows = append(rows, grammarRow{name: "fid check positional", operation: "check.execute", code: "invalid-argument", message: "name the checks to execute", argument: "names", allowed: []string{"defined check names"}, args: args})
+			continue
 		}
 		rows = append(rows, grammarRow{name: cmd.CommandPath() + " positional", operation: grammarOperation(cmd), code: "invalid-argument", message: message, argument: "arguments", value: value, allowed: allowed, args: args})
 		if len(use) > 0 {

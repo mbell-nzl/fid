@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var p24LifecycleFields = map[string]string{"hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
+var p24LifecycleFields = map[string]string{"check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -36,6 +36,7 @@ func p24SingleLifecycle(t *testing.T, a *p22FIDRecoveryAdapter) {
 
 func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	t.Helper()
+	p24InstallLeanPolicy(t, workspace, true)
 	call := func(args ...string) map[string]any {
 		t.Helper()
 		return p21Run(t, binary, workspace, append([]string{"--project", workspace, "--json"}, args...)...)
@@ -46,6 +47,7 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	hold := p21PathString(t, taken, "result", "hold_id")
 	call("heartbeat", "--hold", hold, "--actor", "human:mark")
 	call("start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-start")
+	call("check", "pass", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-check")
 	call("park", "--hold", hold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "lifecycle-park")
 	call("answer", task, "Exclude authentication failures.", "--actor", "human:mark", "--idempotency-key", "lifecycle-answer")
 }

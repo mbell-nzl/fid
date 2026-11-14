@@ -1,0 +1,25 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "check.execute",
+  "result": {
+    "checks": [
+      {
+        "id": "CHK-<new>",
+        "name": "lean",
+        "outcome": "passed",
+        "exit_code": 0,
+        "counts": true,
+        "reasons": [],
+        "artifact_ids": [
+          "ART-<new>"
+        ]
+      }
+    ],
+    "task_id": "FID-9f13aa"
+  }
+}

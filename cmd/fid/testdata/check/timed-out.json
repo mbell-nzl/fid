@@ -1,0 +1,23 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "gate-unsuccessful",
+    "code": "check-unsuccessful",
+    "details": {
+      "check_ids": [
+        "CHK-<new>"
+      ],
+      "outcomes": [
+        "timed-out"
+      ]
+    },
+    "message": "1 of 1 checks failed: lean",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

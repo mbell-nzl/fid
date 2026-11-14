@@ -23,6 +23,7 @@ type Check struct {
 	Timeout     time.Duration `json:"timeout_ns"`
 	DefinedBy   []string      `json:"defined_by"`
 	WhenChanged []string      `json:"when_changed"`
+	Artifacts   []string      `json:"artifacts,omitempty"`
 }
 
 type Lane struct {
@@ -43,6 +44,7 @@ type projectDocument struct {
 		Timeout     string   `toml:"timeout"`
 		DefinedBy   []string `toml:"defined_by"`
 		WhenChanged []string `toml:"when_changed"`
+		Artifacts   []string `toml:"artifacts"`
 	} `toml:"checks"`
 	Lanes map[string]struct {
 		Paths       []string `toml:"paths"`
@@ -101,7 +103,7 @@ func projectKeyKnown(key toml.Key) bool {
 		}
 		if len(key) == 3 {
 			switch key[2] {
-			case "run", "timeout", "defined_by", "when_changed":
+			case "run", "timeout", "defined_by", "when_changed", "artifacts":
 				return true
 			}
 		}
@@ -141,7 +143,7 @@ func decodeChecks(document projectDocument, result *ProjectFile) error {
 				return err
 			}
 		}
-		result.Checks[name] = Check{check.Run, timeout, check.DefinedBy, check.WhenChanged}
+		result.Checks[name] = Check{Run: check.Run, Timeout: timeout, DefinedBy: check.DefinedBy, WhenChanged: check.WhenChanged, Artifacts: check.Artifacts}
 	}
 	return nil
 }

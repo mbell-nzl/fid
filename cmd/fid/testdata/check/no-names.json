@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "defined check names"
+      ],
+      "argument": "names",
+      "value": null
+    },
+    "message": "name the checks to execute",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

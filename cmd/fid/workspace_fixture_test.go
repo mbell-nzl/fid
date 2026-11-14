@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/checkrun"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -64,6 +65,12 @@ func envelopeBindingForWorkspace(t *testing.T, workspace string) envelopeBinding
 }
 
 func TestMain(m *testing.M) {
+	if child, err := checkrun.LaunchChild(); child {
+		if err != nil {
+			os.Exit(125)
+		}
+		os.Exit(0)
+	}
 	exitCode := runCommandTestSuite(m)
 	os.Exit(exitCode)
 }

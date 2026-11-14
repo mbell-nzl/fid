@@ -1,0 +1,2 @@
+error: start the task before checking it
+reason: transition-not-permitted; task-in-progress
