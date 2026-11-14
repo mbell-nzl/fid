@@ -65,6 +65,10 @@ func replayJournal(journalDir string, options *ReplayOptions, project func(Proje
 		return ReplayStats{}, err
 	}
 
+	if _, err := inspectJournal(journalDir, "", 0); err != nil {
+		return ReplayStats{}, err
+	}
+
 	var stats ReplayStats
 	tracker := newAggregateSequenceTracker()
 	for _, fileName := range files {

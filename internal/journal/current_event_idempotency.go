@@ -25,13 +25,8 @@ func validateCurrentIdempotency(event Event) error {
 	if err != nil {
 		return err
 	}
-	if row["result_event_id"] != event.EventID || !currentValuesEqual(row["aggregate_sequence"], event.Aggregate.Sequence) || row["result_entity_id"] != currentResultEntity(event) {
+	if row["result_event_id"] != event.EventID || !currentValuesEqual(row["aggregate_sequence"], event.Aggregate.Sequence) || row["result_entity_id"] != event.Aggregate.ID {
 		return fmt.Errorf("current Event: idempotency result binding mismatch")
-	}
-	if event.EventType == "gate.receipt-recorded" {
-		if result.Op != "update" {
-			return fmt.Errorf("current Receipt: invalid idempotency transition")
-		}
 	}
 	fieldDigests := result.Values["request_field_digests_json"]
 	if result.Op == "update" {
@@ -72,16 +67,4 @@ func currentDigest(value string) bool {
 	}
 	_, err := hex.DecodeString(value)
 	return err == nil
-}
-
-func currentResultEntity(event Event) any {
-	table := map[string]string{"run.observed": "run_observations", "run.checkpointed": "run_observations", "run.recovered": "run_recoveries", "run.budget-observed": "budget_samples", "run.execution-blocked": "stops"}[event.EventType]
-	if table != "" {
-		for _, effect := range event.Effects {
-			if effect.Table == table && effect.Op == "insert" {
-				return effect.PK["id"]
-			}
-		}
-	}
-	return event.Aggregate.ID
 }

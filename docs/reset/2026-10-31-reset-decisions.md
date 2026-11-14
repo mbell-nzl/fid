@@ -814,6 +814,43 @@ lean import test. No replacement helper, stub, dependency or public
 behavior is added. Event catalogs, archive profiles, tables and maintenance
 queries remain for 1.5d1/1.5d2.
 
+**RESET 1.5d1 implementation, 2026-11-15 (Assured).** Following Q2 and Q5:
+
+- The journal and archive catalogs accept only the retained lean families.
+  One shared classifier rejects all 41 removed families and Effects on their
+  removed tables, including fixed-workflow authoring and assignment. Generic
+  version-1 Issue history remains supported in the journal. Physical tables
+  and migration versions stay for 1.5d2.
+- Replay checks the complete journal for unsupported history before applying
+  any Event, including when a checkpoint would otherwise skip that history.
+  Projection freshness inspection makes the same check. A valid prefix before
+  an unsupported Event cannot partially update the projection.
+- `journal-replay-stopped` keeps its original three detail fields for ordinary
+  corruption and precondition conflicts. Its closed schema-refusal variant
+  adds `reason: "schema-unsupported"` and `event_type`, and fills `event_id`
+  with the refused Event's ID. The file and line still identify the source.
+  Human output describes unsupported history without the retired vocabulary.
+  Archives keep `archive-invalid` with a `schema-unsupported` check naming
+  the family and the archive journal member. Entry integrity is checked first;
+  an old capability/source profile cannot mask a removed family. Export
+  creation also refuses unsupported source history before publication.
+- Manifest v1 is refused by validation as well as import. Manifest v2 keeps
+  `sources: []`; a null or nonempty inventory is refused. Export and archive
+  validation no longer query `envelope_sources`. The only surviving entry of
+  the former capability profile is the truthful `export.portable.v1`; no
+  replacement capability IDs are introduced. Private semantic validators keep
+  migration boundaries 19–26 for lean integrity tests; public archive admission
+  still requires the active migration version.
+- The retained Artifact availability Event requires Event-v2 and admits only
+  its guarded availability update and one idempotency result, with strict
+  actor, command, prior, metadata
+  and cached-result bindings. Recorded check results remain immutable (Q7).
+  Kernel-only catalog acceptance tests leave with their subjects; the generic
+  malformed-Effect probes now use a fixed-state task under a lean hold. Two
+  transition-refusal fixtures corrupt the retained seeded state directly in
+  SQLite, rather than append unsupported workflow-authoring Events; their
+  assertions about missing edges and unknown requirements are preserved.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2072,6 +2109,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #71 (1.5c2): `fid artifact verify`'s missing-Artifact failure still
+  says `allowed: ["accepted gate registration input"]`; 1.5c2 kept it so
+  the failure contract didn't change during removal. Reword it when that
+  failure is next touched.
+
+
 - From this PR (1.5c2): `cli.RegisteredCodes` still omits the existing,
   reachable `idempotency-conflict` code. Its established supplemental process
   pair remains; decide separately whether the public enumeration should
@@ -2179,7 +2222,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     though `fid export import` already refuses them as
     `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
     Decided 10 November 2026 (ADR-0014): removed with the kernel's catalogs
-    in 1.5d, together with that test.
+    in 1.5d, together with that test. Completed in RESET 1.5d1 on
+    2026-11-15: validation and import both refuse v1, and the acceptance test
+    is replaced with a refusal/nonmutation test.
   - The kernel's removal (1.5b–1.5d) takes the test-only helpers that belong
     to the kernel.
 - Review rounds, as data for refining the process after the reset: #41, #44

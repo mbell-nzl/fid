@@ -82,7 +82,7 @@ func TestSemanticValidatorRejectsHoldEffectFamilyTampering(t *testing.T) {
 
 func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
 	t.Parallel()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 17)
+	validator, err := newSemanticValidator(testMigrationsDir(t), 26)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
 	}

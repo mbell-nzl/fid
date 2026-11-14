@@ -4,7 +4,10 @@ package journal
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
+	"time"
 )
 
 func currentProjectionSnapshot(t *testing.T, conn *sql.DB) map[string][]string {
@@ -61,4 +64,55 @@ func currentProjectionSnapshot(t *testing.T, conn *sql.DB) map[string][]string {
 		}
 	}
 	return result
+}
+
+func dumpProjectionQuery(t *testing.T, conn *sql.DB, name, query string) string {
+	t.Helper()
+
+	rows, err := conn.Query(query)
+	if err != nil {
+		t.Fatalf("query %s: %v", name, err)
+	}
+	defer closeProjectDB(t, rows)
+
+	columns, err := rows.Columns()
+	if err != nil {
+		t.Fatalf("columns %s: %v", name, err)
+	}
+
+	var result []string
+	for rows.Next() {
+		values := make([]any, len(columns))
+		destinations := make([]any, len(columns))
+		for index := range destinations {
+			destinations[index] = &values[index]
+		}
+		if err := rows.Scan(destinations...); err != nil {
+			t.Fatalf("scan %s: %v", name, err)
+		}
+
+		row := make([]string, len(values))
+		for index, value := range values {
+			row[index] = formatProjectionSnapshotValue(value)
+		}
+		result = append(result, strings.Join(row, "|"))
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate %s: %v", name, err)
+	}
+
+	return name + "=" + strings.Join(result, ";")
+}
+
+func formatProjectionSnapshotValue(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return "NULL"
+	case []byte:
+		return string(typed)
+	case time.Time:
+		return typed.UTC().Format(time.RFC3339Nano)
+	default:
+		return fmt.Sprint(typed)
+	}
 }

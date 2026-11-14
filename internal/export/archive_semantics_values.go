@@ -43,7 +43,7 @@ func validateSemanticMap(tableName string, table semanticTable, values map[strin
 
 func semanticBooleanColumn(table, column string) bool {
 	switch table + "." + column {
-	case "holds.kept", "kit_activations.point_of_no_return", "execution_receipts.timed_out", "execution_receipts.output_truncated", "execution_receipts.redaction_applied", "evidence_artifact_links.required_material", "review_findings.blocking":
+	case "holds.kept":
 		return true
 	default:
 		return false
@@ -54,21 +54,7 @@ func validSemanticPrimaryKey(tableName string, values map[string]any, primary ma
 	if len(primary) != 0 {
 		return sameSemanticKeys(values, primary)
 	}
-	// workflow_assignments predates ordinary SQLite primary keys. Its two
-	// accepted writer selectors are the unique partial-index keys, never an
-	// arbitrary non-key predicate.
-	if tableName != "workflow_assignments" {
-		return false
-	}
-	scope, ok := values["scope"].(string)
-	if !ok {
-		return false
-	}
-	if scope == "project" {
-		return len(values) == 1
-	}
-	_, hasKind := values["kind"].(string)
-	return scope == "kind" && len(values) == 2 && hasKind
+	return false
 }
 
 func sameSemanticKeys(values map[string]any, expected map[string]struct{}) bool {
