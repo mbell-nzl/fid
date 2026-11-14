@@ -2309,6 +2309,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     a non-empty fragment at the end of the file at once. Not seen in about
     3,600 concurrent reads; telling a live append from a damaged tail needs
     a design, not a one-line fix.
+- From #72 (1.5c3): deleting the kernel's domains left these `internal/project`
+  helpers with no production caller, only their own tests:
+  `ObserveRecordedRepository` and `ResolveSourceInput` (`source.go`),
+  `ExpectedRepository` and `MatchesRecordedRepository`
+  (`expected_repository.go`) and `IsAncestor` (`repository.go`). Delete
+  them, with their tests, unless 1.6 or 2.1 turns out to need them.
 - CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
   with the v0.2.0 release.
 
