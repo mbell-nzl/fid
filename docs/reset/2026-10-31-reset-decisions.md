@@ -666,7 +666,10 @@ timestamps. A review reservation in another worktree uses the existing
 `held-elsewhere` scheduling reason. Rebuilding the referenced holds table
 defers foreign keys, verifies the entire final graph with
 `pragma_foreign_key_check`, then clears SQLite's stale deferred DROP
-counters before commit. The downgrade retains review reservations as
+counters before commit. Hand-off observes HEAD and cleanliness without
+hashing uncommitted contents; this includes unmerged paths in `tree-dirty`.
+Its git children disable lazy fetching and optional index writes, and it
+retains the guard against hidden tracked changes. The downgrade retains review reservations as
 interrupted reservations with the reason `In review`.
 
 ## Products

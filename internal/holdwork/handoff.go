@@ -72,7 +72,7 @@ func (ctx writeContext) prepareHandoff(hold holds.Hold) (handoffrecord.Record, e
 	if !loaded.Effective.TestAdequacySet {
 		return record, &checkrecord.Refusal{Code: "test-paths-not-configured", TaskID: hold.TaskID, Message: "no test paths set in .fid.toml", Details: map[string]any{}, Next: "add [review] test_adequacy, then merge .fid.toml and git fetch"}
 	}
-	observation, err := project.ObserveRepository(ctx.options.WorkspaceRoot)
+	observation, err := project.ObserveHead(ctx.options.WorkspaceRoot)
 	if err != nil {
 		return record, err
 	}

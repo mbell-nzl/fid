@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -193,5 +194,26 @@ func TestHandoffReviewElsewhereAndMissingWorktree(t *testing.T) {
 	got := f.run("--json", "status")
 	if got.err != nil || !strings.Contains(got.stdout, `"kind":"worktree-missing"`) {
 		t.Fatalf("missing review worktree=%#v", got)
+	}
+}
+
+func TestHandoffRefusesUnmergedChangesAsTreeDirty(t *testing.T) {
+	t.Parallel()
+	f := requiredCheckFixture(t, "[]")
+	oid := strings.TrimSpace(identityGit(t, f.workspace, "rev-parse", "HEAD:old.go"))
+	runGitForTest(t, f.workspace, "update-index", "--force-remove", "old.go")
+	command := exec.Command("git", "-C", f.workspace, "update-index", "--index-info")
+	command.Stdin = strings.NewReader("100644 " + oid + " 1\told.go\n100644 " + oid + " 2\told.go\n100644 " + oid + " 3\told.go\n")
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("make unmerged index: %v: %s", err, output)
+	}
+	before := startEventCount(t, f.workspace)
+	got := f.run(append([]string{"--json"}, handoffArgs("unmerged")...)...)
+	if cli.ExitCode(got.err) != 4 {
+		t.Fatalf("unmerged hand-off=%#v", got)
+	}
+	assertJSONFailureCode(t, got.stderr, "task.handoff", "tree-dirty")
+	if startEventCount(t, f.workspace) != before {
+		t.Fatal("refusal wrote an event")
 	}
 }
