@@ -47,6 +47,9 @@ func updateResultJSON(result UpdateResult) (string, error) {
 }
 
 func updateResultFromJSON(raw, eventID string, replayed bool) (UpdateResult, error) {
+	if err := journal.ValidateIssueUpdateResult(raw); err != nil {
+		return UpdateResult{}, err
+	}
 	var value struct {
 		EventOccurredAt string        `json:"event_occurred_at"`
 		IdempotencyKey  string        `json:"idempotency_key"`

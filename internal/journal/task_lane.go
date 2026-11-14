@@ -2,12 +2,51 @@ package journal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 )
+
+// ValidateIssueUpdateResult checks lane values before a stored update result
+// can be rendered or accepted into the projection by replay or archive import.
+func ValidateIssueUpdateResult(raw string) error {
+	var result struct {
+		Changes []struct {
+			Field string
+			To    any
+		} `json:"changes"`
+	}
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return fmt.Errorf("decode stored Issue update result: %w", err)
+	}
+	for _, change := range result.Changes {
+		if change.Field != "lane" {
+			continue
+		}
+		lane, ok := change.To.(string)
+		if !ok || lane != "routine" && lane != "standard" && lane != "assured" {
+			return fmt.Errorf("invalid lane change result: to must be routine, standard or assured")
+		}
+	}
+	return nil
+}
 
 // Lane changes use the existing issue Events, preserving their revision and
 // idempotency contracts. Replay enforces the same authority as the writer.
 func validateTaskLane(tx *sql.Tx, event Event) error {
+	if event.EventType == "issue.updated" {
+		for _, effect := range event.Effects {
+			if effect.Table != "idempotency_results" {
+				continue
+			}
+			raw, ok := effect.Values["result_json"].(string)
+			if !ok {
+				return fmt.Errorf("invalid Issue update result")
+			}
+			if err := ValidateIssueUpdateResult(raw); err != nil {
+				return err
+			}
+		}
+	}
 	for _, effect := range event.Effects {
 		value, present := effect.Values["lane"]
 		if effect.Table != "issues" || !present {
