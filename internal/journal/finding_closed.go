@@ -40,14 +40,17 @@ func decodeFindingCloseResult(raw string) (findingCloseResult, error) {
 	return result, nil
 }
 
-// ValidateFindingCloseRetry also compares the response with immutable evidence,
-// so a corrupt response in an already-current projection cannot become output.
-func ValidateFindingCloseRetry(conn reviewrecord.Queryer, raw string) error {
+// ValidateFindingCloseRetry binds the response to the requested finding and
+// stored entity before comparing it with immutable closure evidence.
+func ValidateFindingCloseRetry(conn reviewrecord.Queryer, raw, findingID, entityID string) error {
 	r, err := decodeFindingCloseResult(raw)
 	if err != nil {
 		return err
 	}
 	f := r.Fields
+	if f.FindingID != findingID || entityID != findingID {
+		return fmt.Errorf("finding retry differs from requested finding or stored entity")
+	}
 	var task, reason, at string
 	err = conn.QueryRow(`SELECT subject_id,reason,decided_at FROM person_decisions WHERE id=? AND kind='close-finding' AND binding_id=?`, f.DecisionID, f.FindingID).Scan(&task, &reason, &at)
 	if err != nil {
@@ -135,7 +138,15 @@ func validateFindingClosed(tx *sql.Tx, event Event) error {
 // Preserve the new decision's immutability even through legacy Issue Effects
 // and SQLite case aliases. Other decision kinds retain their existing rules.
 func validateFindingDecisionEffect(tx *sql.Tx, event Event, e Effect) error {
-	for column, value := range e.Values {
+	row := e.Values
+	if e.Op == "insert" {
+		var err error
+		row, err = mergeEffectValues(e.PK, e.Values)
+		if err != nil {
+			return err
+		}
+	}
+	for column, value := range row {
 		if strings.EqualFold(column, "kind") && value == "close-finding" && (!event.IsV2() || event.EventType != "finding.closed") {
 			return fmt.Errorf("finding decisions require their Event-v2 family")
 		}

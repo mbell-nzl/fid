@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
 func TestFindingClosedHistoryCannotBeReplaced(t *testing.T) {
@@ -56,6 +58,45 @@ func TestFindingCloseRetryRefusesCorruptStoredResponse(t *testing.T) {
 			before := reviewProjection(t, f)
 			if got := closeFinding(f, ids[0], "human:mark", "Accepted", "close"); got.err == nil || reviewProjection(t, f) != before {
 				t.Fatal("rendered corrupt closure response")
+			}
+		})
+	}
+}
+
+func TestFindingCloseRetryRefusesAnotherClosure(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name    string
+		columns []string
+	}{
+		{"response", []string{"result_json"}},
+		{"entity", []string{"result_entity_id"}},
+		{"response and entity", []string{"result_json", "result_entity_id"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			f, ids, _ := closureFixture(t)
+			lifecycleResult(t, closeFinding(f, ids[0], "human:mark", "Accepted first risk", "first"), "finding.close")
+			lifecycleResult(t, closeFinding(f, ids[1], "human:alex", "Accepted second risk", "second"), "finding.close")
+			conn, err := reviewwork.OpenProjection(f.workspace)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, column := range tc.columns {
+				_, err = conn.Exec(`UPDATE idempotency_results SET `+column+`=(SELECT `+column+` FROM idempotency_results WHERE idempotency_key=?) WHERE idempotency_key=?`, "second", "first")
+				if err != nil {
+					closeCommandDB(t, conn)
+					t.Fatal(err)
+				}
+			}
+			closeCommandDB(t, conn)
+			before := reviewProjection(t, f)
+			got := closeFinding(f, ids[0], "human:mark", "Accepted first risk", "first")
+			if got.err == nil || got.stdout != "" {
+				t.Fatalf("accepted retry substituted from another closure: %#v", got)
+			}
+			if reviewProjection(t, f) != before {
+				t.Fatal("refused substituted retry changed state")
 			}
 		})
 	}
