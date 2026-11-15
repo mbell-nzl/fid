@@ -42,7 +42,8 @@ type CI struct {
 	NotGreen []WorkflowRun
 }
 
-func evaluateCI(sha string, observed []WorkflowRun) CI {
+// EvaluateCI applies the shared merge-CI rule to complete adapter observations.
+func EvaluateCI(sha string, observed []WorkflowRun) CI {
 	facts := CI{Commit: sha, Runs: slices.Clone(observed), Verdict: Waiting}
 	latest := make(map[int64]WorkflowRun)
 	for _, run := range facts.Runs {

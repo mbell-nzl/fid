@@ -1170,7 +1170,11 @@ files. fid recomputes the committed comparison base with the local
 `origin/<default>` ref, without fetching. Every required check must have
 its latest finished result, for this task, HEAD's tree and the current
 check definition, passing and counting. A commit preserving the tree keeps
-the results valid. Hand-off never executes a check.
+the results valid. Each selected counting result's kept Artifacts must still
+exist with matching digests. This is a present file check, shared with the
+done evaluator; it never changes a check result or writes an availability
+observation. Hand-off never executes a check. Historical replay and an
+identical hand-off retry never re-read those files.
 
 One `task.handed-off` Event records the immutable hand-off receipt, moves
 the task to `in_review`, ends its builder's hold, and keeps the task for its
@@ -1201,6 +1205,7 @@ invalid flags and PR URLs use `invalid-argument`, exit 2.
 | Test paths absent | `test-paths-not-configured` | `{}`; `add [review] test_adequacy, then merge .fid.toml and git fetch` |
 | Uncommitted changes | `tree-dirty` | `{worktree}`; commit them before hand-off |
 | Required checks without counting passes | `checks-unsatisfied` | `{checks, latest_result_ids}`; `fid check --hold <id> --actor <a> --idempotency-key <key>` |
+| A selected counting result's kept Artifact is missing or changed | `kept-artifact-unavailable` | `{artifact_ids}`; restore the kept bytes or repeat the check with a new key |
 | Comparison base unavailable | `comparison-unavailable` | `{ref, problem}`, with nullable ref, as for check |
 | Task not `in_progress` | `transition-not-permitted` | `{from_state, to_state, unsatisfied}`; start the task first |
 | Hold not current | `hold-not-current` | Exact hold checks and repair as above |

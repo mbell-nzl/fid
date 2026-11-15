@@ -73,6 +73,7 @@ var p24CodeRows = map[string]p24CodeFactory{
 var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
+	"kept-artifact-unavailable": handoffCodePair("kept-artifact-unavailable"),
 	"checks-unsatisfied":        handoffCodePair("checks-unsatisfied"),
 	"test-paths-not-configured": handoffCodePair("test-paths-not-configured"),
 	"tree-dirty":                handoffCodePair("tree-dirty"),

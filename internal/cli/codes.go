@@ -20,46 +20,47 @@ const (
 )
 
 const (
-	CodeInvalidArgument        Code = "invalid-argument"
-	CodeHoldNotCurrent         Code = "hold-not-current"
-	CodeWorktreeBusy           Code = "worktree-busy"
-	CodeNotWaiting             Code = "not-waiting"
-	CodeChecksNotConfigured    Code = "checks-not-configured"
-	CodeComparisonUnavailable  Code = "comparison-unavailable"
-	CodeChecksUnsatisfied      Code = "checks-unsatisfied"
-	CodeTreeDirty              Code = "tree-dirty"
-	CodeTestPathsNotConfigured Code = "test-paths-not-configured"
-	CodeCheckUnsuccessful      Code = "check-unsuccessful"
-	CodeCheckNotQualified      Code = "check-not-qualified"
-	CodeCheckStillRunning      Code = "check-still-running"
-	CodeCheckIncomplete        Code = "check-incomplete"
-	CodeLaneNotSet             Code = "lane-not-set"
-	CodeAlreadyHeld            Code = "already-held"
-	CodePolicyUnavailable      Code = "policy-unavailable"
-	CodeOperationUnavailable   Code = "operation-unavailable"
-	CodeUnsupportedKind        Code = "unsupported-kind"
-	CodeUnsupportedRelation    Code = "unsupported-relation"
-	CodeProjectNotFound        Code = "project-not-found"
-	CodeProjectAlreadyInit     Code = "project-already-initialized"
-	CodeIssueNotFound          Code = "issue-not-found"
-	CodeLabelNotFound          Code = "label-not-found"
-	CodeLinkNotFound           Code = "link-not-found"
-	CodeDuplicateEntity        Code = "duplicate-entity"
-	CodeStateConflict          Code = "state-conflict"
-	CodeLockUnavailable        Code = "lock-unavailable"
-	CodeHierarchyInvalid       Code = "hierarchy-invalid"
-	CodeDependencyCycle        Code = "dependency-cycle"
-	CodeTransitionNotPermitted Code = "transition-not-permitted"
-	CodeAuthorityDenied        Code = "authority-denied"
-	CodeJournalReplayStopped   Code = "journal-replay-stopped"
-	CodeProjectionDivergence   Code = "projection-divergence"
-	CodeResultLimitExceeded    Code = "result-limit-exceeded"
-	CodeInternalError          Code = "internal-error"
-	CodeCapabilityUnavailable  Code = "capability-unavailable"
-	CodeArchiveInvalid         Code = "archive-invalid"
-	CodeImportTargetConflict   Code = "import-target-conflict"
-	CodeRepositoryUnavailable  Code = "repository-unavailable"
-	CodeIdempotencyConflict    Code = "idempotency-conflict"
+	CodeInvalidArgument         Code = "invalid-argument"
+	CodeHoldNotCurrent          Code = "hold-not-current"
+	CodeWorktreeBusy            Code = "worktree-busy"
+	CodeNotWaiting              Code = "not-waiting"
+	CodeChecksNotConfigured     Code = "checks-not-configured"
+	CodeComparisonUnavailable   Code = "comparison-unavailable"
+	CodeChecksUnsatisfied       Code = "checks-unsatisfied"
+	CodeKeptArtifactUnavailable Code = "kept-artifact-unavailable"
+	CodeTreeDirty               Code = "tree-dirty"
+	CodeTestPathsNotConfigured  Code = "test-paths-not-configured"
+	CodeCheckUnsuccessful       Code = "check-unsuccessful"
+	CodeCheckNotQualified       Code = "check-not-qualified"
+	CodeCheckStillRunning       Code = "check-still-running"
+	CodeCheckIncomplete         Code = "check-incomplete"
+	CodeLaneNotSet              Code = "lane-not-set"
+	CodeAlreadyHeld             Code = "already-held"
+	CodePolicyUnavailable       Code = "policy-unavailable"
+	CodeOperationUnavailable    Code = "operation-unavailable"
+	CodeUnsupportedKind         Code = "unsupported-kind"
+	CodeUnsupportedRelation     Code = "unsupported-relation"
+	CodeProjectNotFound         Code = "project-not-found"
+	CodeProjectAlreadyInit      Code = "project-already-initialized"
+	CodeIssueNotFound           Code = "issue-not-found"
+	CodeLabelNotFound           Code = "label-not-found"
+	CodeLinkNotFound            Code = "link-not-found"
+	CodeDuplicateEntity         Code = "duplicate-entity"
+	CodeStateConflict           Code = "state-conflict"
+	CodeLockUnavailable         Code = "lock-unavailable"
+	CodeHierarchyInvalid        Code = "hierarchy-invalid"
+	CodeDependencyCycle         Code = "dependency-cycle"
+	CodeTransitionNotPermitted  Code = "transition-not-permitted"
+	CodeAuthorityDenied         Code = "authority-denied"
+	CodeJournalReplayStopped    Code = "journal-replay-stopped"
+	CodeProjectionDivergence    Code = "projection-divergence"
+	CodeResultLimitExceeded     Code = "result-limit-exceeded"
+	CodeInternalError           Code = "internal-error"
+	CodeCapabilityUnavailable   Code = "capability-unavailable"
+	CodeArchiveInvalid          Code = "archive-invalid"
+	CodeImportTargetConflict    Code = "import-target-conflict"
+	CodeRepositoryUnavailable   Code = "repository-unavailable"
+	CodeIdempotencyConflict     Code = "idempotency-conflict"
 )
 
 type SubjectType string
@@ -156,21 +157,22 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
-	CodeTreeDirty:              definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("worktree")),
-	CodeTestPathsNotConfigured: definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}),
-	CodeChecksNotConfigured:    definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("lane")),
-	CodeComparisonUnavailable:  definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, nullableStringField("ref"), stringField("problem")),
-	CodeChecksUnsatisfied:      definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("checks"), stringsField("latest_result_ids")),
-	CodeCheckUnsuccessful:      definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("outcomes")),
-	CodeCheckNotQualified:      definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("reasons")),
-	CodeCheckStillRunning:      definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("check_id"), integerField("pid")),
-	CodeCheckIncomplete:        definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringsField("check_ids")),
-	CodeHoldNotCurrent:         definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
-	CodeWorktreeBusy:           definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
-	CodeLaneNotSet:             definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("task_id")),
-	CodeNotWaiting:             definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
-	CodeAlreadyHeld:            definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
-	CodePolicyUnavailable:      definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
+	CodeKeptArtifactUnavailable: definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("artifact_ids")),
+	CodeTreeDirty:               definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("worktree")),
+	CodeTestPathsNotConfigured:  definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}),
+	CodeChecksNotConfigured:     definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("lane")),
+	CodeComparisonUnavailable:   definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, nullableStringField("ref"), stringField("problem")),
+	CodeChecksUnsatisfied:       definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("checks"), stringsField("latest_result_ids")),
+	CodeCheckUnsuccessful:       definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("outcomes")),
+	CodeCheckNotQualified:       definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("reasons")),
+	CodeCheckStillRunning:       definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("check_id"), integerField("pid")),
+	CodeCheckIncomplete:         definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringsField("check_ids")),
+	CodeHoldNotCurrent:          definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
+	CodeWorktreeBusy:            definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
+	CodeLaneNotSet:              definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("task_id")),
+	CodeNotWaiting:              definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
+	CodeAlreadyHeld:             definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
+	CodePolicyUnavailable:       definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
 		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 
@@ -219,7 +221,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("target_root"), stringField("reason")),
 }
 
-var registeredCodes = []Code{CodeTreeDirty, CodeTestPathsNotConfigured, CodeComparisonUnavailable, CodeChecksUnsatisfied, CodeChecksNotConfigured, CodeCheckUnsuccessful, CodeCheckNotQualified, CodeCheckStillRunning, CodeCheckIncomplete, CodeLaneNotSet, CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
+var registeredCodes = []Code{CodeTreeDirty, CodeTestPathsNotConfigured, CodeComparisonUnavailable, CodeKeptArtifactUnavailable, CodeChecksUnsatisfied, CodeChecksNotConfigured, CodeCheckUnsuccessful, CodeCheckNotQualified, CodeCheckStillRunning, CodeCheckIncomplete, CodeLaneNotSet, CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
 	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityDenied,

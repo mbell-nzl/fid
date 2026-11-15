@@ -15,6 +15,11 @@ import (
 
 func handoffJourneyRepo(t *testing.T, testPaths bool) (string, string) {
 	t.Helper()
+	return handoffJourneyRepoWithArtifacts(t, testPaths, false)
+}
+
+func handoffJourneyRepoWithArtifacts(t *testing.T, testPaths, kept bool) (string, string) {
+	t.Helper()
 	root, binary := gittest.NewWorkspace(t), integrationFIDBinary(t)
 	p21Run(t, binary, root, "init", "--prefix", "FID", "--json")
 	path := filepath.Join(root, ".fid.toml")
@@ -23,6 +28,9 @@ func handoffJourneyRepo(t *testing.T, testPaths bool) (string, string) {
 		t.Fatal(err)
 	}
 	text := string(raw) + "\n[lanes.standard]\nchecks=['test']\n[checks.test]\nrun=['true']\ntimeout='1m'\n"
+	if kept {
+		text += "artifacts=['.fid.toml']\n"
+	}
 	if testPaths {
 		text += "[review]\ntest_adequacy=[]\n"
 	}
@@ -132,12 +140,22 @@ func assertLeanHandoffJournal(t *testing.T, root string) {
 func handoffCodePair(code string) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
-		root, binary := handoffJourneyRepo(t, code != "test-paths-not-configured")
+		root, binary := handoffJourneyRepoWithArtifacts(t, code != "test-paths-not-configured", code == "kept-artifact-unavailable")
 		created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--title", "Hand-off refusal", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 		task := p21PathString(t, created, "result", "issue", "id")
 		taken := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 		hold := p21PathString(t, taken, "result", "hold", "id")
 		p21Run(t, binary, root, "--json", "start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")
+		if code == "kept-artifact-unavailable" {
+			p21Run(t, binary, root, "--json", "check", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "check")
+			files, err := os.ReadDir(filepath.Join(config.LedgerDir(root), "artifacts"))
+			if err != nil || len(files) != 1 {
+				t.Fatalf("kept files=%v/%v", files, err)
+			}
+			if err := os.Remove(filepath.Join(config.LedgerDir(root), "artifacts", files[0].Name())); err != nil {
+				t.Fatal(err)
+			}
+		}
 		if code == "tree-dirty" {
 			if err := os.WriteFile(filepath.Join(root, "dirty"), []byte("dirty"), 0o600); err != nil {
 				t.Fatal(err)
@@ -154,7 +172,7 @@ func handoffCodePair(code string) func(*testing.T) {
 		}
 		stdout, stderr, err = closureRunCommand(root, binary, args...)
 		wantText := p24ExpectedFailureText(t, envelope, "task.handoff", false)
-		if code == "checks-unsatisfied" {
+		if code == "checks-unsatisfied" || code == "kept-artifact-unavailable" {
 			wantText += "next: fid check --hold " + hold + " --actor agent:builder --idempotency-key <key>\n"
 		}
 		if err == nil || stdout != "" || processExitCode(t, err) != 4 || stderr != wantText {

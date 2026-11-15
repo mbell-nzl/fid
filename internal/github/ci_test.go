@@ -57,7 +57,7 @@ func TestCIVerdict(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := evaluateCI(mergeSHA, tt.runs)
+			got := EvaluateCI(mergeSHA, tt.runs)
 			if got.Verdict != tt.verdict || len(got.NotGreen) != tt.failures || len(got.Runs) != len(tt.runs) {
 				t.Fatalf("CI = %#v", got)
 			}
@@ -71,7 +71,7 @@ func TestCIVerdict(t *testing.T) {
 	for _, conclusion := range []string{"cancelled", "timed_out", "action_required", "neutral", "stale", "startup_failure", "unknown_future_value"} {
 		t.Run(conclusion, func(t *testing.T) {
 			t.Parallel()
-			got := evaluateCI(mergeSHA, []WorkflowRun{sampleRun(1, 1, 10, "completed", conclusion)})
+			got := EvaluateCI(mergeSHA, []WorkflowRun{sampleRun(1, 1, 10, "completed", conclusion)})
 			if got.Verdict != NotGreen || len(got.NotGreen) != 1 {
 				t.Fatalf("CI = %#v", got)
 			}

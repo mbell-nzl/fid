@@ -99,6 +99,17 @@ func (ctx writeContext) prepareHandoff(hold holds.Hold) (handoffrecord.Record, e
 		refusal.Next = "fid check --hold " + hold.ID + " --actor " + ctx.options.Actor + " --idempotency-key <key>"
 		return record, refusal
 	}
+	problems, err := checkread.VerifyKept(ctx.options.WorkspaceRoot, evaluation)
+	if err != nil {
+		return record, err
+	}
+	if len(problems) != 0 {
+		ids := []string{}
+		for _, problem := range problems {
+			ids = append(ids, problem.ArtifactID)
+		}
+		return record, &checkrecord.Refusal{Code: "kept-artifact-unavailable", TaskID: hold.TaskID, Message: "kept Artifacts are missing or changed; restore them or check again before hand-off", Details: map[string]any{"artifact_ids": ids}, Next: "fid check --hold " + hold.ID + " --actor " + ctx.options.Actor + " --idempotency-key <key>"}
+	}
 	id, err := journal.GenerateID("HOF", func(candidate string) (bool, error) {
 		var found int
 		err := ctx.conn.QueryRow(`SELECT 1 FROM handoffs WHERE id=?`, candidate).Scan(&found)
