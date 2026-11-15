@@ -23,14 +23,14 @@ func TestJournalAssertionsAcrossUTCMidnight(t *testing.T) {
 			if tc.appendFirst {
 				runFIDCommand(t, workspace, "label", "add", "earlier", "--by", "developer")
 			}
-			journalPath := mustJournalPath(t, workspace)
-			before := splitJournalLines(mustReadCommandFile(t, journalPath))
+
+			before := splitJournalLines(mustReadJournal(t, workspace))
 			args := []string{"--json", "label", "add", "midnight", "--by", "developer", "--idempotency-key", "midnight-add"}
 			result := executeCommandForTest(workspace, args...)
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("label add = %#v", result)
 			}
-			after := mustReadCommandFile(t, journalPath)
+			after := mustReadJournal(t, workspace)
 			lines := splitJournalLines(after)
 			if len(lines) != len(before)+1 {
 				t.Fatalf("journal events = %d, want %d", len(lines), len(before)+1)
@@ -40,7 +40,7 @@ func TestJournalAssertionsAcrossUTCMidnight(t *testing.T) {
 					t.Fatalf("journal event %d changed", i+1)
 				}
 			}
-			last := mustReadLastJournalEvent(t, journalPath)
+			last := mustReadLastJournalEvent(t, workspace)
 			if last.EventType != "label.added" {
 				t.Fatalf("last event = %s, want label.added", last.EventType)
 			}
@@ -54,7 +54,7 @@ func TestJournalAssertionsAcrossUTCMidnight(t *testing.T) {
 			}
 			runFIDCommand(t, workspace, args...)
 			runFIDCommand(t, workspace, "rebuild")
-			if got := mustReadCommandFile(t, journalPath); !bytes.Equal(got, after) {
+			if got := mustReadJournal(t, workspace); !bytes.Equal(got, after) {
 				t.Fatal("retry or rebuild changed journal bytes")
 			}
 		})

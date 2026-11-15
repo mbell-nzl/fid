@@ -87,7 +87,7 @@ func TestBackupFailuresAreRecordedAndTyped(t *testing.T) {
 		{name: "export failure", exit: 7, code: "internal-error", kind: "export-failed", message: "export the ledger: ",
 			setup: func(fixture *backupFixture, workspace string) {
 				fixture.setTarget(fixture.target)
-				journal, err := os.OpenFile(mustJournalPath(fixture.t, workspace), os.O_APPEND|os.O_WRONLY, 0)
+				journal, err := os.OpenFile(latestJournalPath(fixture.t, workspace), os.O_APPEND|os.O_WRONLY, 0)
 				if err != nil {
 					fixture.t.Fatal(err)
 				}

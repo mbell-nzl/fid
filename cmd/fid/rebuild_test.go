@@ -21,7 +21,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -68,7 +68,7 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	databasePath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
@@ -108,7 +108,7 @@ func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -149,7 +149,7 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -259,7 +259,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)

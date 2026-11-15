@@ -930,6 +930,27 @@ workaround is added. This source evidence identifies a historical leak
 mechanism; the old machine's individual 761 pairs were not inspected in
 this session. No production code or dependency changes.
 
+**RESET 1.5f, 2026-11-15 (Routine).** Mark added this separate task
+following a local coverage/no-identity CI run that crossed UTC midnight and
+failed 47 command tests. The shared pristine workspace was initialized on
+one UTC date and later commands correctly opened another dated journal file.
+
+Builder's transactional choices for 1.5f: test readers concatenate all
+journal files in lexical (date) order and re-enumerate on every read,
+including before/after Event counts and byte comparisons. Event lookup and
+tail assertions take a workspace instead of a cached file path. Tests that
+damage the tail, or assert inspect's file-local line number, explicitly
+select the last file. Single-file assertions remain only on a fresh init's
+bootstrap journal, before any further write; the number of Events and all
+existing expected mutations remain unchanged. Integration's closure journey
+reads the whole journal, checks every file is untracked, and searches every
+file for Event attribution. Its existing full file snapshots remain.
+Regressions backdate a copied genesis Event to yesterday, rebuild its
+projection, and run real commands: one starts with a journal spanning dates,
+one opens the new daily file after the before snapshot, and integration
+checks the closure and attribution helpers on both dates. No clock override,
+production change or dependency is added.
+
 ## RESET 1.7 implementation (2026-11-15)
 
 Mark asked on 2026-11-15 for 1.6 and 1.7 to be orchestrated while he was
@@ -2230,6 +2251,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From this PR (1.5f): the existing #51 local-midnight follow-up below
+  remains: `TestStatusAndShowPageOnARealTerminal` compares the date in
+  separate processes' status headers. This journal-file task leaves that
+  display comparison unchanged; check the header date separately and
+  normalise it before comparing when that follow-up is taken.
+
 - From #76 (1.5e): make the hold-lifecycle text goldens independent of
   temp-root length. With a long private `TMPDIR`,
   `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
@@ -2420,15 +2447,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   About 33 fail when `TMPDIR` is behind a symlink (12 in `internal/`, 11 in
   `cmd/fid`, 10 in integration), on `main` too. They compare paths without
   resolving symlinks; P24 observation tests, for example, hash an
-  unresolved worktree path. Found in 1.1c2; no PR since added one. And
-  `cmd/fid` tests fail when a run crosses UTC midnight (`journal files = 2,
-  want 1`, from `mustJournalPath` at `cmd/fid/init_test.go:710`): the
-  fixture creates the journal on one UTC date and the commands append to a
-  new one on the next. Found in 0.7's round-3 review; Mark accepted it for
-  0.7 on 7 November 2026. Fix it in test code (a fixed date in the
-  fixture), not product code, if it ever fails CI. Do the rest when a
-  shard's test step passes 10 minutes, and all of it before the trial at
-  the latest.
+  unresolved worktree path. Found in 1.1c2; no PR since added one.
+  The UTC-midnight failure (`journal files = 2, want 1`, found in 0.7's
+  round-3 review) is resolved by RESET 1.5f on 2026-11-15: test assertions
+  read every dated journal file, with forced-crossing regressions in the
+  command and integration suites. No product clock change was needed.
+  Do the rest when a shard's test step passes 10 minutes, and all of it
+  before the trial at the latest.
 - Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
   `git status` doesn't show it, and nothing removes it. Add cleanup once

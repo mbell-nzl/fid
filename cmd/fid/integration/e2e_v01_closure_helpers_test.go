@@ -180,17 +180,17 @@ func workspaceRelative(t *testing.T, workspace, path string) string {
 	return filepath.ToSlash(relative)
 }
 
-func closureJournalPath(t *testing.T, workspace string) string {
+func closureJournalPaths(t *testing.T, workspace string) []string {
 	t.Helper()
 
 	matches, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil {
 		t.Fatalf("find journal: %v", err)
 	}
-	if len(matches) != 1 {
-		t.Fatalf("journal files = %v, want one", matches)
+	if len(matches) == 0 {
+		t.Fatal("journal files = 0, want at least one")
 	}
-	return matches[0]
+	return matches
 }
 
 // assertClosureJournalNeverTracked checks that git never tracks the journal.
@@ -199,11 +199,13 @@ func closureJournalPath(t *testing.T, workspace string) string {
 func assertClosureJournalNeverTracked(t *testing.T, workspace string) {
 	t.Helper()
 
-	relative := workspaceRelative(t, workspace, closureJournalPath(t, workspace))
-	closureRun(t, workspace, "git", "add", "--", relative)
-	closureRun(t, workspace, "git", "add", "--all")
-	if stdout, _, err := closureRunCommand(workspace, "git", "ls-files", "--error-unmatch", "--", relative); err == nil {
-		t.Fatalf("journal %q is tracked: %q", relative, stdout)
+	for _, path := range closureJournalPaths(t, workspace) {
+		relative := workspaceRelative(t, workspace, path)
+		closureRun(t, workspace, "git", "add", "--", relative)
+		closureRun(t, workspace, "git", "add", "--all")
+		if stdout, _, err := closureRunCommand(workspace, "git", "ls-files", "--error-unmatch", "--", relative); err == nil {
+			t.Fatalf("journal %q is tracked: %q", relative, stdout)
+		}
 	}
 	ledger := workspaceRelative(t, workspace, config.LedgerDir(workspace))
 	tracked, _ := closureRun(t, workspace, "git", "ls-files", "--cached")
@@ -280,7 +282,7 @@ func closureCompleteIssue(t *testing.T, binary, workspace, issueID string) strin
 func assertClosureConcernMutationsUnavailable(t *testing.T, binary, workspace, issueID, completionID string) {
 	t.Helper()
 	for _, leaf := range []string{"raise", "address"} {
-		assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
+		assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace,
 			[]string{"concern", leaf})
 	}
 	_, _ = issueID, completionID
@@ -298,10 +300,10 @@ func closureIDAfterWord(t *testing.T, text, word string) string {
 	return ""
 }
 
-func assertClosureRejectedWithoutJournalAppend(t *testing.T, binary, workspace, journalPath string, args []string, want string) {
+func assertClosureRejectedWithoutJournalAppend(t *testing.T, binary, workspace string, args []string, want string) {
 	t.Helper()
 
-	before := closureReadFile(t, journalPath)
+	before := p21JournalBytes(t, workspace)
 	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, args...)
 	if err == nil {
 		t.Fatalf("fid %s succeeded, want rejection", strings.Join(args, " "))
@@ -312,13 +314,13 @@ func assertClosureRejectedWithoutJournalAppend(t *testing.T, binary, workspace, 
 	if !strings.Contains(stderr, want) {
 		t.Fatalf("fid %s stderr = %q, want %q", strings.Join(args, " "), stderr, want)
 	}
-	assertClosureJournalBytesEqual(t, journalPath, before, strings.Join(args, " "))
+	assertClosureJournalBytesEqual(t, workspace, before, strings.Join(args, " "))
 }
 
-func assertClosureUnknownCommandWithoutJournalAppend(t *testing.T, binary, workspace, journalPath string, args []string) {
+func assertClosureUnknownCommandWithoutJournalAppend(t *testing.T, binary, workspace string, args []string) {
 	t.Helper()
 
-	before := closureReadFile(t, journalPath)
+	before := p21JournalBytes(t, workspace)
 	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, args...)
 	if err == nil {
 		t.Fatalf("fid %s succeeded, want rejection", strings.Join(args, " "))
@@ -327,7 +329,7 @@ func assertClosureUnknownCommandWithoutJournalAppend(t *testing.T, binary, works
 	jsonArgs := append([]string{"--json"}, args...)
 	jsonOut, jsonErr, jsonCause := closureRunFIDExpectError(t, binary, workspace, jsonArgs...)
 	assertRemovedCommandFailure(t, jsonArgs, jsonOut, jsonErr, jsonCause)
-	assertClosureJournalBytesEqual(t, journalPath, before, strings.Join(args, " "))
+	assertClosureJournalBytesEqual(t, workspace, before, strings.Join(args, " "))
 }
 
 func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, peerIssueID string) {
@@ -372,12 +374,12 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	if !strings.Contains(check, `"status":"pass"`) || strings.Contains(check, `"check":"telemetry_gaps"`) {
 		t.Fatalf("maintenance check = %q, want no retired telemetry warning", check)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance check")
+	assertClosureJournalBytesEqual(t, workspace, journalBefore, "maintenance check")
 	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "maintenance", "vacuum")
 	if err == nil || stdout != "" || !strings.Contains(stderr, "capability is unavailable") {
 		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
+	assertClosureJournalBytesEqual(t, workspace, journalBefore, "maintenance vacuum")
 	decisions, _ := closureRunFID(t, binary, workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
 	var rows []struct {
 		ID          string `json:"id"`
@@ -395,7 +397,7 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("person decision read=%s, want the person's task-bound cancellation", decisions)
 	}
 
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "person decisions")
+	assertClosureJournalBytesEqual(t, workspace, journalBefore, "person decisions")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
 		{"--json", "next"},
@@ -404,10 +406,10 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		{"--json", "activity", "list"},
 	} {
 		closureRunFID(t, binary, workspace, args...)
-		assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, strings.Join(args, " "))
+		assertClosureJournalBytesEqual(t, workspace, journalBefore, strings.Join(args, " "))
 	}
-	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace), []string{"policy", "show"})
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "policy show")
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, []string{"policy", "show"})
+	assertClosureJournalBytesEqual(t, workspace, journalBefore, "policy show")
 }
 
 func closureAgedMaintenanceTime(t *testing.T, workspace string) time.Time {
@@ -576,9 +578,9 @@ func closureReadFile(t *testing.T, path string) []byte {
 	return payload
 }
 
-func assertClosureJournalBytesEqual(t *testing.T, journalPath string, want []byte, step string) {
+func assertClosureJournalBytesEqual(t *testing.T, workspace string, want []byte, step string) {
 	t.Helper()
-	if got := closureReadFile(t, journalPath); !bytes.Equal(got, want) {
+	if got := p21JournalBytes(t, workspace); !bytes.Equal(got, want) {
 		t.Fatalf("journal bytes changed after %s", step)
 	}
 }

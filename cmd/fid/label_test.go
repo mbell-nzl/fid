@@ -18,8 +18,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
@@ -37,7 +36,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 		t.Fatalf("stdout = %q, want create confirmation", stdout)
 	}
 
-	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 	if linesAfter != linesBefore+1 {
 		t.Fatalf("journal lines after label add = %d, want %d", linesAfter, linesBefore+1)
 	}
@@ -64,7 +63,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 		t.Fatalf("activity_log rows after label add = %d, want unchanged %d", got, activityBefore)
 	}
 
-	event := mustReadLastJournalEvent(t, journalPath)
+	event := mustReadLastJournalEvent(t, workspace)
 	if event.EventType != "label.added" {
 		t.Fatalf("event type = %q, want %q", event.EventType, "label.added")
 	}
@@ -88,7 +87,6 @@ func TestLabelAddJSONMatchesContract(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	journalPath := mustJournalPath(t, workspace)
 	result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("label add result = %#v, want JSON success on stdout only", result)
@@ -114,7 +112,7 @@ func TestLabelAddJSONMatchesContract(t *testing.T) {
 	if label["name"] != "core" || label["colour"] != "#4A90D9" || label["description"] != "Core infrastructure" {
 		t.Fatalf("label = %#v, want exact contract values", label)
 	}
-	last := mustReadLastJournalEvent(t, journalPath)
+	last := mustReadLastJournalEvent(t, workspace)
 	if envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("envelope event = %#v, journal tail = %#v", envelope.Event, last)
 	}
@@ -125,15 +123,15 @@ func TestLabelAddJSONDuplicateUsesSpecificAtomicFailureCode(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	journalPath := mustJournalPath(t, workspace)
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--by", "developer")
 	if result.err == nil || result.stdout != "" {
 		t.Fatalf("result = %#v, want stderr-only duplicate rejection", result)
 	}
 	assertJSONFailureCode(t, result.stderr, "label.add", "duplicate-entity")
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 		t.Fatalf("journal lines after duplicate = %d, want %d", got, before)
 	}
 }
@@ -144,14 +142,14 @@ func TestLabelAddRejectsExplicitlyEmptyOptionalFlagsBeforeAppend(t *testing.T) {
 		t.Run(flag, func(t *testing.T) {
 			workspace := t.TempDir()
 			clonePristineWorkspaceInto(t, workspace)
-			journalPath := mustJournalPath(t, workspace)
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--"+flag, " ", "--by", "developer")
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("result = %#v, want stderr-only empty-%s rejection", result, flag)
 			}
 			assertJSONFailureCode(t, result.stderr, "label.add", "invalid-argument")
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
 		})
@@ -263,8 +261,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		clonePristineWorkspaceInto(t, workspace)
 		runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 
-		journalPath := mustJournalPath(t, workspace)
-		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+		linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "label", "add", "core", "--by", "developer")
 		if err == nil {
@@ -276,7 +273,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		if stderr != "error: entity already exists\nreason: duplicate-entity; entity_type=label\n" || !strings.Contains(err.Error(), `label "core" already exists`) {
 			t.Fatalf("duplicate stderr = %q, want duplicate-name error", stderr)
 		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+		if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore {
 			t.Fatalf("journal lines after duplicate add = %d, want %d", got, linesBefore)
 		}
 	})
@@ -285,8 +282,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		journalPath := mustJournalPath(t, workspace)
-		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+		linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 		for _, fixture := range []struct{ name, actor string }{{"qa", "agent:qa_reviewer"}, {"unlisted", "agent:intern"}} {
 			stdout, stderr := runFIDCommand(t, workspace, "label", "add", fixture.name, "--actor", fixture.actor)
@@ -294,7 +290,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 				t.Fatalf("%s actor result = (%q, %q), want stdout success", fixture.actor, stdout, stderr)
 			}
 		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+2 {
+		if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore+2 {
 			t.Fatalf("journal lines after project-local actors = %d, want %d", got, linesBefore+2)
 		}
 	})

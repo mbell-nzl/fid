@@ -92,9 +92,9 @@ func seedReadyCommandRows(t *testing.T, conn *sql.DB, rows []readyCommandRow) {
 	}
 }
 
-func mustReadLastJournalEvent(t *testing.T, journalPath string) journal.Event {
+func mustReadLastJournalEvent(t *testing.T, workspace string) journal.Event {
 	t.Helper()
-	lines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	lines := splitJournalLines(mustReadJournal(t, workspace))
 	if len(lines) == 0 {
 		t.Fatal("journal lines = 0, want at least one line")
 	}

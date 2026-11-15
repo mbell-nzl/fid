@@ -34,8 +34,7 @@ func TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim(t *testing.
 		t.Fatalf("Unmarshal(create stdout) error = %v", err)
 	}
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 	transition := executeCommandForTest(workspace, "--json", "issue", "transition", created.Result.Issue.ID, "--to", "in_progress", "--actor", "agent:developer")
 	if transition.err != nil || transition.stderr != "" {
 		t.Fatalf("standalone transition = %#v, want stdout-only success", transition)
@@ -55,7 +54,7 @@ func TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim(t *testing.
 	if failure.Operation != "issue.transition" || failure.Result.Issue.ID != created.Result.Issue.ID || failure.Result.Issue.Revision != 2 {
 		t.Fatalf("transition result = %+v, want issue.transition/%s/revision 2", failure, created.Result.Issue.ID)
 	}
-	if linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath))); linesAfter != linesBefore+1 {
+	if linesAfter := len(splitJournalLines(mustReadJournal(t, workspace))); linesAfter != linesBefore+1 {
 		t.Fatalf("journal lines after standalone transition = %d, want %d", linesAfter, linesBefore+1)
 	}
 }
@@ -105,8 +104,8 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 			}
 			issueID := createEnvelope.Result.Issue.ID
 			before := canonicalIssueForTest(t, workspace, issueID)
-			journalPath := mustJournalPath(t, workspace)
-			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+			linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 			args := []string{"--json", "issue", tt.operation, issueID}
 			if tt.operation == "update" {
@@ -137,7 +136,7 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 				if got, want := success.Result.Issue.Revision, before.Revision+1; got != want {
 					t.Fatalf("%s result revision = %d, want %d", tt.operation, got, want)
 				}
-				if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+				if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore+1 {
 					t.Fatalf("journal lines after %s = %d, want %d", tt.operation, got, linesBefore+1)
 				}
 				return
@@ -171,7 +170,7 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 			if after := canonicalIssueForTest(t, workspace, issueID); after != before {
 				t.Fatalf("Issue after stale %s = %+v, want unchanged %+v", tt.operation, after, before)
 			}
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore {
 				t.Fatalf("journal lines after stale %s = %d, want %d", tt.operation, got, linesBefore)
 			}
 		})
@@ -262,8 +261,8 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			}
 
 			before := canonicalIssueForTest(t, workspace, issueID)
-			journalPath := mustJournalPath(t, workspace)
-			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+			linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 			args := []string{"--json", "issue", "transition", issueID, "--to", tt.toState, "--actor", "agent:" + tt.actor}
 			if tt.toState == "cancelled" {
 				args = []string{"--json", "issue", "transition", issueID, "--to", tt.toState, "--actor", "human:mark", "--reason", "Test cancellation"}
@@ -291,10 +290,10 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 				if got, want := success.Result.Issue.Revision, before.Revision+1; got != want {
 					t.Fatalf("transition revision = %d, want %d", got, want)
 				}
-				if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+				if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore+1 {
 					t.Fatalf("journal lines after legal transition = %d, want %d", got, linesBefore+1)
 				}
-				journalTail := lastCommandJournalEvent(t, journalPath)
+				journalTail := lastCommandJournalEvent(t, workspace)
 				if success.Event.ID != journalTail.EventID || success.Event.OccurredAt != journalTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
 					t.Fatalf("transition event = (%q, %s), want journal tail (%q, %s)", success.Event.ID, success.Event.OccurredAt, journalTail.EventID, journalTail.OccurredAt)
 				}
@@ -330,7 +329,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			if after := canonicalIssueForTest(t, workspace, issueID); after.Status != before.Status {
 				t.Fatalf("Issue status after rejected transition = %q, want unchanged %q", after.Status, before.Status)
 			}
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore {
 				t.Fatalf("journal lines after rejected transition = %d, want %d", got, linesBefore)
 			}
 		})
@@ -405,7 +404,7 @@ func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
 				issueID = envelope.Result.Issue.ID
 			}
 
-			journalTail := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+			journalTail := lastCommandJournalEvent(t, workspace)
 			if journalTail.EventID != envelope.Event.ID || journalTail.ActorV2.ActorID != "developer" || journalTail.ActorV2.Producer != "fid-standalone" || journalTail.ActorV2.ProvenanceRef != "project-local-attribution" {
 				t.Fatalf("journal tail = (%q, actor %#v), want returned event %q with local developer attribution", journalTail.EventID, journalTail.ActorV2, envelope.Event.ID)
 			}
@@ -501,10 +500,10 @@ func commandProjectionTableCounts(t *testing.T, workspace string) map[string]int
 	return counts
 }
 
-func lastCommandJournalEvent(t *testing.T, journalPath string) journal.Event {
+func lastCommandJournalEvent(t *testing.T, workspace string) journal.Event {
 	t.Helper()
 
-	lines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	lines := splitJournalLines(mustReadJournal(t, workspace))
 	if len(lines) == 0 {
 		t.Fatal("journal has no events")
 	}
@@ -578,8 +577,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "done", "--actor", "agent:tl")
 	if err == nil {
@@ -602,7 +600,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 		t.Fatalf("issue JSON after rejected transition = %q, want %q", afterStdout, beforeStdout)
 	}
 
-	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 	if linesAfter != linesBefore {
 		t.Fatalf("journal lines after rejected transition = %d, want %d", linesAfter, linesBefore)
 	}
@@ -680,7 +678,7 @@ func TestIssueTransitionUsesStandaloneActorAttribution(t *testing.T) {
 	if !strings.Contains(stderr, "transitioned "+issueID+": todo → in_progress") {
 		t.Fatalf("qa_reviewer stderr = %q, want standalone attribution transition confirmation", stderr)
 	}
-	last := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+	last := lastCommandJournalEvent(t, workspace)
 	if last.ActorV2.ActorID != "qa_reviewer" || last.ActorV2.Producer != "fid-standalone" {
 		t.Fatalf("transition Event actor = %#v, want qa_reviewer standalone attribution", last.ActorV2)
 	}

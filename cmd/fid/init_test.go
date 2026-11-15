@@ -160,11 +160,11 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	if envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
 		t.Fatalf("mutation event = %+v, want event identity", envelope.Event)
 	}
-	journalPath := filepath.ToSlash(filepath.Join(config.LedgerDir(root), config.JournalDirName, filepath.Base(mustJournalPath(t, workspace))))
+	journalPath := filepath.ToSlash(filepath.Join(config.LedgerDir(root), config.JournalDirName, filepath.Base(onlyJournalPath(t, workspace))))
 	if envelope.Result.JournalPath != journalPath {
 		t.Fatalf("journal_path = %q, want absolute path %q", envelope.Result.JournalPath, journalPath)
 	}
-	journalPayload, err := os.ReadFile(mustJournalPath(t, workspace))
+	journalPayload, err := os.ReadFile(onlyJournalPath(t, workspace))
 	if err != nil {
 		t.Fatalf("ReadFile(journal) error = %v", err)
 	}
@@ -428,7 +428,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 	payload, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -506,7 +506,7 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	runInitCommand(t, workspace, "init")
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
-	journalPath := mustJournalPath(t, workspace)
+	journalPath := onlyJournalPath(t, workspace)
 
 	conn, err := fiddb.Open(dbPath)
 	if err != nil {
@@ -699,13 +699,34 @@ func containsArgument(args []string, value string) bool {
 	return false
 }
 
-func mustJournalPath(t *testing.T, workspace string) string {
+// onlyJournalPath is for a fresh init's single bootstrap Event, before any
+// further writes. General assertions must read the entire journal instead.
+func onlyJournalPath(t *testing.T, workspace string) string {
 	t.Helper()
 	matches := mustJournalPaths(t, workspace)
 	if len(matches) != 1 {
 		t.Fatalf("journal files = %d, want %d", len(matches), 1)
 	}
 	return matches[0]
+}
+
+// latestJournalPath is for tests that deliberately damage the journal's tail,
+// or need the last Event's file and file-local line number for inspect output.
+func latestJournalPath(t *testing.T, workspace string) string {
+	t.Helper()
+	paths := mustJournalPaths(t, workspace)
+	return paths[len(paths)-1]
+}
+
+// mustReadJournal re-enumerates on each read: a command may have opened a new
+// daily file since the previous snapshot. Glob returns paths in date order.
+func mustReadJournal(t *testing.T, workspace string) []byte {
+	t.Helper()
+	var payload []byte
+	for _, path := range mustJournalPaths(t, workspace) {
+		payload = append(payload, mustReadCommandFile(t, path)...)
+	}
+	return payload
 }
 
 func mustJournalPaths(t *testing.T, workspace string) []string {

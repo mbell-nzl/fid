@@ -37,8 +37,8 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 		t.Fatalf("transition stderr = %q, want confirmation", transitionStderr)
 	}
 
-	journalPath := mustJournalPath(t, workspace)
-	event := mustReadLastJournalEvent(t, journalPath)
+	journalPath := latestJournalPath(t, workspace)
+	event := mustReadLastJournalEvent(t, workspace)
 	journalFile := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, filepath.Base(journalPath)))
 	want := expectedCommandStructure(t, journalInspectOutput{
 		EventID:     event.EventID,
@@ -79,7 +79,7 @@ func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	event := mustReadCommandEventByType(t, mustJournalPath(t, workspace), "issue.created")
+	event := mustReadCommandEventByType(t, workspace, "issue.created")
 	stdout, stderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID)
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
@@ -122,10 +122,10 @@ func TestJournalInspectCommandRejectsMissingEventIDs(t *testing.T) {
 	}
 }
 
-func mustReadCommandEventByType(t *testing.T, journalPath, eventType string) journal.Event {
+func mustReadCommandEventByType(t *testing.T, workspace, eventType string) journal.Event {
 	t.Helper()
 
-	lines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	lines := splitJournalLines(mustReadJournal(t, workspace))
 	for _, line := range lines {
 		var event journal.Event
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
@@ -136,7 +136,7 @@ func mustReadCommandEventByType(t *testing.T, journalPath, eventType string) jou
 		}
 	}
 
-	t.Fatalf("journal %q has no event type %q", journalPath, eventType)
+	t.Fatalf("journal %q has no event type %q", workspace, eventType)
 	return journal.Event{}
 }
 
