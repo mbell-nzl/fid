@@ -45,6 +45,11 @@ func TestMain(m *testing.M) {
 		}
 		os.Exit(0)
 	}
+	// These disposable check processes exit inside TestLeanCheckChild, or
+	// are killed. They must never allocate the suite's shared fixtures.
+	if _, child := leanCheckChildMode(); child {
+		os.Exit(m.Run())
+	}
 	exitCode := runCommandTestSuite(m)
 	os.Exit(exitCode)
 }
@@ -65,6 +70,14 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	defer func() { _ = os.RemoveAll(configHome) }()
 	if err := os.Setenv("XDG_CONFIG_HOME", configHome); err != nil {
 		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
+		return 1
+	}
+	// go env/build otherwise start a detached telemetry sidecar that can
+	// recreate configHome after cleanup. This documented command writes only
+	// the suite's isolated config; GOTELEMETRY is not a settable environment
+	// variable. The off command itself opens no counters or sidecar.
+	if err := disableGoTelemetry(configHome, os.UserConfigDir); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.
@@ -121,6 +134,17 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		}
 	}
 	return exitCode
+}
+
+// The resolver seam lets tests exercise config failures without the real home.
+func disableGoTelemetry(configHome string, userConfigDir func() (string, error)) error {
+	if goConfig, err := userConfigDir(); err != nil || goConfig != configHome {
+		return fmt.Errorf("refuse to change Go telemetry outside isolated config: %q, %v", goConfig, err)
+	}
+	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
+		return fmt.Errorf("disable Go telemetry in isolated config: %w\n%s", err, output)
+	}
+	return nil
 }
 
 // The suite isolates XDG_CACHE_HOME, and Go's build cache defaults to a

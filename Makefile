@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -16,6 +16,11 @@ lint:
 # code starts goroutines, found from the source the same way CI finds them.
 test:
 	python3 .github/scripts/ci_tests.py test
+
+# V2 (RESET.md), check:leak-test: human output names no kernel words or IDs.
+# make test runs it too; this runs only the leak checks.
+check-leak-test:
+	go test -count=1 -run '^TestV2Human' ./cmd/fid
 
 # V8 (RESET.md), check:restore: back up, wipe, restore and compare. make test
 # runs it too; this runs only it.

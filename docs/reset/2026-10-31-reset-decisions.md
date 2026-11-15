@@ -884,6 +884,94 @@ historical identifier registered by the unchanged format audit.
 This completes the physical removal for 1.5b-1.5d; old-family refusals still
 happen before any SQL projection or archive publication.
 
+**RESET 1.5e, 2026-11-15 (Routine).** Mark added a separate task after the
+orchestrator found about 8,000 leaked test directories (about 1.9 GB) over
+four days. Disposable `-- --check-child <mode>` processes now enter the
+selected helper test before any command-suite setup. The existing check
+launcher and `FID_RUN_AS_FID` shortcuts remain. The retained integration
+suite has no crash-helper re-execution path.
+
+Builder's transactional choices for 1.5e: both suites run the documented
+`go telemetry off` command only after isolating `XDG_CONFIG_HOME` and
+verifying that `os.UserConfigDir` points there, before any other Go command.
+Suite setup refuses to change telemetry otherwise. `GOTELEMETRY` is a
+read-only `go env` value, not an
+environment switch. In the installed Go 1.26.2 source, `MaybeParent` starts
+a detached telemetry sidecar even in local mode; the sidecar calls
+`counter.Open` itself, which can recreate an already removed config
+directory. A focused passing unit run reproduced that recreation. Turning
+telemetry off prevents both collection and the sidecar, without changing
+the developer's telemetry setting. Shared Go build caches stay pinned.
+
+Child coverage uses `.git/fid-check-child-coverage` in the parent-owned,
+disposable git workspace, rather than a shared directory under `os.TempDir`.
+The existing helper modes and their output are unchanged. Re-execution
+regressions count every entry left in private temp directories after normal
+suite cleanup, helper exits, signals and timeout kills; separate assertions
+check Go's actual telemetry mode. Coverage also exercises the fallback with
+`GOCOVERDIR` stripped. Reverting each fix makes its regression fail. The
+integration regression includes its normal binary build; unchanged focused
+and full integration runs left no entries before the fixes.
+
+Round 1 adds a test-only config resolver seam to both telemetry guards.
+Each suite tests a resolution error (including one returned with a matching
+path), a location outside the fixture, and successful isolated setup. The
+negative cases assert refusal and preserve a seeded simulated user's mode
+file byte for byte; removing either suite's guard fails both assertions.
+
+The historical integration source at `982b4211` exposes the paired-directory
+leak: `TestP22ActivationCrashProcess`, `TestP22BudgetCrashProcess` and
+`TestP22RecoveryCrashProcess` re-executed the integration test binary,
+inheriting `FID_INTEGRATION_BINARY`. Each child allocated new config/cache
+directories, reused that binary, then called `os.Exit(23)` inside its test,
+so `runIntegrationSuite`'s deferred removals never ran. These helpers were
+removed in 1.5c2 (`6124adcc`), before 1.5e's starting commit. No dead-helper
+workaround is added. This source evidence identifies a historical leak
+mechanism; the old machine's individual 761 pairs were not inspected in
+this session. No production code or dependency changes.
+
+## RESET 1.7 implementation (2026-11-15)
+
+Mark asked on 2026-11-15 for 1.6 and 1.7 to be orchestrated while he was
+out. The orchestrator chose to build 1.7 alongside 1.6, from `origin/main`
+at `4517e22d`, so it may merge before 1.6. This is a small deviation from
+table order; 1.7 does not use or change 1.6's code. 1.7's brief, written
+by the orchestrator, permits plain human-text repairs and raises the lane
+to Standard if any are needed.
+V2 found three help leaks: backup's "attempt", next's "run again" and SQL's
+"Run". Their wording is repaired. The lane is **Assured**: the PR adds a
+Makefile target (`check-leak-test`), and RESET.md puts Makefile changes in
+Assured. The brief had called the task Routine, overlooking that rule; the
+review caught it and the orchestrator raised the lane.
+
+Builder's transactional choices:
+
+- `internal/leaktest` owns the unchanged kernel-word pattern and assertion.
+  Only `_test.go` files import it. The assertion's small testing interface
+  allows its rejection diagnostics to be tested without a child process.
+- `TestV2HumanOutputNamesNoKernelWords` recursively scans every `.txt` under
+  `cmd/fid/testdata`, including files with no current golden-test caller.
+  It walks the full Cobra tree, including generated help and completion,
+  checking Use, Short, Long, Example, local/inherited flag usages and actual
+  `--help` output. Only help masks the exact `--claim` token; surrounding
+  prose and other flag spellings remain subject to the unchanged pattern.
+- The live journey initializes a ledger and creates, takes, starts, checks,
+  interrupts, resumes, parks waiting, answers, takes over and hands off a
+  task, reading status and show along the way. Every action uses text mode;
+  JSON show reads supply only the hold IDs that human text omits. It uses
+  the existing check child and its coverage-directory guard. A separate
+  V2 refusal matrix checks both streams, as does every journey action.
+  `done` is absent at this base and remains 1.6's work.
+- A blanket assertion was considered for `executeCommandForTest` and left
+  out: it has no test handle, and its callers deliberately supply arbitrary
+  echoed data and diagnostic JSON. Broad input masking could hide fid's own
+  text. The scoped journey and existing golden/refusal assertions need no
+  such exemptions. `--json` and verbose diagnostics remain outside V2.
+- `make check-leak-test` selects both V2 tests with a fresh execution;
+  ordinary `make test` and CI discover them too. Temporary help, orphan
+  golden and refusal leaks each failed with the shared diagnostic, then
+  were restored.
+
 ## Decided 2026-11-15 (orchestrator, under Mark's delegation)
 
 Mark delegated 1.6's design to the orchestrator on 2026-11-15: "You can
@@ -2325,6 +2413,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `validateCurrentEvent`. This PR fences the new merge/CI tables against
   legacy writes and SQLite case aliases; audit the older lean tables in
   separately scoped work.
+
+- From #76 (1.5e): make the hold-lifecycle text goldens independent of
+  temp-root length. With a long private `TMPDIR`,
+  `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
+  `TestHoldLifecycleGolden/park-started` fail because rendering wraps the
+  actual worktree path before `lifecycleGolden` replaces it with `<ROOT>`.
+  The measured full run left zero temp entries despite those failures.
+  Their assertions and goldens were kept unchanged in this task.
 
 - From #73 (1.5d1): audit the retained-table ownership and column guards for
   SQLite case aliases. `validateCurrentEvent` still indexes
