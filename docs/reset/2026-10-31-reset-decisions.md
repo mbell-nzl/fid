@@ -2606,6 +2606,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From Mark's question, 2026-11-15: jig's reviewer writes markdown, but
+  `fid review record` (1.6d) takes structured JSON. Something must convert
+  one to the other: the recorder (the orchestrator or the loop) or a jig
+  option that emits fid's input. Settle it with 1.8 (moving the reset's
+  work into fid), 2.1 (posting rounds) or 2.5 (the loop), whichever
+  records a real review first.
+
 - From this PR (1.5f): the existing #51 local-midnight follow-up below
   remains: `TestStatusAndShowPageOnARealTerminal` compares the date in
   separate processes' status headers. This journal-file task leaves that
