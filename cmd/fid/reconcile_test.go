@@ -27,7 +27,7 @@ func reconcileSubjects(t *testing.T) (*statusFixture, []string, []doneeval.GitHu
 	lifecycleResult(t, f.run(append([]string{"--json"}, doneHandoffArgs(hold)...)...), "task.handoff")
 	ids := []string{task}
 	facts := []doneeval.GitHubFacts{doneFacts(t, f, task)}
-	for i := 1; i < 5; i++ {
+	for i := 1; i < 6; i++ {
 		other := *f
 		other.workspace = gittest.AddWorktree(t, f.workspace)
 		lane := "routine"
@@ -50,6 +50,7 @@ func reconcileSubjects(t *testing.T) (*statusFixture, []string, []doneeval.GitHu
 	}
 	facts[1].CI.Runs = []github.WorkflowRun{} // Waiting for CI.
 	facts[3].PR.Merged, facts[3].PR.State = false, "OPEN"
+	facts[5].CI.Runs[0].Conclusion = "failure" // All preceding gates satisfied.
 	return f, ids, facts
 }
 
@@ -62,7 +63,11 @@ func TestReconcileMixedOutcomesAndRetry(t *testing.T) {
 	}
 	stub.requests[reconcilePRKey(facts[4])] = map[string]any{"error": "offline for this PR"}
 	first := stub.run("--json", "done", "--actor", "agent:finisher")
-	assertReconciled(t, first, ids, []string{"completed", "waiting", "refused", "waiting", "github-unavailable"})
+	outcomes := assertReconciled(t, first, ids, []string{"completed", "waiting", "refused", "waiting", "github-unavailable", "refused"})
+	ciRefusal := outcomes[ids[5]]["refusal"].(map[string]any)
+	if ciRefusal["code"] != "done-ci-not-green" || ciRefusal["details"].(map[string]any)["gate"] != "ci" {
+		t.Fatalf("failed CI refusal=%v", ciRefusal)
+	}
 	if !strings.Contains(first.stdout, `"code":"done-review-required"`) || !strings.Contains(first.stdout, `"gate":"primary-review"`) || !strings.Contains(first.stdout, `"code":"done-not-merged"`) {
 		t.Fatalf("missing reasons: %s", first.stdout)
 	}
@@ -91,7 +96,7 @@ func TestReconcileMixedOutcomesAndRetry(t *testing.T) {
 	}
 	before := startEventCount(t, f.workspace)
 	again := stub.run("--json", "done", "--actor", "agent:finisher")
-	assertReconciled(t, again, ids[1:], []string{"waiting", "refused", "waiting", "github-unavailable"})
+	assertReconciled(t, again, ids[1:], []string{"waiting", "refused", "waiting", "github-unavailable", "refused"})
 	if startEventCount(t, f.workspace) != before {
 		t.Fatal("unchanged observations appended Events")
 	}
@@ -99,7 +104,7 @@ func TestReconcileMixedOutcomesAndRetry(t *testing.T) {
 	facts[1].CI.Runs[0].Conclusion = "success"
 	stub.add(facts[1])
 	last := stub.run("done", "--actor", "human:mark")
-	if last.err != nil || last.stderr != "" || !strings.Contains(last.stdout, "Completed "+ids[1]) || !strings.Contains(last.stdout, "Refused "+ids[2]) || !strings.Contains(last.stdout, "Waiting "+ids[3]) || !strings.Contains(last.stdout, "GitHub unavailable "+ids[4]) {
+	if last.err != nil || last.stderr != "" || !strings.Contains(last.stdout, "Completed "+ids[1]) || !strings.Contains(last.stdout, "Refused "+ids[2]) || !strings.Contains(last.stdout, "Waiting "+ids[3]) || !strings.Contains(last.stdout, "GitHub unavailable "+ids[4]) || !strings.Contains(last.stdout, "Refused "+ids[5]) {
 		t.Fatalf("text=%#v", last)
 	}
 	// One CI Event and one completion, with no repeated merge/other CI receipt.
@@ -136,8 +141,8 @@ func TestReconcileMovesDuringObservationForOneTaskOnly(t *testing.T) {
 		return doneRunner(t, facts[i], nil)(ctx, args, env)
 	}, "--json", "done", "--actor", "agent:finisher")
 	// All subjects have the same head/tree, so the shared commit-tree response is valid.
-	assertReconciled(t, got, ids, []string{"completed", "refused", "refused", "waiting", "completed"})
-	if calls != 5 || !strings.Contains(got.stdout, `"code":"done-observation-stale"`) {
+	assertReconciled(t, got, ids, []string{"completed", "refused", "refused", "waiting", "completed", "refused"})
+	if calls != 6 || !strings.Contains(got.stdout, `"code":"done-observation-stale"`) {
 		t.Fatalf("calls=%d result=%#v", calls, got)
 	}
 }
@@ -168,14 +173,14 @@ func TestReconcileEmptyAndCommandFailures(t *testing.T) {
 	}
 }
 
-func assertReconciled(t *testing.T, got commandExecutionResult, ids, states []string) {
+func assertReconciled(t *testing.T, got commandExecutionResult, ids, states []string) map[string]map[string]any {
 	t.Helper()
 	fields, _ := lifecycleResult(t, got, "task.done")
 	outcomes, ok := fields["outcomes"].([]any)
 	if !ok || len(outcomes) != len(ids) {
 		t.Fatalf("outcomes=%s want %d", got.stdout, len(ids))
 	}
-	byID := map[string]string{}
+	byID := map[string]map[string]any{}
 	previous := ""
 	for _, raw := range outcomes {
 		row := raw.(map[string]any)
@@ -184,13 +189,14 @@ func assertReconciled(t *testing.T, got commandExecutionResult, ids, states []st
 			t.Fatalf("unstable order: %s", got.stdout)
 		}
 		previous = id
-		byID[id] = row["status"].(string)
+		byID[id] = row
 	}
 	for i, id := range ids {
-		if byID[id] != states[i] {
-			t.Fatalf("%s=%s want=%s: %s", id, byID[id], states[i], got.stdout)
+		if byID[id]["status"] != states[i] {
+			t.Fatalf("%s=%s want=%s: %s", id, byID[id]["status"], states[i], got.stdout)
 		}
 	}
+	return byID
 }
 
 // The existing strict gh stub sees only exact expected requests; git rejects fetch.
