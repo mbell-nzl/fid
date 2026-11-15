@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
+	"unicode"
 
 	"github.com/mbell-nzl/fid/internal/display"
 )
@@ -29,6 +32,10 @@ func newGoldenTempDir(t testing.TB, parent string) string {
 	parent, err = filepath.EvalSymlinks(parent)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// Wrapping splits at whitespace before the fixture can mask paths.
+	if strings.ContainsFunc(parent, unicode.IsSpace) {
+		t.Fatalf("text goldens need a TMPDIR without whitespace; got %q", parent)
 	}
 	base, err := os.MkdirTemp(parent, "g-")
 	if err != nil {
@@ -138,4 +145,49 @@ func TestGoldenTempDirWidthAndCleanup(t *testing.T) {
 			t.Fatalf("golden directory's private parent survived cleanup: %v", err)
 		}
 	}
+}
+
+func TestGoldenTempDirRejectsWhitespace(t *testing.T) {
+	t.Parallel()
+	parent := goldenTestParents(t)[0]
+	for _, tc := range []struct{ name, directory string }{
+		{"space", "a b"},
+		{"tab", "a\tb"},
+		{"non-ASCII-space", "a\u2003b"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			path := filepath.Join(parent, tc.directory)
+			if err := os.Mkdir(path, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			recorder := &goldenTempFatalTB{TB: t}
+			finished := make(chan struct{})
+			go func() {
+				defer close(finished)
+				newGoldenTempDir(recorder, path)
+			}()
+			<-finished
+			want := fmt.Sprintf("text goldens need a TMPDIR without whitespace; got %q", path)
+			if recorder.message != want {
+				t.Fatalf("allocator fatal message = %q, want %q", recorder.message, want)
+			}
+			entries, err := os.ReadDir(path)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("allocator created temporary entries before refusing: %v, %v", entries, err)
+			}
+		})
+	}
+}
+
+// Record Fatalf while ending only the allocator's goroutine, so the enclosing
+// test can assert the failure without marking itself failed.
+type goldenTempFatalTB struct {
+	testing.TB
+	message string
+}
+
+func (t *goldenTempFatalTB) Fatalf(format string, args ...any) {
+	t.message = fmt.Sprintf(format, args...)
+	runtime.Goexit()
 }

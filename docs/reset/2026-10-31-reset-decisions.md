@@ -1639,12 +1639,15 @@ workspace to another random directory. The linked worktree used by health
 goldens uses the same helper, replacing its separate padding scheme.
 Cleanup removes the private parent, including padding. A parent that leaves
 no padding room fails clearly and asks for a shorter TMPDIR or fixture
-parent. No dependency or production
-code changes. Path placeholders also cover HOME, and still precede rework's
-hex-ID masking. Regressions compare real status/show output after masking
-under short, long and non-ASCII parents, including HOME's config fallback,
-and check the allocator's fixed display width and cleanup. Linked-worktree
-health goldens also cover these explicit parents.
+parent. A resolved parent containing any whitespace fails before allocation,
+with a diagnostic requiring a whitespace-free TMPDIR (round 2 of #91);
+wrapping splits paths at whitespace before masking. Regressions pin that
+fatal diagnostic for ASCII spaces, tabs and Unicode spaces. No dependency
+or production code changes. Path placeholders also cover HOME, and still
+precede rework's hex-ID masking. Regressions compare real status/show output
+after masking under short, long and non-ASCII parents, including HOME's
+config fallback, and check the allocator's fixed display width and cleanup.
+Linked-worktree health goldens also cover these explicit parents.
 
 ## Products
 
@@ -2904,10 +2907,16 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
+  paths it prints (a workspace or config path containing spaces wraps
+  mid-path). Decide in later display work whether paths should be kept whole;
+  the text-golden fixtures require a whitespace-free TMPDIR meanwhile.
+
 - From #76 (1.5e), #84 (1.6g) and this stack's 1.6l: resolved by
   golden-wrap on 2026-11-15. Text goldens now render fixed-width fixture
   paths before masking them. The status/config and lifecycle/worktree
-  wrapping no longer depends on TMPDIR, test names or random suffixes.
+  wrapping no longer depends on the length of a whitespace-free TMPDIR,
+  test names or random suffixes.
 
 - From this PR (1.6k): status's existing READY epic row says "no tasks"
   for an epic with only cancelled tasks, because it counts only tasks in
