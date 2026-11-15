@@ -125,18 +125,18 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 		ids = append(ids, parseCreatedIssueID(t, created))
 		runFIDCommand(t, workspace, "link", "add", ids[len(ids)-1], "blocks", second, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
 	}
-	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer", "--model", "codex/gpt-6.1-sol")
 	runFIDCommand(t, workspace, "issue", "transition", ids[2], "--to", "cancelled", "--actor", "human:mark", "--reason", "Test cancellation")
-	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer", "--model", "codex/gpt-6.1-sol")
 	// Keep each lifecycle family and both kinds of person's decision in V8.
 	// A heartbeat, park and linked resume precede a person's live takeover.
-	answer, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
+	answer, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	originalHold := answer["hold"].(map[string]any)["id"].(string)
 	runFIDCommand(t, workspace, "heartbeat", "--hold", originalHold, "--actor", "agent:developer")
 	runFIDCommand(t, workspace, "issue", "update", ids[3], "--lane", "standard", "--actor", "agent:developer")
 	runFIDCommand(t, workspace, "start", "--hold", originalHold, "--actor", "agent:developer", "--idempotency-key", "v8-start")
 	runFIDCommand(t, workspace, "park", "--hold", originalHold, "--actor", "agent:developer", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-park-resume")
-	resumed, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
+	resumed, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	if resumed["hold"].(map[string]any)["replaces"] != originalHold {
 		t.Fatalf("V8 resume = %v", resumed)
 	}
@@ -166,9 +166,9 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	runFIDCommand(t, other, "park", "--hold", waitingHold, "--actor", "human:mark", "--waiting", "Include timeouts?", "--idempotency-key", "v8-question-2")
 	// Record missing and explicitly empty test paths, so backup, export,
 	// replay and restore must preserve their different digests and setup state.
-	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n[checks.restore]\nrun = ['/bin/sleep', '0.15']\ntimeout = '15m'\nartifacts = ['lean-artifact.txt']\n[checks.missing]\nrun = ['/bin/true']\ntimeout = '1m'\nartifacts = ['missing-artifact.txt']\n[lanes.standard]\nchecks = []\n")
+	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n[checks.restore]\nrun = ['/bin/sleep', '0.15']\ntimeout = '15m'\nartifacts = ['lean-artifact.txt']\n[checks.missing]\nrun = ['/bin/true']\ntimeout = '1m'\nartifacts = ['missing-artifact.txt']\n[lanes.standard]\nchecks = []\n[lanes.assured]\nchecks=[]\n")
 	policyOrigin(t, workspace)
-	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer", "--model", "codex/gpt-6.1-sol")
 	writeBackupTestFile(t, filepath.Join(workspace, "lean-artifact.txt"), "kept by the lean check\n")
 	identityGit(t, workspace, "add", ".")
 	identityGit(t, workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-q", "-m", "Lean check files")
@@ -190,15 +190,16 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	}
 
 	// A third worktree keeps its task through review, with an immutable hand-off.
-	_, handoffCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "In review during backup", "--lane", "standard", "--actor", "human:mark")
+	_, handoffCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "In review during backup", "--lane", "assured", "--actor", "human:mark")
 	handoffTask := parseCreatedIssueID(t, handoffCreated)
 	ids = append(ids, handoffTask)
 	reviewTree := gittest.AddWorktree(t, workspace)
-	reviewHold, _ := decodeNext(t, executeCommandForTest(reviewTree, "--json", "takeover", handoffTask, "--actor", "human:mark", "--reason", "Build in this worktree"), "task.takeover")
+	reviewHold, _ := decodeNext(t, executeCommandForTest(reviewTree, "--json", "takeover", handoffTask, "--actor", "human:mark", "--reason", "Build in this worktree", "--model", "claude/opus-5.5"), "task.takeover")
 	reviewID := reviewHold["hold_id"].(string)
 	runFIDCommand(t, reviewTree, "start", "--hold", reviewID, "--actor", "human:mark", "--idempotency-key", "v8-review-start")
 	runFIDCommand(t, reviewTree, "handoff", "--hold", reviewID, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-handoff")
 	recordV8MergeCI(t, workspace, handoffTask)
+	recordV8Reviews(t, reviewTree, handoffTask)
 	assertV8HasNoKernelRecords(t, workspace)
 	return workspace, v8IDs{issues: ids, now: time.Now()}
 }
@@ -291,7 +292,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
+	for _, table := range []string{"review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -308,6 +309,20 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		}
 	}
 	assertV8MergeCI(t, workspace)
+	assertV8Reviews(t, workspace)
+	reviewTask := executeCommandForTest(workspace, "sql", `SELECT task_id FROM review_rounds LIMIT 1`)
+	if reviewTask.err != nil {
+		t.Fatal(reviewTask.err)
+	}
+	var reviewRows []map[string]any
+	if err := json.Unmarshal([]byte(reviewTask.stdout), &reviewRows); err != nil || len(reviewRows) != 1 {
+		t.Fatalf("review task=%#v/%v", reviewTask, err)
+	}
+	reviewRead := executeCommandForTest(workspace, "--json", "review", "list", reviewRows[0]["task_id"].(string))
+	if reviewRead.err != nil {
+		t.Fatalf("V8 review read=%#v", reviewRead)
+	}
+	state.reads["review list"] = reviewRead.stdout
 	rows := policySnapshots(t, workspace)
 	if len(rows) != 2 || rows[0].Digest == rows[1].Digest {
 		t.Fatalf("V8 policy snapshots = %#v, want distinct missing/empty test paths", rows)

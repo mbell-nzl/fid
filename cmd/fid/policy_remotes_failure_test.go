@@ -26,7 +26,7 @@ func TestPolicyRemotesUnavailable(t *testing.T) { //nolint:paralleltest // Overr
 			t.Run(operation+"/"+format, func(t *testing.T) {
 				args := []string{operation}
 				if operation == "next" {
-					args = append(args, "--claim", "--actor", "agent:builder")
+					args = append(args, "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 				}
 				if format == "json" {
 					args = append([]string{"--json"}, args...)

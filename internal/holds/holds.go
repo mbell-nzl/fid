@@ -36,6 +36,7 @@ type Hold struct {
 	WorktreeID      string
 	Worktree        string
 	Actor           string
+	Model           string
 	Since           time.Time
 	ExpiresAt       time.Time
 	LastHeartbeatAt time.Time
@@ -61,7 +62,7 @@ func New(id, taskID, worktreeID, root, actor string, since time.Time, replaces *
 
 // Open reads current holds and ended holds that keep interrupted work, by ID.
 func Open(conn fiddb.Queryer) ([]Hold, error) {
-	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id, COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, end_reason
+	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id, COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, end_reason, model
 		FROM holds WHERE ended_at IS NULL OR kept = 1 ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("read open holds: %w", err)
@@ -75,7 +76,7 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 			replaces, ended, reason, endReason sql.NullString
 			heartbeat                          string
 		)
-		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces, &heartbeat, &ended, &reason, &hold.Kept, &endReason); err != nil {
+		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces, &heartbeat, &ended, &reason, &hold.Kept, &endReason, &hold.Model); err != nil {
 			return nil, fmt.Errorf("scan open hold: %w", err)
 		}
 		if hold.Since, err = time.Parse(time.RFC3339, since); err != nil {
@@ -141,11 +142,15 @@ func (hold Hold) Insert() journal.Effect {
 	if hold.Replaces != nil {
 		replaces = *hold.Replaces
 	}
-	return journal.Effect{Op: "insert", Table: "holds", PK: map[string]any{"id": hold.ID}, Values: map[string]any{
+	effect := journal.Effect{Op: "insert", Table: "holds", PK: map[string]any{"id": hold.ID}, Values: map[string]any{
 		"task_id": hold.TaskID, "worktree_id": hold.WorktreeID, "worktree_root": hold.Worktree, "actor": hold.Actor,
 		"since": Timestamp(hold.Since), "expires_at": Timestamp(hold.ExpiresAt), "replaces_hold_id": replaces,
 		"ended_at": nil, "end_reason": nil, "last_heartbeat_at": Timestamp(hold.LastHeartbeatAt), "kept": false, "park_reason": nil,
 	}}
+	if hold.Model != "" {
+		effect.Values["model"] = hold.Model
+	}
+	return effect
 }
 
 // End is the Effect that ends the open hold id at at, for reason.

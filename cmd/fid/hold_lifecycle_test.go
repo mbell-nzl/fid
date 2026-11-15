@@ -39,7 +39,7 @@ func TestHoldHeartbeatAndInterruptedPark(t *testing.T) {
 	if shown["working"] != nil || shown["kept"].(map[string]any)["reason"] != "Usage limit" {
 		t.Fatalf("show parked = %v", shown)
 	}
-	resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:new"), "next.claim")
+	resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:new", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	if resumed["kind"] != "resume" || resumed["hold"].(map[string]any)["replaces"] != "HLD-aaaaaa" {
 		t.Fatalf("resume = %v", resumed)
 	}

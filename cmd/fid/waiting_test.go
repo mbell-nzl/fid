@@ -34,7 +34,7 @@ func TestWaitingAnswerResume(t *testing.T) {
 			if question == nil || parked["kept_for_worktree"] != true {
 				t.Fatalf("waiting park = %v", parked)
 			}
-			blocked, event := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+			blocked, event := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if blocked["kind"] != "none" || blocked["task"] != nil || event != nil || blocked["waiting"].(map[string]any)["question_id"] != question {
 				t.Fatalf("waiting next = %v, %v", blocked, event)
 			}
@@ -53,13 +53,13 @@ func TestWaitingAnswerResume(t *testing.T) {
 				t.Fatalf("answer retry = %#v", repeat)
 			}
 			f.workspace = main
-			resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder"), "next.claim")
+			resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			hold := resumed["hold"].(map[string]any)
 			answer := resumed["answer"].(map[string]any)
 			if resumed["kind"] != "resume" || hold["replaces"] != "HLD-aaaaaa" || answer["decision_id"] != answered["decision_id"] || answer["question_id"] != question {
 				t.Fatalf("resume = %v", resumed)
 			}
-			repeated, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder"), "next.claim")
+			repeated, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if fmt.Sprint(repeated["answer"]) != fmt.Sprint(resumed["answer"]) {
 				t.Fatalf("lost answer = %v", repeated)
 			}
@@ -73,7 +73,7 @@ func TestWaitingAnswerResume(t *testing.T) {
 				t.Fatalf("question history = %v", shown)
 			}
 			lifecycleResult(t, f.run("--json", "answer", "FID-aaaaaa", "Include them.", "--actor", "human:mark"), "task.answer")
-			latest, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder"), "next.claim")
+			latest, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if latest["answer"].(map[string]any)["text"] != "Include them." || latest["answer"].(map[string]any)["question_id"] == question {
 				t.Fatalf("second answer = %v", latest)
 			}

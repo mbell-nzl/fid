@@ -36,8 +36,8 @@ func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 	var ended, reason, replaces, endReason sql.NullString
 	var since, expires, heartbeat string
 	err := conn.QueryRow(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at,
- COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id, end_reason FROM holds WHERE id = ?`, id).
-		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces, &endReason)
+ COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id, end_reason, model FROM holds WHERE id = ?`, id).
+		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces, &endReason, &hold.Model)
 	if err != nil {
 		return Hold{}, err
 	}

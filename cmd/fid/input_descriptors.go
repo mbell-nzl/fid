@@ -8,5 +8,6 @@ import (
 )
 
 var inputDescriptorRegistry = map[string]cli.InputDescriptor{
+	"review record":   reviewDescriptor(),
 	"artifact verify": {Operation: "artifact.verify", Purpose: "Observe retained Artifact availability.", Type: reflect.TypeFor[artifactverify.Request](), Fields: []cli.InputField{{Name: "artifact_id", Type: "string", Requirement: "required", Meaning: "Artifact ID.", Format: "ID", Placeholder: "<artifact-id>"}}},
 }

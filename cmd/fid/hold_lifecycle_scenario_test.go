@@ -24,7 +24,7 @@ func TestInterruptedParkKeepsOnlyStartedWorkForItsWorktree(t *testing.T) {
 			first := f.run(args...)
 			lifecycleResult(t, first, "hold.park")
 			f.workspace = other
-			next, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:other"), "next.claim")
+			next, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:other", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if state == "todo" {
 				if next["kind"] != "new" || next["task"].(map[string]any)["id"] != "FID-aaaaaa" {
 					t.Fatalf("released task elsewhere = %v", next)
@@ -36,7 +36,7 @@ func TestInterruptedParkKeepsOnlyStartedWorkForItsWorktree(t *testing.T) {
 					t.Fatalf("kept task elsewhere = %v", next)
 				}
 				f.workspace = main
-				resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:new"), "next.claim")
+				resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:new", "--model", "codex/gpt-6.1-sol"), "next.claim")
 				if resumed["kind"] != "resume" || resumed["hold"].(map[string]any)["replaces"] != "HLD-aaaaaa" {
 					t.Fatalf("resumed = %v", resumed)
 				}
@@ -116,7 +116,7 @@ func TestLifecycleRebuildAndExport(t *testing.T) {
 	runFIDCommand(t, workspace, "init", "--prefix", "FID")
 	_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Lifecycle replay", "--lane", "standard", "--actor", "human:mark")
 	task := parseCreatedIssueID(t, created)
-	takenBefore, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+	takenBefore, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	runFIDCommand(t, workspace, "start", "--hold", takenBefore["hold"].(map[string]any)["id"].(string), "--actor", "agent:builder", "--idempotency-key", "lifecycle-start")
 	// Takeover also starts holds for already-started tasks with no earlier hold.
 	taken, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "takeover", task, "--actor", "human:mark", "--reason", "Resume task", "--idempotency-key", "take"), "task.takeover")

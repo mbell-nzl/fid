@@ -106,22 +106,22 @@ func TestNextGolden(t *testing.T) {
 	}{
 		{"next", nil, []string{"next"}},
 		{"explain", nil, []string{"next", "--explain"}},
-		{"taken", nil, []string{"next", "--claim", "--actor", "agent:claude-builder"}},
-		{"taken-explain", nil, []string{"next", "--claim", "--actor", "agent:claude-builder", "--explain"}},
+		{"taken", nil, []string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"}},
+		{"taken-explain", nil, []string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol", "--explain"}},
 		{"resume", func(fixture *statusFixture) { fixture.hold("HLD-0a0a0a", "FID-9f13aa", "", 20*time.Minute) },
-			[]string{"next", "--claim", "--actor", "agent:claude-builder"}},
+			[]string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"}},
 		{"resume-read", func(fixture *statusFixture) { fixture.hold("HLD-0a0a0a", "FID-9f13aa", "", 20*time.Minute) }, []string{"next"}},
 		{"interrupted", func(fixture *statusFixture) { fixture.hold("HLD-0b0b0b", "FID-71a0c2", "", 75*time.Minute) },
-			[]string{"next", "--claim", "--actor", "agent:claude-builder"}},
+			[]string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"}},
 		{"interrupted-read", func(fixture *statusFixture) { fixture.hold("HLD-0b0b0b", "FID-71a0c2", "", 75*time.Minute) }, []string{"next"}},
 		{"lapsed-here", func(fixture *statusFixture) { fixture.hold("HLD-0c0c0c", "FID-0d4e8b", "", 26*time.Hour) },
-			[]string{"next", "--claim", "--actor", "agent:claude-builder", "--explain"}},
+			[]string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol", "--explain"}},
 		{"lapsed-elsewhere", func(fixture *statusFixture) {
 			fixture.hold("HLD-0d0d0d", "FID-9f13aa", "/home/mark/projects/fid-wt3", time.Minute)
 			fixture.hold("HLD-0e0e0e", "FID-0d4e8b", "/home/mark/projects/fid-wt3-tests", time.Minute)
 			fixture.hold("HLD-0f0f0f", "FID-77aa01", "/home/mark/projects/fid-wt4", 2*time.Hour)
 			fixture.hold("HLD-0a0b0c", "FID-71a0c2", "/home/mark/projects/fid-wt5", 2*time.Hour)
-		}, []string{"next", "--claim", "--actor", "agent:claude-builder", "--explain"}},
+		}, []string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol", "--explain"}},
 		{"nothing", func(fixture *statusFixture) {
 			fixture.hold("HLD-0d0d0d", "FID-9f13aa", "/home/mark/projects/fid-wt3", time.Minute)
 			fixture.hold("HLD-0e0e0e", "FID-0d4e8b", "/home/mark/projects/fid-wt3-tests", time.Minute)
@@ -133,7 +133,7 @@ func TestNextGolden(t *testing.T) {
 			fixture.hold("HLD-0e0e0e", "FID-0d4e8b", "/home/mark/projects/fid-wt3-tests", time.Minute)
 			fixture.hold("HLD-0a0b0c", "FID-71a0c2", "/home/mark/projects/fid-wt5", 2*time.Hour)
 			fixture.hold("HLD-0f0f0f", "FID-77aa01", "/home/mark/projects/fid-wt4", time.Minute)
-		}, []string{"next", "--claim", "--actor", "agent:claude-builder", "--explain"}},
+		}, []string{"next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol", "--explain"}},
 	} {
 		for _, format := range []string{"txt", "json"} {
 			t.Run(test.name+"."+format, func(t *testing.T) {
@@ -249,12 +249,12 @@ func TestNextClaimTwiceKeepsTheHold(t *testing.T) {
 	if read["kind"] != "new" || read["hold"] != nil || event != nil {
 		t.Fatalf("next = %v with event %v, want new with no hold or Event", read, event)
 	}
-	first, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one"), "next.claim")
+	first, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	hold, _ := first["hold"].(map[string]any)
 	if first["kind"] != "new" || hold == nil || hold["task_id"] != "FID-9f13aa" || event == nil {
 		t.Fatalf("next --claim = %v with event %v, want a new hold on FID-9f13aa", first, event)
 	}
-	again, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one"), "next.claim")
+	again, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	if again["kind"] != "resume" || event != nil || again["hold"].(map[string]any)["id"] != hold["id"] {
 		t.Fatalf("next --claim again = %v with event %v, want resume of %v with no Event", again, event, hold["id"])
 	}
@@ -304,7 +304,7 @@ func TestNextRefusals(t *testing.T) {
 		t.Fatalf("after the refusals, next = %#v, want nothing taken", open)
 	}
 	outside := gittest.NewWorkspace(t)
-	result := executeCommandForTest(outside, "--json", "next", "--claim", "--actor", "agent:one")
+	result := executeCommandForTest(outside, "--json", "next", "--claim", "--actor", "agent:one", "--model", "codex/gpt-6.1-sol")
 	if cli.ExitCode(result.err) != 3 {
 		t.Fatalf("next --claim without a ledger = %#v, want project-not-found", result)
 	}
@@ -339,7 +339,7 @@ func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	}
 	take := func() string {
 		t.Helper()
-		result, event := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+		result, event := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 		if result["kind"] != "new" || event == nil {
 			t.Fatalf("next --claim = %v, want a new hold", result)
 		}
@@ -415,7 +415,7 @@ func TestNextClaimReadsTheClockUnderTheLock(t *testing.T) {
 		}
 		return statusNow
 	}
-	result, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one"), "next.claim")
+	result, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	for _, owner := range owners {
 		if owner != claimant {
 			t.Fatalf("write lock's owner at each clock read = %q, want %q only", owners, claimant)
@@ -435,7 +435,7 @@ func TestNextClaimRefusesWhileTheLockIsHeld(t *testing.T) {
 	nextWork(fixture)
 	var claimed, read commandExecutionResult
 	if err := journal.WithLock(fixture.workspace, journal.LockOwner{Command: "test"}, func(*journal.WriteLock) error {
-		claimed = fixture.run("--json", "next", "--claim", "--actor", "agent:one")
+		claimed = fixture.run("--json", "next", "--claim", "--actor", "agent:one", "--model", "codex/gpt-6.1-sol")
 		read = fixture.run("--json", "next")
 		return nil
 	}); err != nil {

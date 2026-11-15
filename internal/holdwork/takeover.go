@@ -2,15 +2,20 @@ package holdwork
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/modelid"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func Takeover(options Options) (Result, error) {
+	if options.Model != "" && !modelid.Valid(options.Model) {
+		return Result{}, fmt.Errorf("invalid model: expected <family>/<model>")
+	}
 	return write(options, "task.takeover", func(ctx writeContext) (journal.Event, map[string]any, error) {
 		var kind, status string
 		if err := ctx.conn.QueryRow(`SELECT kind,status FROM issues WHERE id=?`, options.TaskID).Scan(&kind, &status); err != nil {
@@ -65,6 +70,7 @@ func Takeover(options Options) (Result, error) {
 			return journal.Event{}, nil, err
 		}
 		hold := holds.New(id, options.TaskID, project.WorktreeID(options.WorkspaceRoot), options.WorkspaceRoot, options.Actor, ctx.now, previous)
+		hold.Model = options.Model
 		effects = append(effects, decision, hold.Insert())
 		return journal.Event{EventType: "task.taken-over", Aggregate: journal.Aggregate{ID: options.TaskID, Type: "task"}, Effects: effects}, map[string]any{"task_id": options.TaskID, "hold_id": id, "previous_hold_id": previous, "decision_id": decisionID}, nil
 	})

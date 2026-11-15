@@ -40,8 +40,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 6 {
-		t.Fatalf("exclusivity corpus has %d rows, want 6", got)
+	if got := len(leaves) * len(conflicts); got != 12 {
+		t.Fatalf("exclusivity corpus has %d rows, want 12", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -118,8 +118,8 @@ func p24LiveInputLeaves(t *testing.T) []string {
 	}
 	walk(newRootCommandAt(t.TempDir()))
 	slices.Sort(leaves)
-	if len(leaves) != 1 {
-		t.Fatalf("live input leaves = %d, want 1", len(leaves))
+	if len(leaves) != 2 {
+		t.Fatalf("live input leaves = %d, want 2", len(leaves))
 	}
 	return leaves
 }
@@ -410,6 +410,9 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						t.Fatal(err)
 					}
 					args := append([]string{"--json"}, parts...)
+					if leaf == "review record" {
+						args = append(args, "FID-test")
+					}
 					args = append(args, "--input", input)
 					if leaf != "evidence evaluate" {
 						args = append(args, "--actor", "agent:builder", "--idempotency-key", "structure")

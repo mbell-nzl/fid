@@ -1,0 +1,79 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-20261108-000003",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "review.record",
+  "result": {
+    "round": {
+      "id": "RND-<new>",
+      "task_id": "FID-9f13aa",
+      "handoff_id": "HOF-<new>",
+      "reviewer": {
+        "actor": "agent:reviewer",
+        "model": "claude/opus-5.5",
+        "session_id": "review-session-1"
+      },
+      "stream": "primary",
+      "profiles": [
+        "code",
+        "test-adequacy"
+      ],
+      "verdict": "CHANGES",
+      "purpose": "Persist the task change.",
+      "findings": [
+        {
+          "id": "RND-<new>-1",
+          "profile": "code",
+          "severity": "major",
+          "summary": "Retry conflicts lack coverage",
+          "location": {
+            "file": "cmd/fid/merge_records_test.go",
+            "line": 111
+          },
+          "evidence": "Disabling the conflict guard left focused tests green.",
+          "fix": "Retry a changed task and PR; assert refusal and unchanged state."
+        },
+        {
+          "id": "RND-<new>-2",
+          "profile": "code",
+          "severity": "minor",
+          "summary": "Retry conflicts lack coverage",
+          "location": {
+            "file": "cmd/fid/merge_records_test.go",
+            "line": 111
+          },
+          "evidence": "Disabling the conflict guard left focused tests green.",
+          "fix": "Retry a changed task and PR; assert refusal and unchanged state."
+        },
+        {
+          "id": "RND-<new>-3",
+          "profile": "code",
+          "severity": "nit",
+          "summary": "Retry conflicts lack coverage",
+          "location": {
+            "file": "cmd/fid/merge_records_test.go",
+            "line": 111
+          },
+          "evidence": "Disabling the conflict guard left focused tests green.",
+          "fix": "Retry a changed task and PR; assert refusal and unchanged state."
+        }
+      ],
+      "verification": "go test ./... passed",
+      "provenance": {
+        "prompt": "Review the PR",
+        "output": "## Review: APPROVE\n### Findings\nNone."
+      },
+      "binding": {
+        "algorithm": "patch-id-verbatim-per-file-v1",
+        "fingerprint": "<fingerprint-or-commit>",
+        "base": "<fingerprint-or-commit>",
+        "head": "<fingerprint-or-commit>"
+      },
+      "recorded_by": "human:courier",
+      "at": "2026-11-08T09:00:00Z"
+    }
+  }
+}

@@ -28,7 +28,9 @@ func assertLeanIntegrationJournal(t *testing.T, root string) {
 		family, _, _ := strings.Cut(event.EventType, ".")
 		switch family {
 		case "activation", "envelope", "claim", "run", "gate", "evidence", "stop", "attention", "review", "finding", "concern", "deviation", "decision", "human-outcome", "requirement", "workflow":
-			t.Fatalf("lean fixture appended kernel family %s", event.EventType)
+			if event.EventType != "review.round-recorded" {
+				t.Fatalf("lean fixture appended kernel family %s", event.EventType)
+			}
 		}
 		for _, effect := range event.Effects {
 			for _, table := range forbidden {

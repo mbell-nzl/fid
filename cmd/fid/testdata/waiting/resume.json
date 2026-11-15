@@ -41,6 +41,7 @@
           "since": "2026-11-08T09:00:00Z",
           "hold_id": "HLD-aaaaaa",
           "actor": "agent:claude-builder",
+          "model": "",
           "question": "Should retries include authentication failures?"
         },
         "epic_blocked_by": []
@@ -108,6 +109,7 @@
           "worktree": "/home/mark/projects/fid-wt2",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
           "last_heartbeat_at": "2026-11-08T08:40:00Z",

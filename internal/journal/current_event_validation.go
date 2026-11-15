@@ -30,12 +30,27 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	// These tables have no legacy writer. Guard SQLite's case-insensitive
 	// table resolution before the legacy/retained Issue compatibility path.
 	for _, effect := range event.Effects {
+		if strings.EqualFold(effect.Table, "holds") {
+			for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
+				for column := range values {
+					if strings.EqualFold(column, "model") && (!event.IsV2() || effect.Op != "insert" || (event.EventType != "hold.taken" && event.EventType != "task.taken-over")) {
+						return fmt.Errorf("build models require a validated Event-v2 hold insert")
+					}
+				}
+			}
+		}
+		if (strings.EqualFold(effect.Table, "review_rounds") || strings.EqualFold(effect.Table, "round_findings")) && (!event.IsV2() || event.EventType != "review.round-recorded") {
+			return fmt.Errorf("review tables require their Event-v2 family")
+		}
 		if strings.EqualFold(effect.Table, "merge_observations") && (!event.IsV2() || event.EventType != "merge.observed") || strings.EqualFold(effect.Table, "ci_results") && (!event.IsV2() || event.EventType != "ci.result-recorded") {
 			return fmt.Errorf("merge/CI tables require their validated Event-v2 family")
 		}
 	}
 	if !event.IsV2() && (event.EventType == "merge.observed" || event.EventType == "ci.result-recorded") {
 		return fmt.Errorf("merge/CI observations require Event-v2")
+	}
+	if !event.IsV2() && event.EventType == "review.round-recorded" {
+		return fmt.Errorf("review rounds require Event-v2")
 	}
 	if !event.IsV2() {
 		if event.EventType == "artifact.availability-observed" {
@@ -52,6 +67,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
+	}
+	if event.EventType == "review.round-recorded" {
+		return validateReviewRound(tx, event)
 	}
 	if event.EventType == "task.handed-off" {
 		return validateHandoff(tx, event)
@@ -164,6 +182,11 @@ func validateCurrentEffect(event Event, effect Effect) error {
 		row, err := mergeEffectValues(effect.PK, effect.Values)
 		if err != nil {
 			return err
+		}
+		if effect.Table == "holds" {
+			if _, present := row["model"]; !present {
+				row["model"] = ""
+			}
 		}
 		if len(row) != len(table.columns) || len(effect.Prior) != 0 || len(effect.Preconditions) != 0 {
 			return fmt.Errorf("insert must contain complete row and no prior/precondition")

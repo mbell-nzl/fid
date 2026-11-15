@@ -13,12 +13,17 @@ import (
 
 func handoffArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
+	return handoffArchiveFixtureWithLane(t, "standard")
+}
+
+func handoffArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator, journal.Event) {
+	t.Helper()
 	validator, err := newSemanticValidator(testMigrationsDir(t), 26)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = validator.close() })
-	_, err = validator.conn.Exec(`INSERT INTO issues(id,kind,title,workflow_id,status,lane,owner_role,created_at,updated_at) VALUES('FID-a','task','Work','task-default','in_progress','standard','developer','2026-11-10T00:00:00Z','2026-11-10T00:00:00Z')`)
+	_, err = validator.conn.Exec(`INSERT INTO issues(id,kind,title,workflow_id,status,lane,owner_role,created_at,updated_at) VALUES('FID-a','task','Work','task-default','in_progress',?,'developer','2026-11-10T00:00:00Z','2026-11-10T00:00:00Z')`, lane)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +34,7 @@ func handoffArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	if err := validator.accept(raw); err != nil {
 		t.Fatal(err)
 	}
-	file, err := config.DecodeProject([]byte("[lanes.standard]\nchecks=[]\n[review]\ntest_adequacy=[]\n"))
+	file, err := config.DecodeProject([]byte("[lanes." + lane + "]\nchecks=[]\n[review]\ntest_adequacy=[]\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +49,7 @@ func handoffArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	}
 	event := archiveStartEvent(t)
 	event.EventType, event.CommandName = "task.handed-off", "task.handoff"
-	record := handoffrecord.Record{View: handoffrecord.View{ID: "HOF-100001", PR: "https://github.com/owner/repo/pull/63", Head: strings.Repeat("a", 40), Base: strings.Repeat("b", 40), RequiredChecks: []string{}, ResultIDs: []string{}, At: "2026-11-10T09:05:00Z"}, TaskID: "FID-a", HoldID: "HLD-1", Actor: "agent:builder", Tree: strings.Repeat("c", 40), Lane: "standard", PolicySnapshot: 1, DefinitionDigests: map[string]string{}, ChangedPaths: []string{}}
+	record := handoffrecord.Record{View: handoffrecord.View{ID: "HOF-100001", PR: "https://github.com/owner/repo/pull/63", Head: strings.Repeat("a", 40), Base: strings.Repeat("b", 40), RequiredChecks: []string{}, ResultIDs: []string{}, At: "2026-11-10T09:05:00Z"}, TaskID: "FID-a", HoldID: "HLD-1", Actor: "agent:builder", Tree: strings.Repeat("c", 40), Lane: lane, PolicySnapshot: 1, DefinitionDigests: map[string]string{}, ChangedPaths: []string{}}
 	encoded, err = json.Marshal(record)
 	if err != nil {
 		t.Fatal(err)

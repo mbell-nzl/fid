@@ -9,6 +9,7 @@ type Working struct {
 	Worktree        string `json:"worktree"`
 	Here            bool   `json:"here"`
 	Actor           string `json:"actor"`
+	Model           string `json:"model"`
 	Since           string `json:"since"`
 	ExpiresAt       string `json:"expires_at"`
 	LastHeartbeatAt string `json:"last_heartbeat_at"`
@@ -20,7 +21,7 @@ func Describe(hold Hold, worktreeID string, now time.Time) *Working {
 	if hold.EndedAt != nil {
 		return nil
 	}
-	return &Working{HoldID: hold.ID, Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Actor: hold.Actor,
+	return &Working{HoldID: hold.ID, Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Actor: hold.Actor, Model: hold.Model,
 		Since: Timestamp(hold.Since), ExpiresAt: Timestamp(hold.ExpiresAt), Lapsed: hold.Lapsed(now), LastHeartbeatAt: Timestamp(hold.LastHeartbeat())}
 }
 
@@ -33,6 +34,7 @@ type Kept struct {
 	Since    string  `json:"since"`
 	HoldID   string  `json:"hold_id"`
 	Actor    string  `json:"actor"`
+	Model    string  `json:"model"`
 	Question *string `json:"question,omitempty"`
 }
 
@@ -44,7 +46,7 @@ func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
 	if hold.EndedAt != nil {
 		since = *hold.EndedAt
 	}
-	kept := &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
+	kept := &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor, Model: hold.Model}
 	if hold.Waiting() || (hold.Question != nil && hold.Kept && hold.ParkReason == nil) {
 		kept.Mode = "waiting"
 		kept.Question = &hold.Question.Text
