@@ -23,7 +23,7 @@ func TestStartSecondTaskKeepsStartedEpicRevisionAcrossReplay(t *testing.T) {
 	main := f.workspace
 	for _, workspace := range []string{main, gittest.AddWorktree(t, main)} {
 		f.workspace = workspace
-		taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+		taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 		id := taken["task"].(map[string]any)["id"].(string)
 		if started, exists := tasks[id]; !exists || started {
 			t.Fatalf("next chose %s; task starts = %v", id, tasks)

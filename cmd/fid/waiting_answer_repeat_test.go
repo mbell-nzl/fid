@@ -29,7 +29,7 @@ func TestWaitingAnswerSurvivesUnstartedInterruption(t *testing.T) {
 			answered, _ := lifecycleResult(t, f.run("--json", "answer", "FID-aaaaaa", "Exclude authentication failures.", "--actor", "human:mark"), "task.answer")
 			want := map[string]any{"question_id": parked["question_id"], "question": waitingQuestion,
 				"text": answered["answer"], "decision_id": answered["decision_id"]}
-			resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder"), "next.claim")
+			resumed, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if resumed["kind"] != "resume" || !reflect.DeepEqual(resumed["answer"], want) {
 				t.Fatalf("initial resume = %v, want answer %v", resumed, want)
 			}
@@ -45,7 +45,7 @@ func TestWaitingAnswerSurvivesUnstartedInterruption(t *testing.T) {
 			for _, claim := range []bool{false, true} {
 				args, operation := []string{"--json", "next"}, "next.get"
 				if claim {
-					args, operation = append(args, "--claim", "--actor", "agent:claude-builder"), "next.claim"
+					args, operation = append(args, "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol"), "next.claim"
 				}
 				next, _ := lifecycleResult(t, f.run(args...), operation)
 				if next["kind"] != "new" || next["task"].(map[string]any)["id"] != "FID-aaaaaa" || next["waiting"] != nil {

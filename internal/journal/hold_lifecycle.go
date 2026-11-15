@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/modelid"
 )
 
 // All import and replay paths reach this validator before applying Effects.
@@ -44,6 +46,11 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 		switch effect.Op {
 		case "insert":
 			inserts++
+			if model, exists := effect.Values["model"]; exists && model != "" {
+				if text, ok := model.(string); !ok || !modelid.Valid(text) {
+					return fmt.Errorf("invalid build model")
+				}
+			}
 			if _, modern := effect.Values["last_heartbeat_at"]; modern || event.EventType == "task.taken-over" {
 				if err := validateNewHold(event, effect); err != nil {
 					return err

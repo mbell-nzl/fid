@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/modelid"
 	"github.com/mbell-nzl/fid/internal/next"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
@@ -31,7 +33,7 @@ var nextActorDomain = flagDomain{[]string{"string"}, "RESET 1.4a next.claim; P21
 func newNextCommand() *cobra.Command {
 	var (
 		claim, explain bool
-		actor          string
+		actor, model   string
 	)
 	cmd := &cobra.Command{
 		Use:   "next",
@@ -42,7 +44,7 @@ func newNextCommand() *cobra.Command {
 			"same hold. --explain lists the whole order with a verdict for each task.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			operation := leafOperation(cmd)
-			if refused := refuseNextRequest(cmd, claim, actor); refused != nil {
+			if refused := refuseNextRequest(cmd, claim, actor, model); refused != nil {
 				return refused
 			}
 			root, err := rebuildWorkspaceRoot(cmd)
@@ -50,7 +52,7 @@ func newNextCommand() *cobra.Command {
 				return renderNextFailure(cmd, operation, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor}
+			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor, Model: model}
 			read := next.Read
 			if claim {
 				read = next.Claim
@@ -76,6 +78,7 @@ func newNextCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&claim, "claim", false, "Take the task as a hold for this worktree")
 	cmd.Flags().StringVar(&actor, "actor", "", "Who takes the task, agent:<id> or human:<id>; only with --claim")
+	cmd.Flags().StringVar(&model, "model", "", "Builder model as <family>/<model>; required for agents taking work")
 	cmd.Flags().BoolVar(&explain, "explain", false, "List the whole order with a verdict for each task")
 	return cmd
 }
@@ -83,10 +86,10 @@ func newNextCommand() *cobra.Command {
 // refuseNextRequest refuses, before fid looks for a project, a request
 // whose flags don't go together or whose actor can't take a task. A flag
 // is never accepted and ignored.
-func refuseNextRequest(cmd *cobra.Command, claim bool, actor string) error {
+func refuseNextRequest(cmd *cobra.Command, claim bool, actor, model string) error {
 	switch {
-	case !claim && cmd.Flags().Changed("actor"):
-		return writeGrammarFailure(cmd, "next.get", cli.CodeInvalidArgument, "--actor is accepted only when taking the task",
+	case !claim && (cmd.Flags().Changed("actor") || cmd.Flags().Changed("model")):
+		return writeGrammarFailure(cmd, "next.get", cli.CodeInvalidArgument, "--actor and --model are accepted only when taking the task",
 			map[string]any{"argument": flagCombinationArgument, "value": nil, "allowed": []string{"accepted next.get input"}})
 	case !claim:
 		return nil
@@ -98,6 +101,12 @@ func refuseNextRequest(cmd *cobra.Command, claim bool, actor string) error {
 	}
 	if err := next.CheckActor(actor); err != nil {
 		return refuseNextActor(cmd, actor)
+	}
+	if strings.HasPrefix(actor, "agent:") && !cmd.Flags().Changed("model") {
+		return requireCanonicalFlag(cmd, "next.claim", "model")
+	}
+	if cmd.Flags().Changed("model") && !modelid.Valid(model) {
+		return writeGrammarFailure(cmd, "next.claim", cli.CodeInvalidArgument, "--model must be <family>/<model>", map[string]any{"argument": "--model", "value": model, "allowed": []string{modelid.Pattern}})
 	}
 	return nil
 }

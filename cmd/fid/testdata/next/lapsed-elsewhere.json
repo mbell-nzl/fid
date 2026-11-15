@@ -14,6 +14,7 @@
       "expires_at": "2026-11-08T10:00:00Z",
       "id": "HLD-<new>",
       "last_heartbeat_at": "2026-11-08T09:00:00Z",
+      "model": "codex/gpt-6.1-sol",
       "replaces": null,
       "since": "2026-11-08T09:00:00Z",
       "task_id": "FID-77aa01"
@@ -36,6 +37,7 @@
           "worktree": "/home/mark/projects/fid-wt5",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T07:00:00Z",
           "expires_at": "2026-11-08T08:00:00Z",
           "last_heartbeat_at": "2026-11-08T07:00:00Z",
@@ -48,7 +50,8 @@
           "reason": null,
           "since": "2026-11-08T07:00:00Z",
           "hold_id": "HLD-0a0b0c",
-          "actor": "agent:claude-builder"
+          "actor": "agent:claude-builder",
+          "model": ""
         },
         "epic_blocked_by": []
       },
@@ -85,6 +88,7 @@
           "worktree": "/home/mark/projects/fid-wt3",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T08:59:00Z",
           "expires_at": "2026-11-08T09:59:00Z",
           "last_heartbeat_at": "2026-11-08T08:59:00Z",
@@ -109,6 +113,7 @@
           "worktree": "/home/mark/projects/fid-wt3-tests",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T08:59:00Z",
           "expires_at": "2026-11-08T09:59:00Z",
           "last_heartbeat_at": "2026-11-08T08:59:00Z",
@@ -133,6 +138,7 @@
           "worktree": "/home/mark/projects/fid-wt2",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
           "last_heartbeat_at": "2026-11-08T08:40:00Z",
@@ -187,6 +193,7 @@
           "worktree": "<ROOT>",
           "here": true,
           "actor": "agent:claude-builder",
+          "model": "codex/gpt-6.1-sol",
           "since": "2026-11-08T09:00:00Z",
           "expires_at": "2026-11-08T10:00:00Z",
           "last_heartbeat_at": "2026-11-08T09:00:00Z",

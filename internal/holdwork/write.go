@@ -19,7 +19,7 @@ import (
 
 type Options struct {
 	WorkspaceRoot, MigrationsDir, HoldID, TaskID, Actor, Reason, IdempotencyKey string
-	PR, Question, Answer                                                        string
+	PR, Question, Answer, Model                                                 string
 	Clock                                                                       func() time.Time
 }
 
@@ -164,7 +164,10 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 	if options.Reason != "" {
 		request["reason"] = options.Reason
 	}
-	names := map[string]string{"reason": "--reason", "hold": "--hold", "task": "task"}
+	if operation == "task.takeover" && options.Model != "" {
+		request["model"] = options.Model
+	}
+	names := map[string]string{"model": "--model", "reason": "--reason", "hold": "--hold", "task": "task"}
 	if operation == "hold.park" || operation == "task.start" || operation == "task.handoff" {
 		request["hold"] = options.HoldID
 		if operation == "hold.park" {

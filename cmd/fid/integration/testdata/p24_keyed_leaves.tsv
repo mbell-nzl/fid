@@ -14,3 +14,4 @@ park	--waiting
 start	--hold
 takeover	--reason
 handoff	--pr
+review record	purpose

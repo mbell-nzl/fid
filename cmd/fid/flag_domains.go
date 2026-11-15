@@ -10,6 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/mbell-nzl/fid/internal/modelid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -45,6 +46,8 @@ func patternDomain(citation, pattern string) flagDomain {
 // Only the newest accepted row is cited. Generic pflag domains are registered
 // mechanically below; these declarations supply the stronger row constraints.
 var declaredStringDomains = map[string]map[string]flagDomain{
+	"next":         {"model": patternDomain("RESET 1.6d model attribution", modelid.Pattern)},
+	"takeover":     {"model": patternDomain("RESET 1.6d model attribution", modelid.Pattern)},
 	"init":         {"prefix": patternDomain("P21 §4.1 project.init", "^[A-Z][A-Z0-9]{0,15}$")},
 	"issue update": {"lane": enumDomain("RESET 1.5a4 planning lane", "routine", "standard", "assured")},
 	"issue create": {

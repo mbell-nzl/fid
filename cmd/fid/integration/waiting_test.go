@@ -23,23 +23,23 @@ func TestWaitingWorktreeJourney(t *testing.T) {
 	second := call(root, "issue", "create", "--kind", "task", "--title", "Other work", "--actor", "human:mark", "--idempotency-key", "second")
 	otherTask := p21PathString(t, second, "result", "issue", "id")
 	other := gittest.AddWorktree(t, root)
-	held := call(root, "next", "--claim", "--actor", "agent:builder")
+	held := call(root, "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	hold := p21PathString(t, held, "result", "hold", "id")
 	parked := call(root, "park", "--hold", hold, "--actor", "agent:builder", "--waiting", "Include timeouts?", "--idempotency-key", "wait")
 	question := p21PathString(t, parked, "result", "question_id")
-	blocked := call(root, "next", "--claim", "--actor", "agent:builder")
+	blocked := call(root, "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if p21PathString(t, blocked, "result", "kind") != "none" || p21PathString(t, blocked, "result", "waiting", "question_id") != question {
 		t.Fatalf("waiting next: %v", blocked)
 	}
-	if available := call(other, "next", "--claim", "--actor", "agent:other"); p21PathString(t, available, "result", "task", "id") != otherTask {
+	if available := call(other, "next", "--claim", "--actor", "agent:other", "--model", "codex/gpt-6.1-sol"); p21PathString(t, available, "result", "task", "id") != otherTask {
 		t.Fatalf("other worktree: %v", available)
 	}
 	answer := call(other, "answer", task, "Yes", "--actor", "human:mark", "--idempotency-key", "answer")
-	resumed := call(root, "next", "--claim", "--actor", "agent:builder")
+	resumed := call(root, "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if p21PathString(t, resumed, "result", "kind") != "resume" || p21PathString(t, resumed, "result", "hold", "replaces") != hold || p21PathString(t, resumed, "result", "answer", "decision_id") != p21PathString(t, answer, "result", "decision_id") {
 		t.Fatalf("resume: %v", resumed)
 	}
-	repeated := call(root, "next", "--claim", "--actor", "agent:builder")
+	repeated := call(root, "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if !reflect.DeepEqual(p21Path(t, resumed, "result", "answer"), p21Path(t, repeated, "result", "answer")) {
 		t.Fatalf("repeated resume lost answer: %v", repeated)
 	}

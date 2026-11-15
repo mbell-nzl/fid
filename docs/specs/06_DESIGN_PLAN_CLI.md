@@ -763,7 +763,7 @@ on them, only on `kind`.
 
 - `fid next` reads (operation `next.get`). It refreshes the projection like
   every read and records no Event.
-- `fid next --claim --actor <actor>` takes the served task as a hold for
+- `fid next --claim --actor <actor> [--model <family/model>]` takes the served task as a hold for
   this worktree (operation `next.claim`), in one `hold.taken` Event under
   the write lock. The Event ends this worktree's earlier hold and any
   lapsed hold on the task. Re-run in the same worktree, it returns the hold
@@ -776,8 +776,18 @@ on them, only on `kind`.
 - `--explain` lists the whole order with a verdict for each task, with or
   without `--claim`. It changes only the text.
 
+As of RESET 1.6d, `--model <family>/<model>` is required for an `agent:*`
+actor taking work and optional for a `human:*` actor. Both components
+match `[a-z0-9][a-z0-9._-]{0,63}`. A person omitting it builds by hand;
+old model-less holds retain unknown attribution. The model is immutable
+for that hold: a repeated request returning an existing hold keeps its
+recorded model, even if the supplied model differs. `--model` without
+`--claim`, a missing agent model or a malformed model is `invalid-argument`
+(exit 2), before project access. Parser failures name `next.get`; a
+missing required agent model names `next.claim`.
+
 A hold records its ID (`HLD-` and 6 hex digits), the task, the worktree
-(the SHA-256 of its root path, and the path), the actor, `since` and
+(the SHA-256 of its root path, and the path), the actor and model, `since` and
 `expires_at`, an hour later (D8), `last_heartbeat_at` (initially `since`), and,
 for a resume, the hold it replaces. Whether a hold has lapsed is read from
 the clock, never stored. `fid next` reads the clock once, just before it
@@ -793,7 +803,7 @@ The JSON result, with exit 0 for every kind:
 
 ```json
 {"kind": "new", "worktree": "/home/mark/projects/fid",
- "hold": {"id": "HLD-4c1e9a", "task_id": "FID-9f13aa", "actor": "agent:claude-builder",
+ "hold": {"id": "HLD-4c1e9a", "task_id": "FID-9f13aa", "actor": "agent:claude-builder", "model": "claude/opus-5.5",
           "since": "2026-11-10T09:02:11Z", "expires_at": "2026-11-10T10:02:11Z", "replaces": null},
  "task": <task>,
  "epic": {"id": "FID-e3a1c0", "title": "Operating experience", "progress": {"done": 0, "total": 3}},
@@ -813,6 +823,8 @@ The JSON result, with exit 0 for every kind:
   `fid status`'s task shape (section 3), or null for `none`. `epic` is the
   served task's epic, with its progress as `fid status` gives it, or null
   when the task has no epic and for `none` (Mark, 12 November 2026).
+- Holds in `hold`, `working` and `kept` JSON include `model` (a string,
+  empty for manual or historical unknown attribution).
 - `hold` is the hold `--claim` took or kept; it is null for `next.get` and
   for `none`. Its times are UTC, to the second. `event` is the
   `hold.taken` Event, or null when no hold was taken.
@@ -963,7 +975,7 @@ Cancellation stays person-only. Completion refusal belongs to `done` in
 ```text
 fid heartbeat --hold <id> --actor <actor>
 fid park --hold <id> --actor <actor> --interrupted --reason "<text>" --idempotency-key <k>
-fid takeover <task> --actor human:<name> --reason "<why>" [--idempotency-key <k>]
+fid takeover <task> --actor human:<name> --reason "<why>" [--model <family/model>] [--idempotency-key <k>]
 fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<why>" [--idempotency-key <k>]
 ```
 
@@ -985,7 +997,10 @@ fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<
   hold and is skipped elsewhere as `interrupted-elsewhere`. Unstarted
   work is available to anyone. Its retry key is required; a same-key
   repeat returns the original result and Event, even after resume.
-- Takeover (`task.takeover`) is for a person; agents and services get
+- Takeover (`task.takeover`) accepts an optional `--model` in the same
+  form as next; omitted means building by hand. It becomes the new hold
+  model, appears in hold reads and participates in the retry digest.
+  Takeover is for a person; agents and services get
   `authority-denied`. One atomic Event ends the old hold or releases kept
   work, records the person's decision and takes a new linked hold in the
   person's current worktree. The old hold can be live, lapsed, parked or
@@ -1202,14 +1217,156 @@ The text's message is:
 Status labels it `in review`. Missing-worktree NEEDS YOU covers this
 reservation too. Cancellation releases it in the same transition Event.
 The loop opens a worktree per task (2.5); rework returns to this worktree
-as kind `rework` (2.1).
+as kind `rework` (1.6f).
 
 Show gains a Hand-off row, for example
 `10:10 · PR #63 · lint, test passed on a1b2c3d`, after Checks. With no checks
 it says `no checks required`. Its JSON always has `handoff`, null before
 one, otherwise `{id, pr, head, base, required_checks, result_ids, at}` for
 the latest receipt. A new hand-off after rework may name a different PR;
-done uses the latest. Rework behavior and its shaped test belong to 2.1.
+done uses the latest. Rework behavior and its public-command stale-round V8 journey belong to 1.6f.
+
+### Review rounds (RESET 1.6d)
+
+```text
+fid review record <task> --input <file|-> --actor <recorder> --idempotency-key <key>
+fid review list <task>
+```
+
+Both commands accept `--project` and `--json`. Their operations are
+`review.record` and `review.list`. `review record --example` prints an
+editable template outside a project; help describes the closed input
+schema. The input is a single UTF-8 JSON object of at most 1 MiB. The complete
+encoded Event, including retry and finding copies, must also remain below
+the existing journal scanners' 1 MiB line budget; an oversized round refuses
+before append and changes nothing. Unknown
+or duplicate members, missing required members, wrong types and nulls
+outside the nullable location are refused before project access.
+
+| Member | Type and requirement | Meaning |
+|---|---|---|
+| `reviewer` | Required object | Attribution of the independent reviewer, distinct from the recorder |
+| `reviewer.actor` | Required typed work actor | `agent:<id>` or `human:<id>`; never a service |
+| `reviewer.model` | Optional string | `<family>/<model>`, as on build holds; omission or an empty value means unknown |
+| `reviewer.effort` | Optional short token | The declared reviewer effort |
+| `reviewer.session_id` | Required short token | Attributed session identity; an assertion, not authentication |
+| `stream` | Required string | `primary`, or `separate` for an Assured hand-off |
+| `profiles` | Required array of unique short tokens | Every profile this session reviewed; `[]` is possible for Routine work without a test trigger |
+| `verdict` | Required string | `APPROVE` or `CHANGES` |
+| `purpose` | Required nonblank string | What the change sets out to do, as the review read it (jig's "Claim" line; fid's human text never says "claim") |
+| `findings` | Required array | `[]` for no findings; the caller supplies no finding IDs |
+| `findings[].profile` | Required string | One of the session's profiles |
+| `findings[].severity` | Required string | `major`, `minor`, or `nit`; majors block |
+| `findings[].summary` | Required nonblank string | The problem found |
+| `findings[].location` | Required object or null | A file and positive integer line, or no location |
+| `findings[].location.file` | Required nonblank string | The file containing the finding |
+| `findings[].location.line` | Required positive integer | Its line number |
+| `findings[].evidence` | Required nonblank string | Evidence supporting the finding |
+| `findings[].fix` | Required nonblank string | The requested action |
+| `verification` | Required nonblank string | Commands, results, probes and limitations |
+| `provenance` | Optional object | Original prompt, command and raw reviewer output |
+| `provenance.prompt`, `.command`, `.output` | Optional strings | Retained unchanged for later comment rendering |
+
+Session, effort and profile tokens match `[A-Za-z0-9][A-Za-z0-9._-]{0,127}`.
+These are declared attribution values. A model label alone does not prove
+independence. The recorder needs the work action set; agents and humans
+may courier someone else's review, including a builder couriering an
+independent review. Services get `authority-denied` (exit 5), with the
+actor, operation and `review` action in the standard authority details.
+
+Admission examines **every** build hold of the task, including ended,
+lapsed and replaced holds. A reviewer who ever held it is refused. There
+must be a latest hand-off; the round binds to its recorded base and head
+using the local `patch-id-verbatim-per-file-v1` fingerprint, never fetching missing
+objects. Every round must include the required profiles selected from that
+hand-off's lane, changed paths and policy snapshot: `code` for Standard and
+Assured, plus `test-adequacy` in any lane whose paths match the frozen test
+paths. Unsupported changed paths conservatively trigger test adequacy.
+Additional profiles are retained but add no gates.
+
+A separate round needs an Assured hand-off and a different session from
+every primary round of the task. The same reviewer actor may do both in
+different sessions. Reusing a separate session for a later primary is also
+refused. `CHANGES` is required exactly when a major is open after recording,
+including majors raised by earlier rounds on any fingerprint. Until 1.6e
+adds closure, every major remains open. Rounds do not move task state;
+rework arrives in 1.6f. Posting, review selection and discovered work remain
+in 2.1.
+
+For example, this input adapts the actual 1.6b round-one jig-format review
+of conflicting merge retries (its second, minor finding is omitted here):
+
+```json
+{
+  "reviewer": {
+    "actor": "agent:independent-reviewer",
+    "model": "codex/gpt-6-astra",
+    "effort": "xhigh",
+    "session_id": "1.6b-review-r1"
+  },
+  "stream": "primary",
+  "profiles": ["code", "test-adequacy"],
+  "verdict": "CHANGES",
+  "purpose": "Persist confirmed merges and completed CI attempts through replay, export and restore; reject invalid bindings without mutation and preserve local checks.",
+  "findings": [{
+    "profile": "test-adequacy",
+    "severity": "major",
+    "summary": "Conflicting merge retries have no regression coverage.",
+    "location": {"file": "cmd/fid/merge_records_test.go", "line": 111},
+    "evidence": "Disabling the retry conflict guard left the focused writer, archive and V8 tests green; an altered task or PR could return the old observation.",
+    "fix": "Retry an existing key with changed task, PR and observation facts. Assert refusal and unchanged journal/projection alongside the identical retry."
+  }],
+  "verification": "The focused baseline passed, ending with ok github.com/mbell-nzl/fid/cmd/fid 14.338s. The disabled-conflict-guard probe was not caught. The builder's historical red runs and prior coverage/no-identity shard were not independently verified.",
+  "provenance": {
+    "prompt": "Review RESET 1.6b, lane Assured, with code and test-adequacy profiles.",
+    "output": "## Review: CHANGES\nReviewer: Codex (gpt-6-astra), effort xhigh · Profiles: code, test-adequacy · Round 1 · Same-model fallback"
+  }
+}
+```
+
+The example's provenance is an excerpt; callers can retain the complete
+original prompt/command/output there. fid stores the complete supplied
+narrative and findings, so later rendering need not invent review text.
+
+One `review.round-recorded` Event inserts the immutable round and findings.
+It records a `RND-<six-hex>` ID, task/hand-off IDs, the binding
+`{algorithm, fingerprint, base, head}`, recorder and UTC time. Stable finding
+IDs append their one-based position to the round ID, such as
+`RND-a1b2c3-1`. JSON success is the standard envelope with result `{round}`
+and the original Event. Same-key retries return the same result and Event
+before consulting current hand-offs or git; changed input, task or recorder
+gets `idempotency-conflict` (exit 4) naming the differing public fields.
+Corrupt stored responses are refused and never rendered as a review.
+Text success is `✓ Recorded review RND-a1b2c3 · primary · CHANGES`.
+
+`review list` returns `{task_id, rounds: [...]}` in journal order and no
+Event. Each round contains its complete recorded fields, plus derived
+`other_model` and `current` booleans; each finding adds `open: true` until
+closures land. Other-model means the reviewer's declared family differs
+from every model-bearing build hold of that task; a manual hold adds no
+family, and an unknown reviewer never counts as other-model. Two different
+models within one family are the same-family case.
+
+A round is current exactly when its algorithm and fingerprint equal the
+latest hand-off's; older rounds are never rewritten. A recorded round
+covering the latest hand-off's exact base/head provides its already-computed
+fingerprint, so imported/restored history is readable without those git
+objects. A later hand-off with new endpoints needs a local computation;
+missing objects refuse the freshness read. A clean rebase with an equal
+fingerprint keeps the earlier round current; edits stale it without closing
+its findings. Reads never use the network. Human output uses the 72-column
+box and escaped, wrapped text, listing stream, reviewer/model/session,
+profiles, verdict, other-model, fingerprint, freshness and open findings.
+
+Semantic admission and fingerprint failures use `invalid-argument` (exit 2)
+with `{argument:"input", value:null,
+allowed:["an independent review of the latest hand-off"]}` and a bounded
+specific message. Structural input failures name the exact field instead.
+The common repository/project, lock and corrupt-journal refusal contracts
+still apply. Replay and import validate model/fingerprint forms, exact
+hand-off endpoints, hold history, profile/session/verdict rules and retry
+bindings, without git or network access. Retired `review.recorded` and its
+old tables remain refused.
 
 ### Retained Artifact verification (RESET 1.5c2)
 
@@ -1520,9 +1677,11 @@ evidence finding gate human-outcome ready receipt requirement resume review
 run stats stop workflow
 ```
 
-Each is an unknown root command (`operation-unavailable`, exit 2), with the
-known path `fid` as its operation and sorted current alternatives. There is
-no `fid admin`. Lean reviews and findings return in RESET 2.1. Issue Concern
+Except for `review`, which returns with the new lean record/list contract
+in RESET 1.6d, each is an unknown root command (`operation-unavailable`,
+exit 2), with the known path `fid` as its operation and sorted current
+alternatives. The retired review schema, Event and tables stay refused;
+finding closures arrive in 1.6e and delivery in 2.1. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.
@@ -1624,7 +1783,7 @@ retain their existing behavior (CF-047); task 9a records them in its completion
 report. The live tree is the corpus scope. Family request fallbacks remain
 available only for their existing non-grammar causes.
 
-`artifact verify` uses descriptor-generated help, `--example` and closed
+`artifact verify` and `review record` use descriptor-generated help, `--example` and closed
 structural validation. Help lists field paths, types and required status;
 examples use documented field order and two-space indentation. `--example`
 works outside a project and refuses combinations in this order: `--json`,
@@ -1632,4 +1791,4 @@ works outside a project and refuses combinations in this order: `--json`,
 arguments. Unknown or duplicate input fields and missing, null or wrongly
 typed `artifact_id` give `invalid-argument` with the exact field path.
 
-*Last updated: 2026-11-15 (RESET 1.5c2: retiring commands and lean Artifact verification)*
+*Last updated: 2026-11-15 (RESET 1.6d: build models and canonical review rounds)*

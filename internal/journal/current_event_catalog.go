@@ -25,6 +25,7 @@ func currentEffectKey(table, op string) string { return table + "/" + op }
 // Retained Event-v2 families keep their accepted Effect grammar. Lean families
 // check every stage in order; older Issue writers also retain SQL guards.
 var retainedCurrentRules = map[string]currentEventRule{
+	"review.round-recorded":          currentRule("review", currentStage(1, currentEffectKey("review_rounds", "insert")), currentStage(0, currentEffectKey("round_findings", "insert")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 	"merge.observed":                 currentRule("merge", currentStage(1, currentEffectKey("merge_observations", "insert"))),
 	"ci.result-recorded":             currentRule("merge", currentStage(1, currentEffectKey("ci_results", "insert"))),
 	"check.completed":                currentRule("check", currentStage(1, currentEffectKey("check_requests", "insert")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),

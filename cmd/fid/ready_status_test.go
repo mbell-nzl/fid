@@ -58,7 +58,7 @@ func TestStatusReadyAgreesWithNext(t *testing.T) {
 				t.Fatalf("status doesn't show working here:\n%s", text.stdout)
 			}
 			if test.wantNext != nil {
-				taken := commandResultFields(t, fixture, "next", "--claim", "--actor", "agent:codex")
+				taken := commandResultFields(t, fixture, "next", "--claim", "--actor", "agent:codex", "--model", "codex/gpt-6.1-sol")
 				if taken["task"].(map[string]any)["id"] != ready["next"] {
 					t.Fatalf("READY next %v disagrees with the task handed out: %v", ready["next"], taken["task"])
 				}

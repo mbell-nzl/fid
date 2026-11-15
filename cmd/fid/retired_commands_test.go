@@ -11,7 +11,7 @@ import (
 
 func TestRetiredCommandsAreUnknown(t *testing.T) {
 	t.Parallel()
-	for _, name := range strings.Fields("activation attention capabilities claim concern decision deviation envelope evidence finding gate human-outcome ready receipt requirement resume review run stats stop workflow") {
+	for _, name := range strings.Fields("activation attention capabilities claim concern decision deviation envelope evidence finding gate human-outcome ready receipt requirement resume run stats stop workflow") {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			for _, jsonMode := range []bool{false, true} {
@@ -80,6 +80,25 @@ func TestArtifactVerifyTypedActors(t *testing.T) {
 			}
 			if got := startEventCount(t, workspace); got != before {
 				t.Fatalf("refusal wrote %d Events", got-before)
+			}
+		})
+	}
+}
+
+// The review root returns with a new lean schema in 1.6d. Its retired kernel
+// inputs remain refused, alongside the unchanged retired Event/table tests.
+func TestRetiredReviewInputRemainsRefused(t *testing.T) {
+	t.Parallel()
+	for _, field := range []string{"envelope_id", "claim_id", "run_id"} {
+		t.Run(field, func(t *testing.T) {
+			t.Parallel()
+			f := reviewFixture(t)
+			in := reviewInput()
+			in[field] = "retired-record"
+			before := reviewProjection(t, f)
+			got := recordReview(t, f, in, "old-input", "human:courier")
+			if got.err == nil || !strings.Contains(got.stderr, "input."+field) || reviewProjection(t, f) != before {
+				t.Fatalf("retired input=%#v", got)
 			}
 		})
 	}
