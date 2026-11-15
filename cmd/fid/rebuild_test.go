@@ -21,11 +21,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := onlyJournalPath(t, workspace)
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("Remove(projection) error = %v", err)
 	}
@@ -54,10 +50,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 	if !success.OK || success.Operation != "project.rebuild" || success.Event != nil {
 		t.Fatalf("success = %+v, want role-free project.rebuild result", success)
 	}
-	afterJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after rebuild error = %v", journalPath, err)
-	}
+	afterJournal := mustReadJournal(t, workspace)
 	if !bytes.Equal(afterJournal, beforeJournal) {
 		t.Fatal("role-free rebuild appended journal data")
 	}
@@ -68,12 +61,8 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
-	journalPath := onlyJournalPath(t, workspace)
 	databasePath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 	beforeDatabase, err := os.ReadFile(databasePath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", databasePath, err)
@@ -91,10 +80,7 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 		t.Fatalf("Execute() error = %v, want removed --by rejection", err)
 	}
 
-	afterJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
-	}
+	afterJournal := mustReadJournal(t, workspace)
 	afterDatabase, err := os.ReadFile(databasePath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) after rejection error = %v", databasePath, err)
@@ -108,11 +94,7 @@ func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := onlyJournalPath(t, workspace)
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 
 	for _, testCase := range []struct {
 		name  string
@@ -136,10 +118,7 @@ func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 		})
 	}
 
-	afterJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
-	}
+	afterJournal := mustReadJournal(t, workspace)
 	if !bytes.Equal(afterJournal, beforeJournal) {
 		t.Fatal("removed-flag rebuild appended journal data")
 	}
@@ -149,11 +128,7 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := onlyJournalPath(t, workspace)
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 
 	for _, testCase := range []struct {
 		name         string
@@ -205,10 +180,7 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 		})
 	}
 
-	afterJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
-	}
+	afterJournal := mustReadJournal(t, workspace)
 	if !bytes.Equal(afterJournal, beforeJournal) {
 		t.Fatal("invalid rebuild request appended journal data")
 	}
@@ -259,16 +231,12 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
-	journalPath := onlyJournalPath(t, workspace)
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 
 	lockedStdout := &bytes.Buffer{}
 	lockedStderr := &bytes.Buffer{}
 	var lockedErr error
-	err = journal.WithLock(workspace, journal.LockOwner{Command: "test held lock"}, func(_ *journal.WriteLock) error {
+	err := journal.WithLock(workspace, journal.LockOwner{Command: "test held lock"}, func(_ *journal.WriteLock) error {
 		cmd := newRootCommandAt(workspace)
 		cmd.SetOut(lockedStdout)
 		cmd.SetErr(lockedStderr)
@@ -309,10 +277,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 		lockedFailure.Error.Details.LockPath != filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), "write.lock")) {
 		t.Fatalf("held-lock failure = %+v, want retryable typed lock-unavailable at the absolute lock path", lockedFailure)
 	}
-	afterHeldJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after held-lock rejection error = %v", journalPath, err)
-	}
+	afterHeldJournal := mustReadJournal(t, workspace)
 	if !bytes.Equal(afterHeldJournal, beforeJournal) {
 		t.Fatal("held-lock rebuild appended journal data")
 	}

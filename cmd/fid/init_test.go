@@ -506,7 +506,6 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	runInitCommand(t, workspace, "init")
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
-	journalPath := onlyJournalPath(t, workspace)
 
 	conn, err := fiddb.Open(dbPath)
 	if err != nil {
@@ -522,10 +521,7 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	}
 	closeCommandDB(t, conn)
 
-	beforeJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforeJournal := mustReadJournal(t, workspace)
 
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
@@ -556,10 +552,7 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 		t.Fatalf("rebuilt projection_meta = %+v, want %+v", afterMeta, beforeMeta)
 	}
 
-	afterJournal, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) rebuilt error = %v", journalPath, err)
-	}
+	afterJournal := mustReadJournal(t, workspace)
 	if !bytes.Equal(afterJournal, beforeJournal) {
 		t.Fatal("journal bytes changed after rebuild")
 	}
