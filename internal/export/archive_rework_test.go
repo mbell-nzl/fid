@@ -98,10 +98,23 @@ func applyReworkEvent(v *semanticValidator, mode string, e journal.Event) error 
 func TestReworkHoldAdmissionEveryPath(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"live", "replay", "import"} {
-		for _, tc := range []struct{ name, root, replaces string }{
-			{"complete", "/w/one", "HLD-1"},
-			{"another worktree", "/w/another", "HLD-1"},
-			{"missing link", "/w/one", ""},
+		for _, tc := range []struct {
+			name, root, replaces string
+			legacy, noHeartbeat  bool
+			keepWorktreeID       bool
+			aliases              bool
+			valid                bool
+		}{
+			{name: "complete", root: "/w/one", replaces: "HLD-1", valid: true},
+			{name: "another worktree", root: "/w/another", replaces: "HLD-1"},
+			{name: "missing link", root: "/w/one"},
+			{name: "root differs from ID", root: "/w/another", replaces: "HLD-1", keepWorktreeID: true},
+			{name: "missing heartbeat", root: "/w/one", replaces: "HLD-1", noHeartbeat: true},
+			{name: "root differs without heartbeat", root: "/w/another", replaces: "HLD-1", keepWorktreeID: true, noHeartbeat: true},
+			{name: "legacy another worktree", root: "/w/another", replaces: "HLD-1", legacy: true},
+			{name: "legacy same worktree", root: "/w/one", replaces: "HLD-1", legacy: true},
+			{name: "legacy missing link", root: "/w/one", legacy: true},
+			{name: "legacy case aliases", root: "/w/another", replaces: "HLD-1", legacy: true, aliases: true},
 		} {
 			t.Run(mode+"/"+tc.name, func(t *testing.T) {
 				t.Parallel()
@@ -117,12 +130,28 @@ func TestReworkHoldAdmissionEveryPath(t *testing.T) {
 				e := journal.Event{EventSchema: 2, EventID: "EVT-20261110-000005", EventType: "hold.taken", CommandName: "next.claim", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "fixer", ActorType: "agent", Producer: "fid-standalone", ProvenanceRef: "test"}, Aggregate: journal.Aggregate{ID: hold.ID, Type: "hold", Sequence: 1}, Effects: []journal.Effect{
 					{Op: "update", Table: "holds", PK: map[string]any{"id": "HLD-1"}, Values: map[string]any{"kept": false}, Preconditions: map[string]any{"kept": true}}, hold.Insert(),
 				}}
+				if tc.keepWorktreeID {
+					e.Effects[1].Values["worktree_id"] = project.WorktreeID("/w/one")
+				}
+				if tc.noHeartbeat {
+					delete(e.Effects[1].Values, "last_heartbeat_at")
+				}
+				if tc.legacy {
+					e.EventSchema = journal.EventSchemaV1
+					e.Actor = journal.Actor{Role: "developer", Actor: &hold.Actor}
+					e.Command = journal.Command{Argv: []string{"fid", "next", "--claim"}, CWD: tc.root, FIDVersion: "test"}
+					delete(e.Effects[1].Values, "model")
+				}
+				if tc.aliases {
+					e.Effects[0].Table = "HOLDS"
+					e.Effects[0].PK = map[string]any{"ID": "HLD-1"}
+				}
 				before := handoffProjectionSnapshot(t, v)
 				err := applyReworkEvent(v, mode, e)
-				if (err == nil) != (tc.name == "complete") {
-					t.Fatalf("rework hold=%v", err)
+				if (err == nil) != tc.valid {
+					t.Errorf("rework hold=%v want valid=%t", err, tc.valid)
 				}
-				if tc.name != "complete" && handoffProjectionSnapshot(t, v) != before {
+				if !tc.valid && handoffProjectionSnapshot(t, v) != before {
 					t.Fatal("refused rework hold changed projection")
 				}
 			})

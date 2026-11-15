@@ -3,6 +3,7 @@ package journal
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
@@ -55,7 +56,7 @@ func validateReworkHold(tx *sql.Tx, event Event) error {
 	var insert *Effect
 	for i := range event.Effects {
 		e := &event.Effects[i]
-		if e.Table == "holds" && e.Op == "insert" {
+		if strings.EqualFold(e.Table, "holds") && e.Op == "insert" {
 			if insert != nil {
 				return fmt.Errorf("taking work requires one new hold")
 			}
@@ -63,18 +64,35 @@ func validateReworkHold(tx *sql.Tx, event Event) error {
 		}
 	}
 	for _, e := range event.Effects {
-		if e.Table != "holds" || e.Op != "update" {
+		if !strings.EqualFold(e.Table, "holds") || e.Op != "update" {
+			continue
+		}
+		// Resolve the affected row as SQLite does, including legacy key and
+		// table spelling, before the Event-v1 compatibility path can return.
+		row, found, err := readCurrentValues(tx, "holds", e.PK, []string{"id"})
+		if err != nil {
+			return err
+		}
+		if !found {
 			continue
 		}
 		var task, worktree, state string
 		var rework sql.NullString
-		if err := tx.QueryRow(`SELECT h.task_id,h.worktree_id,h.rework_at,i.status FROM holds h JOIN issues i ON i.id=h.task_id WHERE h.id=? AND h.kept=1`, e.PK["id"]).Scan(&task, &worktree, &rework, &state); err == sql.ErrNoRows {
+		if err := tx.QueryRow(`SELECT h.task_id,h.worktree_id,h.rework_at,i.status FROM holds h JOIN issues i ON i.id=h.task_id WHERE h.id=? AND h.kept=1`, row["id"]).Scan(&task, &worktree, &rework, &state); err == sql.ErrNoRows {
 			continue
 		} else if err != nil {
 			return err
 		}
-		if rework.Valid && (insert == nil || state != "in_progress" || insert.Values["task_id"] != task || insert.Values["worktree_id"] != worktree || insert.Values["replaces_hold_id"] != e.PK["id"]) {
+		if !rework.Valid {
+			continue
+		}
+		if !event.IsV2() || insert == nil || state != "in_progress" || insert.Values["task_id"] != task || insert.Values["worktree_id"] != worktree || insert.Values["replaces_hold_id"] != row["id"] {
 			return fmt.Errorf("rework requires a linked hold in the task's kept worktree")
+		}
+		// Rework has no legacy writer. Optional historical fields cannot
+		// bypass the full new-hold checks, including the root/ID binding.
+		if err := validateNewHold(event, *insert); err != nil {
+			return err
 		}
 	}
 	return nil

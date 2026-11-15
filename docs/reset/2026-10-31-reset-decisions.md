@@ -1346,6 +1346,9 @@ review Event bumps only an `in_review` task’s revision and changes its own
 kept hand-off reservation. CHANGES while already `in_progress` and APPROVE
 never change state or a hold. A linked rework hold is allowed only for the
 same task and worktree; its model joins all other build-hold attribution.
+Rework replacement admission runs before the Event-v1 compatibility return,
+resolves legacy SQL table/key spelling, and requires a full Event-v2 new hold
+even when historical optional fields such as `last_heartbeat_at` are omitted.
 
 `next` returns rework before unblocking and new work; an existing live or
 interrupted session still resumes first. Repeating next after taking
