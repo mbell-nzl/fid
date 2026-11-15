@@ -1,6 +1,7 @@
 package export
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ func epicCloseArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 func TestEpicCloseAdmissionEveryPath(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"live", "replay", "import"} {
-		for _, name := range []string{"valid", "in progress", "done child", "cancelled child", "todo child", "started child", "review child", "late open child", "open subtask", "agent", "service", "blank reason", "task subject", "wrong actor", "wrong binding", "wrong subject", "wrong time", "wrong kind", "missing decision", "missing move", "other move", "extra move", "extra decision", "injected retry", "wrong revision", "wrong from", "wrong target", "changed title", "wrong command", "wrong aggregate", "legacy", "other family", "case alias", "closed epic", "cancelled epic"} {
+		for _, name := range []string{"valid", "in progress", "done child", "cancelled child", "todo child", "started child", "review child", "late open child", "open subtask", "agent", "service", "blank reason", "oversized reason", "task subject", "wrong actor", "wrong binding", "wrong subject", "wrong time", "wrong kind", "missing decision", "missing move", "other move", "extra move", "extra decision", "injected retry", "wrong revision", "wrong from", "wrong target", "changed title", "wrong command", "wrong aggregate", "legacy", "other family", "case alias", "closed epic", "cancelled epic"} {
 			t.Run(mode+"/"+name, func(t *testing.T) {
 				t.Parallel()
 				v, e := epicCloseArchiveFixture(t)
@@ -85,6 +86,8 @@ func TestEpicCloseAdmissionEveryPath(t *testing.T) {
 					e.Effects[0].Values["actor"] = name + ":mark"
 				case "blank reason":
 					e.Effects[0].Values["reason"] = " \n "
+				case "oversized reason":
+					e.Effects[0].Values["reason"] = strings.Repeat("<", 200000)
 				case "wrong actor":
 					e.Effects[0].Values["actor"] = "human:other"
 				case "wrong binding":

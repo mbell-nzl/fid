@@ -47,6 +47,13 @@ func validateEpicCloseOwnership(tx *sql.Tx, event Event, e Effect) error {
 	return nil
 }
 func validateEpicClose(tx *sql.Tx, event Event) error {
+	encoded, err := MarshalCanonicalJSON(event)
+	if err != nil {
+		return err
+	}
+	if len(encoded)+1 >= 1<<20 {
+		return fmt.Errorf("epic close Event exceeds the journal's 1 MiB line budget")
+	}
 	if !event.IsV2() || event.CommandName != "task.done" || event.Aggregate.Type != "epic" || event.Repository != nil || event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("epic close requires a person's decision and its command")
 	}
