@@ -6,13 +6,15 @@ import (
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
 )
 
 type workingTask struct {
 	issues.OverviewTask
-	Working *holds.Working `json:"working"`
-	Kept    *holds.Kept    `json:"kept"`
+	Working *holds.Working           `json:"working"`
+	Kept    *holds.Kept              `json:"kept"`
+	Merge   *mergerecord.ReviewState `json:"merge,omitempty"`
 }
 
 type section[T any] struct {
@@ -64,6 +66,9 @@ func (result Result) readyVerdict(task issues.OverviewTask) (string, display.Rol
 }
 
 func (result Result) startedVerdict(task issues.OverviewTask) string {
+	if merge := result.merges[task.ID]; merge != nil && merge.Summary() != "" {
+		return merge.Summary()
+	}
 	if kept := result.entries[task.ID].Kept; kept != nil {
 		if kept.Mode == "rework" {
 			return "rework in " + filepath.Base(kept.Worktree)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/backup"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
 )
 
@@ -39,6 +40,7 @@ type Result struct {
 	Ready       issues.OverviewSection
 	Next        *string
 	entries     map[string]next.Entry
+	merges      map[string]*mergerecord.ReviewState
 	// Hint is set only when the project has no epics or tasks at all.
 	Hint *Hint
 }
@@ -68,7 +70,7 @@ func Build(options Options) (Result, error) {
 }
 
 func build(options Options, afterOverview func()) (Result, error) {
-	overview, planned, err := readWork(options, afterOverview)
+	overview, planned, merges, err := readWork(options, afterOverview)
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
@@ -77,7 +79,7 @@ func build(options Options, afterOverview func()) (Result, error) {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
 	result := Result{GeneratedAt: options.Now, Backup: describeBackup(health, options.Now), NeedsYou: []NeedsYouItem{},
-		Warnings: readPolicyWarnings(options.WorkspaceRoot), InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}}
+		Warnings: readPolicyWarnings(options.WorkspaceRoot), InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}, merges: merges}
 	for _, entry := range planned.Queue {
 		result.entries[entry.ID] = entry
 	}
@@ -103,7 +105,7 @@ func (result Result) Fields() map[string]any {
 		"needs_you":    result.NeedsYou,
 		"warnings":     result.Warnings,
 		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
-			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept}
+			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept, Merge: result.merges[task.ID]}
 		}),
 		"ready": result.readyFields(),
 		"hint":  result.Hint,

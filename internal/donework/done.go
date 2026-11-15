@@ -28,8 +28,10 @@ type Options struct {
 }
 
 type Refusal struct {
-	Code, Message, Next string
-	Details             map[string]any
+	Code    string         `json:"code"`
+	Message string         `json:"message"`
+	Next    string         `json:"next_action"`
+	Details map[string]any `json:"details"`
 }
 
 func (r *Refusal) Error() string { return r.Message }

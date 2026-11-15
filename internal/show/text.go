@@ -146,6 +146,9 @@ func (text textWriter) rows(result Result) []string {
 		}
 		lines = append(lines, text.value("Hand-off", display.Clock(handoff.At, result.Now)+" · PR #"+handoffrecord.PRNumber(handoff.PR)+" · "+checks+" on "+handoff.Head[:8])...)
 	}
+	if merge := result.Merge; merge != nil && merge.Summary() != "" {
+		lines = append(lines, text.value("Merge", merge.Summary())...)
+	}
 	if hold := result.Working; hold != nil {
 		clock := func(stamp string) string { return display.Clock(stamp, result.Now) }
 		value := fmt.Sprintf("here, since %s, until %s", clock(hold.Since), clock(hold.ExpiresAt))

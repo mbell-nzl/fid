@@ -52,7 +52,7 @@ func Build(options Options) (Result, error) {
 // Fields is the result as the issue.show JSON result. Its blocks links
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
-	return map[string]any{
+	fields := map[string]any{
 		"handoff":     result.Handoff,
 		"questions":   result.Questions,
 		"checks":      result.Checks,
@@ -70,4 +70,8 @@ func (result Result) Fields() map[string]any {
 		"kept":        result.Kept,
 		"scheduling":  result.Scheduling,
 	}
+	if result.Merge != nil {
+		fields["merge"] = result.Merge
+	}
+	return fields
 }

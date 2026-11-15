@@ -1,0 +1,9 @@
+╭ FID-<task> ──────────────────────────────────────────────────── task ╮
+
+  ● Done evaluator subject                                   in review
+
+  Lane        Standard
+  Checks      ✓ evidence passed at <clock> · required · counts on HEAD
+  Hand-off    <clock> · PR #63 · evidence passed on <head>
+  Merge       merged, waiting for CI
+╰──────────────────────────────────────────────────────────────────────╯

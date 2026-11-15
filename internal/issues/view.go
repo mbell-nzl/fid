@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issuestate"
+	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/questions"
 )
 
@@ -41,6 +42,7 @@ type IssueView struct {
 	Scheduling *string
 	Checks     []checkrecord.Record
 	Handoff    *handoffrecord.View
+	Merge      *mergerecord.ReviewState
 }
 
 // IssueReference names another issue and its state.
@@ -125,6 +127,10 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 				return IssueView{}, fmt.Errorf("decode hand-off: %w", err)
 			}
 			view.Handoff = &record.View
+		}
+		view.Merge, err = mergerecord.ReadReviewState(conn, issue.ID)
+		if err != nil {
+			return IssueView{}, fmt.Errorf("read merge state: %w", err)
 		}
 		checks, err := checkread.Read(conn, issue.ID)
 		if err != nil {

@@ -1,0 +1,156 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "checks": [
+      {
+        "name": "evidence",
+        "start": {
+          "id": "CHK-<new>",
+          "task_id": "FID-<task>",
+          "hold_id": "HLD-<new>",
+          "actor": "human:builder",
+          "name": "evidence",
+          "definition": {
+            "run": [
+              "true"
+            ],
+            "timeout_ns": 60000000000,
+            "environment": [
+              "CI",
+              "GOCACHE",
+              "GOMODCACHE",
+              "GOPATH",
+              "HOME",
+              "LANG",
+              "LC_ALL",
+              "PATH",
+              "TMPDIR",
+              "XDG_CACHE_HOME"
+            ],
+            "artifacts": [
+              "notes.md"
+            ]
+          },
+          "definition_digest": "sha256:<digest>",
+          "policy_snapshot": 1,
+          "environment_digest": "sha256:<digest>",
+          "started_at": "<time>",
+          "tree": {
+            "head": "<commit-or-tree>",
+            "tree": "<commit-or-tree>",
+            "dirty": false,
+            "dirty_digest": null
+          },
+          "owner": {
+            "machine": "<machine>",
+            "boot_id": "<boot_id>",
+            "pid": 10001,
+            "start_time": "<start_time>"
+          }
+        },
+        "process": {
+          "machine": "<machine>",
+          "boot_id": "<boot_id>",
+          "pid": 10001,
+          "start_time": "<start_time>"
+        },
+        "result": {
+          "finished_at": "<time>",
+          "outcome": "passed",
+          "exit_code": 0,
+          "signal": null,
+          "tree": {
+            "head": "<commit-or-tree>",
+            "tree": "<commit-or-tree>",
+            "dirty": false,
+            "dirty_digest": null
+          },
+          "output_digest": "sha256:<digest>",
+          "output_excerpt": "",
+          "output_bytes": 0,
+          "output_truncated": false,
+          "toolchain": {
+            "executable": "<executable>",
+            "digest": "sha256:<digest>",
+            "os": "<os>",
+            "arch": "<arch>",
+            "fid_version": "<fid_version>"
+          },
+          "artifacts": [
+            {
+              "id": "ART-<new>",
+              "path": "notes.md",
+              "digest": "sha256:<digest>",
+              "size_bytes": 14
+            }
+          ],
+          "refused_artifacts": [],
+          "counts": true,
+          "reasons": []
+        },
+        "required": true,
+        "satisfied": true
+      }
+    ],
+    "checks_base": null,
+    "children": [],
+    "epic": null,
+    "handoff": {
+      "id": "HOF-<new>",
+      "pr": "https://github.com/MBELL-NZL/FID/pull/63",
+      "head": "<commit-or-tree>",
+      "base": "<commit-or-tree>",
+      "required_checks": [
+        "evidence"
+      ],
+      "result_ids": [
+        "CHK-<new>"
+      ],
+      "at": "<time>"
+    },
+    "issue": {
+      "lane": "standard",
+      "id": "FID-<task>",
+      "kind": "task",
+      "title": "Done evaluator subject",
+      "status": "in_review",
+      "status_category": "started",
+      "workflow_id": "task-default",
+      "parent_id": null,
+      "priority": null,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 3,
+      "labels": [],
+      "created_at": "<time>",
+      "updated_at": "<time>",
+      "acceptance_criteria": []
+    },
+    "kept": {
+      "worktree": "<ROOT>",
+      "here": true,
+      "mode": "review",
+      "reason": null,
+      "since": "<time>",
+      "hold_id": "HLD-<new>",
+      "actor": "human:builder",
+      "model": "codex/gpt-6.1-sol"
+    },
+    "merge": {
+      "merge_commit": "<commit-or-tree>",
+      "ci": "not-green"
+    },
+    "progress": null,
+    "questions": [],
+    "scheduling": null,
+    "state": null,
+    "task": null,
+    "warnings": [],
+    "working": null
+  }
+}

@@ -42,7 +42,7 @@ func assertV8MergeCI(t *testing.T, workspace string) {
 	}
 	defer func() { _ = conn.Close() }()
 	var task string
-	if err := conn.QueryRow(`SELECT task_id FROM merge_observations`).Scan(&task); err != nil {
+	if err := conn.QueryRow(`SELECT task_id FROM completions`).Scan(&task); err != nil {
 		t.Fatal(err)
 	}
 	var firstMerge string

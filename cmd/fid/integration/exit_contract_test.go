@@ -33,7 +33,7 @@ func TestProcessExitContract(t *testing.T) {
 		{"maintenance vacuum", []string{"--json", "maintenance", "vacuum", "--actor", "agent:task-9"}, "capability-unavailable", 5, false},
 		{"invalid input", []string{"maintenance", "vacuum", "--by", "tl"}, "", 2, false},
 		{"unknown flag", []string{"maintenance", "vacuum", "--unexpected"}, "", 2, false},
-		{"done usage", []string{"done"}, "", 2, false},
+		{"done actor required", []string{"done"}, "", 2, false},
 		{"usage", []string{"issue", "get"}, "", 2, false},
 		{"not found", []string{"--json", "issue", "get", "FID-404"}, "issue-not-found", 3, false},
 		{"conflict", []string{"--json", "init", "--prefix", "FID"}, "project-already-initialized", 4, false},
