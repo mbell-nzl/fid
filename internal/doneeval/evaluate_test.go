@@ -126,7 +126,7 @@ func TestLaneMatrix(t *testing.T) {
 					matrixCase{"profile missing", func(s *Snapshot) { s.Rounds[0].Profiles = nil }, PrimaryGate, ProfileMissing, Missing, Refused})
 			}
 			if actual == "assured" {
-				for _, c := range []matrixCase{
+				cases = append(cases, []matrixCase{
 					{"separate missing", func(s *Snapshot) { s.Rounds = s.Rounds[:1] }, SeparateGate, ReviewMissing, Missing, Refused},
 					{"separate stale", func(s *Snapshot) { s.Rounds[1].Current = false }, SeparateGate, ReviewStale, Stale, Refused},
 					{"separate same session", func(s *Snapshot) { s.Rounds[1].Reviewer.SessionID = "first" }, SeparateGate, SeparateSessionRequired, RefusedState, Refused},
@@ -134,9 +134,7 @@ func TestLaneMatrix(t *testing.T) {
 					{"approval stale", func(s *Snapshot) { s.Approval.State = "stale" }, ApprovalGate, ApprovalStale, Stale, Refused},
 					{"rollback missing", func(s *Snapshot) { s.GitHub.PR.Body = "" }, RollbackGate, RollbackMissing, Missing, Refused},
 					{"rollback fenced", func(s *Snapshot) { s.GitHub.PR.Body = "```markdown\n## Rollback\n```" }, RollbackGate, RollbackMissing, Missing, Refused},
-				} {
-					cases = append(cases, c)
-				}
+				}...)
 			}
 			for _, tc := range cases {
 				t.Run(tc.name, func(t *testing.T) {

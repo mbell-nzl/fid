@@ -110,28 +110,39 @@ func evaluateReviews(o *Outcome, s Snapshot) {
 	o.set(SeparateGate, Satisfied, NotRequired)
 	o.set(ApprovalGate, Satisfied, NotRequired)
 	o.set(RollbackGate, Satisfied, NotRequired)
+	var profiles []string
+	profilesKnown := false
 	if s.Policy == nil {
 		o.set(PrimaryGate, Missing, PrerequisiteMissing)
-		return
+	} else {
+		var err error
+		profiles, err = reviewrecord.RequiredProfiles(*s.Handoff, *s.Policy)
+		if err != nil {
+			o.set(PrimaryGate, Missing, TestPathsNotConfigured)
+		} else {
+			profilesKnown = true
+			if len(profiles) > 0 {
+				o.Gates[PrimaryGate] = reviewGate(s, "primary", profiles)
+			}
+		}
 	}
-	profiles, err := reviewrecord.RequiredProfiles(*s.Handoff, *s.Policy)
-	if err != nil {
-		o.set(PrimaryGate, Missing, TestPathsNotConfigured)
-		return
+	if s.Handoff.Lane == "assured" {
+		evaluateAssured(o, s, profiles, profilesKnown)
 	}
-	if len(profiles) > 0 {
-		o.Gates[PrimaryGate] = reviewGate(s, "primary", profiles)
-	}
-	if s.Handoff.Lane != "assured" {
-		return
-	}
+}
+
+func evaluateAssured(o *Outcome, s Snapshot, profiles []string, profilesKnown bool) {
 	o.NoOtherModelReview = true
 	for _, r := range s.Rounds {
 		if r.TaskID == s.Task.ID && r.Current && (r.Stream == "primary" || r.Stream == "separate") && r.OtherModel {
 			o.NoOtherModelReview = false
 		}
 	}
-	o.Gates[SeparateGate] = reviewGate(s, "separate", profiles)
+	if profilesKnown {
+		o.Gates[SeparateGate] = reviewGate(s, "separate", profiles)
+	} else {
+		o.set(SeparateGate, Missing, PrerequisiteMissing)
+	}
 	if o.Gates[SeparateGate].State == Satisfied {
 		separate := o.Gates[SeparateGate].IDs[0]
 		session := ""

@@ -1424,6 +1424,62 @@ Prompt and JSON goldens, export/import, forged archive refusals and replay
 cover the same record. No dependency is added. Approval in status/show (2.3)
 and the done evaluator (1.6h) remain their scheduled tasks.
 
+
+**1.6h's choices (2026-11-15).** `internal/doneeval.Evaluate` is pure over
+one `Snapshot` and reports all fifteen gates, with satisfied, missing, stale,
+waiting or refused states. Overall refusal takes precedence over waiting;
+only an entirely satisfied snapshot is complete. Non-applicable gates are
+satisfied with `not-required`. Missing prerequisites remain explicit; known
+Assured approval, Rollback and model-disclosure gates are still evaluated
+when policy/profile prerequisites are missing. The
+command's public reason mapping belongs to 1.6i; no command, record, migration
+or dependency joins this slice.
+
+`Gather` takes a caller-owned projection query/transaction, its workspace,
+task, trusted local origin/default-branch target and explicit GitHub facts.
+The caller refreshes the projection and owns locking/revalidation. It reads
+the latest hand-off's frozen policy, local results, current review views,
+task-wide open majors, approval view, latest merge observation and its CI
+receipts. Review/approval freshness uses a local fingerprint computation
+when such evidence exists; an empty Routine change without review or approval
+evidence does not introduce a fingerprint requirement. Shared
+`reviewwork.CurrentViews` factors the existing list reader's freshness,
+closures and other-model derivation. No GitHub call or journal write occurs.
+
+Fresh GitHub CI facts are explicit too: pending attempts are deliberately
+not durable, so old green receipts alone cannot prove current CI. The
+adapter's existing pure CI selection is exported as `github.EvaluateCI`;
+there is no second latest-attempt rule. Each selected green attempt must
+also match a recorded receipt for this task and merge observation. A confirmed
+merge receipt must bind to this latest hand-off and the observed PR/head tree.
+These are existing recorded facts, not new records. All current review
+rounds may establish other-model coverage; the latest current round per
+required stream supplies that stream's profiles. A person's closure can
+satisfy the major gate without rewriting a round's original CHANGES verdict.
+The separate session is still required under same-model fallback.
+
+`checkread.VerifyKept` reads only the required counting passes selected by
+`checkread.Evaluate`, checks their stored bytes with the existing digest
+verifier, and returns present observations without changing receipts or
+availability. Hand-off and gathered done evidence share it. Hand-off's new
+`kept-artifact-unavailable` refusal is a nonretryable precondition (exit 4),
+with `{artifact_ids}` and guidance to restore bytes or check again. Rebuild
+and identical hand-off retries never re-read kept files. Rollback recognizes
+an exact level-two ATX `Rollback` heading, including optional closing hashes,
+outside backtick/tilde fences; indented and blockquoted examples do not count.
+
+The internal reason values are: `evidence-satisfied`, `not-required`,
+`prerequisite-missing`, `task-unavailable`, `task-not-in-review`,
+`handoff-missing`, `handoff-mismatch`, `lane-changed`, `policy-missing`,
+`policy-mismatch`, `checks-not-configured`, `test-paths-not-configured`,
+`checks-unsatisfied`, `kept-artifact-unavailable`, `artifacts-not-verified`,
+`review-missing`, `review-stale`, `profile-missing`,
+`separate-session-required`, `open-major`, `approval-missing`,
+`approval-stale`, `rollback-missing`, `pr-unavailable`, `pr-mismatch`,
+`repository-mismatch`, `branch-mismatch`, `not-merged`, `merge-invalid`,
+`head-tree-mismatch`, `merge-missing`, `merge-mismatch`, `ci-waiting`,
+`ci-not-green`, `ci-mismatch`, `ci-unrecorded`.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

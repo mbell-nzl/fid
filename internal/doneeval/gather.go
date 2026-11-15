@@ -20,7 +20,7 @@ import (
 // can revalidate after network observations. Target comes from trusted local
 // origin metadata. Remote is explicit: this function never contacts GitHub.
 // It computes review/approval freshness locally, reads kept bytes, and writes
-// nothing. Missing evidence remains in the snapshot for Evaluate to explain.
+// no ledger records. Missing evidence stays in the snapshot for Evaluate.
 func Gather(root string, conn reviewrecord.Queryer, task string, target Target, remote GitHubFacts) (Snapshot, error) {
 	s := Snapshot{Target: target, GitHub: remote, Approval: approvalrecord.View{State: "missing"}}
 	var lane sql.NullString
