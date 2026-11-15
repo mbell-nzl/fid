@@ -993,6 +993,284 @@ Builder's transactional choices:
   golden and refusal leaks each failed with the shared diagnostic, then
   were restored.
 
+## Decided 2026-11-15 (orchestrator, under Mark's delegation)
+
+Mark delegated 1.6's design to the orchestrator on 2026-11-15: "You can
+settle the 1.6 design decisions; just record these to report back to me
+later. If the survey finds work scheduled for later is actually required
+prior to 1.6, then I am ok with bringing that forward. As stated
+previously, I do want this done right." Two read-only surveys (1.6 itself,
+then 2.1 and 2.3) found that `done` must check reviews, findings and Mark's
+fingerprint-bound approval, whose records were due in 2.1 and 2.3, after
+1.6. No recorded rule covered `done` before those exist, and 1.5c2 removed
+the old review commands with no interim stub. So the recording parts of
+2.1 and 2.3 move into 1.6's sequence, and `done` checks real records only:
+no GitHub stand-in for reviews or approvals, and no flags a caller supplies.
+`RESET.md` holds the twelve rows, 1.6a–1.6l, all Assured.
+
+**Which PR, which merge, which CI**
+
+1. **The PR is the latest hand-off's.** `done` uses the PR URL in the
+   task's latest hand-off, never a branch-name guess. The PR's base
+   repository must be the project's `origin` repository (fork heads are
+   fine), its base branch the default branch `origin/HEAD` names (as policy
+   discovery uses), and it must be merged: state merged with a merge
+   commit, never inferred from closed.
+2. **Checks bind to the merged head's tree.** The merged PR head's tree
+   must equal the hand-off's recorded tree. Otherwise `done` refuses and
+   the task is handed off again, which re-evaluates its checks on the new
+   tree. A clean rebase that keeps the tree keeps the checks.
+3. **CI green, GitHub Actions only.** Every Actions workflow run on the
+   exact merge commit with event `push`, taking the latest attempt per
+   workflow, must have completed with conclusion `success`. Skipped runs
+   are ignored. No runs, only skipped runs, or any queued or in-progress
+   run means "waiting for CI". Any other conclusion means CI isn't green.
+   The run's conclusion counts, not its jobs' (fid's own `main` runs skip
+   test jobs on verified tree reuse and still succeed). An incomplete or
+   inconsistent response is never green. External status contexts and a
+   setting to choose workflows are on the later list; there is still no
+   key to opt out.
+4. **What becomes a record.** A confirmed merge is recorded against its
+   task (the merge commit), even while CI is pending, so offline reads can
+   say "merged, waiting for CI" or, when GitHub can't be reached,
+   "merged, waiting for confirmation". Each completed CI run on the merge
+   commit, success or failure, is recorded as a check result from CI: run
+   ID, attempt, workflow, commit, conclusion and when it was observed. It
+   has its own typed storage and never invents a local check start,
+   process or hold. In-progress runs and network or authentication
+   failures aren't recorded.
+
+**1.6b's choices (2026-11-15).** `merge.observed` (`merge.observe`) and
+`ci.result-recorded` (`ci.record`) are new lean Event-v2 families on a
+`merge` aggregate, separate from local `check.*`. Migration 28 adds
+`merge_observations` and `ci_results`; projection cache version 10 makes
+an existing caught-up projection rebuild with their tables. Indexed
+binding columns and immutable typed JSON keep the full observations.
+The merge key is (hand-off, merge commit); the CI key is (normalized
+repository, run ID, attempt, merge observation). Identical retries return
+the original records and times; changed facts under an existing key refuse.
+A CI batch appends all new completed attempts as one Event or changes
+nothing. Pending attempts append nothing. These natural keys need no
+command retry-result row; both families refuse injected retry effects.
+Writers take already-read 1.6a facts and do no networking; the ledger lock
+covers refresh, validation and append. The caller supplies only CI facts
+on this merge commit; a differing head is refused. All completed events
+are retained, including skipped, superseded and non-push observations;
+the later evaluator selects which count. Latest-merge and CI history
+readers use journal insertion order. CI Event decoding preserves integer
+identities without a floating-point conversion. `fid done` (1.6i) is the first public
+caller. Local check storage, readers and evaluation are unchanged.
+
+**The `done` command**
+
+5. **`fid done <task> --actor <a>`.** Any work actor may run it; the
+   hand-off ended the build hold, so no live hold is needed. Each call
+   makes one GitHub observation per task: no polling and no background
+   work. A task waiting for its merge or CI stays `in_review`, and the
+   refusal says why with its own retryable code (not merged, waiting for
+   CI, CI not green, GitHub unavailable, or the failing gate). A pending
+   result is never cached under a retry key. `status`, `next` and `show`
+   never use the network.
+6. **`fid done` with no task reconciles.** It runs the same evaluation and
+   recording for every task in review, which is how PRs Mark merged in
+   GitHub get completed. It reports each task's outcome and exits 0 unless
+   the command itself fails.
+7. **Gates come from the hand-off.** Every gate is evaluated at the latest
+   hand-off's lane and policy snapshot: the required checks (as 1.5a
+   settled), the review profiles, the test-adequacy trigger and the
+   Assured gates. If the task's lane was raised after its hand-off, `done`
+   refuses until it is handed off again. Later policy changes don't change
+   a hand-off's requirements retroactively; who may run `done` comes from
+   current trusted policy.
+8. **Kept Artifacts must still be there** (1.5b–1.5d's Q7). Hand-off and
+   `done` require each counting result's kept Artifacts to exist with
+   matching digests. Results stay immutable, and replay never re-reads
+   files.
+9. **An open question when the task completes** is resolved with its own
+   resolution, the task finishing before an answer: neither "cancelled"
+   nor a made-up answer.
+10. **`## Rollback`** means a level-two `Rollback` heading in the PR body,
+    outside fenced code. `done` checks that it is there, not what it says.
+
+**Epics**
+
+11. Cancelled tasks count as finished. `fid done <epic>` works from `todo`
+    or `in_progress` when no task is open (an epic with no tasks
+    included); a task in review is open. Only a person may close an epic,
+    with a reason. NEEDS YOU shows an open epic with at least one task and
+    none open, so a newly created, empty epic doesn't nag.
+
+**The change fingerprint**
+
+12. **Computed locally, from the hand-off.** Reviews and approval bind to
+    the fingerprint of the task's latest hand-off: its recorded base and
+    head, from objects already in the repository, never fetched (lazy
+    fetch is disabled). `done` compares against the same computation, which
+    is sound because item 2 ties the merged head's tree to the hand-off's.
+    `gh pr diff` isn't used: it fails for PRs over 300 files (HTTP 406).
+13. **Which patch-id.** D10's `git patch-id`, as `--verbatim`, per file of a
+    diff rendered with pinned settings (no external diff or textconv; fixed
+    context, algorithm, prefixes and rename detection; full index; binary
+    changes included; independent of user config). Whitespace edits change
+    the fingerprint, as D10's "any edit" says; the line shifts of a clean
+    rebase don't. The algorithm is recorded with each fingerprint. Empty,
+    partial, oversized or unavailable input refuses; there is no empty
+    fingerprint. Review round 1 of #79 reproduced Git 2.53 skipping the
+    next file header after a binary patch, losing that change's path.
+    D10's patch-id is therefore applied separately to every file section,
+    and the fingerprint combines the sorted per-file IDs with their count
+    using SHA-256 (orchestrator, 2026-11-15, under Mark's delegation;
+    Mark reviews this later). Review round 2 reproduced an edited rename's
+    similarity changing from 97% to 99% on a clean rebase over distant
+    upstream additions. Before hashing each section, drop its `similarity
+    index` and `dissimilarity index` extended headers: they depend on file
+    size and add no change content beyond the paths and hunks. Keep rename
+    paths, modes and all other lines (orchestrator, 2026-11-15, under the
+    same delegation).
+    Limitation: when upstream changes to a renamed file move it across git's
+    50% rename-detection threshold, a clean rebase renders the rename as a
+    deletion and an addition, so the fingerprint changes and the change needs
+    re-approval. This fails safe (stale, never falsely current), like D10's
+    allowance for rebases that alter lines next to a hunk; turning rename
+    detection off would stale approvals on any upstream edit to a renamed
+    file. Narrowing of the clean-rebase guarantee, for Mark's review
+    (orchestrator, 2026-11-15, under the same delegation; #79 review round 3).
+14. **A hand-off comes first.** A review round or an approval needs the
+    task's latest hand-off. A changed delivery needs a new hand-off; a clean
+    rebase gives a new hand-off with the same fingerprint, so an approval
+    survives it (V6), subject to item 13's limitation.
+
+**1.6c's choices (2026-11-15).** `internal/fingerprint.Compute` accepts the
+recorded base and head as full lowercase 40-hex commit IDs and returns
+`patch-id-verbatim-per-file-v1`, a SHA-256 fingerprint and both covered
+commits. It has no consumer yet: review rounds (1.6d), approval (1.6g) and
+done (1.6h) call it in their own slices. No command, record, migration,
+Event or dependency is added here.
+
+The algorithm renders one aggregate diff with patch output, no color,
+external diff, textconv or relative paths; `a/` and `b/` prefixes; no line
+prefix; three context lines and zero inter-hunk context; Myers with the
+indent heuristic; 50% rename detection with no rename-search limit; full
+index and `--binary`; all submodule changes in short form; standard output
+indicators; quoted paths; no blank-context suppression or order file.
+`--binary` preserves binary identities and contents; real add/change/delete
+tests distinguish two binary contents. Context changes adjacent to a hunk
+may still change the ID, as D10 permits.
+
+The complete aggregate is split at lines beginning `diff --git `. Drop each
+section's `similarity index NN%` and `dissimilarity index NN%` lines only
+within its extended header, before the first `---`/`+++`, `@@` or `GIT binary
+patch` line, then pass that section alone to `git patch-id --verbatim`.
+These percentages can change on a clean rebase when distant upstream edits
+change file size, while rename paths and hunks remain the same. Rename
+detection stays enabled; retain `rename from`/`rename to`, mode lines and
+everything else. The `patch-id-verbatim-per-file-v1` name includes this
+normalization; no fingerprint has been recorded yet.
+
+Limitation: when upstream changes to a renamed file move it across git's
+50% rename-detection threshold, a clean rebase renders the rename as a
+deletion and an addition, so the fingerprint changes and the change needs
+re-approval. This fails safe (stale, never falsely current), like D10's own
+allowance for rebases that alter lines next to a hunk; turning rename
+detection off would stale approvals on any upstream edit to a renamed
+file. Narrowing of the clean-rebase guarantee, for Mark's review
+(orchestrator, 2026-11-15, under Mark's delegation; #79 review round 3).
+The regression starts with a 60% edited rename and cleanly rebases over
+upstream deleting lines 000–049, retaining edits at 060–099 and their context
+at 057–059. It asserts the delete/add rendering and changed fingerprint;
+the 97%→99% rename regression still asserts an unchanged fingerprint.
+
+Per-file hashing avoids the Git 2.53 parser skipping the next file header
+after a binary patch, as reproduced in #79 review round 1; D10's patch-id
+is applied per file. Text
+content retains its pinned `+`, `-` or space prefix, paths quote newlines,
+and base85 binary data contains no spaces, so content cannot forge a file
+boundary. Sort the per-file 40-hex IDs lexicographically, retaining every
+occurrence. The SHA-256 input is the decimal section count and LF, followed
+by each sorted ID and LF (including the last). File order has no effect.
+No fingerprint has been recorded using the earlier aggregate recipe, whose
+algorithm tag is dropped.
+
+The round-2 extended-header audit checked Git's documented old/new,
+new-file/deleted-file modes, copy/rename paths, similarity/dissimilarity
+and index lines. Mode and path metadata describe the change itself; copying
+and rewrite breaking are not enabled by the pinned renderer. Text `index`
+object IDs also change on rebase, but patch-id already ignores them, as the
+edited-rename regression verifies with different index headers. Binary
+index IDs remain necessary to distinguish binary contents. No further
+extended-header normalization was needed.
+
+A disposable private git view borrows only the repository's existing
+object store, including alternates, and materializes committed attribute
+files from the recorded head using its own index. This excludes repository
+diff-driver config (which can change binary classification despite
+`--no-ext-diff`), local `info/attributes`, and checkout/index attributes.
+It changes no source repository files. System/global config and attributes
+are disabled, ambient git overrides are removed, replace refs are disabled,
+and every git child sets `GIT_NO_LAZY_FETCH=1` and `GIT_OPTIONAL_LOCKS=0`.
+No remote is configured in the private view.
+
+The complete diff must fit within 10 MiB (10,485,760 bytes), and its producer
+must exit successfully before any section reaches `patch-id --verbatim`.
+Each section must yield exactly one patch-ID line with a zero source-commit
+field; every consumer's exit status is checked and its stdout is bounded
+to 4 KiB (diagnostics to 8 KiB). Typed failures distinguish missing
+base/head objects, empty changes, oversized diffs and git/output failures
+(including unavailable trees/blobs). Raw NUL text patches are refused too:
+committed attributes can force binary data into text hunks, where even
+`--verbatim` silently ignores bytes after NUL. Normal binary patches remain
+supported. There is no prefix or empty binding.
+
+**Reviews and findings** (moved from 2.1)
+
+15. **Models are recorded as `<family>/<model>`**, for example
+    `codex/gpt-6.1-sol` or `claude/opus-5.5`. "Other model" compares
+    families: Codex reviewing Codex is a same-model review, whatever the
+    exact models. Each build hold records its model: `next --claim`
+    requires `--model` for agent actors, and `fid takeover` takes an
+    optional `--model` (none means a person building by hand). A review is
+    other-model only if its family differs from every model that built the
+    task; an unknown model never counts as other.
+16. **Streams.** Each round records its stream, `primary` or, for Assured
+    work, `separate`, and an attributed session ID. The separate review must
+    come from a different session than the primary; the same reviewer actor
+    may do both. The latest round of each stream on the current fingerprint
+    counts. A shadow `merge` round satisfies neither.
+17. **Required profiles.** `test-adequacy` in every lane when the
+    hand-off's changed paths match the snapshot's test-adequacy paths, and
+    `code` for Standard and Assured. One round records every profile its
+    session ran; other profiles may be recorded but aren't gates.
+18. **Majors stay open until closed.** A fingerprint change makes a review
+    stale; it doesn't close findings. A major stays open until a later round
+    of the same task resolves it or rules it not applicable, or a person
+    closes it with a reason. A builder's answer never closes it. An earlier
+    passing round never masks a later round asking for changes, and a
+    round's verdict must agree with its findings.
+19. **Recording someone else's review.** Whoever records the round (its
+    `--actor`, such as the orchestrator) may differ from the reviewer the
+    input names, with its model, session and stream. Independence is
+    checked on the reviewer: no actor that held the task to build it may
+    review it, including through an ended hold. The round keeps its full
+    text, so 2.1 can render the PR comment from fid's record.
+20. **Rework moves forward too.** A round asking for changes moves the task
+    from `in_review` back to `in_progress`, and the builder's kept worktree
+    gets it back from `next` as kind `rework` (after resume, before new
+    work); the fix is checked, handed off again and reviewed again. Review
+    scheduling (kind `review`), the rework cap, discovered work, answering
+    or deferring findings and posting rounds to the PR stay in 2.1.
+
+**Approval** (moved from 2.3)
+
+21. **`fid approve <task> --actor human:<name> --reason <text>`.** Standard
+    input and standard error must be terminals: the prompt goes to standard
+    error and an optional JSON result to standard output. Agents and
+    services are refused, whatever the terminal. The prompt shows the full
+    diffstat, the check results, each stream's review verdict, any stale
+    approval and "no other-model review" when it applies, then asks for an
+    explicit typed confirmation. A person may approve while other gates are
+    still missing (the prompt shows them); `done` refuses those. The
+    approval presentation in `fid status` and `fid show` stays in 2.3.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2256,6 +2534,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   separate processes' status headers. This journal-file task leaves that
   display comparison unchanged; check the header date separately and
   normalise it before comparing when that follow-up is taken.
+
+- From this PR (1.6b): the broader retained-table ownership audit from
+  #73 remains, including the pre-existing Event-v1 early-return path in
+  `validateCurrentEvent`. This PR fences the new merge/CI tables against
+  legacy writes and SQLite case aliases; audit the older lean tables in
+  separately scoped work.
 
 - From #76 (1.5e): make the hold-lifecycle text goldens independent of
   temp-root length. With a long private `TMPDIR`,

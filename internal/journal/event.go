@@ -105,7 +105,8 @@ func (event Event) MarshalJSON() ([]byte, error) {
 
 func (event *Event) UnmarshalJSON(data []byte) error {
 	var header struct {
-		EventSchema int `json:"event_schema"`
+		EventSchema int    `json:"event_schema"`
+		EventType   string `json:"event_type"`
 	}
 	if err := json.Unmarshal(data, &header); err != nil {
 		return err
@@ -120,6 +121,11 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		return nil
 	case EventSchemaV2:
 		decoder := json.NewDecoder(bytes.NewReader(data))
+		// CI identities live in numeric Effect columns as well as the typed
+		// payload. Preserve their full int64 values through journal replay.
+		if header.EventType == "ci.result-recorded" {
+			decoder.UseNumber()
+		}
 		decoder.DisallowUnknownFields()
 		var wire eventV2Wire
 		if err := decoder.Decode(&wire); err != nil {

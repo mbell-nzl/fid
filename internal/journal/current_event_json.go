@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -43,6 +44,9 @@ func validateCurrentColumnDomain(column string, value any) error {
 	}
 	if strings.HasSuffix(column, "_at") {
 		return validateCurrentValue("Timestamp", value)
+	}
+	if column == "run_id" {
+		return validateCurrentValue("Positive", json.Number(fmt.Sprint(value)))
 	}
 	if column == "id" || strings.HasSuffix(column, "_id") || column == "idempotency_key" {
 		return validateCurrentValue("ID", value)
