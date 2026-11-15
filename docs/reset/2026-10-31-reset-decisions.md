@@ -2880,6 +2880,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From this PR (1.6l): the existing #84 `TestReworkGolden` path-wrapping
+  follow-up below reproduced in the first `make test` run. At
+  `rework_golden_test.go:37`, actual status put `then` after
+  `<CONFIG>/fid/config.toml,` while the golden expected `then fid backup`
+  on its own line. The V5 verifier passed; the unchanged display test
+  remains outside this task. Resolve it with #84's recorded follow-up.
+
 - From this PR (1.6k): status's existing READY epic row says "no tasks"
   for an epic with only cancelled tasks, because it counts only tasks in
   its displayed section, which omits cancelled children
