@@ -1531,6 +1531,14 @@ dependency. Reconciliation/status wording, epics and V5's verifier remain
 public commands, retaining its separate in-review, rework and unanswered
 question subjects alongside the completed task.
 
+Round 1 of #86 tightened completion admission to require the exact Effect
+sequence: one completion insert, one task move, one hand-off reservation
+release, each open question's resolution and only the optional retry result.
+The stage grammar's minimum counts and a total Effect count alone allowed
+an unrelated hold release or an unrequested retry result to replace a
+question resolution. Live dry-run/projection, replay and import now refuse
+these substitutions without changing the projection.
+
 **1.6j's choices (2026-11-15).** The no-task form keeps the `task.done`
 operation and one live/keyed command leaf. It takes a stable ID-ordered list
 of in-review tasks with a hand-off, then calls 1.6i's `donework.Finish` for
