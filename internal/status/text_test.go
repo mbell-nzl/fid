@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 	"github.com/mbell-nzl/fid/internal/next"
 )
 
@@ -82,7 +83,7 @@ func TestWriteTextColorsOnlyWhenTheRendererDoes(t *testing.T) {
 	if strip.Replace(colored) != plain {
 		t.Fatalf("colored output differs from plain beyond its colours:\n%s\n%s", strip.Replace(colored), plain)
 	}
-	assertNoKernelWords(t, plain)
+	leaktest.AssertNoKernelWords(t, plain)
 }
 
 func TestWriteTextCapsToDoAtTenTaskRows(t *testing.T) {
