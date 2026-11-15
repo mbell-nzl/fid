@@ -33,7 +33,7 @@ func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	p24AssertRebuildMapParity(t, workspace, binary)
 }
 
-func p24LifecycleCommands(t *testing.T, binary, workspace string) {
+func p24LifecycleCommands(t *testing.T, binary, workspace string) string {
 	t.Helper()
 	p24InstallLeanPolicy(t, workspace, true)
 	file := filepath.Join(workspace, ".fid.toml")
@@ -81,6 +81,7 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	review := call("review", "record", task, "--input", input, "--actor", "human:courier", "--idempotency-key", "lifecycle-review")
 	finding := p21Path(t, review, "result", "round", "findings").([]any)[0].(map[string]any)["id"].(string)
 	call("finding", "close", finding, "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "lifecycle-close")
+	return task
 }
 
 func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {

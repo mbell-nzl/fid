@@ -44,6 +44,11 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	}
 	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "close", ids[1], "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "v8-close"), "finding.close")
 	recordV8Rework(t, root, task, ids[2])
+	in := reviewInput()
+	in["stream"] = "separate"
+	in["reviewer"].(map[string]any)["session_id"] = "v8-fixed-separate"
+	f := &statusFixture{t: t, workspace: root, clock: time.Now}
+	lifecycleResult(t, recordReviewTask(t, f, in, "v8-fixed-separate", "human:courier", task), "review.record")
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-after-edit"))
 }
 
@@ -58,7 +63,10 @@ func recordV8Rework(t *testing.T, root, task, finding string) {
 	runGitForTest(t, root, "add", ".")
 	runGitForTest(t, root, "commit", "-qm", "Rework the reviewed change")
 	lifecycleResult(t, executeCommandForTest(root, "--json", "check", "--hold", hold, "--actor", "agent:fixer", "--idempotency-key", "v8-rework-check"), "check.execute")
-	lifecycleResult(t, executeCommandForTest(root, "--json", "handoff", "--hold", hold, "--actor", "agent:fixer", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-rework-handoff"), "task.handoff")
+	lifecycleResult(t, executeCommandForTest(root, "--json", "park", "--hold", hold, "--actor", "agent:fixer", "--waiting", "Does this need an answer before finishing?", "--idempotency-key", "v8-finished-question"), "hold.park")
+	finishTakeover, _ := lifecycleResult(t, executeCommandForTest(root, "--json", "takeover", task, "--actor", "human:mark", "--reason", "Finish before an answer", "--model", "codex/gpt-6.1-sol"), "task.takeover")
+	hold = finishTakeover["hold_id"].(string)
+	lifecycleResult(t, executeCommandForTest(root, "--json", "handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-rework-handoff"), "task.handoff")
 	in := reviewInput()
 	in["reviewer"].(map[string]any)["session_id"] = "v8-fixed-primary"
 	in["dispositions"] = []any{disposition(finding, "resolved")}
@@ -97,7 +105,7 @@ func assertV8Reviews(t *testing.T, workspace string) {
 			t.Fatal(err)
 		}
 	}
-	if rounds != 4 || findings != 6 || closures != 4 || models == 0 || manual == 0 {
+	if rounds != 5 || findings != 6 || closures != 4 || models == 0 || manual == 0 {
 		t.Fatalf("V8 reviews=%d findings=%d modeled holds=%d manual holds=%d closures=%d", rounds, findings, models, manual, closures)
 	}
 	for _, severity := range []string{"major", "minor", "nit"} {
@@ -115,7 +123,7 @@ func assertV8Reviews(t *testing.T, workspace string) {
 		t.Fatalf("V8 open majors=%v/%v", open, err)
 	}
 	views, err := reviewwork.List(workspace, task)
-	if err != nil || len(views) != 3 || views[0].Current || views[1].Current || !views[2].Current || views[2].Verdict != "APPROVE" {
+	if err != nil || len(views) != 4 || views[0].Current || views[1].Current || !views[2].Current || views[2].Verdict != "APPROVE" || !views[3].Current || views[3].Verdict != "APPROVE" {
 		t.Fatalf("V8 stale and fixed rounds=%v/%v", views, err)
 	}
 	var outstanding int
@@ -124,7 +132,7 @@ func assertV8Reviews(t *testing.T, workspace string) {
 	}
 	for _, stream := range []string{"primary", "separate"} {
 		var n int
-		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 3, "separate": 1}[stream] {
+		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 3, "separate": 2}[stream] {
 			t.Fatalf("V8 %s=%d/%v", stream, n, err)
 		}
 	}

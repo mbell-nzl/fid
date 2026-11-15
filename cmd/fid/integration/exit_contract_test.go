@@ -33,6 +33,7 @@ func TestProcessExitContract(t *testing.T) {
 		{"maintenance vacuum", []string{"--json", "maintenance", "vacuum", "--actor", "agent:task-9"}, "capability-unavailable", 5, false},
 		{"invalid input", []string{"maintenance", "vacuum", "--by", "tl"}, "", 2, false},
 		{"unknown flag", []string{"maintenance", "vacuum", "--unexpected"}, "", 2, false},
+		{"done usage", []string{"done"}, "", 2, false},
 		{"usage", []string{"issue", "get"}, "", 2, false},
 		{"not found", []string{"--json", "issue", "get", "FID-404"}, "issue-not-found", 3, false},
 		{"conflict", []string{"--json", "init", "--prefix", "FID"}, "project-already-initialized", 4, false},
@@ -82,7 +83,7 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 	switch group {
 	case "policy", "concern", "requirement", "run":
 		group, word = "fid", args[0]
-		allowed = []string{"activity", "answer", "approve", "artifact", "backup", "check", "completion", "export", "finding", "handoff", "heartbeat", "help", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "rebuild", "restore", "review", "show", "sql", "start", "status", "takeover"}
+		allowed = []string{"activity", "answer", "approve", "artifact", "backup", "check", "completion", "done", "export", "finding", "handoff", "heartbeat", "help", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "rebuild", "restore", "review", "show", "sql", "start", "status", "takeover"}
 	case "issue":
 		group, word, allowed = "issue.ac", args[2], []string{"add", "list"}
 	}

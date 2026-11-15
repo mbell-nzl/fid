@@ -94,3 +94,10 @@ func RecordCI(options Options, mergeID string, repo github.Repository, facts git
 	}
 	return results, nil
 }
+
+// RecordCILocked records within the caller's already-refreshed ledger lock.
+// The caller must finish stale-observation checks before invoking it.
+func RecordCILocked(lock *journal.WriteLock, conn *sql.DB, options Options, mergeID string, repo github.Repository, facts github.CI) ([]mergerecord.CIResult, error) {
+	options.lock, options.conn = lock, conn
+	return RecordCI(options, mergeID, repo, facts)
+}

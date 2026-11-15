@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "task.approve" || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "task.done" || operation == "task.approve" || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -89,6 +89,9 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			}
 		} else {
 			for i, arg := range changed {
+				if operation == "task.done" && arg == "done" && name == "task" {
+					changed[i+1] += "-changed"
+				}
 				if operation == "task.answer" && arg == "answer" && name == "text" {
 					changed[i+2] += "-changed"
 				}
@@ -124,6 +127,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 // under a field name, for p24AssertStoredFieldNames.
 var p24PositionalNames = map[string][]string{"check.execute": {"names"},
 	"review.record": {"task"},
+	"task.done":     {"task"},
 	"task.approve":  {"task"},
 	"finding.close": {"finding"},
 	"task.answer":   {"task", "text"},
@@ -287,6 +291,10 @@ func p24AssertFamilyConflict(t *testing.T, workspace, binary, operation string, 
 func p24ChangeFlagOrPositional(t *testing.T, operation string, args []string, name string) []string {
 	t.Helper()
 	for i, arg := range args {
+		if operation == "task.done" && arg == "done" && name == "task" {
+			args[i+1] += "-changed"
+			return args
+		}
 		if operation == "task.answer" && arg == "answer" && name == "text" {
 			args[i+2] += "-changed"
 			return args

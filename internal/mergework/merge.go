@@ -52,3 +52,10 @@ func RecordMerge(options Options, handoff string, pr github.PullRequest, headTre
 	}
 	return result, nil
 }
+
+// RecordMergeLocked records within the caller's already-refreshed ledger lock.
+// The caller must finish stale-observation checks before invoking it.
+func RecordMergeLocked(lock *journal.WriteLock, conn *sql.DB, options Options, handoff string, pr github.PullRequest, headTree string) (mergerecord.Merge, error) {
+	options.lock, options.conn = lock, conn
+	return RecordMerge(options, handoff, pr, headTree)
+}

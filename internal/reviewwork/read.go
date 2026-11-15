@@ -8,18 +8,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
-type RoundView struct {
-	reviewrecord.Round
-	OtherModel bool          `json:"other_model"`
-	Current    bool          `json:"current"`
-	Findings   []FindingView `json:"findings"`
-}
-
-type FindingView struct {
-	reviewrecord.Finding
-	Open    bool                  `json:"open"`
-	Closure *reviewrecord.Closure `json:"closure,omitempty"`
-}
+type RoundView = reviewrecord.RoundView
+type FindingView = reviewrecord.FindingView
 
 // List derives freshness from the latest hand-off, without rewriting history.
 // The caller refreshes the projection before reading. All git is local.
@@ -52,38 +42,14 @@ func List(root, task string) ([]RoundView, error) {
 	if err != nil {
 		return nil, err
 	}
-	return currentViews(conn, rounds, fp)
+	return reviewrecord.CurrentViews(conn, task, fingerprint.Result{Algorithm: fp.Algorithm, Fingerprint: fp.Fingerprint})
 }
 
 // CurrentViews is the shared freshness/closure reader for done. The caller
 // supplies the latest hand-off's locally computed fingerprint and projection
 // snapshot; no git or network is used here.
 func CurrentViews(conn reviewrecord.Queryer, task string, fp fingerprint.Result) ([]RoundView, error) {
-	rounds, err := reviewrecord.Read(conn, task)
-	if err != nil {
-		return nil, err
-	}
-	return currentViews(conn, rounds, reviewrecord.Bind(fp))
-}
-
-func currentViews(conn reviewrecord.Queryer, rounds []reviewrecord.Round, fp reviewrecord.Binding) ([]RoundView, error) {
-	views := []RoundView{}
-	for _, r := range rounds {
-		other, err := reviewrecord.OtherModel(conn, r.TaskID, r.Reviewer.Model)
-		if err != nil {
-			return nil, err
-		}
-		v := RoundView{Round: r, OtherModel: other, Current: r.Binding.Algorithm == fp.Algorithm && r.Binding.Fingerprint == fp.Fingerprint, Findings: []FindingView{}}
-		for _, f := range r.Findings {
-			c, err := reviewrecord.ReadClosure(conn, f.ID)
-			if err != nil {
-				return nil, err
-			}
-			v.Findings = append(v.Findings, FindingView{f, c == nil, c})
-		}
-		views = append(views, v)
-	}
-	return views, nil
+	return reviewrecord.CurrentViews(conn, task, fp)
 }
 
 // A recorded round already computed this exact pair of endpoints. Reuse that

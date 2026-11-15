@@ -454,7 +454,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 
 	workspace := newIssueWorkspace(t)
 
-	created, err := Create(CreateOptions{
+	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
