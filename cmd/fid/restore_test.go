@@ -198,6 +198,7 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	reviewID := reviewHold["hold_id"].(string)
 	runFIDCommand(t, reviewTree, "start", "--hold", reviewID, "--actor", "human:mark", "--idempotency-key", "v8-review-start")
 	runFIDCommand(t, reviewTree, "handoff", "--hold", reviewID, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-handoff")
+	recordV8MergeCI(t, workspace, handoffTask)
 	assertV8HasNoKernelRecords(t, workspace)
 	return workspace, v8IDs{issues: ids, now: time.Now()}
 }
@@ -290,7 +291,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
+	for _, table := range []string{"merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -306,6 +307,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 			}
 		}
 	}
+	assertV8MergeCI(t, workspace)
 	rows := policySnapshots(t, workspace)
 	if len(rows) != 2 || rows[0].Digest == rows[1].Digest {
 		t.Fatalf("V8 policy snapshots = %#v, want distinct missing/empty test paths", rows)

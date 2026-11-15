@@ -27,6 +27,16 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if err := ValidateEventSupport(event); err != nil {
 		return err
 	}
+	// These tables have no legacy writer. Guard SQLite's case-insensitive
+	// table resolution before the legacy/retained Issue compatibility path.
+	for _, effect := range event.Effects {
+		if strings.EqualFold(effect.Table, "merge_observations") && (!event.IsV2() || event.EventType != "merge.observed") || strings.EqualFold(effect.Table, "ci_results") && (!event.IsV2() || event.EventType != "ci.result-recorded") {
+			return fmt.Errorf("merge/CI tables require their validated Event-v2 family")
+		}
+	}
+	if !event.IsV2() && (event.EventType == "merge.observed" || event.EventType == "ci.result-recorded") {
+		return fmt.Errorf("merge/CI observations require Event-v2")
+	}
 	if !event.IsV2() {
 		if event.EventType == "artifact.availability-observed" {
 			return fmt.Errorf("artifact availability requires Event-v2")
@@ -39,6 +49,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		default:
 			return fmt.Errorf("project event %q: unsupported effect op %q", event.EventID, effect.Op)
 		}
+	}
+	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
+		return validateMergeCI(tx, event)
 	}
 	if event.EventType == "task.handed-off" {
 		return validateHandoff(tx, event)

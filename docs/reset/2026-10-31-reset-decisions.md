@@ -1019,6 +1019,27 @@ no GitHub stand-in for reviews or approvals, and no flags a caller supplies.
    process or hold. In-progress runs and network or authentication
    failures aren't recorded.
 
+**1.6b's choices (2026-11-15).** `merge.observed` (`merge.observe`) and
+`ci.result-recorded` (`ci.record`) are new lean Event-v2 families on a
+`merge` aggregate, separate from local `check.*`. Migration 28 adds
+`merge_observations` and `ci_results`; projection cache version 10 makes
+an existing caught-up projection rebuild with their tables. Indexed
+binding columns and immutable typed JSON keep the full observations.
+The merge key is (hand-off, merge commit); the CI key is (normalized
+repository, run ID, attempt, merge observation). Identical retries return
+the original records and times; changed facts under an existing key refuse.
+A CI batch appends all new completed attempts as one Event or changes
+nothing. Pending attempts append nothing. These natural keys need no
+command retry-result row; both families refuse injected retry effects.
+Writers take already-read 1.6a facts and do no networking; the ledger lock
+covers refresh, validation and append. The caller supplies only CI facts
+on this merge commit; a differing head is refused. All completed events
+are retained, including skipped, superseded and non-push observations;
+the later evaluator selects which count. Latest-merge and CI history
+readers use journal insertion order. CI Event decoding preserves integer
+identities without a floating-point conversion. `fid done` (1.6i) is the first public
+caller. Local check storage, readers and evaluation are unchanged.
+
 **The `done` command**
 
 5. **`fid done <task> --actor <a>`.** Any work actor may run it; the
@@ -2386,6 +2407,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.6b): the broader retained-table ownership audit from
+  #73 remains, including the pre-existing Event-v1 early-return path in
+  `validateCurrentEvent`. This PR fences the new merge/CI tables against
+  legacy writes and SQLite case aliases; audit the older lean tables in
+  separately scoped work.
 
 - From #76 (1.5e): make the hold-lifecycle text goldens independent of
   temp-root length. With a long private `TMPDIR`,
