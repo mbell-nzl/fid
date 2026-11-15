@@ -2,14 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func lifecycleResult(t *testing.T, result commandExecutionResult, operation string) (map[string]any, any) {
@@ -98,27 +95,7 @@ func TestCancelRequiresAPersonAndReleasesKeptWork(t *testing.T) {
 	}
 }
 
-// A short root keeps wrapping independent of the test runner's temporary
-// directory suffix, while still executing the actual CLI renderers.
 func newLifecycleFixture(t *testing.T) *statusFixture {
 	t.Helper()
-	f := newStatusFixture(t, 100*time.Hour)
-	base, err := os.MkdirTemp("", "fhl-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(base); err != nil {
-			t.Error(err)
-		}
-	})
-	root := filepath.Join(base, "worktree")
-	if err := os.Rename(f.workspace, root); err != nil {
-		t.Fatal(err)
-	}
-	f.workspace = root
-	if err := gittest.CheckRepository(root); err != nil {
-		t.Fatal(err)
-	}
-	return f
+	return newStatusFixtureAt(t, 100*time.Hour, "", "worktree")
 }

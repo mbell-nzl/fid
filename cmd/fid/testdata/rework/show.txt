@@ -5,6 +5,7 @@
   Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
   Lane        Standard
   Hand-off    22:00 · PR #63 · no checks required on <commit>
-  Working     rework in <ROOT> by
-              agent:claude-builder, since 22:00
+  Working     rework in
+              <ROOT>
+              by agent:claude-builder, since 22:00
 ╰──────────────────────────────────────────────────────────────────────╯

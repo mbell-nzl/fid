@@ -1622,6 +1622,27 @@ have separate cases. Routine with and without changed test paths, Standard
 and Assured each complete with their required evidence. Product Go changes
 by zero lines; no dependency or product behavior changes.
 
+**golden-wrap fixture repair, 2026-11-15 (Routine).** Mark approved a
+separate test-only fix for the path-wrapping flake recorded in 1.5e, 1.6g
+and 1.6l. This is a friction-log entry in RESET.md, not a new task row.
+
+Builder's transactional choices: one shared command-test helper creates a
+private temporary directory, resolves its absolute path, and pads a child
+to exactly 120 characters. This accommodates long TMPDIRs while keeping
+refusal details below their existing 200-character cap. The fixture puts
+its workspace, `config` and `home` beneath it, giving each path a constant
+total length and preserving the existing workspace basenames. The
+lifecycle fixture now creates its paths directly instead of moving its
+workspace to another random directory. The linked worktree used by health
+goldens uses the same helper, replacing its separate padding scheme.
+Cleanup removes the private parent, including padding. A parent that leaves
+no padding room fails clearly and asks for a shorter TMPDIR or fixture
+parent. No dependency or production
+code changes. Path placeholders also cover HOME, and still precede rework's
+hex-ID masking. Regressions compare real status/show output after masking
+under short and long parents, including HOME's config fallback, and check
+the allocator's fixed length and cleanup.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2880,12 +2901,10 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
-- From this PR (1.6l): the existing #84 `TestReworkGolden` path-wrapping
-  follow-up below reproduced in the first `make test` run. At
-  `rework_golden_test.go:37`, actual status put `then` after
-  `<CONFIG>/fid/config.toml,` while the golden expected `then fid backup`
-  on its own line. The V5 verifier passed; the unchanged display test
-  remains outside this task. Resolve it with #84's recorded follow-up.
+- From #76 (1.5e), #84 (1.6g) and this stack's 1.6l: resolved by
+  golden-wrap on 2026-11-15. Text goldens now render fixed-length fixture
+  paths before masking them. The status/config and lifecycle/worktree
+  wrapping no longer depends on TMPDIR, test names or random suffixes.
 
 - From this PR (1.6k): status's existing READY epic row says "no tasks"
   for an epic with only cancelled tasks, because it counts only tasks in
@@ -2894,14 +2913,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   shows this alongside a correct NEEDS YOU close action. Clarify the
   row wording in later display work; eligibility already counts actual task
   presence and correctly permits all-cancelled epics.
-
-- From #84 (1.6g): make `TestReworkGolden`'s status text independent of
-  temporary config-path length, extending #76's path-wrapping follow-up below.
-  The fix-round coverage/no-git-identity CI run reported a mismatch at
-  `rework_golden_test.go:37`: the backup guidance kept `then` on the config
-  path's line instead of beginning `then fid backup` on the next line.
-  Rendering wraps the real config path before the fixture replaces it with
-  `<CONFIG>`. The test and its golden were kept unchanged in this fix round.
 
 - From Mark's question, 2026-11-15: jig's reviewer writes markdown, but
   `fid review record` (1.6d) takes structured JSON. Something must convert
@@ -2934,14 +2945,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `validateCurrentEvent`. This PR fences the new merge/CI tables against
   legacy writes and SQLite case aliases; audit the older lean tables in
   separately scoped work.
-
-- From #76 (1.5e): make the hold-lifecycle text goldens independent of
-  temp-root length. With a long private `TMPDIR`,
-  `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
-  `TestHoldLifecycleGolden/park-started` fail because rendering wraps the
-  actual worktree path before `lifecycleGolden` replaces it with `<ROOT>`.
-  The measured full run left zero temp entries despite those failures.
-  Their assertions and goldens were kept unchanged in this task.
 
 - From #73 (1.5d1): audit the retained-table ownership and column guards for
   SQLite case aliases. `validateCurrentEvent` still indexes

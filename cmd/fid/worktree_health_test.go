@@ -84,13 +84,7 @@ func TestKeptWorktreeHealth(t *testing.T) {
 func fixedWidthHealthWorktree(t *testing.T, repository string) string {
 	t.Helper()
 	original := gittest.AddWorktree(t, repository)
-	parent := gittest.ResolvedPath(t, filepath.Dir(repository))
-	const pathWidth = 61
-	nameWidth := pathWidth - len(parent) - 1
-	if nameWidth < 1 {
-		t.Fatalf("health fixture parent %q is too long for a %d-column path", parent, pathWidth)
-	}
-	worktree := filepath.Join(parent, strings.Repeat("w", nameWidth))
+	worktree := filepath.Join(newGoldenTempDir(t, ""), "linked")
 	if output, err := exec.Command("git", "-C", repository, "worktree", "move", original, worktree).CombinedOutput(); err != nil {
 		t.Fatalf("move health worktree: %v: %s", err, output)
 	}

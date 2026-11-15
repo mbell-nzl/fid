@@ -39,21 +39,13 @@ type statusFixture struct {
 
 func newStatusFixture(t *testing.T, started time.Duration) *statusFixture {
 	t.Helper()
-	return newStatusFixtureAt(t, started, "")
+	return newStatusFixtureAt(t, started, "", "001")
 }
 
-func newStatusFixtureAt(t *testing.T, started time.Duration, parent string) *statusFixture {
+func newStatusFixtureAt(t *testing.T, started time.Duration, parent, workspaceName string) *statusFixture {
 	t.Helper()
-	base, err := os.MkdirTemp(parent, "g-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(base); err != nil {
-			t.Error(err)
-		}
-	})
-	workspace := filepath.Join(base, "worktree")
+	base := newGoldenTempDir(t, parent)
+	workspace := filepath.Join(base, workspaceName)
 	if err := gittest.InitRepository(workspace); err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +197,7 @@ func (fixture *statusFixture) run(args ...string) commandExecutionResult {
 }
 
 // golden runs fid and compares its output, with the fixture's temp paths
-// named <ROOT> and <CONFIG>, to testdata/<name>.
+// named <ROOT>, <CONFIG> and <HOME>, to testdata/<name>.
 func (fixture *statusFixture) golden(name string, args ...string) {
 	fixture.t.Helper()
 	result := fixture.run(args...)
@@ -215,14 +207,16 @@ func (fixture *statusFixture) golden(name string, args ...string) {
 	assertGolden(fixture.t, name, fixture.placeholders(result.stdout))
 }
 
-// placeholders names the fixture's temp paths in output <ROOT> and
-// <CONFIG>.
+// placeholders names the fixture's temp paths in output <ROOT>, <CONFIG>
+// and <HOME>.
 func (fixture *statusFixture) placeholders(output string) string {
 	fixture.t.Helper()
-	for _, path := range []string{fixture.workspace, fixture.configHome} {
-		placeholder := "<ROOT>"
-		if path == fixture.configHome {
-			placeholder = "<CONFIG>"
+	for _, entry := range []struct{ path, placeholder string }{
+		{fixture.workspace, "<ROOT>"}, {fixture.configHome, "<CONFIG>"}, {fixture.home, "<HOME>"},
+	} {
+		path, placeholder := entry.path, entry.placeholder
+		if path == "" {
+			continue
 		}
 		output = strings.ReplaceAll(output, gittest.ResolvedPath(fixture.t, filepath.Dir(path))+"/"+filepath.Base(path), placeholder)
 		output = strings.ReplaceAll(output, path, placeholder)
