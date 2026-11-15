@@ -884,6 +884,52 @@ historical identifier registered by the unchanged format audit.
 This completes the physical removal for 1.5b-1.5d; old-family refusals still
 happen before any SQL projection or archive publication.
 
+**RESET 1.5e, 2026-11-15 (Routine).** Mark added a separate task after the
+orchestrator found about 8,000 leaked test directories (about 1.9 GB) over
+four days. Disposable `-- --check-child <mode>` processes now enter the
+selected helper test before any command-suite setup. The existing check
+launcher and `FID_RUN_AS_FID` shortcuts remain. The retained integration
+suite has no crash-helper re-execution path.
+
+Builder's transactional choices for 1.5e: both suites run the documented
+`go telemetry off` command only after isolating `XDG_CONFIG_HOME` and
+verifying that `os.UserConfigDir` points there, before any other Go command.
+Suite setup refuses to change telemetry otherwise. `GOTELEMETRY` is a
+read-only `go env` value, not an
+environment switch. In the installed Go 1.26.2 source, `MaybeParent` starts
+a detached telemetry sidecar even in local mode; the sidecar calls
+`counter.Open` itself, which can recreate an already removed config
+directory. A focused passing unit run reproduced that recreation. Turning
+telemetry off prevents both collection and the sidecar, without changing
+the developer's telemetry setting. Shared Go build caches stay pinned.
+
+Child coverage uses `.git/fid-check-child-coverage` in the parent-owned,
+disposable git workspace, rather than a shared directory under `os.TempDir`.
+The existing helper modes and their output are unchanged. Re-execution
+regressions count every entry left in private temp directories after normal
+suite cleanup, helper exits, signals and timeout kills; separate assertions
+check Go's actual telemetry mode. Coverage also exercises the fallback with
+`GOCOVERDIR` stripped. Reverting each fix makes its regression fail. The
+integration regression includes its normal binary build; unchanged focused
+and full integration runs left no entries before the fixes.
+
+Round 1 adds a test-only config resolver seam to both telemetry guards.
+Each suite tests a resolution error (including one returned with a matching
+path), a location outside the fixture, and successful isolated setup. The
+negative cases assert refusal and preserve a seeded simulated user's mode
+file byte for byte; removing either suite's guard fails both assertions.
+
+The historical integration source at `982b4211` exposes the paired-directory
+leak: `TestP22ActivationCrashProcess`, `TestP22BudgetCrashProcess` and
+`TestP22RecoveryCrashProcess` re-executed the integration test binary,
+inheriting `FID_INTEGRATION_BINARY`. Each child allocated new config/cache
+directories, reused that binary, then called `os.Exit(23)` inside its test,
+so `runIntegrationSuite`'s deferred removals never ran. These helpers were
+removed in 1.5c2 (`6124adcc`), before 1.5e's starting commit. No dead-helper
+workaround is added. This source evidence identifies a historical leak
+mechanism; the old machine's individual 761 pairs were not inspected in
+this session. No production code or dependency changes.
+
 ## RESET 1.7 implementation (2026-11-15)
 
 Mark asked on 2026-11-15 for 1.6 and 1.7 to be orchestrated while he was
@@ -2183,6 +2229,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From #76 (1.5e): make the hold-lifecycle text goldens independent of
+  temp-root length. With a long private `TMPDIR`,
+  `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
+  `TestHoldLifecycleGolden/park-started` fail because rendering wraps the
+  actual worktree path before `lifecycleGolden` replaces it with `<ROOT>`.
+  The measured full run left zero temp entries despite those failures.
+  Their assertions and goldens were kept unchanged in this task.
 
 - From #73 (1.5d1): audit the retained-table ownership and column guards for
   SQLite case aliases. `validateCurrentEvent` still indexes
