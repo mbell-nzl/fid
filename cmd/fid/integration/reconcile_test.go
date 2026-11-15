@@ -13,6 +13,8 @@ import (
 func TestReconcileBuiltBinaryExitContract(t *testing.T) {
 	t.Parallel()
 	j := newDoneJourney(t, "standard")
+	// Start pending: a prior green receipt would correctly remain green offline.
+	j.ci = []any{}
 	for _, phase := range []string{"refused", "waiting", "completed", "empty"} {
 		switch phase {
 		case "waiting":
