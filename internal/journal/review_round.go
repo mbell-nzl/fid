@@ -65,7 +65,7 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 	if err := reviewrecord.Admit(tx, r); err != nil {
 		return err
 	}
-	if insert.PK["id"] != r.ID || insert.Values["task_id"] != r.TaskID || insert.Values["handoff_id"] != r.HandoffID || event.Aggregate.ID != r.ID || r.RecordedBy != event.ActorV2.ActorType+":"+event.ActorV2.ActorID || r.At != event.OccurredAt.UTC().Format(time.RFC3339) || len(event.Effects) != len(r.Findings)+2 {
+	if insert.PK["id"] != r.ID || insert.Values["task_id"] != r.TaskID || insert.Values["handoff_id"] != r.HandoffID || event.Aggregate.ID != r.ID || r.RecordedBy != event.ActorV2.ActorType+":"+event.ActorV2.ActorID || r.At != event.OccurredAt.UTC().Format(time.RFC3339) || len(event.Effects) != len(r.Findings)+closingCount(r)+2 {
 		return fmt.Errorf("review round differs from Event")
 	}
 	for i, f := range r.Findings {
@@ -77,6 +77,17 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 		if e.PK["id"] != f.ID || e.Values["round_id"] != r.ID || !currentValuesEqual(recorded, f) {
 			return fmt.Errorf("round finding differs from immutable review")
 		}
+	}
+	index := len(r.Findings) + 1
+	for _, d := range r.Dispositions {
+		if !d.Closes() {
+			continue
+		}
+		e := event.Effects[index]
+		if e.PK["finding_id"] != d.FindingID || e.Values["round_id"] != r.ID || e.Values["decision_id"] != nil || e.Values["disposition"] != d.Disposition || e.Values["reason"] != d.Reason {
+			return fmt.Errorf("closure differs from round disposition")
+		}
+		index++
 	}
 	raw, ok := event.Effects[len(event.Effects)-1].Values["result_json"].(string)
 	if !ok {
@@ -96,4 +107,14 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 		return fmt.Errorf("review response differs from round")
 	}
 	return nil
+}
+
+func closingCount(r reviewrecord.Round) int {
+	n := 0
+	for _, d := range r.Dispositions {
+		if d.Closes() {
+			n++
+		}
+	}
+	return n
 }

@@ -17,7 +17,8 @@ type RoundView struct {
 
 type FindingView struct {
 	reviewrecord.Finding
-	Open bool `json:"open"`
+	Open    bool                  `json:"open"`
+	Closure *reviewrecord.Closure `json:"closure,omitempty"`
 }
 
 // List derives freshness from the latest hand-off, without rewriting history.
@@ -58,7 +59,11 @@ func List(root, task string) ([]RoundView, error) {
 		}
 		v := RoundView{Round: r, OtherModel: other, Current: r.Binding.Algorithm == fp.Algorithm && r.Binding.Fingerprint == fp.Fingerprint, Findings: []FindingView{}}
 		for _, f := range r.Findings {
-			v.Findings = append(v.Findings, FindingView{f, true})
+			c, err := reviewrecord.ReadClosure(conn, f.ID)
+			if err != nil {
+				return nil, err
+			}
+			v.Findings = append(v.Findings, FindingView{f, c == nil, c})
 		}
 		views = append(views, v)
 	}

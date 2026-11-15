@@ -75,6 +75,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newMaintenanceCommand())
 	cmd.AddCommand(newNextCommand())
 	cmd.AddCommand(newReviewCommand())
+	cmd.AddCommand(newFindingCommand())
 	cmd.AddCommand(newAnswerCommand())
 	for _, name := range []string{"heartbeat", "park", "takeover"} {
 		cmd.AddCommand(newHoldCommand(name))

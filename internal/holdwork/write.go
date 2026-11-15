@@ -19,7 +19,7 @@ import (
 
 type Options struct {
 	WorkspaceRoot, MigrationsDir, HoldID, TaskID, Actor, Reason, IdempotencyKey string
-	PR, Question, Answer, Model                                                 string
+	PR, Question, Answer, Model, FindingID                                      string
 	Clock                                                                       func() time.Time
 }
 
@@ -45,7 +45,7 @@ type writeContext struct {
 
 func write(options Options, operation string, build func(writeContext) (journal.Event, map[string]any, error)) (Result, error) {
 	set := policy.WorkSet
-	if operation == "task.takeover" || operation == "task.answer" {
+	if operation == "task.takeover" || operation == "task.answer" || operation == "finding.close" {
 		set = policy.PersonDecisions
 	}
 	if !policy.Allows(options.Actor, set) {
@@ -72,6 +72,11 @@ func write(options Options, operation string, build func(writeContext) (journal.
 				return err
 			}
 			if found {
+				if operation == "finding.close" {
+					if err := journal.ValidateFindingCloseRetry(conn, outcome.ResultJSON); err != nil {
+						return err
+					}
+				}
 				result, err = decodeResult(outcome.ResultJSON, outcome.EventID, operation)
 				return err
 			}
@@ -181,6 +186,11 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 		names["mode"] = "--interrupted"
 	} else {
 		request["task"] = options.TaskID
+	}
+	if operation == "finding.close" {
+		delete(request, "task")
+		request["finding"] = options.FindingID
+		names["finding"] = "finding"
 	}
 	if operation == "task.answer" {
 		request["answer"] = options.Answer

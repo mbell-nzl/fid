@@ -19,7 +19,7 @@ func TestLatestSchemaContainsOnlyRetainedTables(t *testing.T) {
 	}
 	want := []string{
 		"acceptance_criteria", "activity_log", "agent_runs", "check_files", "check_processes",
-		"check_requests", "check_results", "check_starts", "ci_results", "epic_metadata", "handoffs", "holds",
+		"check_requests", "check_results", "check_starts", "ci_results", "epic_metadata", "finding_closures", "handoffs", "holds",
 		"idempotency_results", "issue_labels", "issues", "labels", "links", "merge_observations", "person_decisions",
 		"policy_snapshots", "projection_meta", "questions", "referenced_artifacts", "review_rounds", "round_findings", "schema_migrations",
 		"triage_events", "workflow_states", "workflow_transition_requires", "workflow_transitions", "workflows",
