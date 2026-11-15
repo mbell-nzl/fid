@@ -43,40 +43,44 @@ func TestRoundDispositionAdmissionEveryPath(t *testing.T) {
 	for _, mode := range []string{"live", "replay", "import"} {
 		for _, tc := range []struct {
 			name   string
-			change func(*semanticValidator, *reviewrecord.Round)
+			change func(*testing.T, *semanticValidator, *reviewrecord.Round)
 			want   bool
 		}{
 			{name: "complete", want: true},
-			{name: "open major", change: func(_ *semanticValidator, r *reviewrecord.Round) {
+			{name: "open major", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) {
 				r.Dispositions[0].Disposition = "open"
 				r.Verdict = "CHANGES"
 			}, want: true},
-			{name: "omitted major", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Dispositions = r.Dispositions[1:] }},
-			{name: "changes after closing all", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Verdict = "CHANGES" }},
-			{name: "same round", change: func(_ *semanticValidator, r *reviewrecord.Round) {
+			{name: "omitted major", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) { r.Dispositions = r.Dispositions[1:] }},
+			{name: "changes after closing all", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) { r.Verdict = "CHANGES" }},
+			{name: "same round", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) {
 				r.Findings = []reviewrecord.Finding{{ID: "FND-own", FindingInput: reviewrecord.FindingInput{Profile: "code", Severity: "major", Summary: "New fault", Evidence: "Observed", Fix: "Fix"}}}
 				r.Dispositions[0].FindingID = "FND-own"
 				r.Verdict = "CHANGES"
 			}},
-			{name: "future finding", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Dispositions[0].FindingID = "FND-future" }},
-			{name: "another task", change: func(v *semanticValidator, r *reviewrecord.Round) {
+			{name: "future finding", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) {
+				r.Dispositions[0].FindingID = "FND-future"
+			}},
+			{name: "another task", change: func(t *testing.T, v *semanticValidator, r *reviewrecord.Round) {
 				if _, err := v.conn.Exec(`INSERT INTO issues(id,kind,title,workflow_id,status,owner_role,created_at,updated_at) VALUES('FID-other','task','Other','task-default','todo','developer','2026-11-10T00:00:00Z','2026-11-10T00:00:00Z'); INSERT INTO review_rounds VALUES('RND-other','FID-other','HOF-100001','{}'); INSERT INTO round_findings VALUES('FND-other','RND-other','{}')`); err != nil {
 					t.Fatal(err)
 				}
 				r.Dispositions[0].FindingID = "FND-other"
 			}},
-			{name: "builder", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Reviewer.Actor = "agent:builder" }},
-			{name: "empty reason", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Dispositions[0].Reason = " " }},
-			{name: "duplicate", change: func(_ *semanticValidator, r *reviewrecord.Round) {
+			{name: "builder", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) { r.Reviewer.Actor = "agent:builder" }},
+			{name: "empty reason", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) { r.Dispositions[0].Reason = " " }},
+			{name: "duplicate", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) {
 				r.Dispositions = append(r.Dispositions, r.Dispositions[0])
 			}},
-			{name: "answered is not closure", change: func(_ *semanticValidator, r *reviewrecord.Round) { r.Dispositions[0].Disposition = "answered" }},
+			{name: "answered is not closure", change: func(_ *testing.T, _ *semanticValidator, r *reviewrecord.Round) {
+				r.Dispositions[0].Disposition = "answered"
+			}},
 		} {
 			t.Run(mode+"/"+tc.name, func(t *testing.T) {
 				t.Parallel()
 				v, e, r := closureArchiveFixture(t)
 				if tc.change != nil {
-					tc.change(v, &r)
+					tc.change(t, v, &r)
 				}
 				setReviewArchiveRound(t, &e, r)
 				e.Idempotency.Key = "later"
@@ -169,5 +173,42 @@ func TestPersonClosureAdmissionEveryPath(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestPersonClosureRefusesLegacyDecisionOnlyWriter(t *testing.T) {
+	t.Parallel()
+	for _, mode := range []string{"live", "replay", "import"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Parallel()
+			v, _, _ := closureArchiveFixture(t)
+			e := personClosureEvent(t)
+			e.EventSchema = 1
+			e.EventType = "issue.updated"
+			e.Aggregate.Type = "issue"
+			e.Aggregate.ID = "FID-a"
+			e.Effects = e.Effects[:1]
+			e.Effects[0].Table = "PERSON_DECISIONS"
+			before := handoffProjectionSnapshot(t, v)
+			if err := applyLeanEmptyEvent(v, mode, e); err == nil || handoffProjectionSnapshot(t, v) != before {
+				t.Fatalf("legacy person's closure=%v", err)
+			}
+		})
+	}
+}
+
+func TestClosureDecisionIsImmutableThroughLegacyAliases(t *testing.T) {
+	t.Parallel()
+	for _, mode := range []string{"live", "replay", "import"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Parallel()
+			v, _, _ := closureArchiveFixture(t)
+			acceptMergeArchiveEvent(t, v, personClosureEvent(t))
+			e := journal.Event{OccurredAt: personClosureEvent(t).OccurredAt, EventSchema: 1, EventID: "EVT-20261110-000006", EventType: "issue.updated", Aggregate: journal.Aggregate{ID: "FID-a", Type: "issue", Sequence: 1}, Effects: []journal.Effect{{Op: "update", Table: "PERSON_DECISIONS", PK: map[string]any{"ID": "PDN-close"}, Values: map[string]any{"reason": "Changed after closure"}}}}
+			before := handoffProjectionSnapshot(t, v)
+			if err := applyLeanEmptyEvent(v, mode, e); err == nil || handoffProjectionSnapshot(t, v) != before {
+				t.Fatalf("mutated immutable decision: %v", err)
+			}
+		})
 	}
 }

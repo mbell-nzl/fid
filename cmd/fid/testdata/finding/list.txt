@@ -1,0 +1,28 @@
+╭ fid review FID-9f13aa ─────────────────────────────────── 2026-11-08 ╮
+
+  RND-<new> · primary · CHANGES · current
+    agent:reviewer · claude/opus-5.5 · other model: true
+    Session review-session-1 · profiles: code, test-adequacy
+    patch-id-verbatim-per-file-v1
+    <fingerprint-or-commit>
+    RND-<new>-1 · major · closed
+      By RND-<new> · resolved · Verified the regression and accepted
+      the fix.
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+    RND-<new>-2 · major · closed
+      By PDN-<new> · closed · Accepted risk
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+    RND-<new>-3 · minor · closed
+      By RND-<new> · not-applicable · Verified the regression and
+      accepted the fix.
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+
+  RND-<new> · primary · CHANGES · current
+    agent:reviewer · claude/opus-5.5 · other model: true
+    Session review-session-1 · profiles: code, test-adequacy
+    patch-id-verbatim-per-file-v1
+    <fingerprint-or-commit>
+╰──────────────────────────────────────────────────────────────────────╯

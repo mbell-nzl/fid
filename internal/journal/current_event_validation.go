@@ -39,6 +39,11 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 				}
 			}
 		}
+		if strings.EqualFold(effect.Table, "person_decisions") {
+			if err := validateFindingDecisionEffect(tx, event, effect); err != nil {
+				return err
+			}
+		}
 		if strings.EqualFold(effect.Table, "finding_closures") && (!event.IsV2() || event.EventType != "review.round-recorded" && event.EventType != "finding.closed") {
 			return fmt.Errorf("finding closures require their Event-v2 family")
 		}

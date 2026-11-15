@@ -123,3 +123,13 @@ func TestFindingClosureRefusals(t *testing.T) {
 		})
 	}
 }
+
+func TestFindingClosureRefusesOversizedEvent(t *testing.T) {
+	t.Parallel()
+	f, ids, _ := closureFixture(t)
+	before := reviewProjection(t, f)
+	got := closeFinding(f, ids[0], "human:mark", strings.Repeat("x", 600000), "oversized")
+	if got.err == nil || !strings.Contains(got.stderr, "1 MiB") || reviewProjection(t, f) != before {
+		t.Fatalf("oversize refusal error=%v, state changed=%t", got.err, reviewProjection(t, f) != before)
+	}
+}

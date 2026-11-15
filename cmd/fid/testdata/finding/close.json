@@ -1,0 +1,16 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-20261108-000005",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "finding.close",
+  "result": {
+    "decision_id": "PDN-<new>",
+    "disposition": "closed",
+    "finding_id": "RND-<new>-2",
+    "reason": "Accepted risk",
+    "task_id": "FID-9f13aa"
+  }
+}

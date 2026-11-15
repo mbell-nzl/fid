@@ -64,6 +64,14 @@ func ValidateFindingCloseRetry(conn reviewrecord.Queryer, raw string) error {
 }
 
 func validateFindingClosed(tx *sql.Tx, event Event) error {
+	encoded, err := MarshalCanonicalJSON(event)
+	if err != nil {
+		return err
+	}
+	if len(encoded)+1 >= 1<<20 {
+		return fmt.Errorf("finding close Event exceeds the journal's 1 MiB line budget")
+	}
+
 	if event.CommandName != "finding.close" || event.Aggregate.Type != "finding" || event.Aggregate.Sequence != 1 || event.Repository != nil || event.ActorV2.ActorType != "human" || !policy.Allows("human:"+event.ActorV2.ActorID, policy.PersonDecisions) {
 		return fmt.Errorf("finding closure requires a person's decision")
 	}
@@ -119,6 +127,26 @@ func validateFindingClosed(tx *sql.Tx, event Event) error {
 		want := FindingCloseFields{task, event.Aggregate.ID, d.PK["id"].(string), "closed", reason}
 		if r.Fields != want || r.OccurredAt != d.Values["decided_at"] {
 			return fmt.Errorf("finding response differs from decision")
+		}
+	}
+	return nil
+}
+
+// Preserve the new decision's immutability even through legacy Issue Effects
+// and SQLite case aliases. Other decision kinds retain their existing rules.
+func validateFindingDecisionEffect(tx *sql.Tx, event Event, e Effect) error {
+	for column, value := range e.Values {
+		if strings.EqualFold(column, "kind") && value == "close-finding" && (!event.IsV2() || event.EventType != "finding.closed") {
+			return fmt.Errorf("finding decisions require their Event-v2 family")
+		}
+	}
+	if e.Op == "update" || e.Op == "delete" {
+		values, found, err := readCurrentValues(tx, "person_decisions", e.PK, []string{"kind"})
+		if err != nil {
+			return err
+		}
+		if found && values["kind"] == "close-finding" {
+			return fmt.Errorf("finding closure decisions are immutable")
 		}
 	}
 	return nil

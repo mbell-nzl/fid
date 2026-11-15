@@ -1263,6 +1263,10 @@ outside the nullable location are refused before project access.
 | `findings[].location.line` | Required positive integer | Its line number |
 | `findings[].evidence` | Required nonblank string | Evidence supporting the finding |
 | `findings[].fix` | Required nonblank string | The requested action |
+| `dispositions` | Optional array | Earlier findings assessed by this round; omission and `[]` mean none |
+| `dispositions[].finding_id` | Required string | An already recorded finding of the same task |
+| `dispositions[].disposition` | Required string | `resolved`, `not-applicable`, or `open` |
+| `dispositions[].reason` | Required nonblank string | Evidence or reason for this disposition |
 | `verification` | Required nonblank string | Commands, results, probes and limitations |
 | `provenance` | Optional object | Original prompt, command and raw reviewer output |
 | `provenance.prompt`, `.command`, `.output` | Optional strings | Retained unchanged for later comment rendering |
@@ -1288,8 +1292,9 @@ A separate round needs an Assured hand-off and a different session from
 every primary round of the task. The same reviewer actor may do both in
 different sessions. Reusing a separate session for a later primary is also
 refused. `CHANGES` is required exactly when a major is open after recording,
-including majors raised by earlier rounds on any fingerprint. Until 1.6e
-adds closure, every major remains open. Rounds do not move task state;
+including majors raised by earlier rounds on any fingerprint, after this
+round’s dispositions are applied. `resolved` and `not-applicable` close an
+earlier finding; `open` or no mention leaves it open. Rounds do not move task state;
 rework arrives in 1.6f. Posting, review selection and discovered work remain
 in 2.1.
 
@@ -1328,7 +1333,9 @@ The example's provenance is an excerpt; callers can retain the complete
 original prompt/command/output there. fid stores the complete supplied
 narrative and findings, so later rendering need not invent review text.
 
-One `review.round-recorded` Event inserts the immutable round and findings.
+One `review.round-recorded` Event inserts the immutable round, findings and
+any closures atomically. Dispositions are retained in the round; terminal
+dispositions also insert immutable `finding_closures` rows.
 It records a `RND-<six-hex>` ID, task/hand-off IDs, the binding
 `{algorithm, fingerprint, base, head}`, recorder and UTC time. Stable finding
 IDs append their one-based position to the round ID, such as
@@ -1341,8 +1348,9 @@ Text success is `✓ Recorded review RND-a1b2c3 · primary · CHANGES`.
 
 `review list` returns `{task_id, rounds: [...]}` in journal order and no
 Event. Each round contains its complete recorded fields, plus derived
-`other_model` and `current` booleans; each finding adds `open: true` until
-closures land. Other-model means the reviewer's declared family differs
+`other_model` and `current` booleans. Each finding adds `open`; a closed
+finding also adds `closure: {round_id?, decision_id?, disposition, reason}`,
+with exactly one authority ID. Other-model means the reviewer's declared family differs
 from every model-bearing build hold of that task; a manual hold adds no
 family, and an unknown reviewer never counts as other-model. Two different
 models within one family are the same-family case.
@@ -1356,7 +1364,9 @@ missing objects refuse the freshness read. A clean rebase with an equal
 fingerprint keeps the earlier round current; edits stale it without closing
 its findings. Reads never use the network. Human output uses the 72-column
 box and escaped, wrapped text, listing stream, reviewer/model/session,
-profiles, verdict, other-model, fingerprint, freshness and open findings.
+profiles, verdict, other-model, fingerprint, freshness and each finding’s
+open/closed state. Closed findings name the round or decision, disposition
+and reason.
 
 Semantic admission and fingerprint failures use `invalid-argument` (exit 2)
 with `{argument:"input", value:null,
@@ -1367,6 +1377,72 @@ still apply. Replay and import validate model/fingerprint forms, exact
 hand-off endpoints, hold history, profile/session/verdict rules and retry
 bindings, without git or network access. Retired `review.recorded` and its
 old tables remain refused.
+
+### Finding closure (RESET 1.6e)
+
+A round may dispose only of an already recorded finding of its own task.
+Journal order establishes “later”: caller-supplied times never establish
+precedence. A round cannot dispose of its own findings. The existing
+reviewer independence rule applies even to ended build holds. The later
+round may bind to a newer fingerprint; resolving a finding after a fix is
+normal. Duplicate finding IDs, unknown dispositions and blank reasons
+refuse. Minors and nits may be disposed too, without affecting the major
+gate. A closed finding stays closed: another disposition of it refuses.
+
+For example, a later independent session can submit:
+
+```json
+{
+  "reviewer": {"actor": "agent:reviewer", "model": "claude/opus-5.5", "session_id": "review-2"},
+  "stream": "primary",
+  "profiles": ["code", "test-adequacy"],
+  "verdict": "APPROVE",
+  "purpose": "Persist confirmed merges and CI attempts.",
+  "findings": [],
+  "dispositions": [
+    {"finding_id": "RND-a1b2c3-1", "disposition": "resolved", "reason": "The new retry regression catches the original fault and passes with the fix."}
+  ],
+  "verification": "Focused regression and required checks passed."
+}
+```
+
+This passes only when that disposition leaves no major open. A builder’s
+answer never closes a major; answering and deferring findings arrive in
+2.1. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
+remain immutable even when a person later closes the last major.
+`reviewrecord.OpenMajors` is the shared task-wide reader for the later done
+evaluator; it never filters findings by fingerprint or review stream.
+
+```text
+fid finding close <finding> --actor human:<name> --reason <text> [--idempotency-key <key>]
+```
+
+This accepts `--project` and `--json`, operation `finding.close`. Only a
+person may close a finding; agents and services receive `authority-denied`
+(exit 5). No terminal is required. The one person’s-decision record has
+kind `close-finding`, subject type `task`, subject ID the finding’s task,
+and binding ID the finding itself. Existing decision kinds keep their
+subject rules. One `finding.closed` Event inserts the decision and closure
+atomically. The closure’s disposition is `closed`: the person need not
+assert that the defect was fixed. The full encoded Event must remain below
+the journal’s 1 MiB line budget, including retry copies.
+
+JSON success contains `{task_id, finding_id, decision_id, disposition,
+reason}` and the original Event. Text success is:
+
+```text
+✓ Closed RND-a1b2c3-1 · decision PDN-d4e5f6 · Accepted risk
+```
+
+An identical keyed retry returns the original decision and Event; a changed
+finding, actor or reason with that key is `idempotency-conflict` (exit 4).
+Corrupt stored retry results refuse. A second close without the original
+retry key, an unknown finding or a blank reason is `invalid-argument`
+(exit 2), changing nothing. Common repository/project, lock and journal
+refusals apply. Both catalogs register the new family; live, replay and
+import validate authority, bindings and single closure without git or
+network. Migration 31 adds the closure projection and decision kind;
+projection cache version 13 rebuilds older caught-up projections.
 
 ### Retained Artifact verification (RESET 1.5c2)
 
@@ -1677,11 +1753,11 @@ evidence finding gate human-outcome ready receipt requirement resume review
 run stats stop workflow
 ```
 
-Except for `review`, which returns with the new lean record/list contract
-in RESET 1.6d, each is an unknown root command (`operation-unavailable`,
+Except for `review` (the lean record/list contract in RESET 1.6d) and
+`finding` (the person’s close command in RESET 1.6e), each is an unknown root command (`operation-unavailable`,
 exit 2), with the known path `fid` as its operation and sorted current
 alternatives. The retired review schema, Event and tables stay refused;
-finding closures arrive in 1.6e and delivery in 2.1. There is no `fid admin`. Issue Concern
+review delivery arrives in 2.1. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.
@@ -1791,4 +1867,4 @@ works outside a project and refuses combinations in this order: `--json`,
 arguments. Unknown or duplicate input fields and missing, null or wrongly
 typed `artifact_id` give `invalid-argument` with the exact field path.
 
-*Last updated: 2026-11-15 (RESET 1.6d: build models and canonical review rounds)*
+*Last updated: 2026-11-15 (RESET 1.6e: immutable finding closures)*

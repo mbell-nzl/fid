@@ -1283,6 +1283,38 @@ edits stale earlier rounds and a clean rebase with the same fingerprint
 keeps them current. No repeat hand-off command or transition bypass joins
 1.6d.
 
+**1.6e's choices (2026-11-15).** Optional `dispositions` in a round name
+an earlier finding, `resolved`, `not-applicable` or `open`, and a nonblank
+reason. Omission and `[]` mean no dispositions. Original rounds and findings
+stay immutable; dispositions stay in the round, and terminal ones add
+`finding_closures` keyed by finding, with exactly one closing round or
+person's-decision ID. `finding.closed` (`finding.close`) is a new lean
+Event-v2 family. A person's `close-finding` decision keeps the task as its
+subject and binds to the finding: this preserves the issue foreign key and
+all existing kinds' subject rules while naming exactly what was decided.
+Its closure disposition is `closed`, without asserting the fault was fixed.
+No terminal is needed; optional keyed retries use the existing person's
+command transaction and compare stored retry output with immutable closure
+evidence. Both closure Event forms enforce the journal's existing below-1-MiB
+line budget before append. Legacy and unrelated writers cannot insert the
+new closure table or decision kind.
+
+Migration 31 extends the decision kind and adds the closure table;
+projection cache version 13 rebuilds older projections. The migration
+rebuilds referencing questions alongside decisions, preserving answered
+questions and their foreign keys (SQLite's deferred FK counter does not
+clear after dropping and recreating a populated referenced parent alone).
+`reviewrecord.OpenMajors` reads all unclosed majors of a task in journal
+order, independent of fingerprint and stream; admission and later `done`
+share it. Dispositions use existing projection rows as evidence of journal
+precedence, never caller times. Already closed findings cannot receive a
+second disposition; identical command retries retain their original Event.
+Raw CHANGES verdicts are never rewritten after a person closes a major.
+V8 writes a major closed by a round, one by a person, a disposed minor,
+a nit and a major still open, through public commands. The cross-fingerprint
+closure test extends 1.6d's journal-backed second-hand-off fixture; public
+rework and its V8 journey still belong to 1.6f.
+
 **Approval** (moved from 2.3)
 
 21. **`fid approve <task> --actor human:<name> --reason <text>`.** Standard
