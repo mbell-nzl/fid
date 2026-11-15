@@ -513,8 +513,16 @@ capped, with or without `--all`. `event` is null.
   `ref` and `commit` are strings when known, null otherwise. `lanes` uses
   lowercase names in the text's order.
 - A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` includes
-  `backup`, `waiting-for-you` and `worktree-missing`; `subject` is null for it, and `{type, id}` for later
-  kinds about an issue.
+  `backup`, `waiting-for-you`, `worktree-missing` and `epic-ready-to-close`.
+  `subject` is null for backup and `{type, id}` for an Issue. An open epic
+  (`todo` or `in_progress`) with at least one direct task and no open task
+  gets `epic-ready-to-close`, subject `{type: "epic", id}`, summary
+  `<id> has no open tasks and is ready to close`, and next action
+  `fid done <id> --actor human:<name> --reason "<why>"`. Completed and
+  cancelled tasks are finished; a task in review is open. Empty, closed
+  and cancelled epics do not appear. Eligibility uses the same predicate
+  as epic completion, over all direct tasks in status's one snapshot,
+  before display truncation. Status writes no Event and needs no network.
 - An epic is
   `{id, title, status, status_category, state, sequence, priority, progress: {done, total}, tasks}`,
   `state` being `in-progress` or `to-do` and `tasks` the section's tasks.
@@ -716,7 +724,7 @@ fid next [--claim --actor <actor>] [--explain]
 Issues use fixed built-in states for their kind. New issues ignore retired
 workflow assignments. Standalone inventory mutations record typed actor
 attribution. No execution-chain authority is required for an Issue transition.
-`issue transition` refuses every completed-category target for a task and
+`issue transition` refuses every completed-category target for a task or epic and
 points at `fid done`; subtasks retain their plain transitions. Cancelling
 tasks and epics is a person's decision, with the contract below.
 
@@ -1575,19 +1583,19 @@ refusals use `invalid-argument` (exit 2) and change nothing. Existing project,
 lock and journal refusal envelopes still apply.
 
 
-### Task completion and reconciliation (RESET 1.6i–1.6j)
+### Completion and reconciliation (RESET 1.6i–1.6k)
 
 ```text
 fid done <task> --actor <actor> [--idempotency-key <key>] [--json]
+fid done <epic> --actor human:<name> --reason <text> [--idempotency-key <key>] [--json]
 fid done --actor <actor> [--json]
 ```
 
 The operation is `task.done`, accepting `--project`. Agents and people may
 finish a task; services get `authority-denied`. No live hold is required.
 The task must be `in_review` with its latest hand-off's review reservation.
-An epic is `invalid-argument` (exit 2), with the message
-"fid done closes tasks; closing an epic arrives in 1.6k". Subtasks use their
-plain transitions. With no task, fid reconciles the current in-review work
+An epic takes the person-only path below. Subtasks are `invalid-argument`
+(exit 2) and use their plain transitions. With no task, fid reconciles the current in-review work
 as described below.
 
 Each invocation observes GitHub once, outside the ledger write lock. The
@@ -1651,6 +1659,37 @@ precondition (exit 4), Issue subject, exact details `{reason, merged}`;
 failures retain `policy-unavailable`. Every refusal supplies a repair in
 human text. A hard evidence failure takes precedence over waiting, with
 gates considered in the evaluator's fixed order.
+
+**Closing an epic (RESET 1.6k).** The explicit Issue's kind dispatches to
+this local path under the same `task.done` operation. Only `human:*`
+actors may close an epic; agents and services get `authority-denied`
+(exit 5). A missing or blank `--reason` is `invalid-argument` (exit 2),
+naming `--reason`. `--reason` is accepted only with an explicit epic; using it for a task or
+reconciliation is invalid usage. No terminal or GitHub access is required. The epic must
+be `todo` or `in_progress`, and every direct task must be `done` or
+`cancelled`; an empty epic may close. Subtasks belong to their tasks and
+do not affect eligibility. All tasks are re-read under the ledger write
+lock, so a new or reopened task defeats a stale read.
+
+Text says `✓ Closed <epic> · <reason>`. JSON returns
+`{status: "done", revision: <new revision>, decision: {id, kind: "close-epic",
+actor, subject_type: "epic", subject_id, reason, binding_id: <epic>,
+decided_at}}`, plus the close Event. One `epic.closed` Event inserts the
+immutable person's decision and moves that epic to `done`, with one
+revision bump and an optional retry result. A keyed retry returns the
+original response/Event unchanged; a changed request under that key
+conflicts. An unkeyed repeat refuses a closed epic. There is no generic
+`todo → done` edge: this command alone owns that move.
+
+`done-epic-not-open` and `done-epic-open-tasks` are preconditions (exit 4),
+not retryable, with an Issue subject and exact
+`{gate: "epic", reason: "epic-not-open" | "open-tasks", record_ids: [...]}`.
+The latter lists all open direct task IDs in ID order; the former has an
+empty list when no task is open. Both point to `fid show <epic>`.
+Generic `issue transition --to done` refuses every actor with
+`transition-not-permitted`, `use-done`, and the person's `fid done` action.
+Person cancellation is unchanged. Epic validations/plan approval belong
+to RESET 3.1; reconciliation below continues to select tasks only.
 
 **Reconciliation.** With no task argument, the same `task.done` operation
 selects every task currently `in_review` with a hand-off, ordered by task ID.

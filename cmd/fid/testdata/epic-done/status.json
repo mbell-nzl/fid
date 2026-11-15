@@ -1,0 +1,106 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "warning",
+      "reasons": [
+        "no-target"
+      ],
+      "summary": "No backup target is set; not backed up yet",
+      "next_action": "add [backup] target to <CONFIG>/fid/config.toml, then fid backup",
+      "last_backup_at": null,
+      "ledger_started_at": "2026-11-08T09:00:00Z",
+      "age_seconds": 0,
+      "latest": null,
+      "consecutive_failures": 0,
+      "target_set": false,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [
+        {
+          "id": "FID-e00003",
+          "title": "Open epic",
+          "status": "in_progress",
+          "status_category": "started",
+          "state": "in-progress",
+          "sequence": null,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 1
+          },
+          "tasks": [
+            {
+              "id": "FID-a00003",
+              "title": "Task in review",
+              "status": "in_review",
+              "status_category": "started",
+              "epic_id": "FID-e00003",
+              "sequence": null,
+              "priority": null,
+              "blocked_by": [],
+              "working": null,
+              "kept": null
+            }
+          ]
+        }
+      ],
+      "tasks": []
+    },
+    "needs_you": [
+      {
+        "kind": "epic-ready-to-close",
+        "summary": "FID-e00001 has no open tasks and is ready to close",
+        "next_action": "fid done FID-e00001 --actor human:<name> --reason \"<why>\"",
+        "subject": {
+          "type": "epic",
+          "id": "FID-e00001"
+        }
+      }
+    ],
+    "ready": {
+      "next": null,
+      "epics": [
+        {
+          "id": "FID-e00001",
+          "title": "Finished epic",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "to-do",
+          "sequence": null,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 0
+          },
+          "tasks": []
+        },
+        {
+          "id": "FID-e00002",
+          "title": "Empty epic",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "to-do",
+          "sequence": null,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 0
+          },
+          "tasks": []
+        }
+      ],
+      "tasks": []
+    },
+    "warnings": []
+  }
+}

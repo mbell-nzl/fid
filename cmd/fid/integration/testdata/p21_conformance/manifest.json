@@ -17,6 +17,8 @@
     "done-checks-unsatisfied",
     "done-ci-not-green",
     "done-ci-waiting",
+    "done-epic-not-open",
+    "done-epic-open-tasks",
     "done-evidence-required",
     "done-handoff-required",
     "done-kept-artifact-unavailable",

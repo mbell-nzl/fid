@@ -3,6 +3,8 @@ package cli
 func init() {
 	for _, code := range []Code{
 		"done-task-not-in-review",
+		"done-epic-not-open",
+		"done-epic-open-tasks",
 		"done-checks-unsatisfied",
 		"done-kept-artifact-unavailable",
 		"done-open-major",
