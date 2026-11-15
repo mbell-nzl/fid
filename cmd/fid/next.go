@@ -38,7 +38,7 @@ func newNextCommand() *cobra.Command {
 		Short: "Show the task to work on next in this worktree, or take it.",
 		Long: "Show the task fid would hand this worktree next: the one it already holds, then work others wait on, " +
 			"then unstarted tasks in fid status's order, passing over held, blocked and out-of-sequence tasks.\n\n" +
-			"--claim --actor <actor> takes the task as a hold for this worktree, in one Event; run again, it returns the " +
+			"--claim --actor <actor> takes the task as a hold for this worktree, in one Event; repeating it returns the " +
 			"same hold. --explain lists the whole order with a verdict for each task.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			operation := leafOperation(cmd)
