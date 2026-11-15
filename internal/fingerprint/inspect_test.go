@@ -1,6 +1,7 @@
 package fingerprint_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -35,5 +36,29 @@ func TestInspectKeepsEveryPathDespiteUserStatSettings(t *testing.T) {
 	_, stat, err := fingerprint.Inspect(root, base, head)
 	if err != nil || !strings.Contains(stat, name) || !strings.Contains(stat, " file ") || !strings.Contains(stat, "2 files changed") || strings.Contains(stat, "...") {
 		t.Fatalf("full diffstat=%q/%v", stat, err)
+	}
+}
+
+func TestInspectKeepsEveryPathBeyondFortyFiles(t *testing.T) {
+	t.Parallel()
+	root, base := fixture(t)
+	var paths []string
+	for i := range 45 {
+		name := fmt.Sprintf("path-%02d.txt", i)
+		paths = append(paths, name)
+		write(t, root, name, "new file\n")
+	}
+	head := commit(t, root)
+	_, stat, err := fingerprint.Inspect(root, base, head)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range paths {
+		if !strings.Contains(stat, path) {
+			t.Errorf("path %q missing from full diffstat:\n%s", path, stat)
+		}
+	}
+	if strings.Contains(stat, "...") || !strings.Contains(stat, "45 files changed") {
+		t.Fatalf("incomplete diffstat:\n%s", stat)
 	}
 }

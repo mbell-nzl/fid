@@ -2682,6 +2682,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #84 (1.6g): make `TestReworkGolden`'s status text independent of
+  temporary config-path length, extending #76's path-wrapping follow-up below.
+  The fix-round coverage/no-git-identity CI run reported a mismatch at
+  `rework_golden_test.go:37`: the backup guidance kept `then` on the config
+  path's line instead of beginning `then fid backup` on the next line.
+  Rendering wraps the real config path before the fixture replaces it with
+  `<CONFIG>`. The test and its golden were kept unchanged in this fix round.
+
 - From Mark's question, 2026-11-15: jig's reviewer writes markdown, but
   `fid review record` (1.6d) takes structured JSON. Something must convert
   one to the other: the recorder (the orchestrator or the loop) or a jig
