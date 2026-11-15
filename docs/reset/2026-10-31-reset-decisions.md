@@ -972,6 +972,163 @@ Builder's transactional choices:
   golden and refusal leaks each failed with the shared diagnostic, then
   were restored.
 
+## Decided 2026-11-15 (orchestrator, under Mark's delegation)
+
+Mark delegated 1.6's design to the orchestrator on 2026-11-15: "You can
+settle the 1.6 design decisions; just record these to report back to me
+later. If the survey finds work scheduled for later is actually required
+prior to 1.6, then I am ok with bringing that forward. As stated
+previously, I do want this done right." Two read-only surveys (1.6 itself,
+then 2.1 and 2.3) found that `done` must check reviews, findings and Mark's
+fingerprint-bound approval, whose records were due in 2.1 and 2.3, after
+1.6. No recorded rule covered `done` before those exist, and 1.5c2 removed
+the old review commands with no interim stub. So the recording parts of
+2.1 and 2.3 move into 1.6's sequence, and `done` checks real records only:
+no GitHub stand-in for reviews or approvals, and no flags a caller supplies.
+`RESET.md` holds the twelve rows, 1.6a–1.6l, all Assured.
+
+**Which PR, which merge, which CI**
+
+1. **The PR is the latest hand-off's.** `done` uses the PR URL in the
+   task's latest hand-off, never a branch-name guess. The PR's base
+   repository must be the project's `origin` repository (fork heads are
+   fine), its base branch the default branch `origin/HEAD` names (as policy
+   discovery uses), and it must be merged: state merged with a merge
+   commit, never inferred from closed.
+2. **Checks bind to the merged head's tree.** The merged PR head's tree
+   must equal the hand-off's recorded tree. Otherwise `done` refuses and
+   the task is handed off again, which re-evaluates its checks on the new
+   tree. A clean rebase that keeps the tree keeps the checks.
+3. **CI green, GitHub Actions only.** Every Actions workflow run on the
+   exact merge commit with event `push`, taking the latest attempt per
+   workflow, must have completed with conclusion `success`. Skipped runs
+   are ignored. No runs, only skipped runs, or any queued or in-progress
+   run means "waiting for CI". Any other conclusion means CI isn't green.
+   The run's conclusion counts, not its jobs' (fid's own `main` runs skip
+   test jobs on verified tree reuse and still succeed). An incomplete or
+   inconsistent response is never green. External status contexts and a
+   setting to choose workflows are on the later list; there is still no
+   key to opt out.
+4. **What becomes a record.** A confirmed merge is recorded against its
+   task (the merge commit), even while CI is pending, so offline reads can
+   say "merged, waiting for CI" or, when GitHub can't be reached,
+   "merged, waiting for confirmation". Each completed CI run on the merge
+   commit, success or failure, is recorded as a check result from CI: run
+   ID, attempt, workflow, commit, conclusion and when it was observed. It
+   has its own typed storage and never invents a local check start,
+   process or hold. In-progress runs and network or authentication
+   failures aren't recorded.
+
+**The `done` command**
+
+5. **`fid done <task> --actor <a>`.** Any work actor may run it; the
+   hand-off ended the build hold, so no live hold is needed. Each call
+   makes one GitHub observation per task: no polling and no background
+   work. A task waiting for its merge or CI stays `in_review`, and the
+   refusal says why with its own retryable code (not merged, waiting for
+   CI, CI not green, GitHub unavailable, or the failing gate). A pending
+   result is never cached under a retry key. `status`, `next` and `show`
+   never use the network.
+6. **`fid done` with no task reconciles.** It runs the same evaluation and
+   recording for every task in review, which is how PRs Mark merged in
+   GitHub get completed. It reports each task's outcome and exits 0 unless
+   the command itself fails.
+7. **Gates come from the hand-off.** Every gate is evaluated at the latest
+   hand-off's lane and policy snapshot: the required checks (as 1.5a
+   settled), the review profiles, the test-adequacy trigger and the
+   Assured gates. If the task's lane was raised after its hand-off, `done`
+   refuses until it is handed off again. Later policy changes don't change
+   a hand-off's requirements retroactively; who may run `done` comes from
+   current trusted policy.
+8. **Kept Artifacts must still be there** (1.5b–1.5d's Q7). Hand-off and
+   `done` require each counting result's kept Artifacts to exist with
+   matching digests. Results stay immutable, and replay never re-reads
+   files.
+9. **An open question when the task completes** is resolved with its own
+   resolution, the task finishing before an answer: neither "cancelled"
+   nor a made-up answer.
+10. **`## Rollback`** means a level-two `Rollback` heading in the PR body,
+    outside fenced code. `done` checks that it is there, not what it says.
+
+**Epics**
+
+11. Cancelled tasks count as finished. `fid done <epic>` works from `todo`
+    or `in_progress` when no task is open (an epic with no tasks
+    included); a task in review is open. Only a person may close an epic,
+    with a reason. NEEDS YOU shows an open epic with at least one task and
+    none open, so a newly created, empty epic doesn't nag.
+
+**The change fingerprint**
+
+12. **Computed locally, from the hand-off.** Reviews and approval bind to
+    the fingerprint of the task's latest hand-off: its recorded base and
+    head, from objects already in the repository, never fetched (lazy
+    fetch is disabled). `done` compares against the same computation, which
+    is sound because item 2 ties the merged head's tree to the hand-off's.
+    `gh pr diff` isn't used: it fails for PRs over 300 files (HTTP 406).
+13. **Which patch-id.** D10's `git patch-id`, as `--verbatim`, over a diff
+    rendered with pinned settings (no external diff or textconv; fixed
+    context, algorithm, prefixes and rename detection; full index; binary
+    changes included; independent of user config). Whitespace edits change
+    the fingerprint, as D10's "any edit" says; the line shifts of a clean
+    rebase don't. The algorithm is recorded with each fingerprint. Empty,
+    partial, oversized or unavailable input refuses; there is no empty
+    fingerprint.
+14. **A hand-off comes first.** A review round or an approval needs the
+    task's latest hand-off. A changed delivery needs a new hand-off; a clean
+    rebase gives a new hand-off with the same fingerprint, so an approval
+    survives it (V6).
+
+**Reviews and findings** (moved from 2.1)
+
+15. **Models are recorded as `<family>/<model>`**, for example
+    `codex/gpt-6.1-sol` or `claude/opus-5.5`. "Other model" compares
+    families: Codex reviewing Codex is a same-model review, whatever the
+    exact models. Each build hold records its model: `next --claim`
+    requires `--model` for agent actors, and `fid takeover` takes an
+    optional `--model` (none means a person building by hand). A review is
+    other-model only if its family differs from every model that built the
+    task; an unknown model never counts as other.
+16. **Streams.** Each round records its stream, `primary` or, for Assured
+    work, `separate`, and an attributed session ID. The separate review must
+    come from a different session than the primary; the same reviewer actor
+    may do both. The latest round of each stream on the current fingerprint
+    counts. A shadow `merge` round satisfies neither.
+17. **Required profiles.** `test-adequacy` in every lane when the
+    hand-off's changed paths match the snapshot's test-adequacy paths, and
+    `code` for Standard and Assured. One round records every profile its
+    session ran; other profiles may be recorded but aren't gates.
+18. **Majors stay open until closed.** A fingerprint change makes a review
+    stale; it doesn't close findings. A major stays open until a later round
+    of the same task resolves it or rules it not applicable, or a person
+    closes it with a reason. A builder's answer never closes it. An earlier
+    passing round never masks a later round asking for changes, and a
+    round's verdict must agree with its findings.
+19. **Recording someone else's review.** Whoever records the round (its
+    `--actor`, such as the orchestrator) may differ from the reviewer the
+    input names, with its model, session and stream. Independence is
+    checked on the reviewer: no actor that held the task to build it may
+    review it, including through an ended hold. The round keeps its full
+    text, so 2.1 can render the PR comment from fid's record.
+20. **Rework moves forward too.** A round asking for changes moves the task
+    from `in_review` back to `in_progress`, and the builder's kept worktree
+    gets it back from `next` as kind `rework` (after resume, before new
+    work); the fix is checked, handed off again and reviewed again. Review
+    scheduling (kind `review`), the rework cap, discovered work, answering
+    or deferring findings and posting rounds to the PR stay in 2.1.
+
+**Approval** (moved from 2.3)
+
+21. **`fid approve <task> --actor human:<name> --reason <text>`.** Standard
+    input and standard error must be terminals: the prompt goes to standard
+    error and an optional JSON result to standard output. Agents and
+    services are refused, whatever the terminal. The prompt shows the full
+    diffstat, the check results, each stream's review verdict, any stale
+    approval and "no other-model review" when it applies, then asks for an
+    explicit typed confirmation. A person may approve while other gates are
+    still missing (the prompt shows them); `done` refuses those. The
+    approval presentation in `fid status` and `fid show` stays in 2.3.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
