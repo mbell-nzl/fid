@@ -1254,6 +1254,9 @@ profiles, verdict, claim, findings (profile, severity, summary, nullable
 file/positive line, evidence, fix), verification and optional prompt,
 command and raw-output provenance. The CLI spec defines the exact schema
 and includes an example adapted from the real 1.6b first-round review.
+The field for what the change sets out to do is `purpose` (jig's reviewer
+calls it "Claim"); it was renamed when merging 1.7's leak test showed the
+help text naming it, since fid's human text never says "claim".
 Round IDs are `RND-<six-hex>`; stable finding IDs append their one-based
 position. All findings remain open until 1.6e. Session reuse across streams
 is refused in either recording order. Rounds do not change task state.

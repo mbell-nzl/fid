@@ -22,7 +22,7 @@
         "test-adequacy"
       ],
       "verdict": "CHANGES",
-      "claim": "Persist the task change.",
+      "purpose": "Persist the task change.",
       "findings": [
         {
           "id": "RND-<new>-1",

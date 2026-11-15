@@ -33,7 +33,7 @@ func reviewFixtureWith(t *testing.T, prepare func(*statusFixture)) *statusFixtur
 }
 
 func reviewInput() map[string]any {
-	return map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "claude/opus-5.5", "session_id": "review-session-1"}, "stream": "primary", "profiles": []string{"code", "test-adequacy"}, "verdict": "APPROVE", "claim": "Persist the task change.", "findings": []any{}, "verification": "go test ./... passed", "provenance": map[string]any{"prompt": "Review the PR", "output": "## Review: APPROVE\n### Findings\nNone."}}
+	return map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "claude/opus-5.5", "session_id": "review-session-1"}, "stream": "primary", "profiles": []string{"code", "test-adequacy"}, "verdict": "APPROVE", "purpose": "Persist the task change.", "findings": []any{}, "verification": "go test ./... passed", "provenance": map[string]any{"prompt": "Review the PR", "output": "## Review: APPROVE\n### Findings\nNone."}}
 }
 
 func recordReview(t *testing.T, f *statusFixture, input map[string]any, key, actor string) commandExecutionResult {
@@ -340,7 +340,7 @@ func TestReviewRetryRejectsCorruptedStoredResult(t *testing.T) {
 			lifecycleResult(t, recordReview(t, f, in, "round", "human:courier"), "review.record")
 			mutateStoredRetry(t, f, "round", func(result map[string]any) {
 				if field == "altered narrative" {
-					result["round"].(map[string]any)["claim"] = "Forged review narrative"
+					result["round"].(map[string]any)["purpose"] = "Forged review narrative"
 				} else {
 					delete(result, field)
 				}

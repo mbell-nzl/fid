@@ -20,7 +20,7 @@
           "test-adequacy"
         ],
         "verdict": "CHANGES",
-        "claim": "Persist the task change.",
+        "purpose": "Persist the task change.",
         "verification": "go test ./... passed",
         "provenance": {
           "prompt": "Review the PR",

@@ -86,7 +86,7 @@ func Record(o Options) (Result, error) {
 			return err
 		}
 		in := o.Input
-		r := reviewrecord.Round{ID: id, TaskID: o.TaskID, HandoffID: h.ID, Reviewer: in.Reviewer, Stream: in.Stream, Profiles: in.Profiles, Verdict: in.Verdict, Claim: in.Claim, Findings: []reviewrecord.Finding{}, Verification: in.Verification, Provenance: in.Provenance, Binding: reviewrecord.Bind(binding), RecordedBy: o.Actor, At: now.Format(time.RFC3339)}
+		r := reviewrecord.Round{ID: id, TaskID: o.TaskID, HandoffID: h.ID, Reviewer: in.Reviewer, Stream: in.Stream, Profiles: in.Profiles, Verdict: in.Verdict, Purpose: in.Purpose, Findings: []reviewrecord.Finding{}, Verification: in.Verification, Provenance: in.Provenance, Binding: reviewrecord.Bind(binding), RecordedBy: o.Actor, At: now.Format(time.RFC3339)}
 		for i, f := range in.Findings {
 			r.Findings = append(r.Findings, reviewrecord.Finding{ID: fmt.Sprintf("%s-%d", id, i+1), FindingInput: f})
 		}

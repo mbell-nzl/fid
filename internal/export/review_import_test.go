@@ -45,7 +45,7 @@ func addReviewExportFacts(t *testing.T, root string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	in := reviewrecord.Input{Reviewer: reviewrecord.Reviewer{Actor: "agent:reviewer", Model: "claude/opus-5.5", Effort: "high", SessionID: "portable-session"}, Stream: "primary", Profiles: []string{"code", "test-adequacy"}, Verdict: "CHANGES", Claim: "Persist canonical reviews", Verification: "go test ./... passed; a probe failed", Provenance: &reviewrecord.Provenance{Prompt: "Review the change", Command: "review-command", Output: "## Review: CHANGES\nClaim: Persist canonical reviews\nVerification: passed"}, Findings: []reviewrecord.FindingInput{}}
+	in := reviewrecord.Input{Reviewer: reviewrecord.Reviewer{Actor: "agent:reviewer", Model: "claude/opus-5.5", Effort: "high", SessionID: "portable-session"}, Stream: "primary", Profiles: []string{"code", "test-adequacy"}, Verdict: "CHANGES", Purpose: "Persist canonical reviews", Verification: "go test ./... passed; a probe failed", Provenance: &reviewrecord.Provenance{Prompt: "Review the change", Command: "review-command", Output: "## Review: CHANGES\nClaim: Persist canonical reviews\nVerification: passed"}, Findings: []reviewrecord.FindingInput{}}
 	for _, severity := range []string{"major", "minor", "nit"} {
 		in.Findings = append(in.Findings, reviewrecord.FindingInput{Profile: "code", Severity: severity, Summary: severity + " finding", Location: &reviewrecord.Location{File: "internal/example.go", Line: 42}, Evidence: "Observed behaviour", Fix: "Add coverage"})
 	}

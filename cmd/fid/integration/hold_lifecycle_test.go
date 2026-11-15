@@ -11,7 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-var p24LifecycleFields = map[string]string{"review.record": "claim", "task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
+var p24LifecycleFields = map[string]string{"review.record": "purpose", "task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -72,7 +72,7 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	resumed := call("next", "--claim", "--actor", "human:mark")
 	hold = p21PathString(t, resumed, "result", "hold", "id")
 	call("handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "lifecycle-handoff")
-	input := p21Input(t, workspace, "review", map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "codex/gpt-6.1-sol", "session_id": "keyed-review"}, "stream": "primary", "profiles": []string{"code"}, "verdict": "APPROVE", "claim": "Record held work through hand-off.", "findings": []any{}, "verification": "The checks passed."})
+	input := p21Input(t, workspace, "review", map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "codex/gpt-6.1-sol", "session_id": "keyed-review"}, "stream": "primary", "profiles": []string{"code"}, "verdict": "APPROVE", "purpose": "Record held work through hand-off.", "findings": []any{}, "verification": "The checks passed."})
 	call("review", "record", task, "--input", input, "--actor", "human:courier", "--idempotency-key", "lifecycle-review")
 }
 

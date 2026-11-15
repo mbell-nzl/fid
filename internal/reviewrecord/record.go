@@ -46,7 +46,7 @@ type Input struct {
 	Stream       string         `json:"stream"`
 	Profiles     []string       `json:"profiles"`
 	Verdict      string         `json:"verdict"`
-	Claim        string         `json:"claim"`
+	Purpose      string         `json:"purpose"`
 	Findings     []FindingInput `json:"findings"`
 	Verification string         `json:"verification"`
 	Provenance   *Provenance    `json:"provenance,omitempty"`
@@ -74,7 +74,7 @@ type Round struct {
 	Stream       string      `json:"stream"`
 	Profiles     []string    `json:"profiles"`
 	Verdict      string      `json:"verdict"`
-	Claim        string      `json:"claim"`
+	Purpose      string      `json:"purpose"`
 	Findings     []Finding   `json:"findings"`
 	Verification string      `json:"verification"`
 	Provenance   *Provenance `json:"provenance,omitempty"`
@@ -107,8 +107,8 @@ func (in Input) Validate() error {
 	if in.Verdict != "APPROVE" && in.Verdict != "CHANGES" {
 		return fmt.Errorf("review verdict must be APPROVE or CHANGES")
 	}
-	if in.Profiles == nil || in.Findings == nil || !text(in.Claim) || !text(in.Verification) {
-		return fmt.Errorf("review requires profiles, findings, claim and verification")
+	if in.Profiles == nil || in.Findings == nil || !text(in.Purpose) || !text(in.Verification) {
+		return fmt.Errorf("review requires profiles, findings, purpose and verification")
 	}
 	seen := map[string]bool{}
 	for _, p := range in.Profiles {
@@ -135,7 +135,7 @@ func (r Round) Input() Input {
 	for i, f := range r.Findings {
 		findings[i] = f.FindingInput
 	}
-	return Input{r.Reviewer, r.Stream, r.Profiles, r.Verdict, r.Claim, findings, r.Verification, r.Provenance}
+	return Input{r.Reviewer, r.Stream, r.Profiles, r.Verdict, r.Purpose, findings, r.Verification, r.Provenance}
 }
 
 func (r Round) Validate() error {

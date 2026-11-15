@@ -31,7 +31,7 @@ func reviewArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator
 	}
 	v.profile = 30
 	acceptMergeArchiveEvent(t, v, h)
-	r := reviewrecord.Round{ID: "RND-123456", TaskID: "FID-a", HandoffID: "HOF-100001", Reviewer: reviewrecord.Reviewer{Actor: "agent:reviewer", Model: "claude/opus-5.5", SessionID: "session-1"}, Stream: "primary", Profiles: []string{"code"}, Verdict: "CHANGES", Claim: "Persist review rounds", Verification: "go test passed", Binding: reviewrecord.Binding{Algorithm: fingerprint.Algorithm, Fingerprint: strings.Repeat("f", 64), Base: strings.Repeat("b", 40), Head: strings.Repeat("a", 40)}, RecordedBy: "human:courier", At: "2026-11-10T09:06:00Z", Findings: []reviewrecord.Finding{}}
+	r := reviewrecord.Round{ID: "RND-123456", TaskID: "FID-a", HandoffID: "HOF-100001", Reviewer: reviewrecord.Reviewer{Actor: "agent:reviewer", Model: "claude/opus-5.5", SessionID: "session-1"}, Stream: "primary", Profiles: []string{"code"}, Verdict: "CHANGES", Purpose: "Persist review rounds", Verification: "go test passed", Binding: reviewrecord.Binding{Algorithm: fingerprint.Algorithm, Fingerprint: strings.Repeat("f", 64), Base: strings.Repeat("b", 40), Head: strings.Repeat("a", 40)}, RecordedBy: "human:courier", At: "2026-11-10T09:06:00Z", Findings: []reviewrecord.Finding{}}
 	for i, severity := range []string{"major", "minor", "nit"} {
 		r.Findings = append(r.Findings, reviewrecord.Finding{ID: []string{"FND-1", "FND-2", "FND-3"}[i], FindingInput: reviewrecord.FindingInput{Profile: "code", Severity: severity, Summary: "Problem", Evidence: "Observed behaviour", Fix: "Add regression coverage"}})
 	}

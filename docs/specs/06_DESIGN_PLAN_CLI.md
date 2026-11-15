@@ -1253,7 +1253,7 @@ outside the nullable location are refused before project access.
 | `stream` | Required string | `primary`, or `separate` for an Assured hand-off |
 | `profiles` | Required array of unique short tokens | Every profile this session reviewed; `[]` is possible for Routine work without a test trigger |
 | `verdict` | Required string | `APPROVE` or `CHANGES` |
-| `claim` | Required nonblank string | What the review checked |
+| `purpose` | Required nonblank string | What the change sets out to do, as the review read it (jig's "Claim" line; fid's human text never says "claim") |
 | `findings` | Required array | `[]` for no findings; the caller supplies no finding IDs |
 | `findings[].profile` | Required string | One of the session's profiles |
 | `findings[].severity` | Required string | `major`, `minor`, or `nit`; majors block |
@@ -1307,7 +1307,7 @@ of conflicting merge retries (its second, minor finding is omitted here):
   "stream": "primary",
   "profiles": ["code", "test-adequacy"],
   "verdict": "CHANGES",
-  "claim": "Persist confirmed merges and completed CI attempts through replay, export and restore; reject invalid bindings without mutation and preserve local checks.",
+  "purpose": "Persist confirmed merges and completed CI attempts through replay, export and restore; reject invalid bindings without mutation and preserve local checks.",
   "findings": [{
     "profile": "test-adequacy",
     "severity": "major",
