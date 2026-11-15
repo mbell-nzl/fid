@@ -36,8 +36,7 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 		t.Fatalf("Unmarshal(create stdout) error = %v", err)
 	}
 
-	journalPath := mustJournalPath(t, workspace)
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 	result := executeCommandForTest(workspace,
 		"--json", "issue", "ac", "add", createEnvelope.Result.Issue.ID,
 		"--text", "Response envelope has the exact AC result", "--ordinal", "1", "--by", "developer",
@@ -86,10 +85,10 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 	if envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
 		t.Fatalf("event = %+v, want identity", envelope.Event)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before+1 {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before+1 {
 		t.Fatalf("journal lines = %d, want %d", got, before+1)
 	}
-	last := mustReadLastJournalEvent(t, journalPath)
+	last := mustReadLastJournalEvent(t, workspace)
 	if last.EventID != envelope.Event.ID || last.OccurredAt.UTC().Format(time.RFC3339Nano) != envelope.Event.OccurredAt {
 		t.Fatalf("envelope event = %+v, journal tail = %+v", envelope.Event, last)
 	}
@@ -103,7 +102,6 @@ func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) 
 	issueID := parseCreatedIssueID(t, createStderr)
 	runFIDCommand(t, workspace, "issue", "ac", "add", issueID, "--text", "existing", "--ordinal", "1", "--by", "developer")
 
-	journalPath := mustJournalPath(t, workspace)
 	tests := []struct {
 		name string
 		args []string
@@ -114,13 +112,13 @@ func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) 
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, test.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("result = %#v, want stderr-only rejection", result)
 			}
 			assertJSONFailureCode(t, result.stderr, "issue.ac.add", test.code)
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
 		})
@@ -130,7 +128,6 @@ func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) 
 func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
-	journalPath := mustJournalPath(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC add", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -183,7 +180,7 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 	}
 	defer closeCommandDB(t, conn)
 
-	event := mustReadLastJournalEvent(t, journalPath)
+	event := mustReadLastJournalEvent(t, workspace)
 	if event.EventType != "issue.ac-added" {
 		t.Fatalf("event type = %q, want issue.ac-added", event.EventType)
 	}
@@ -314,8 +311,8 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 			clonePristineWorkspaceInto(t, workspace)
 
 			args := tt.args(t, workspace)
-			journalPath := mustJournalPath(t, workspace)
-			linesBefore := splitJournalLines(mustReadCommandFile(t, journalPath))
+
+			linesBefore := splitJournalLines(mustReadJournal(t, workspace))
 
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, args...)
 			if err == nil {
@@ -327,7 +324,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 			if !strings.Contains(stderr, tt.wantErr) {
 				t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantErr)
 			}
-			linesAfter := splitJournalLines(mustReadCommandFile(t, journalPath))
+			linesAfter := splitJournalLines(mustReadJournal(t, workspace))
 			if len(linesAfter) != len(linesBefore) {
 				t.Fatalf("journal lines after rejection = %d, want unchanged %d", len(linesAfter), len(linesBefore))
 			}
@@ -398,13 +395,13 @@ func TestIssueACVerifyCommandUsesRoleSpecificPermissionsAndHumanAttribution(t *t
 
 func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionID, actor string) {
 	t.Helper()
-	journalPath := mustJournalPath(t, workspace)
-	before := mustReadCommandFile(t, journalPath)
+
+	before := mustReadJournal(t, workspace)
 	result := executeCommandForTest(workspace, "issue", "ac", "verify")
 	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "verify"`) {
 		t.Fatalf("removed issue ac verify for %s/%s/%s = %#v, want unknown-command rejection", issueID, criterionID, actor, result)
 	}
-	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+	if after := mustReadJournal(t, workspace); !bytes.Equal(after, before) {
 		t.Fatalf("issue ac verify actor %s changed journal bytes", actor)
 	}
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))

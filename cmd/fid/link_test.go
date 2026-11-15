@@ -25,8 +25,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	_, secondStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Second issue", "--actor", "agent:developer")
 	secondIssueID := parseCreatedIssueID(t, secondStderr)
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	if stderr != "" {
@@ -41,7 +40,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 		}
 	}
 
-	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 	if linesAfter != linesBefore+1 {
 		t.Fatalf("journal lines after link add = %d, want %d", linesAfter, linesBefore+1)
 	}
@@ -67,7 +66,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 		}
 	}
 
-	event := mustReadLastJournalEvent(t, journalPath)
+	event := mustReadLastJournalEvent(t, workspace)
 	if len(event.Effects) != 6 {
 		t.Fatalf("effect count = %d, want link effects plus idempotency result", len(event.Effects))
 	}
@@ -125,8 +124,8 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 		clonePristineWorkspaceInto(t, workspace)
 
 		issueID := createCommandIssue(t, workspace, "Implements issue")
-		journalPath := mustJournalPath(t, workspace)
-		before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+		before := len(splitJournalLines(mustReadJournal(t, workspace)))
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 		if err == nil || stdout != "" || (!strings.Contains(stderr, "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue\n") || !strings.Contains(err.Error(), `to-type must be issue`)) {
 			t.Fatalf("removed endpoint result = (%q, %q, %v)", stdout, stderr, err)
@@ -139,7 +138,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 		defer closeCommandDB(t, conn)
 
 		rows := loadCommandLinks(t, conn)
-		if len(rows) != 0 || len(splitJournalLines(mustReadCommandFile(t, journalPath))) != before {
+		if len(rows) != 0 || len(splitJournalLines(mustReadJournal(t, workspace))) != before {
 			t.Fatalf("removed endpoint changed rows or journal: %#v", rows)
 		}
 	})
@@ -216,8 +215,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 				command[2] = ids[0]
 				command[4] = ids[1]
 
-				journalPath := mustJournalPath(t, workspace)
-				linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+				linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 				stdout, stderr, err := runFIDCommandExpectError(t, workspace, command...)
 				if err == nil {
@@ -230,7 +228,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantSubstring)
 				}
 
-				linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+				linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 				if linesAfter != linesBefore {
 					t.Fatalf("journal lines after rejection = %d, want %d", linesAfter, linesBefore)
 				}
@@ -248,8 +246,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
 	runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
@@ -272,7 +269,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 		}
 	}
 
-	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 	if linesAfter != linesBefore+1 {
 		t.Fatalf("journal lines after link remove = %d, want %d", linesAfter, linesBefore+1)
 	}
@@ -284,7 +281,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 		t.Fatalf("activity_log rows after remove = %d, want %d", got, activityBefore+1)
 	}
 
-	event := mustReadLastJournalEvent(t, journalPath)
+	event := mustReadLastJournalEvent(t, workspace)
 	if len(event.Effects) != 6 {
 		t.Fatalf("effect count = %d, want link effects plus idempotency result", len(event.Effects))
 	}
@@ -376,15 +373,14 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 			command[2] = ids[0]
 			command[4] = ids[1]
 
-			journalPath := mustJournalPath(t, workspace)
-			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, command...)
 			if tt.wantSuccess {
 				if err != nil || stdout == "" || stderr != "" {
 					t.Fatalf("project-local actor result = (%q, %q, %v), want stdout success", stdout, stderr, err)
 				}
-				if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+				if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore+1 {
 					t.Fatalf("journal lines after project-local actor = %d, want %d", got, linesBefore+1)
 				}
 				return
@@ -399,7 +395,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 				t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantSubstring)
 			}
 
-			linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 			if linesAfter != linesBefore {
 				t.Fatalf("journal lines after rejection = %d, want %d", linesAfter, linesBefore)
 			}
@@ -415,14 +411,13 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	firstIssueID := createCommandIssue(t, workspace, "First issue")
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:intern")
 	if stderr != "" || stdout == "" {
 		t.Fatalf("project-local actor result = (%q, %q), want stdout success", stdout, stderr)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore+1 {
 		t.Fatalf("journal lines after project-local actor = %d, want %d", got, linesBefore+1)
 	}
 }
@@ -512,8 +507,8 @@ func TestLinkAddRejectsRequirementEndpointBeforeResolution(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := createCommandIssue(t, workspace, "Opaque issue ID")
-	journalPath := mustJournalPath(t, workspace)
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	result := executeCommandForTest(workspace,
 		"--json", "link", "add", issueID, "implements", issueID,
@@ -524,7 +519,7 @@ func TestLinkAddRejectsRequirementEndpointBeforeResolution(t *testing.T) {
 	}
 
 	assertLinkFailure(t, result.stderr, "link.add", "invalid-argument", nil, map[string]any{"argument": "to-type", "value": "requirement", "allowed": []any{"issue"}})
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 		t.Fatalf("journal lines after typed rejected add = %d, want %d", got, before)
 	}
 }
@@ -535,19 +530,18 @@ func TestLinkMutationsJSONMatchContract(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First JSON link issue")
 	secondID := createCommandIssue(t, workspace, "Second JSON link issue")
-	journalPath := mustJournalPath(t, workspace)
 
 	add := executeCommandForTest(workspace,
 		"--json", "link", "add", firstID, "blocks", secondID,
 		"--from-type", "issue", "--to-type", "issue", "--by", "developer",
 	)
-	assertLinkMutationEnvelope(t, add, journalPath, "link.add", "link.added", firstID, "blocks", secondID, 2)
+	assertLinkMutationEnvelope(t, add, workspace, "link.add", "link.added", firstID, "blocks", secondID, 2)
 
 	remove := executeCommandForTest(workspace,
 		"--json", "link", "remove", firstID, "blocks", secondID,
 		"--from-type", "issue", "--to-type", "issue", "--by", "developer",
 	)
-	assertLinkMutationEnvelope(t, remove, journalPath, "link.remove", "link.removed", firstID, "blocks", secondID, 3)
+	assertLinkMutationEnvelope(t, remove, workspace, "link.remove", "link.removed", firstID, "blocks", secondID, 3)
 }
 
 func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
@@ -556,7 +550,6 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First link failure issue")
 	secondID := createCommandIssue(t, workspace, "Second link failure issue")
-	journalPath := mustJournalPath(t, workspace)
 
 	tests := []struct {
 		name      string
@@ -630,7 +623,7 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, test.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("%s result = %#v, want stderr-only rejection", test.operation, result)
@@ -639,7 +632,7 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 				t.Fatalf("missing flag exit=%d", cli.ExitCode(result.err))
 			}
 			test.assert(t, result.stderr)
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after %s rejection = %d, want %d", test.name, got, before)
 			}
 		})
@@ -653,8 +646,8 @@ func TestLinkJSONDependencyCycleHasExactPathAndNoAppend(t *testing.T) {
 	firstID := createCommandIssue(t, workspace, "First cycle issue")
 	secondID := createCommandIssue(t, workspace, "Second cycle issue")
 	runFIDCommand(t, workspace, "link", "add", firstID, "blocks", secondID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
-	journalPath := mustJournalPath(t, workspace)
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	result := executeCommandForTest(workspace,
 		"--json", "link", "add", secondID, "blocks", firstID,
@@ -666,12 +659,12 @@ func TestLinkJSONDependencyCycleHasExactPathAndNoAppend(t *testing.T) {
 	assertLinkFailure(t, result.stderr, "link.add", "dependency-cycle", nil, map[string]any{
 		"path": []any{secondID, firstID, secondID},
 	})
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 		t.Fatalf("journal lines after dependency-cycle rejection = %d, want %d", got, before)
 	}
 }
 
-func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, journalPath, operation, eventType, fromID, relation, toID string, revision int) {
+func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, workspace, operation, eventType, fromID, relation, toID string, revision int) {
 	t.Helper()
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("%s result = %#v, want JSON success on stdout only", operation, result)
@@ -710,7 +703,7 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, jou
 		}
 	}
 
-	last := mustReadLastJournalEvent(t, journalPath)
+	last := mustReadLastJournalEvent(t, workspace)
 	if last.EventType != eventType || last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("%s envelope event = %#v, journal tail = %#v", operation, envelope.Event, last)
 	}

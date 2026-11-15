@@ -20,12 +20,11 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	assertClosureGitLayout(t, workspace)
 
-	journalPath := closureJournalPath(t, workspace)
 	assertClosureJournalNeverTracked(t, workspace)
 
 	closureRunFID(t, binary, workspace, "label", "add", "release", "--description", "Closure journey label", "--by", "developer")
 	closureWriteRequirementFixture(t, workspace)
-	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath, []string{"requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl"})
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, []string{"requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl"})
 
 	parentID := closureCreateIssue(t, binary, workspace, "task", "Closure lifecycle parent", nil, nil, nil)
 	mainIssueID := closureCreateIssue(t, binary, workspace, "subtask", "Closure lifecycle subtask", nil, &parentID, nil)
@@ -35,16 +34,16 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "done", "--actor", "agent:developer")
-	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace,
 		[]string{"issue", "ac", "verify"})
 	_ = acID
 	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, "TC-unavailable")
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace,
 		[]string{"--json", "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
 		`"code":"invalid-argument"`)
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace,
 		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 		"error: link relation is unsupported\nreason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=implements\n")
 
@@ -59,12 +58,12 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
 	assertClosureNextTaskInEpic(t, binary, workspace, priorityEpicID, priorityHighID)
 
-	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace,
 		[]string{"run", "record", "--issue", mainIssueID, "--completion", "TC-unavailable",
 			"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer"})
 
 	assertLeanIntegrationJournal(t, workspace)
-	journalBeforeNonJournal := closureReadFile(t, journalPath)
+	journalBeforeNonJournal := p21JournalBytes(t, workspace)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)
 	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, seqCurrentID, journalBeforeNonJournal)
 	maintenanceNow := closureAgedMaintenanceTime(t, workspace)
@@ -100,7 +99,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 		t.Fatalf("remove derived DB: %v", err)
 	}
 	closureRunFID(t, binary, workspace, "rebuild")
-	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "rebuild")
+	assertClosureJournalBytesEqual(t, workspace, journalBeforeNonJournal, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "delete-and-rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
 	if afterSchema := closureSchemaSnapshot(t, binary, workspace); afterSchema != beforeSchema {

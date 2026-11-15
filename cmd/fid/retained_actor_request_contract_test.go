@@ -13,7 +13,6 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	journalPath := mustJournalPath(t, workspace)
 
 	tests := []struct {
 		name      string
@@ -38,7 +37,7 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, tt.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("result = %#v, want stderr-only request rejection", result)
@@ -72,7 +71,7 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 			}
 			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
 			grammarCheck(t, want, true, result, cli.ExitCode(result.err))
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
 		})
@@ -83,7 +82,6 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	journalPath := mustJournalPath(t, workspace)
 
 	for _, tt := range []struct {
 		name      string
@@ -100,7 +98,7 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 		{"issue label remove malformed actor", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core", "--actor", " ", "--idempotency-key", "malformed-issue-label-remove-actor"}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, tt.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("result = %#v, want stderr-only request rejection", result)
@@ -134,7 +132,7 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 			}
 			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
 			grammarCheck(t, want, true, result, cli.ExitCode(result.err))
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
 		})
@@ -145,7 +143,6 @@ func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	journalPath := mustJournalPath(t, workspace)
 
 	for _, tt := range []struct {
 		name   string
@@ -162,12 +159,12 @@ func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
 		{"issue label remove malformed actor", []string{"issue", "label", "remove", "FID-any", "core", "--actor", " ", "--idempotency-key", "human-malformed-issue-label-remove-actor"}, `error: invalid argument " " for "--actor" flag` + "\n"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			before := len(splitJournalLines(mustReadJournal(t, workspace)))
 			result := executeCommandForTest(workspace, tt.args...)
 			if result.err == nil || result.stdout != "" || result.stderr != tt.stderr+"reason: invalid-argument; argument=--actor, allowed="+map[bool]string{true: "--actor", false: "^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}[strings.Contains(tt.name, "missing")]+"\n" {
 				t.Fatalf("result = %#v, want concise Human required-actor error", result)
 			}
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
 		})
@@ -210,14 +207,14 @@ func TestIssueACVerifyRemainsGuardedLegacyLeaf(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Legacy verify guard")
-	journalPath := mustJournalPath(t, workspace)
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	result := executeCommandForTest(workspace, "issue", "ac", "verify")
 	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "verify"`) {
 		t.Fatalf("result = %#v, want removed-leaf rejection for %s/%s", result, issueID, criterionID)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 		t.Fatalf("journal lines after guarded rejection = %d, want %d", got, before)
 	}
 }

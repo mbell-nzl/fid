@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"database/sql"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -47,11 +46,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	journalPath := mustJournalPath(t, workspace)
-	beforePayload, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforePayload := mustReadJournal(t, workspace)
 	beforeLines := splitJournalLines(beforePayload)
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
@@ -67,10 +62,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 		t.Fatalf("policy show = %#v, want absent public command", result)
 	}
 
-	afterPayload, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after show error = %v", journalPath, err)
-	}
+	afterPayload := mustReadJournal(t, workspace)
 	afterLines := splitJournalLines(afterPayload)
 	if len(afterLines) != len(beforeLines) {
 		t.Fatalf("journal lines after policy show = %d, want unchanged %d", len(afterLines), len(beforeLines))
@@ -83,7 +75,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 
 	result = executeCommandForTest(workspace, "policy", "show", "--by", "developer")
 	grammarCheck(t, grammarRow{name: "absent policy with removed flag", operation: "fid", code: "invalid-argument", argument: "--by", value: "--by", allowed: []string{}, message: "unknown flag: --by"}, false, result, cli.ExitCode(result.err))
-	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, beforePayload) || countActivityLogRows(t, conn) != activityBefore {
+	if after := mustReadJournal(t, workspace); !bytes.Equal(after, beforePayload) || countActivityLogRows(t, conn) != activityBefore {
 		t.Fatal("absent policy with removed flag mutated state")
 	}
 }

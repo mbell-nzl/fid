@@ -160,7 +160,7 @@ func TestStatusStopsOnACorruptJournalTail(t *testing.T) {
 	t.Parallel()
 	fixture := newJournalStatusFixture(t)
 	fixture.createTask("Task before the damage")
-	appendRawJournalLine(t, mustJournalPath(t, fixture.workspace), `{"event_id":"EVT-20261108-999999"`)
+	appendRawJournalLine(t, latestJournalPath(t, fixture.workspace), `{"event_id":"EVT-20261108-999999"`)
 	result := fixture.run("--json", "status")
 	if cli.ExitCode(result.err) != 6 || result.stdout != "" {
 		t.Fatalf("status --json = %#v, want journal-replay-stopped", result)
