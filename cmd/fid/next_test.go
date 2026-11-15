@@ -326,68 +326,76 @@ func lastJournalEvent(t *testing.T, workspace string) map[string]any {
 	return event
 }
 
-// A task completed or cancelled ends its hold in the same Event as the
-// transition. The journal replays: a rebuild gives back the same holds, and
-// an export of the ledger validates.
+// Cancellation ends the active hold in its Event; completion releases its
+// review reservation in its Event. Replay and export preserve both histories.
 func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runFIDCommand(t, workspace, "init", "--prefix", "FID")
-
-	for _, title := range []string{"Cancelled while held", "Done while held", "Left held"} {
-		runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "human:mark")
+	appendPolicy(t, workspace, "\n[review]\ntest_adequacy=[]\n[lanes.routine]\nchecks=[]\n")
+	policyOrigin(t, workspace)
+	for _, title := range []string{"Cancelled while held", "Done through review", "Left held"} {
+		runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--lane", "routine", "--title", title, "--actor", "human:mark")
 	}
-	take := func() string {
+	take := func() (string, string) {
 		t.Helper()
 		result, event := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 		if result["kind"] != "new" || event == nil {
-			t.Fatalf("next --claim = %v, want a new hold", result)
+			t.Fatalf("next=%v", result)
 		}
-		return result["task"].(map[string]any)["id"].(string)
+		return result["task"].(map[string]any)["id"].(string), result["hold"].(map[string]any)["id"].(string)
 	}
-	for _, to := range []string{"cancelled", "done"} {
-		task := take()
-		if to == "done" {
-			seedReviewState(t, workspace, task)
+	task, _ := take()
+	runFIDCommand(t, workspace, "issue", "transition", task, "--to", "cancelled", "--actor", "human:mark", "--reason", "Test cancellation")
+	event := lastJournalEvent(t, workspace)
+	ended := false
+	for _, e := range event["effects"].([]any) {
+		e := e.(map[string]any)
+		if e["table"] == "holds" {
+			ended = e["op"] == "update" && e["values"].(map[string]any)["end_reason"] == "task-cancelled"
 		}
-		runFIDCommand(t, workspace, "issue", "transition", task, "--to", to, "--actor", "human:mark", "--reason", "Test transition")
-		event := lastJournalEvent(t, workspace)
-		ended := false
-		for _, effect := range event["effects"].([]any) {
-			effect := effect.(map[string]any)
-			if effect["table"] == "holds" {
-				values := effect["values"].(map[string]any)
-				ended = effect["op"] == "update" && values["end_reason"] == "task-"+map[string]string{"cancelled": "cancelled", "done": "completed"}[to]
-			}
+	}
+	if event["event_type"] != "issue.transitioned" || !ended {
+		t.Fatalf("cancellation=%v", event)
+	}
+	task, hold := take()
+	runFIDCommand(t, workspace, "start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start-done")
+	runFIDCommand(t, workspace, "handoff", "--hold", hold, "--actor", "agent:builder", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "handoff-done")
+	f := &statusFixture{t: t, workspace: workspace, clock: time.Now}
+	facts := doneFacts(t, f, task)
+	lifecycleResult(t, runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher"), "task.done")
+	event = lastJournalEvent(t, workspace)
+	released := false
+	for _, e := range event["effects"].([]any) {
+		e := e.(map[string]any)
+		if e["table"] == "holds" {
+			released = e["op"] == "update" && e["pk"].(map[string]any)["id"] == hold && e["values"].(map[string]any)["kept"] == false
 		}
-		if event["event_type"] != "issue.transitioned" || !ended {
-			t.Fatalf("moving %s to %s = %v, want the transition to end its hold", task, to, event)
-		}
+	}
+	if event["event_type"] != "task.finished" || !released {
+		t.Fatalf("completion=%v", event)
 	}
 	take()
-	holdsQuery := "SELECT task_id, actor, end_reason, replaces_hold_id FROM holds ORDER BY since, task_id"
+	holdsQuery := "SELECT task_id, actor, end_reason, replaces_hold_id, kept FROM holds ORDER BY since, task_id"
 	before := executeCommandForTest(workspace, "sql", holdsQuery)
-	if before.err != nil || strings.Count(before.stdout, `"end_reason":"task-`) != 2 || strings.Count(before.stdout, `"end_reason":null`) != 1 {
-		t.Fatalf("holds = %#v, want one ended by each transition and one open", before)
+	if before.err != nil || strings.Count(before.stdout, `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.stdout, `"end_reason":"review"`) != 1 || strings.Count(before.stdout, `"end_reason":null`) != 1 || strings.Count(before.stdout, `"kept":0`) != 3 {
+		t.Fatalf("holds=%#v", before)
 	}
 	if rebuilt := executeCommandForTest(workspace, "rebuild"); rebuilt.err != nil {
-		t.Fatalf("rebuild = %#v", rebuilt)
+		t.Fatalf("rebuild=%#v", rebuilt)
 	}
 	if after := executeCommandForTest(workspace, "sql", holdsQuery); after.stdout != before.stdout {
-		t.Fatalf("holds after a rebuild = %s, want %s", after.stdout, before.stdout)
+		t.Fatalf("restored holds=%s want=%s", after.stdout, before.stdout)
 	}
 	archive := filepath.Join(t.TempDir(), "export.zip")
 	if created := executeCommandForTest(workspace, "export", "create", archive); created.err != nil {
-		t.Fatalf("export create = %#v", created)
+		t.Fatalf("export=%#v", created)
 	}
 	if validated := executeCommandForTest(workspace, "--json", "export", "validate", archive); validated.err != nil {
-		t.Fatalf("export validate = %#v", validated)
+		t.Fatalf("validate=%#v", validated)
 	}
 }
 
-// --claim reads the clock once it holds the write lock: a hold that lapses
-// while fid waits for the lock is read as lapsed, so its started task is
-// resumed under a new hold that replaces it.
 func TestNextClaimReadsTheClockUnderTheLock(t *testing.T) {
 	t.Parallel()
 	fixture := newStatusFixture(t, 100*time.Hour)

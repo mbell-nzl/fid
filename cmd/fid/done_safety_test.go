@@ -179,3 +179,24 @@ func TestDoneMissingLocalObjectsHasARepair(t *testing.T) {
 	got := runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher")
 	assertJSONFailureCode(t, got.stderr, "task.done", "done-evidence-required")
 }
+
+func TestDoneGitHubFailureDoesNotConfirmAnEarlierHandoff(t *testing.T) {
+	t.Parallel()
+	f, task, hold := doneBuildFixture(t, "routine", false)
+	lifecycleResult(t, f.run(append([]string{"--json"}, doneHandoffArgs(hold)...)...), "task.handoff")
+	facts := doneFacts(t, f, task)
+	facts.CI.Runs = []github.WorkflowRun{}
+	first := runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher")
+	assertJSONFailureCode(t, first.stderr, "task.done", "done-ci-waiting")
+	lifecycleResult(t, recordReviewTask(t, f, changesInput("primary"), "changes", "human:courier", task), "review.record")
+	next, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "human:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
+	hold = next["hold"].(map[string]any)["id"].(string)
+	lifecycleResult(t, f.run("--json", "check", "--hold", hold, "--actor", "human:builder", "--idempotency-key", "recheck"), "check.execute")
+	lifecycleResult(t, f.run("--json", "handoff", "--hold", hold, "--actor", "human:builder", "--pr", "https://github.com/mbell-nzl/fid/pull/64", "--idempotency-key", "new-pr"), "task.handoff")
+	unavailable := func(context.Context, []string, []string) github.Result { return github.Result{ExitCode: 1} }
+	got := runDone(t, f, unavailable, "--json", "done", task, "--actor", "agent:finisher")
+	assertJSONFailureCode(t, got.stderr, "task.done", "github-unavailable")
+	if strings.Contains(got.stderr, `"merged":true`) || strings.Contains(got.stderr, "merged, waiting") {
+		t.Fatalf("old merge confirmed new hand-off: %s", got.stderr)
+	}
+}

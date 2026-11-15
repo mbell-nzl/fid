@@ -1605,7 +1605,7 @@ merge/CI writers. The single done evaluator then applies the latest
 hand-off's frozen lane and policy. Missing or pending CI says "merged,
 waiting for CI" and keeps the task in review. GitHub failure says "GitHub
 confirmation unavailable", or "merged, waiting for confirmation" when
-there is a recorded merge, including one independently confirmed earlier
+there is a recorded merge for this hand-off, including one independently confirmed earlier
 in this invocation. No failed or waiting result binds a retry key.
 
 Successful text is `✓ Completed FID-9f13aa · merged with CI green`. JSON

@@ -1521,7 +1521,8 @@ Public precondition codes (exit 4) use exact `{gate, reason, record_ids}`:
 `done-observation-stale`. The last four are retryable. Related repairs share
 a code while `reason` retains the evaluator's specific gate reason; the CLI
 spec lists the full mapping. `github-unavailable` is retryable with exact
-`{reason, merged}`, preserving the recorded-merge knowledge boundary.
+`{reason, merged}`, preserving the recorded-merge knowledge boundary for the current hand-off.
+An older hand-off's merge never confirms a replacement PR.
 Unknown IDs retain `issue-not-found`; epics/subtasks are invalid arguments.
 `issue transition` refuses completed-category targets for tasks, with
 `use-done`, for every actor; subtask transitions stay unchanged. No new

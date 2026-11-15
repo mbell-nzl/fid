@@ -139,7 +139,7 @@ func Finish(ctx context.Context, o Options) (completionrecord.Result, error) {
 			}
 		}
 		if remoteErr != nil {
-			return observationFailure(remoteErr, s.Merge != nil)
+			return observationFailure(remoteErr, s.Merge != nil && s.Merge.HandoffID == s.Handoff.ID)
 		}
 		outcome := doneeval.Evaluate(s)
 		if outcome.Status != doneeval.Complete {
