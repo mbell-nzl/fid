@@ -16,6 +16,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
@@ -296,9 +297,7 @@ func TestNextRefusals(t *testing.T) {
 			if cli.ExitCode(human.err) != test.exit || !strings.HasPrefix(human.stderr, "error: ") {
 				t.Fatalf("%v = %#v, want a refusal", test.args, human)
 			}
-			if found := kernelWords.FindAllString(human.stderr, -1); len(found) > 0 {
-				t.Fatalf("%v refusal names kernel words %q:\n%s", test.args, found, human.stderr)
-			}
+			leaktest.AssertNoKernelWords(t, human.stderr)
 		})
 	}
 	if open := fixture.run("--json", "next"); !strings.Contains(open.stdout, `"kind":"new"`) {

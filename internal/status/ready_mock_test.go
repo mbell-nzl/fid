@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 	"github.com/mbell-nzl/fid/internal/next"
 )
 
@@ -66,7 +67,7 @@ func TestReadyApprovedMock(t *testing.T) {
 	if text != want {
 		t.Fatalf("approved mock differs:\n%s\nwant:\n%s", text, want)
 	}
-	assertNoKernelWords(t, text)
+	leaktest.AssertNoKernelWords(t, text)
 }
 
 func stringPtr(value string) *string { return &value }

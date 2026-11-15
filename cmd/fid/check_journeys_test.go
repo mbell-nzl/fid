@@ -24,7 +24,9 @@ func quietChildCoverage() {
 	if testing.CoverMode() == "" || os.Getenv("GOCOVERDIR") != "" {
 		return
 	}
-	dir := filepath.Join(os.TempDir(), "fid-check-child-coverage")
+	// The parent owns this disposable git workspace. Coverage must live
+	// there too: a directory in os.TempDir would outlive an os.Exit or kill.
+	dir := filepath.Join(".git", "fid-check-child-coverage")
 	if os.MkdirAll(dir, 0o700) == nil {
 		_ = os.Setenv("GOCOVERDIR", dir)
 	}
@@ -32,31 +34,39 @@ func quietChildCoverage() {
 
 //nolint:paralleltest // A disposable child process for the named check tests.
 func TestLeanCheckChild(t *testing.T) {
-	for i, arg := range os.Args {
-		if arg != "--check-child" {
-			continue
-		}
-		quietChildCoverage()
-		switch os.Args[i+1] {
-		case "pass":
-			fmt.Println("check output\x1b[31m")
-		case "fail":
-			fmt.Fprintln(os.Stderr, "check failed")
-			os.Exit(3)
-		case "signal":
-			_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
-			time.Sleep(time.Hour)
-		case "pause":
-			time.Sleep(150 * time.Millisecond)
-		case "wait":
-			time.Sleep(time.Hour)
-		case "change":
-			if err := os.WriteFile("coverage.out", []byte("changed"), 0o600); err != nil {
-				os.Exit(2)
-			}
-		}
-		os.Exit(0)
+	mode, child := leanCheckChildMode()
+	if !child {
+		return
 	}
+	quietChildCoverage()
+	switch mode {
+	case "pass":
+		fmt.Println("check output\x1b[31m")
+	case "fail":
+		fmt.Fprintln(os.Stderr, "check failed")
+		os.Exit(3)
+	case "signal":
+		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		time.Sleep(time.Hour)
+	case "pause":
+		time.Sleep(150 * time.Millisecond)
+	case "wait":
+		time.Sleep(time.Hour)
+	case "change":
+		if err := os.WriteFile("coverage.out", []byte("changed"), 0o600); err != nil {
+			os.Exit(2)
+		}
+	}
+	os.Exit(0)
+}
+
+func leanCheckChildMode() (string, bool) {
+	for i, arg := range os.Args {
+		if arg == "--check-child" && i > 0 && os.Args[i-1] == "--" && i+1 < len(os.Args) {
+			return os.Args[i+1], true
+		}
+	}
+	return "", false
 }
 
 func TestLeanCheckStartNamesThePolicyItActuallyResolved(t *testing.T) {
