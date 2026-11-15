@@ -45,22 +45,29 @@ func validateCompletion(tx *sql.Tx, event Event) error {
 	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
 		return err
 	}
-	n := 3
 	var open int
 	if err := tx.QueryRow(`SELECT count(*) FROM questions WHERE task_id=? AND resolved_at IS NULL`, event.Aggregate.ID).Scan(&open); err != nil {
 		return err
 	}
-	n += open
+	// Stage grammar permits repeated Effects. Completion needs an exact
+	// shape so an extra release or retry cannot replace a question resolution.
+	tables := []string{"completions", "issues", "holds"}
+	for i := 0; i < open; i++ {
+		tables = append(tables, "questions")
+	}
 	if event.Idempotency != nil {
-		n++
+		tables = append(tables, "idempotency_results")
 		if err := validateCurrentIdempotency(event); err != nil {
 			return err
 		}
 	}
-	if len(event.Effects) != n {
+	if len(event.Effects) != len(tables) {
 		return fmt.Errorf("completion requires its record, state move, reservation release and open question")
 	}
-	for _, e := range event.Effects {
+	for i, e := range event.Effects {
+		if e.Table != tables[i] {
+			return fmt.Errorf("completion requires exactly its record, state move, reservation release, open question resolutions and optional retry result")
+		}
 		if e.Table != "issues" {
 			if err := validateCurrentEffect(event, e); err != nil {
 				return err
@@ -105,7 +112,7 @@ func validateCompletion(tx *sql.Tx, event Event) error {
 	}
 	if event.Idempotency != nil {
 		var result completionrecord.Result
-		if err := decodeCheckJSON(event.Effects[n-1].Values["result_json"], &result); err != nil {
+		if err := decodeCheckJSON(event.Effects[len(event.Effects)-1].Values["result_json"], &result); err != nil {
 			return err
 		}
 		if result.Status != "done" || result.Replayed || !reflect.DeepEqual(result.Completion, r) {
