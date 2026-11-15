@@ -48,6 +48,11 @@ func newDoneJourney(t *testing.T, lane string) *doneJourney {
 	closureRun(t, root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Task change")
 	p21Run(t, binary, root, "--json", "check", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "check")
 	h := p21Run(t, binary, root, "--json", "handoff", "--hold", hold, "--actor", "agent:builder", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "handoff")
+	return newDoneObservation(t, root, binary, task, hold, h)
+}
+
+func newDoneObservation(t *testing.T, root, binary, task, hold string, h map[string]any) *doneJourney {
+	t.Helper()
 	head := p21PathString(t, h, "result", "head")
 	base, _, err := closureRunCommand(root, "git", "rev-parse", "refs/remotes/origin/trunk")
 	if err != nil {
@@ -149,40 +154,7 @@ func TestDoneBuiltBinaryStandardAndAssuredJourney(t *testing.T) {
 				t.Fatalf("calls=%s/%v", log, err)
 			}
 			entry := p24EndKeyedCapture(j.root)["task.done"]
-			p24AssertStoredFieldNames(t, j.root, "task.done", entry)
-			before := p21JournalEventCount(t, j.root)
-			retry, retryErr, err := j.run(t, args...)
-			if err != nil || retryErr != "" || retry != first {
-				t.Fatalf("retry=%v %s %s", err, retry, retryErr)
-			}
-			for _, field := range []string{"task", "--actor"} {
-				changed := append([]string(nil), args...)
-				for i, arg := range changed {
-					if (field == "task" && arg == "done") || arg == field {
-						changed[i+1] += "-changed"
-						break
-					}
-				}
-				out, stderr, err := j.run(t, changed...)
-				if err == nil || out != "" || processExitCode(t, err) != 4 {
-					t.Fatalf("conflict=%v %s %s", err, out, stderr)
-				}
-				envelope := p23Envelope(t, stderr)
-				if p21PathString(t, envelope, "error", "code") != "idempotency-conflict" || !reflect.DeepEqual(p21Path(t, envelope, "error", "details", "differing_fields"), []any{field}) {
-					t.Fatalf("conflict=%v", envelope)
-				}
-			}
-			if p21JournalEventCount(t, j.root) != before {
-				t.Fatal("retries or conflicts appended Events")
-			}
-			human, humanErr, err := j.run(t, args[1:]...)
-			if err != nil || humanErr != "" || human != "✓ Completed "+j.task+" · merged with CI green\n" {
-				t.Fatalf("human success=%v %q %q", err, human, humanErr)
-			}
-			log2, _ := os.ReadFile(j.log)
-			if !bytes.Equal(log, log2) {
-				t.Fatal("retry observed GitHub")
-			}
+			assertDoneKeyedRetries(t, j, entry)
 			p21Run(t, j.binary, j.root, "rebuild", "--json")
 			shown := p21Run(t, j.binary, j.root, "--json", "show", j.task)
 			if p21PathString(t, shown, "result", "issue", "status") != "done" {
@@ -193,5 +165,54 @@ func TestDoneBuiltBinaryStandardAndAssuredJourney(t *testing.T) {
 				t.Fatalf("reservation=%v", next)
 			}
 		})
+	}
+}
+
+func assertDoneKeyedRetries(t *testing.T, j *doneJourney, entry p24CapturedKeyedCommand) {
+	t.Helper()
+	args := entry.args
+	p24AssertStoredFieldNames(t, j.root, "task.done", entry)
+	before := p21JournalEventCount(t, j.root)
+	log, err := os.ReadFile(j.log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	retry, stderr, err := j.run(t, args...)
+	if err != nil || stderr != "" || retry != entry.stdout {
+		t.Fatalf("retry=%v %s %s", err, retry, stderr)
+	}
+	for _, field := range []string{"task", "--actor"} {
+		changed := append([]string(nil), args...)
+		for i, arg := range changed {
+			if (field == "task" && arg == "done") || arg == field {
+				changed[i+1] += "-changed"
+				break
+			}
+		}
+		out, stderr, err := j.run(t, changed...)
+		if err == nil || out != "" || processExitCode(t, err) != 4 {
+			t.Fatalf("conflict=%v %s %s", err, out, stderr)
+		}
+		envelope := p23Envelope(t, stderr)
+		if p21PathString(t, envelope, "error", "code") != "idempotency-conflict" || !reflect.DeepEqual(p21Path(t, envelope, "error", "details", "differing_fields"), []any{field}) {
+			t.Fatalf("conflict=%v", envelope)
+		}
+	}
+	humanArgs := []string{}
+	for _, arg := range args {
+		if arg != "--json" {
+			humanArgs = append(humanArgs, arg)
+		}
+	}
+	human, stderr, err := j.run(t, humanArgs...)
+	if err != nil || stderr != "" || human != "✓ Completed "+j.task+" · merged with CI green\n" {
+		t.Fatalf("human success=%v %q %q", err, human, stderr)
+	}
+	if p21JournalEventCount(t, j.root) != before {
+		t.Fatal("retries or conflicts appended Events")
+	}
+	log2, _ := os.ReadFile(j.log)
+	if !bytes.Equal(log, log2) {
+		t.Fatal("retry observed GitHub")
 	}
 }

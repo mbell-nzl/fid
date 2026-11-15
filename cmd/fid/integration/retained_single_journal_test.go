@@ -30,7 +30,8 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 	peerID := p21PathString(t, peer, "result", "issue", "id")
 	call("link", "add", issue, "blocks", peerID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:developer", "--idempotency-key", "single-link-add")
 	call("link", "remove", issue, "blocks", peerID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:developer", "--idempotency-key", "single-link-remove")
-	p24LifecycleCommands(t, binary, workspace)
+	task := p24LifecycleCommands(t, binary, workspace)
+	done := completeRetainedLifecycle(t, binary, workspace, task)
 	connArtifact := p22FaultDB(t, workspace)
 	var artifactID string
 	p22FaultOK(t, connArtifact.QueryRow("SELECT id FROM referenced_artifacts ORDER BY id LIMIT 1").Scan(&artifactID))
@@ -45,6 +46,10 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 		t.Fatalf("retained keyed inventory=%v, want %v", got, want)
 	}
 	for _, operation := range want {
+		if operation == "task.done" {
+			assertDoneKeyedRetries(t, done, captured[operation])
+			continue
+		}
 		field := p24FlagFields[operation]
 		if field == "" {
 			field = p24LifecycleFields[operation]
@@ -101,8 +106,25 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 19 {
-		t.Fatalf("retained keyed leaves=%v, want all 19 remaining keyed leaves", want)
+	if len(want) != 20 {
+		t.Fatalf("retained keyed leaves=%v, want all 20 remaining keyed leaves", want)
 	}
 	return want
+}
+
+func completeRetainedLifecycle(t *testing.T, binary, workspace, task string) *doneJourney {
+	t.Helper()
+	taken := p21Run(t, binary, workspace, "--json", "next", "--claim", "--actor", "human:mark")
+	hold := p21PathString(t, taken, "result", "hold", "id")
+	closureRun(t, workspace, "git", "add", ".")
+	closureRun(t, workspace, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Retained corpus change")
+	p21Run(t, binary, workspace, "--json", "check", "pass", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "single-done-check")
+	h := p21Run(t, binary, workspace, "--json", "handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "single-done-handoff")
+	j := newDoneObservation(t, workspace, binary, task, hold, h)
+	j.review(t, "primary", "APPROVE", "single-done-review")
+	out, stderr, err := j.run(t, "--json", "done", task, "--actor", "agent:finisher", "--idempotency-key", "single-done")
+	if err != nil || stderr != "" {
+		t.Fatalf("done=%v %s %s", err, out, stderr)
+	}
+	return j
 }
