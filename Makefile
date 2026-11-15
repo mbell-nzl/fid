@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test check-approval-binding
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test check-approval-binding check-done-refusals
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -50,3 +50,9 @@ build:
 # clean rebase, becomes stale on an edit, and is renewed by a new decision.
 check-approval-binding:
 	go test -count=1 -run '^TestV6ApprovalSurvivesCleanRebaseAndStalesOnEdit$$' ./cmd/fid
+
+# V5 (RESET.md), check:done-refusals: public journeys refuse missing receipts,
+# open majors and stale approvals; only merged work with green CI completes.
+# make test runs it too; this runs only it.
+check-done-refusals:
+	go test -count=1 -run '^TestV5DoneRefusesWithoutReceiptsAndAcceptsMergedGreenWork$$' ./cmd/fid
