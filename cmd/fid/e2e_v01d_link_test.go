@@ -21,12 +21,11 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")
 	peerIssueID := createCommandIssue(t, workspace, "Add index on concerns(issue_id, status)")
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBeforePhase12Writes := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBeforePhase12Writes := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	_, linkIssueStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, linkIssueStderr)
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+1 {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBeforePhase12Writes+1 {
 		t.Fatalf("journal lines after issue link add = %d, want %d", got, linesBeforePhase12Writes+1)
 	}
 
@@ -35,7 +34,7 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 		linkRequirementStderr != "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue\n" {
 		t.Fatalf("removed requirement endpoint = (%q, %v)", linkRequirementStderr, linkRequirementErr)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+1 {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBeforePhase12Writes+1 {
 		t.Fatalf("journal lines after rejected requirement link = %d, want %d", got, linesBeforePhase12Writes+1)
 	}
 
@@ -56,7 +55,7 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 
 	_, removeStderr := runFIDCommand(t, workspace, "link", "remove", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, removeStderr)
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+2 {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBeforePhase12Writes+2 {
 		t.Fatalf("journal lines after link remove = %d, want %d", got, linesBeforePhase12Writes+2)
 	}
 

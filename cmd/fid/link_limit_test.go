@@ -15,7 +15,7 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	primaryID := createCommandIssue(t, workspace, "Link list limit primary")
-	journalPath := mustJournalPath(t, workspace)
+
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
@@ -72,7 +72,7 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 	if _, err := conn.Exec(`INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at) VALUES ('issue', ?, 'relates_to', 'issue', ?, '2026-08-15T00:00:00Z')`, primaryID, "FID-link-limit-over"); err != nil {
 		t.Fatalf("insert over-limit link: %v", err)
 	}
-	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	before := len(splitJournalLines(mustReadJournal(t, workspace)))
 	overLimit := executeCommandForTest(workspace, "--json", "link", "list", primaryID, "--type", "issue")
 	if overLimit.err == nil || overLimit.stdout != "" {
 		t.Fatalf("over-limit link.list = %#v, want stderr-only rejection", overLimit)
@@ -80,7 +80,7 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 	assertLinkFailure(t, overLimit.stderr, "link.list", "result-limit-exceeded", nil, map[string]any{
 		"collection": "links", "limit": json.Number("10000"), "observed": json.Number("10001"),
 	})
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != before {
 		t.Fatalf("journal lines after over-limit read = %d, want %d", got, before)
 	}
 	var rows int
