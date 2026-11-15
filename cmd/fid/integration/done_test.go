@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -148,8 +149,36 @@ func TestDoneBuiltBinaryStandardAndAssuredJourney(t *testing.T) {
 				t.Fatalf("calls=%s/%v", log, err)
 			}
 			entry := p24EndKeyedCapture(j.root)["task.done"]
-			p24ExerciseCapturedLeaf(t, j.root, j.binary, "task.done", "task", entry)
-			p24AssertFamilyConflict(t, j.root, j.binary, "task.done", entry, []string{"--actor"})
+			p24AssertStoredFieldNames(t, j.root, "task.done", entry)
+			before := p21JournalEventCount(t, j.root)
+			retry, retryErr, err := j.run(t, args...)
+			if err != nil || retryErr != "" || retry != first {
+				t.Fatalf("retry=%v %s %s", err, retry, retryErr)
+			}
+			for _, field := range []string{"task", "--actor"} {
+				changed := append([]string(nil), args...)
+				for i, arg := range changed {
+					if (field == "task" && arg == "done") || arg == field {
+						changed[i+1] += "-changed"
+						break
+					}
+				}
+				out, stderr, err := j.run(t, changed...)
+				if err == nil || out != "" || processExitCode(t, err) != 4 {
+					t.Fatalf("conflict=%v %s %s", err, out, stderr)
+				}
+				envelope := p23Envelope(t, stderr)
+				if p21PathString(t, envelope, "error", "code") != "idempotency-conflict" || !reflect.DeepEqual(p21Path(t, envelope, "error", "details", "differing_fields"), []any{field}) {
+					t.Fatalf("conflict=%v", envelope)
+				}
+			}
+			if p21JournalEventCount(t, j.root) != before {
+				t.Fatal("retries or conflicts appended Events")
+			}
+			human, humanErr, err := j.run(t, args[1:]...)
+			if err != nil || humanErr != "" || human != "✓ Completed "+j.task+" · merged with CI green\n" {
+				t.Fatalf("human success=%v %q %q", err, human, humanErr)
+			}
 			log2, _ := os.ReadFile(j.log)
 			if !bytes.Equal(log, log2) {
 				t.Fatal("retry observed GitHub")
