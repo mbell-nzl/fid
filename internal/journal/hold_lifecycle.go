@@ -27,9 +27,6 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 	if err := validateQuestions(tx, event); err != nil {
 		return err
 	}
-	if err := validateReworkHold(tx, event); err != nil {
-		return err
-	}
 	decisions, inserts, updates := 0, 0, 0
 	for _, effect := range event.Effects {
 		if effect.Table == "idempotency_results" && commands[event.EventType] != "" {

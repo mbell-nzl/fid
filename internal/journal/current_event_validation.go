@@ -69,6 +69,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && event.EventType == "task.approved" {
 		return fmt.Errorf("approval requires Event-v2")
 	}
+	if err := validateReworkHold(tx, event); err != nil {
+		return err
+	}
 	if !event.IsV2() {
 		if event.EventType == "artifact.availability-observed" {
 			return fmt.Errorf("artifact availability requires Event-v2")
