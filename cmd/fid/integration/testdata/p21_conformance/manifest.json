@@ -21,6 +21,7 @@
     "invalid-argument",
     "issue-not-found",
     "journal-replay-stopped",
+    "kept-artifact-unavailable",
     "label-not-found",
     "lane-not-set",
     "link-not-found",
