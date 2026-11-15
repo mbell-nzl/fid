@@ -53,8 +53,7 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 			workspace := clonePristineWorkspace(t)
 			testCase.setup(t, workspace)
 
-			journalPath := mustJournalPath(t, workspace)
-			before := mustReadCommandFile(t, journalPath)
+			before := mustReadJournal(t, workspace)
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "maintenance", "check")
 			if err != nil {
 				t.Fatalf("maintenance check error = %v", err)
@@ -66,7 +65,7 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 			if envelope["event"] != nil || envelope["operation"] != "maintenance.check" || envelope["result"].(map[string]any)["status"] != "pass" {
 				t.Fatalf("maintenance envelope = %#v, want successful maintenance.check read envelope", envelope)
 			}
-			if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+			if after := mustReadJournal(t, workspace); !bytes.Equal(after, before) {
 				t.Fatal("maintenance check changed journal bytes")
 			}
 

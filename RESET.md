@@ -93,6 +93,7 @@ criteria below.
 | **1.5d1** | Remove the kernel, part 3a: its journal and export catalog entries, and those of Concerns and of requirement and decision references; manifest-v1 validation (decisions record, settled 12 and 14 November 2026) | Assured | A journal or archive holding any removed event is refused as `schema-unsupported`, changing nothing; every remaining test passes, V8 and the export tests included, none weakened (done 2026-11-15) |
 | **1.5d2** | Remove the kernel, part 3b: its tables, and those of Concerns and of requirement and decision references, dropped by a migration; its maintenance checks | Assured | No kernel table remains, nor any table of Concerns or of requirement and decision references; every remaining test passes, V8 and the export tests included, none weakened (done 2026-11-15) |
 | **1.5e** | Test suites clean up their temporary directories: a helper child of the test binary skips the suite's setup, Go's telemetry cannot recreate the suite's directories after cleanup, and child coverage stays in its parent-owned fixture | Routine | A `make test` run and an integration run leave nothing in the temp directory (done 2026-11-15) |
+| **1.5f** | cmd/fid tests survive a run that crosses UTC midnight | Routine | Journal assertions span every dated file, proven by tests that force the crossing in cmd/fid and integration (done 2026-11-15) |
 | **1.6a** | Merge-aware `done`, part 1: GitHub facts through `gh`: a small read adapter with an injected runner, and typed facts for the PR, its head's tree and the CI runs on its merge commit (decisions record, 2026-11-15) | Assured | Canned `gh` responses prove the adapter returns the exact facts or a typed failure; a mismatched repository, branch or commit and an incomplete response never count as success; no `gh` call fetches, merges or writes (done 2026-11-15) |
 | **1.6b** | Merge-aware `done`, part 2: a confirmed merge recorded against its task, and each completed CI run on the merge commit recorded as a check result from CI (run, attempt, workflow, commit, conclusion) | Assured | Merge and CI records survive replay, export and restore, V8 included; a wrong task, PR or commit is refused and changes nothing; local check results are unchanged (done 2026-11-15) |
 | **1.6c** | Merge-aware `done`, part 3: the change fingerprint, `git patch-id --verbatim` of the hand-off's recorded base and head with pinned diff settings, computed locally and never fetched | Assured | A clean rebase keeps the fingerprint and any edit, whitespace included, changes it; binary, rename and mode changes count; empty, partial or unavailable input is refused (done 2026-11-15) |
@@ -131,6 +132,7 @@ On 2026-11-14 the orchestrator split 1.5b-1.5d into 1.5b1-1.5d2, all Assured, un
 On 2026-11-15 Mark added 1.5e after the test suites were found to leak temporary directories.
 On 2026-11-15 the orchestrator split 1.6 into 1.6a-1.6l, all Assured, under Mark's delegation,
 bringing forward the recording parts of 2.1 and 2.3 that `done` needs.
+On 2026-11-15 Mark added 1.5f after a local CI run that crossed UTC midnight failed 47 tests.
 
 Weeks 4–6 run the trial; it may slip to week 7.
 

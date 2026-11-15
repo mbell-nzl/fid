@@ -73,7 +73,7 @@ func write(options Options, operation string, build func(writeContext) (journal.
 			}
 			if found {
 				if operation == "finding.close" {
-					if err := journal.ValidateFindingCloseRetry(conn, outcome.ResultJSON); err != nil {
+					if err := journal.ValidateFindingCloseRetry(conn, outcome.ResultJSON, options.FindingID, outcome.EntityID); err != nil {
 						return err
 					}
 				}

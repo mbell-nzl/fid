@@ -6,12 +6,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
@@ -310,16 +307,7 @@ func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expe
 
 func p20AssertJournalEventAttribution(t *testing.T, workspace, eventID, actorID string) {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
-	if err != nil || len(paths) != 1 {
-		t.Fatalf("journal files = %v, %v; want one journal", paths, err)
-	}
-	file, err := os.Open(paths[0])
-	if err != nil {
-		t.Fatalf("open journal: %v", err)
-	}
-	defer func() { _ = file.Close() }()
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(bytes.NewReader(p21JournalBytes(t, workspace)))
 	for scanner.Scan() {
 		var event struct {
 			ID     string `json:"event_id"`

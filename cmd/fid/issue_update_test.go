@@ -101,8 +101,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--priority", "8", "--actor", "agent:developer")
 	if err == nil {
@@ -120,7 +119,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 		t.Fatalf("issue JSON after rejected update = %q, want %q", afterStdout, beforeStdout)
 	}
 
-	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	linesAfter := len(splitJournalLines(mustReadJournal(t, workspace)))
 	if linesAfter != linesBefore {
 		t.Fatalf("journal lines after rejected update = %d, want %d", linesAfter, linesBefore)
 	}
@@ -133,8 +132,8 @@ func TestIssueUpdateRejectsStaleExpectedRevision(t *testing.T) {
 
 	_, createOutput := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Concurrency target", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createOutput)
-	journalPath := mustJournalPath(t, workspace)
-	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 
 	result := executeCommandForTest(workspace,
 		"--json", "issue", "update", issueID,
@@ -168,7 +167,7 @@ func TestIssueUpdateRejectsStaleExpectedRevision(t *testing.T) {
 	if failure.Error.Details.Expected != 2 || failure.Error.Details.Actual != 1 {
 		t.Fatalf("state-conflict details = %+v, want expected 2 actual 1", failure.Error.Details)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+	if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore {
 		t.Fatalf("journal lines after stale update = %d, want unchanged %d", got, linesBefore)
 	}
 }
@@ -292,8 +291,7 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 				issueID = envelope.Result.Issue.ID
 			}
 
-			journalPath := mustJournalPath(t, workspace)
-			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			linesBefore := len(splitJournalLines(mustReadJournal(t, workspace)))
 			args := []string{"--json", "issue", tt.operation}
 			if tt.operation == "create" {
 				args = append(args, "--kind", "task", "--title", "Removed owner input")
@@ -341,7 +339,7 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 			if failure.Error.Details.Argument != "--"+tt.flag || failure.Error.Details.Value != "--"+tt.flag || strings.Join(failure.Error.Details.Allowed, ",") != strings.Join(want, ",") {
 				t.Fatalf("failure details = %+v, want full offending spelling and exact local flags %v", failure.Error.Details, want)
 			}
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+			if got := len(splitJournalLines(mustReadJournal(t, workspace))); got != linesBefore {
 				t.Fatalf("journal lines after rejected %s = %d, want %d", tt.operation, got, linesBefore)
 			}
 		})
@@ -372,8 +370,8 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 		t.Fatalf("Unmarshal(create stdout) error = %v", err)
 	}
 	issueID := createEnvelope.Result.Issue.ID
-	journalPath := mustJournalPath(t, workspace)
-	createTail := lastCommandJournalEvent(t, journalPath)
+
+	createTail := lastCommandJournalEvent(t, workspace)
 	if createEnvelope.Event.ID != createTail.EventID || createEnvelope.Event.OccurredAt != createTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("create event = %+v, want journal tail %q at %s", createEnvelope.Event, createTail.EventID, createTail.OccurredAt)
 	}
@@ -415,7 +413,7 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 	if got, want := strings.Join(fields, ","), "labels,priority,spec_md_path,title"; got != want {
 		t.Fatalf("update change fields = %q, want %q", got, want)
 	}
-	updateTail := lastCommandJournalEvent(t, journalPath)
+	updateTail := lastCommandJournalEvent(t, workspace)
 	if updateEnvelope.Event.ID != updateTail.EventID || updateEnvelope.Event.OccurredAt != updateTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("update event = %+v, want journal tail %q at %s", updateEnvelope.Event, updateTail.EventID, updateTail.OccurredAt)
 	}

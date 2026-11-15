@@ -383,16 +383,12 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 
 	seedCommandLabels(t, workspace, "core", "phase-4")
 
-	journalPath := mustJournalPath(t, workspace)
-	beforePayload, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforePayload := mustReadJournal(t, workspace)
 	beforeLines := splitJournalLines(beforePayload)
 
 	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	epicID := parseCreatedIssueID(t, epicStderr)
-	afterEpicLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	afterEpicLines := splitJournalLines(mustReadJournal(t, workspace))
 	if len(afterEpicLines) != len(beforeLines)+1 {
 		t.Fatalf("journal lines after epic = %d, want %d", len(afterEpicLines), len(beforeLines)+1)
 	}
@@ -412,14 +408,14 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		"--actor", "agent:tl",
 	)
 	taskID := parseCreatedIssueID(t, taskStderr)
-	afterTaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	afterTaskLines := splitJournalLines(mustReadJournal(t, workspace))
 	if len(afterTaskLines) != len(afterEpicLines)+1 {
 		t.Fatalf("journal lines after task = %d, want %d", len(afterTaskLines), len(afterEpicLines)+1)
 	}
 
 	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--actor", "agent:developer")
 	subtaskID := parseCreatedIssueID(t, subtaskStderr)
-	afterSubtaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	afterSubtaskLines := splitJournalLines(mustReadJournal(t, workspace))
 	if len(afterSubtaskLines) != len(afterTaskLines)+1 {
 		t.Fatalf("journal lines after subtask = %d, want %d", len(afterSubtaskLines), len(afterTaskLines)+1)
 	}
@@ -566,20 +562,13 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
-	journalPath := mustJournalPath(t, workspace)
-	beforePayload, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
-	}
+	beforePayload := mustReadJournal(t, workspace)
 	beforeLines := splitJournalLines(beforePayload)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Append one event", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
-	afterPayload, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("ReadFile(%q) after create error = %v", journalPath, err)
-	}
+	afterPayload := mustReadJournal(t, workspace)
 	afterLines := splitJournalLines(afterPayload)
 	if len(afterLines) != len(beforeLines)+1 {
 		t.Fatalf("journal lines = %d, want %d", len(afterLines), len(beforeLines)+1)
@@ -686,7 +675,7 @@ func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
 	t.Run("unregistered actor is recorded as attribution", func(t *testing.T) {
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unregistered actor", "--actor", "agent:intern")
 		issueID := parseCreatedIssueID(t, stderr)
-		tail := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+		tail := lastCommandJournalEvent(t, workspace)
 		if tail.ActorV2.ActorID != "intern" || tail.ActorV2.ActorType != "agent" || tail.Aggregate.ID != issueID {
 			t.Fatalf("Event Actor/aggregate = (%#v, %#v), want agent intern attribution for %q", tail.ActorV2, tail.Aggregate, issueID)
 		}
@@ -714,7 +703,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 			t.Fatalf("stdout before corruption = %q, want issue payload", stdout)
 		}
 
-		appendRawJournalLine(t, mustJournalPath(t, workspace), `{"event_id":"EVT-20260607-999999"`)
+		appendRawJournalLine(t, latestJournalPath(t, workspace), `{"event_id":"EVT-20260607-999999"`)
 
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "issue", "get", issueID)
 		if err == nil {
@@ -809,7 +798,7 @@ func assertStoppedJournalFile(t *testing.T, stderr, workspace string) {
 	if err := json.Unmarshal([]byte(stderr), &failure); err != nil {
 		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr)
 	}
-	want := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, filepath.Base(mustJournalPath(t, workspace))))
+	want := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, filepath.Base(latestJournalPath(t, workspace))))
 	if got := failure.Error.Details.JournalFile; got != want {
 		t.Fatalf("journal_file = %q, want %q", got, want)
 	}

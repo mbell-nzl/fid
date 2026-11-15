@@ -27,7 +27,7 @@ func TestRemovedFamiliesRenderSchemaRefusal(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			path := mustJournalPath(t, fixture.workspace)
+			path := latestJournalPath(t, fixture.workspace)
 			appendRawJournalLine(t, path, string(encoded))
 			before := snapshotWorkspacePersistence(t, fixture.workspace)
 			for _, command := range []string{"status", "rebuild"} {

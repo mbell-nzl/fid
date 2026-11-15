@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,8 +14,7 @@ func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
-	journalPath := mustJournalPath(t, workspace)
-	journalBefore := mustReadCommandFile(t, journalPath)
+	journalBefore := mustReadJournal(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
@@ -38,7 +36,7 @@ func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 			t.Fatalf("maintenance vacuum %v = %#v, want %q", args, result, want)
 		}
 	}
-	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+	if journalAfter := mustReadJournal(t, workspace); !bytes.Equal(journalAfter, journalBefore) {
 		t.Fatal("maintenance vacuum changed journal bytes")
 	}
 	if activityAfter := countActivityLogRows(t, conn); activityAfter != activityBefore {
@@ -50,11 +48,7 @@ func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testi
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
-	journalPath := mustJournalPath(t, workspace)
-	journalBefore, err := os.ReadFile(journalPath)
-	if err != nil {
-		t.Fatalf("read journal: %v", err)
-	}
+	journalBefore := mustReadJournal(t, workspace)
 
 	for _, args := range [][]string{{"maintenance", "vacuum"}, {"maintenance", "vacuum", "--by", "unknown"}} {
 		result := executeCommandForTest(workspace, args...)
@@ -68,7 +62,7 @@ func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testi
 		if !strings.Contains(result.stderr, want) {
 			t.Fatalf("maintenance vacuum %v = %#v, want %q", args, result, want)
 		}
-		if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+		if journalAfter := mustReadJournal(t, workspace); !bytes.Equal(journalAfter, journalBefore) {
 			t.Fatal("unavailable maintenance vacuum changed journal bytes")
 		}
 	}

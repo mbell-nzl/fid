@@ -179,21 +179,37 @@ func TestPersonClosureAdmissionEveryPath(t *testing.T) {
 func TestPersonClosureRefusesLegacyDecisionOnlyWriter(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"live", "replay", "import"} {
-		t.Run(mode, func(t *testing.T) {
-			t.Parallel()
-			v, _, _ := closureArchiveFixture(t)
-			e := personClosureEvent(t)
-			e.EventSchema = 1
-			e.EventType = "issue.updated"
-			e.Aggregate.Type = "issue"
-			e.Aggregate.ID = "FID-a"
-			e.Effects = e.Effects[:1]
-			e.Effects[0].Table = "PERSON_DECISIONS"
-			before := handoffProjectionSnapshot(t, v)
-			if err := applyLeanEmptyEvent(v, mode, e); err == nil || handoffProjectionSnapshot(t, v) != before {
-				t.Fatalf("legacy person's closure=%v", err)
-			}
-		})
+		for _, tc := range []struct {
+			name, column string
+			inKey        bool
+		}{
+			{"values", "kind", false},
+			{"values alias", "KiNd", false},
+			{"key", "kind", true},
+			{"key alias", "KiNd", true},
+		} {
+			t.Run(mode+"/"+tc.name, func(t *testing.T) {
+				t.Parallel()
+				v, _, _ := closureArchiveFixture(t)
+				e := personClosureEvent(t)
+				e.EventSchema = 1
+				e.EventType = "issue.updated"
+				e.Aggregate.Type = "issue"
+				e.Aggregate.ID = "FID-a"
+				e.Effects = e.Effects[:1]
+				e.Effects[0].Table = "PERSON_DECISIONS"
+				delete(e.Effects[0].Values, "kind")
+				row := e.Effects[0].Values
+				if tc.inKey {
+					row = e.Effects[0].PK
+				}
+				row[tc.column] = "close-finding"
+				before := handoffProjectionSnapshot(t, v)
+				if err := applyLeanEmptyEvent(v, mode, e); err == nil || handoffProjectionSnapshot(t, v) != before {
+					t.Fatalf("legacy person's closure=%v", err)
+				}
+			})
+		}
 	}
 }
 
