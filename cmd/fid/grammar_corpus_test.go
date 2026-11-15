@@ -149,7 +149,13 @@ func grammarClassRows(t *testing.T) []grammarRow {
 		if cmd.CommandPath() == "fid check" {
 			continue
 		}
-		rows = append(rows, grammarRow{name: cmd.CommandPath() + " positional", operation: grammarOperation(cmd), code: "invalid-argument", message: message, argument: "arguments", value: value, allowed: allowed, args: args})
+		argument := "arguments"
+		positionalAllowed := allowed
+		if cmd.CommandPath() == "fid done" {
+			// The optional task selects reconciliation; an actor is required in both forms.
+			argument, message, positionalAllowed = "--actor", "--actor is required", []string{"--actor"}
+		}
+		rows = append(rows, grammarRow{name: cmd.CommandPath() + " positional", operation: grammarOperation(cmd), code: "invalid-argument", message: message, argument: argument, value: value, allowed: positionalAllowed, args: args})
 		if len(use) > 0 {
 			extra := append([]string{}, parts...)
 			for range use {

@@ -33,6 +33,8 @@ func TestP24KeyedLeafCorpusMatchesLiveTree(t *testing.T) {
 	if len(rows) != 20 || len(families) != 14 {
 		t.Fatalf("keyed-leaf corpus has %d rows in %d families; want 20/14", len(rows), len(families))
 	}
+	// done remains one keyed leaf: only its explicit-task form accepts a key;
+	// TestReconcileEmptyAndCommandFailures covers rejection in the no-ID form.
 	root := newRootCommandAt(t.TempDir())
 	got := make([]string, 0, len(rows))
 	var walk func(*cobra.Command)

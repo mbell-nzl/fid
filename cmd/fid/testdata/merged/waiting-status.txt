@@ -1,0 +1,7 @@
+╭ fid status ────────────────────────────────────────────── <date> ╮
+
+  IN PROGRESS
+  ● FID-<task>  Done evaluator subject          merged, waiting for CI
+
+  ✓ Backed up 1 minute ago
+╰──────────────────────────────────────────────────────────────────────╯

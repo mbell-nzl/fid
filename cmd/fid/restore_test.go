@@ -210,6 +210,8 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	holdReview := tookReview["hold_id"].(string)
 	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "start", "--hold", holdReview, "--actor", "human:mark", "--idempotency-key", "v8-still-review-start"), "task.start")
 	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "handoff", "--hold", holdReview, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/65", "--idempotency-key", "v8-still-review-handoff"), "task.handoff")
+	recordV8OfflineMerge(t, reviewTree, stillReview, 65, false)
+	ids = append(ids, addV8FailedMerge(t, workspace))
 	assertV8HasNoKernelRecords(t, workspace)
 	return workspace, v8IDs{issues: ids, now: time.Now()}
 }
@@ -277,6 +279,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		}
 		state.reads[strings.Join(args, " ")] = result.stdout
 	}
+	captureV8MergeReads(t, workspace, ids, &state)
 	// The holds, as the projection replayed from the journal has them. No
 	// read command lists them, and fid next's answer depends on the
 	// worktree it runs in.
@@ -536,7 +539,7 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["questions"], `"resolution":"finished-before-answer"`) != 1 || strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 7 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 3 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 8 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 4 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {

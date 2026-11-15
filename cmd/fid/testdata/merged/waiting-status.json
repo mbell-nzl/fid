@@ -1,0 +1,74 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "current",
+      "reasons": [],
+      "summary": "Backed up 1 minute ago",
+      "next_action": null,
+      "last_backup_at": "<time>",
+      "ledger_started_at": "<time>",
+      "age_seconds": 60,
+      "latest": {
+        "schema": "fid.backup-record.v1",
+        "started_at": "<time>",
+        "finished_at": "<time>",
+        "outcome": "pushed",
+        "project_id": "project-0123456789abcdef0123456789abcdef",
+        "commit": "<commit-or-tree>",
+        "archive_digest": "sha256:<digest>",
+        "event_count": 12,
+        "terminal_event_hash": "sha256:<digest>",
+        "failure": null
+      },
+      "consecutive_failures": 0,
+      "target_set": true,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "<time>",
+    "hint": null,
+    "in_progress": {
+      "epics": [],
+      "tasks": [
+        {
+          "id": "FID-<task>",
+          "title": "Done evaluator subject",
+          "status": "in_review",
+          "status_category": "started",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": [],
+          "working": null,
+          "kept": {
+            "worktree": "<ROOT>",
+            "here": true,
+            "mode": "review",
+            "reason": null,
+            "since": "<time>",
+            "hold_id": "HLD-<new>",
+            "actor": "human:builder",
+            "model": "codex/gpt-6.1-sol"
+          },
+          "merge": {
+            "merge_commit": "<commit-or-tree>",
+            "ci": "waiting"
+          }
+        }
+      ]
+    },
+    "needs_you": [],
+    "ready": {
+      "next": null,
+      "epics": [],
+      "tasks": []
+    },
+    "warnings": []
+  }
+}

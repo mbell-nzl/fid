@@ -13,13 +13,19 @@ import (
 func init() { rootFlagCapabilities["done"] = rootFlagCapability{Project: true, JSON: true} }
 func newDoneCommand(run github.Runner) *cobra.Command {
 	var actor, key string
-	cmd := &cobra.Command{Use: "done <task>", Short: "Complete a reviewed task after its merge and CI pass.", Args: canonicalExactArgs("task.done", 1), RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{Use: "done [task]", Short: "Complete a reviewed task, or reconcile every task in review.", Args: doneArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireCanonicalFlag(cmd, "task.done", "actor"); err != nil {
 			return err
+		}
+		if len(args) == 0 && cmd.Flags().Changed("idempotency-key") {
+			return writeGrammarFailure(cmd, "task.done", cli.CodeInvalidArgument, "--idempotency-key requires a task", map[string]any{"argument": "--idempotency-key", "value": key, "allowed": []string{"supply a task"}})
 		}
 		root, err := rebuildWorkspaceRoot(cmd)
 		if err != nil {
 			return renderCheckOperationFailure(cmd, "task.done", err)
+		}
+		if len(args) == 0 {
+			return reconcileDone(cmd, donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Actor: actor, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
 		}
 		result, err := donework.Finish(cmd.Context(), donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
 		if err != nil {
@@ -64,4 +70,46 @@ func renderDoneFailure(cmd *cobra.Command, task string, cause error) error {
 		return err
 	}
 	return cli.NewFailureError(f, cause)
+}
+
+func doneArgs(cmd *cobra.Command, args []string) error {
+	if len(args) > 1 {
+		return canonicalExactArgs("task.done", 1)(cmd, args)
+	}
+	return nil
+}
+
+func reconcileDone(cmd *cobra.Command, options donework.Options) error {
+	outcomes, err := donework.Reconcile(cmd.Context(), options)
+	if err != nil {
+		return renderCheckOperationFailure(cmd, "task.done", err)
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "task.done", map[string]any{"outcomes": outcomes}, nil)
+	}
+	if len(outcomes) == 0 {
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), "No tasks in review to reconcile.")
+		return err
+	}
+	for _, o := range outcomes {
+		label, message := "Completed", "merged with CI green"
+		if o.Refusal != nil {
+			message = o.Refusal.Message
+			label = map[string]string{"waiting": "Waiting", "refused": "Refused", "github-unavailable": "GitHub unavailable"}[o.Status]
+			if gate, ok := o.Refusal.Details["gate"].(string); ok {
+				message += " (" + gate + ")"
+			}
+			if o.Refusal.Next != "" {
+				message += "; " + o.Refusal.Next
+			}
+		}
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s · %s\n", label, cli.EscapeControlText(o.TaskID), cli.EscapeControlText(message)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
