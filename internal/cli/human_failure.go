@@ -128,6 +128,9 @@ func humanStrings(value any) []string {
 }
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
+	if strings.HasPrefix(string(failure.Code), "done-") || failure.Code == "github-unavailable" {
+		return failure.NextAction
+	}
 	switch failure.Code {
 	case CodeKeptArtifactUnavailable, CodeChecksNotConfigured, CodeCheckStillRunning, CodeChecksUnsatisfied, CodeTestPathsNotConfigured:
 		return failure.NextAction

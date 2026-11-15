@@ -6,12 +6,12 @@ import (
 	"github.com/mbell-nzl/fid/internal/approvalrecord"
 	"github.com/mbell-nzl/fid/internal/checkread"
 	"github.com/mbell-nzl/fid/internal/checkrecord"
+	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
-	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
 type Status string
@@ -129,14 +129,15 @@ type GitHubFacts struct {
 }
 
 type Snapshot struct {
+	Fingerprint       fingerprint.Result
 	Task              Task
 	Handoff           *handoffrecord.Record
 	Policy            *policy.Effective
 	Checks            []checkrecord.Record
 	ArtifactsVerified bool
 	ArtifactProblems  []checkread.ArtifactProblem
-	Rounds            []reviewwork.RoundView // journal order, freshness/other-model from shared reader
-	OpenMajors        []reviewrecord.Finding // task-wide, including stale rounds
+	Rounds            []reviewrecord.RoundView // journal order, freshness/other-model from shared reader
+	OpenMajors        []reviewrecord.Finding   // task-wide, including stale rounds
 	Approval          approvalrecord.View
 	Merge             *mergerecord.Merge
 	CIResults         []mergerecord.CIResult

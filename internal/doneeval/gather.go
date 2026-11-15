@@ -9,10 +9,9 @@ import (
 	"github.com/mbell-nzl/fid/internal/approvalrecord"
 	"github.com/mbell-nzl/fid/internal/checkread"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
-	"github.com/mbell-nzl/fid/internal/mergework"
+	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
-	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
 // Gather reads fid's evidence through a caller-owned projection snapshot. The
@@ -22,6 +21,16 @@ import (
 // It computes review/approval freshness locally, reads kept bytes, and writes
 // no ledger records. Missing evidence stays in the snapshot for Evaluate.
 func Gather(root string, conn reviewrecord.Queryer, task string, target Target, remote GitHubFacts) (Snapshot, error) {
+	return gather(root, conn, task, target, remote, nil)
+}
+
+// Recorded rechecks historical bindings without git, kept files or networking.
+// Present-evidence observations are immutable completion attestations.
+func Recorded(conn reviewrecord.Queryer, task string, target Target, remote GitHubFacts, fp fingerprint.Result) (Snapshot, error) {
+	return gather("", conn, task, target, remote, &fp)
+}
+
+func gather(root string, conn reviewrecord.Queryer, task string, target Target, remote GitHubFacts, fp *fingerprint.Result) (Snapshot, error) {
 	s := Snapshot{Target: target, GitHub: remote, Approval: approvalrecord.View{State: "missing"}}
 	var lane sql.NullString
 	err := conn.QueryRow(`SELECT id,kind,status,lane,revision FROM issues WHERE id=?`, task).Scan(&s.Task.ID, &s.Task.Kind, &s.Task.State, &lane, &s.Task.Revision)
@@ -52,16 +61,16 @@ func Gather(root string, conn reviewrecord.Queryer, task string, target Target, 
 		}
 		s.Policy = &p
 	}
-	if err := gatherLocal(root, conn, &s); err != nil {
+	if err := gatherLocal(root, conn, &s, fp); err != nil {
 		return s, fmt.Errorf("gather done evidence: %w", err)
 	}
-	m, err := mergework.LatestMerge(conn, task)
+	m, err := mergerecord.LatestMerge(conn, task)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return s, fmt.Errorf("gather done merge: %w", err)
 	}
 	if err == nil {
 		s.Merge = &m
-		s.CIResults, err = mergework.CIResults(conn, task, m.ID)
+		s.CIResults, err = mergerecord.CIResults(conn, task, m.ID)
 		if err != nil {
 			return s, fmt.Errorf("gather done CI: %w", err)
 		}
@@ -69,7 +78,7 @@ func Gather(root string, conn reviewrecord.Queryer, task string, target Target, 
 	return s, nil
 }
 
-func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot) error {
+func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *fingerprint.Result) error {
 	var err error
 	s.Checks, err = checkread.Read(conn, s.Task.ID)
 	if err != nil {
@@ -77,7 +86,9 @@ func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot) error {
 	}
 	if s.Policy != nil {
 		checks := checkread.Evaluate(s.Task.ID, s.Handoff.Tree, s.Handoff.RequiredChecks, s.Policy.Checks, s.Checks)
-		s.ArtifactProblems, err = checkread.VerifyKept(root, checks)
+		if recorded == nil {
+			s.ArtifactProblems, err = checkread.VerifyKept(root, checks)
+		}
 		if err != nil {
 			return err
 		}
@@ -98,13 +109,16 @@ func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot) error {
 	fp := fingerprint.Result{}
 	// Routine work with no review/approval evidence does not need a fingerprint
 	// merely to explain missing gates, and may have an empty committed diff.
-	if len(rounds) > 0 || len(approvals) > 0 {
+	if recorded != nil {
+		fp = *recorded
+	} else if len(rounds) > 0 || len(approvals) > 0 {
 		fp, err = fingerprint.Compute(root, s.Handoff.Base, s.Handoff.Head)
 		if err != nil {
 			return err
 		}
 	}
-	s.Rounds, err = reviewwork.CurrentViews(conn, s.Task.ID, fp)
+	s.Fingerprint = fp
+	s.Rounds, err = reviewrecord.CurrentViews(conn, s.Task.ID, fp)
 	if err != nil {
 		return err
 	}

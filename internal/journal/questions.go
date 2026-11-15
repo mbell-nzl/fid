@@ -38,7 +38,7 @@ func validateQuestions(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("answer requires one question resolution")
 		}
 	default:
-		if inserts != 0 || updates > 1 || (updates == 1 && event.EventType != "issue.transitioned") {
+		if inserts != 0 || updates > 1 || (updates == 1 && event.EventType != "issue.transitioned" && event.EventType != "task.finished") {
 			return fmt.Errorf("unrelated question Effect")
 		}
 	}
@@ -98,8 +98,14 @@ func validateQuestionResolution(tx *sql.Tx, event Event, effect Effect) error {
 	if err := tx.QueryRow(`SELECT task_id,resolved_at FROM questions WHERE id=?`, effect.PK["id"]).Scan(&task, &resolved); err != nil {
 		return err
 	}
-	if resolved != nil || task != event.Aggregate.ID || event.ActorV2.ActorType != "human" || effect.Values["resolved_at"] != event.OccurredAt.UTC().Format(time.RFC3339) {
+	if resolved != nil || task != event.Aggregate.ID || (event.ActorV2.ActorType != "human" && event.EventType != "task.finished") || effect.Values["resolved_at"] != event.OccurredAt.UTC().Format(time.RFC3339) {
 		return fmt.Errorf("question resolution differs from Event or already resolved")
+	}
+	if event.EventType == "task.finished" {
+		if effect.Values["resolution"] != "finished-before-answer" || effect.Values["decision_id"] != nil {
+			return fmt.Errorf("completion resolves a question without an answer or cancellation")
+		}
+		return nil
 	}
 	kind, resolution, binding := "answer", "answered", effect.PK["id"]
 	if event.EventType == "issue.transitioned" {

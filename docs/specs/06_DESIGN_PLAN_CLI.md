@@ -716,9 +716,9 @@ fid next [--claim --actor <actor>] [--explain]
 Issues use fixed built-in states for their kind. New issues ignore retired
 workflow assignments. Standalone inventory mutations record typed actor
 attribution. No execution-chain authority is required for an Issue transition.
-An `issue transition` that completes a task ends its hold in the same
-`issue.transitioned` Event. Cancelling tasks and epics is a person's
-decision, with the contract below.
+`issue transition` refuses every completed-category target for a task and
+points at `fid done`; subtasks retain their plain transitions. Cancelling
+tasks and epics is a person's decision, with the contract below.
 
 **`fid next`** (task 1.4a; decisions record, D8's 1.4 details) hands a
 worktree its next task. It walks one order and serves the first task
@@ -979,8 +979,10 @@ reason: transition-not-permitted; from_state=todo, to_state=in_progress, unsatis
 next: fid start --hold <hold> --actor <actor> --idempotency-key <key>
 ```
 
-Cancellation stays person-only. Completion refusal belongs to `done` in
-1.6; subtasks retain their existing behavior.
+Cancellation stays person-only. Task completion belongs to `fid done`
+(RESET 1.6i), with `transition-not-permitted`, unsatisfied `use-done`,
+for every actor attempting it through `issue transition`. Subtasks retain
+their existing behavior; the epic completion guard arrives in 1.6k.
 
 **Hold lifecycle (RESET 1.5a2; Mark, 14 November 2026).**
 
@@ -1572,6 +1574,83 @@ approval after an edit needs a fresh key. Semantic, fingerprint and terminal
 refusals use `invalid-argument` (exit 2) and change nothing. Existing project,
 lock and journal refusal envelopes still apply.
 
+
+### Task completion (RESET 1.6i)
+
+```text
+fid done <task> --actor <actor> [--idempotency-key <key>] [--json]
+```
+
+The operation is `task.done`, accepting `--project`. Agents and people may
+finish a task; services get `authority-denied`. No live hold is required.
+The task must be `in_review` with its latest hand-off's review reservation.
+An epic is `invalid-argument` (exit 2), with the message
+"fid done closes tasks; closing an epic arrives in 1.6k". No task argument
+is a usage error until 1.6j adds reconciliation. Subtasks use their plain
+transitions.
+
+Each invocation observes GitHub once, outside the ledger write lock. The
+PR comes from the latest hand-off, the repository from `origin`, and the
+default branch from local `origin/HEAD`. fid never fetches, polls, merges,
+or starts background work. Under the write lock it refreshes the projection
+and compares the original task/evidence snapshot and its hold/question
+history. A takeover, cancellation, lane change, newer hand-off or changed
+evidence refuses as `done-observation-stale` before any observation is
+recorded. A takeover already present when the call starts needs a new
+hand-off too.
+
+A confirmed merge whose head tree matches the hand-off is recorded even
+while CI is pending. Every completed CI attempt is recorded through the
+merge/CI writers. The single done evaluator then applies the latest
+hand-off's frozen lane and policy. Missing or pending CI says "merged,
+waiting for CI" and keeps the task in review. GitHub failure says "GitHub
+confirmation unavailable", or "merged, waiting for confirmation" when
+there is a recorded merge, including one independently confirmed earlier
+in this invocation. No failed or waiting result binds a retry key.
+
+Successful text is `✓ Completed FID-9f13aa · merged with CI green`. JSON
+has `result: {status: "done", completion: <record>}` and the completion
+Event's ID and time. The completion names its task, latest hand-off, merge,
+all completed CI results observed by this call, the selected counting CI
+results, review rounds and approval. It also records the locally computed
+fingerprint, the Rollback observation, other-model disclosure, actor and
+time. One `task.finished` Event inserts that immutable record, moves the
+task to `done`, releases its review reservation, and resolves an open
+question as `finished-before-answer`, without an answer or cancellation.
+Replay/import validate the same recorded gates without network, git objects
+or present Artifact files. An identical keyed retry returns the original
+response/Event before any GitHub or git observation; changed task or actor
+under that key is `idempotency-conflict`.
+
+All `done-*` refusals below are preconditions (exit 4), with an Issue subject
+and exact details `{gate, reason, record_ids}`. `reason` retains the done
+evaluator's specific reason even when related repairs share a public code.
+
+| Code | Evaluator reasons | Retryable |
+|---|---|---|
+| `done-task-not-in-review` | `task-not-in-review` | no |
+| `done-handoff-required` | `handoff-missing`, `handoff-mismatch`, `lane-changed`, `pr-mismatch`, `repository-mismatch`, `branch-mismatch`, `merge-invalid`, `head-tree-mismatch` | no |
+| `done-evidence-required` | `fingerprint-unavailable` (local computation), `prerequisite-missing`, `policy-missing`, `policy-mismatch`, `checks-not-configured`, `test-paths-not-configured`, `artifacts-not-verified`, `pr-unavailable`, `merge-missing`, `merge-mismatch`, `ci-mismatch`, `ci-unrecorded` | no |
+| `done-checks-unsatisfied` | `checks-unsatisfied` | no |
+| `done-kept-artifact-unavailable` | `kept-artifact-unavailable` | no |
+| `done-review-required` | primary `review-missing`, `review-stale`, `profile-missing` | no |
+| `done-separate-review-required` | separate `review-missing`, `review-stale`, `profile-missing`, `separate-session-required` | no |
+| `done-open-major` | `open-major` | no |
+| `done-approval-missing` | `approval-missing` | no |
+| `done-approval-stale` | `approval-stale` | no |
+| `done-rollback-missing` | `rollback-missing` | no |
+| `done-not-merged` | `not-merged` | yes |
+| `done-ci-waiting` | `ci-waiting` | yes |
+| `done-ci-not-green` | `ci-not-green` | yes |
+| `done-observation-stale` | command revalidation failed (`observation-stale`) | yes |
+
+A missing task is `issue-not-found`. `github-unavailable` is a retryable
+precondition (exit 4), Issue subject, exact details `{reason, merged}`;
+`reason` comes from the GitHub adapter's unavailable reason. Local policy
+failures retain `policy-unavailable`. Every refusal supplies a repair in
+human text. A hard evidence failure takes precedence over waiting, with
+gates considered in the evaluator's fixed order. Offline status/show
+presentation and reconciliation remain in 1.6j.
 
 ## 4. Common Mutation Behavior
 

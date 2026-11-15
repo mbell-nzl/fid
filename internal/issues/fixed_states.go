@@ -1,5 +1,7 @@
 package issues
 
+import "github.com/mbell-nzl/fid/internal/issuestate"
+
 // CommandTransitionError directs callers to the command that owns an edge.
 type CommandTransitionError struct{ IssueID, From, To, Rule, Message, Next string }
 
@@ -10,7 +12,10 @@ func fixedTransition(current issueTransitionState, to string) error {
 		return nil
 	}
 	rule, message, next := "", "", ""
+	category, _ := issuestate.CategoryForState(current.WorkflowID, to)
 	switch {
+	case current.Kind == "task" && category == "completed":
+		rule, message, next = "use-done", current.ID+" completes with fid done", "fid done "+current.ID+" --actor <actor>"
 	case to == "in_progress":
 		rule, message, next = "use-start", current.ID+" starts with fid start", "fid start --hold <hold> --actor <actor> --idempotency-key <key>"
 	case current.Kind == "task" && to == "in_review":

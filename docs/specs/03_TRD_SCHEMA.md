@@ -984,3 +984,26 @@ Build models use the existing immutable hold attribution. No new Event
 family or dependency is introduced. Both closed catalogs admit these
 stages; archive profile 32 and projection cache version 14 cover the change.
 The down migration drops `rework_at`; it does not rewrite journal history.
+
+
+### Lean task completion (RESET 1.6i)
+
+Migration 0034 adds `completions(id, task_id UNIQUE, handoff_id, merge_id,
+record_json)` with foreign keys to the task's recorded evidence. Projection
+cache version 16 rebuilds existing caught-up projections; the active
+migration/export profile is 34. The immutable JSON holds the exact
+completion evidence, its observed and selected CI result IDs, round IDs,
+approval ID, fingerprint binding, Rollback observation and model disclosure.
+The new lean family is `task.finished` / `task.done`, on the task aggregate.
+Both catalogs admit exactly the ordered completion insert, task state move,
+review reservation release, optional question resolution and optional retry
+result. No other family can insert, update or delete a completion. Admission
+reuses the pure done evaluator over recorded observations, and checks exact
+state/revision, latest hand-off, task/evidence ownership, and reservation.
+The complete Event must fit below the journal's 1 MiB line limit.
+
+The rebuilt `questions` table additionally admits `finished-before-answer`.
+Only the completion family may write that resolution. It preserves the
+original question, has a resolution time and null decision/answer, and lands
+atomically with the task's completion and reservation release. Historical
+replay/import do not reacquire external or filesystem evidence.

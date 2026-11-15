@@ -174,6 +174,8 @@ func projectCommandFlags(key, outside string) []string {
 		return []string{"--hold", "HLD-1", "--interrupted", "--reason", "Refusal"}
 	case "answer":
 		return nil
+	case "done":
+		return []string{"--actor", "agent:finisher"}
 	case "approve":
 		return []string{"--actor", "human:mark", "--reason", "Refusal"}
 	case "takeover", "finding close":

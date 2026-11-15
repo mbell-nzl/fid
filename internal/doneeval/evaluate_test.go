@@ -14,7 +14,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
-	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
 func completeSnapshot(lane string, triggered bool) Snapshot {
@@ -29,10 +28,10 @@ func completeSnapshot(lane string, triggered bool) Snapshot {
 	profiles, _ := reviewrecord.RequiredProfiles(*h, p)
 	s := Snapshot{Task: Task{ID: h.TaskID, Kind: "task", State: "in_review", Lane: lane}, Handoff: h, Policy: &p, ArtifactsVerified: true, Target: Target{Repository: pr.BaseRepository, DefaultBranch: "main"}, GitHub: GitHubFacts{PR: pr, HeadTree: tree}, Approval: approvalrecord.View{State: "current"}}
 	s.Checks = []checkrecord.Record{{Start: checkrecord.Start{ID: "CHK-one", TaskID: h.TaskID, Tree: checkrecord.Tree{Tree: tree}, Name: "test", DefinitionDigest: h.DefinitionDigests["test"]}, Result: &checkrecord.Result{Counts: true, Outcome: "passed"}}}
-	s.Rounds = []reviewwork.RoundView{{Round: reviewrecord.Round{ID: "RND-one", TaskID: h.TaskID, Stream: "primary", Profiles: profiles, Reviewer: reviewrecord.Reviewer{SessionID: "first"}, Verdict: "APPROVE"}, Current: true, OtherModel: true}}
+	s.Rounds = []reviewrecord.RoundView{{Round: reviewrecord.Round{ID: "RND-one", TaskID: h.TaskID, Stream: "primary", Profiles: profiles, Reviewer: reviewrecord.Reviewer{SessionID: "first"}, Verdict: "APPROVE"}, Current: true, OtherModel: true}}
 	s.GitHub.PR.Body = "## Rollback\nRevert."
 	if lane == "assured" {
-		s.Rounds = append(s.Rounds, reviewwork.RoundView{Round: reviewrecord.Round{ID: "RND-two", TaskID: h.TaskID, Stream: "separate", Profiles: profiles, Reviewer: reviewrecord.Reviewer{SessionID: "second"}, Verdict: "APPROVE"}, Current: true})
+		s.Rounds = append(s.Rounds, reviewrecord.RoundView{Round: reviewrecord.Round{ID: "RND-two", TaskID: h.TaskID, Stream: "separate", Profiles: profiles, Reviewer: reviewrecord.Reviewer{SessionID: "second"}, Verdict: "APPROVE"}, Current: true})
 	}
 	s.Merge = &mergerecord.Merge{ID: "MRG-one", TaskID: h.TaskID, HandoffID: h.ID, PR: h.PR, Number: 1, Repository: "owner/repo", BaseBranch: "main", MergeCommit: merge, HeadSHA: head, HeadTree: tree}
 	run := github.WorkflowRun{ID: 1, Attempt: 2, WorkflowID: 1, Name: "ci", Path: ".github/workflows/ci.yml", Event: "push", HeadSHA: merge, Status: "completed", Conclusion: "success", URL: "https://github.com/owner/repo/actions/runs/1"}

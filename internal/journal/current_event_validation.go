@@ -30,6 +30,19 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	// These tables have no legacy writer. Guard SQLite's case-insensitive
 	// table resolution before the legacy/retained Issue compatibility path.
 	for _, effect := range event.Effects {
+		if strings.EqualFold(effect.Table, "questions") {
+			for _, row := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
+				for column, value := range row {
+					if strings.EqualFold(column, "resolution") && value == "finished-before-answer" && (!event.IsV2() || event.EventType != "task.finished" || effect.Op != "update") {
+						return fmt.Errorf("finished questions require their completion Event-v2 family")
+					}
+				}
+			}
+		}
+		if strings.EqualFold(effect.Table, "completions") && (!event.IsV2() || event.EventType != "task.finished" || effect.Op != "insert") {
+			return fmt.Errorf("completion records require their immutable Event-v2 family")
+		}
+
 		if strings.EqualFold(effect.Table, "holds") {
 			for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
 				for column := range values {
@@ -66,7 +79,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && (event.EventType == "review.round-recorded" || event.EventType == "finding.closed") {
 		return fmt.Errorf("review rounds require Event-v2")
 	}
-	if !event.IsV2() && event.EventType == "task.approved" {
+	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.finished") {
 		return fmt.Errorf("approval requires Event-v2")
 	}
 	if err := validateReworkHold(tx, event); err != nil {
@@ -87,6 +100,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
+	}
+	if event.EventType == "task.finished" {
+		return validateCompletion(tx, event)
 	}
 	if event.EventType == "task.approved" {
 		return validateApproval(tx, event)

@@ -1480,6 +1480,56 @@ The internal reason values are: `evidence-satisfied`, `not-required`,
 `head-tree-mismatch`, `merge-missing`, `merge-mismatch`, `ci-waiting`,
 `ci-not-green`, `ci-mismatch`, `ci-unrecorded`.
 
+
+**1.6i's choices (2026-11-15).** `fid done <task>` / `task.done` accepts
+work actors and an optional retry key, without a live hold. It observes the
+hand-off's PR once through the injected `gh` reader, with origin's GitHub
+identity and locally known default branch, outside the ledger lock. Under
+the lock it refreshes and compares the complete gathered evidence and task
+hold/question history, catching takeovers which do not bump the Issue
+revision. Origin metadata is rechecked too. Superseded observations record
+nothing. An already-replaced review reservation requires another hand-off.
+Locked entry points to 1.6b's writers let confirmed matching merges and
+completed CI attempts land before the evaluator, even on waiting/refusal.
+A separately confirmed merge may be retained if the later CI request fails.
+
+Migration 34 adds `completions`; cache version 16 rebuilds the projection.
+The new lean family is `task.finished`, on the task aggregate, avoiding the
+retired kernel's `task_completions` name. One Event inserts the immutable
+completion, moves `in_review` to `done`, releases exactly its hand-off's
+review reservation and resolves any open question as
+`finished-before-answer` (null answer/decision). It may append one retry
+result. Both catalogs admit the family; every replay/import validates the
+record's task/latest-hand-off/merge/CI/review/approval bindings and exact
+state/release effects. Its fingerprint and Rollback observation are present
+evidence recorded at completion. Recorded evaluation reuses 1.6h's pure
+evaluator without network, git objects or Artifact bytes; shared read views
+now live in record packages so journal admission has no writer dependency.
+The record distinguishes all completed CI attempts observed on this call
+from the selected green attempts, preserving latest-attempt evaluation
+without treating older receipts as a fresh GitHub observation. The Event
+budget is below 1 MiB. Waiting/refused results never bind retry keys; a
+completed retry validates against its immutable record and returns the
+original response/Event before git/GitHub access.
+
+Public precondition codes (exit 4) use exact `{gate, reason, record_ids}`:
+`done-task-not-in-review`, `done-handoff-required`, `done-evidence-required`,
+`done-checks-unsatisfied`, `done-kept-artifact-unavailable`,
+`done-review-required`, `done-separate-review-required`, `done-open-major`,
+`done-approval-missing`, `done-approval-stale`, `done-rollback-missing`,
+`done-not-merged`, `done-ci-waiting`, `done-ci-not-green` and
+`done-observation-stale`. The last four are retryable. Related repairs share
+a code while `reason` retains the evaluator's specific gate reason; the CLI
+spec lists the full mapping. `github-unavailable` is retryable with exact
+`{reason, merged}`, preserving the recorded-merge knowledge boundary.
+Unknown IDs retain `issue-not-found`; epics/subtasks are invalid arguments.
+`issue transition` refuses completed-category targets for tasks, with
+`use-done`, for every actor; subtask transitions stay unchanged. No new
+dependency. Reconciliation/status wording, epics and V5's verifier remain
+1.6j–1.6l. V8 writes merges, failed/successful CI and completion through
+public commands, retaining its separate in-review, rework and unanswered
+question subjects alongside the completed task.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

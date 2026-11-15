@@ -12,6 +12,11 @@ func validateCurrentUpdate(event Event, effect Effect) error {
 	}
 	values, guards := "", ""
 	switch effect.Table {
+	case "holds":
+		if event.EventType != "task.finished" {
+			return fmt.Errorf("hold update requires its family validation")
+		}
+		values, guards = "kept", "kept"
 	case "referenced_artifacts":
 		values, guards = "availability", "availability"
 	case "check_requests":

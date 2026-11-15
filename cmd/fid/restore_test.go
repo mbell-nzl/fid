@@ -190,7 +190,7 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	}
 
 	// A third worktree keeps its task through review, with an immutable hand-off.
-	_, handoffCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "In review during backup", "--lane", "assured", "--actor", "human:mark")
+	_, handoffCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Completed before backup", "--lane", "assured", "--actor", "human:mark")
 	handoffTask := parseCreatedIssueID(t, handoffCreated)
 	ids = append(ids, handoffTask)
 	reviewTree := gittest.AddWorktree(t, workspace)
@@ -200,6 +200,16 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	runFIDCommand(t, reviewTree, "handoff", "--hold", reviewID, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-handoff")
 	recordV8MergeCI(t, workspace, handoffTask)
 	recordV8Reviews(t, reviewTree, handoffTask)
+	recordV8Completion(t, reviewTree, handoffTask)
+	// Completion releases its reservation. Preserve the existing in-review
+	// reservation assertion on another task, alongside the rework subject.
+	createdReview, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Still in review at backup", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "v8-still-review"), "issue.create")
+	stillReview := createdReview["issue"].(map[string]any)["id"].(string)
+	ids = append(ids, stillReview)
+	tookReview, _ := lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "takeover", stillReview, "--actor", "human:mark", "--reason", "Keep the review reservation"), "task.takeover")
+	holdReview := tookReview["hold_id"].(string)
+	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "start", "--hold", holdReview, "--actor", "human:mark", "--idempotency-key", "v8-still-review-start"), "task.start")
+	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "handoff", "--hold", holdReview, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/65", "--idempotency-key", "v8-still-review-handoff"), "task.handoff")
 	assertV8HasNoKernelRecords(t, workspace)
 	return workspace, v8IDs{issues: ids, now: time.Now()}
 }
@@ -292,7 +302,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
+	for _, table := range []string{"completions", "finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -523,10 +533,10 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["holds"], `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.reads["holds"], `"end_reason":null`) != 1 {
 		t.Fatalf("original holds = %s, want one its task's cancellation ended and one open", before.reads["holds"])
 	}
-	if strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
+	if strings.Count(before.reads["questions"], `"resolution":"finished-before-answer"`) != 1 || strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 5 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 3 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 7 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 3 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {
