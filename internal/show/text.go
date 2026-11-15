@@ -163,6 +163,9 @@ func (text textWriter) rows(result Result) []string {
 			return lines
 		}
 	}
+	if kept := result.Kept; kept != nil && kept.Mode == "rework" {
+		lines = append(lines, text.value("Working", fmt.Sprintf("rework in %s by %s, since %s", kept.Worktree, kept.Actor, display.Clock(kept.Since, result.Now)))...)
+	}
 	if kept := result.Kept; kept != nil && kept.Reason != nil {
 		lines = append(lines, text.value("Working", fmt.Sprintf("⚠ interrupted in %s by %s: parked at %s: %s", kept.Worktree, kept.Actor, display.Clock(kept.Since, result.Now), *kept.Reason))...)
 	}

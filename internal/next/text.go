@@ -99,6 +99,8 @@ func (text textWriter) rows(result Result, served Entry) []string {
 func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
+	case result.Kind == KindRework:
+		return append(text.prose(indent, "Rework here: fix the review findings, then check and hand off again."), text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Answer != nil:
 		return append(text.prose(indent, "Answer: "+result.Answer.Text), text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Interrupted != nil:
@@ -169,6 +171,9 @@ func (text textWriter) nothing(result Result, explain bool) []string {
 // stoppedBy is what stops entry, as a kind to count: its reason, with the
 // worktree directory for work held elsewhere.
 func stoppedBy(entry Entry) string {
+	if entry.Kept != nil && entry.Kept.Mode == "rework" {
+		return "rework " + filepath.Base(entry.Kept.Worktree)
+	}
 	if entry.Kept != nil && entry.Kept.Mode == "review" {
 		return "review"
 	}
@@ -185,6 +190,8 @@ func stoppedBy(entry Entry) string {
 func countText(kind string, count int) string {
 	reason, directory, _ := strings.Cut(kind, " ")
 	switch reason {
+	case "rework":
+		return fmt.Sprintf("%d for rework in %s", count, directory)
 	case "review":
 		return plural(count, "in review", "in review")
 	case ReasonWaitingForYou:
@@ -228,6 +235,12 @@ func (text textWriter) inOrder(result Result) []string {
 // it hands out, ready for any other that nothing stops, and otherwise what
 // stops it. A held task names the worktree's directory.
 func Verdict(entry Entry, served bool) (string, display.Role) {
+	if entry.Kept != nil && entry.Kept.Mode == "rework" {
+		if entry.Kept.Here {
+			return "rework here", display.RoleWarning
+		}
+		return "rework in " + filepath.Base(entry.Kept.Worktree), display.RoleWarning
+	}
 	if entry.Kept != nil && entry.Kept.Mode == "review" {
 		return "in review", display.RoleMuted
 	}

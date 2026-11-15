@@ -168,8 +168,8 @@ func TestReviewExistingMajorAndConflictingRetry(t *testing.T) {
 	first := recordReview(t, f, in, "first", "human:courier")
 	lifecycleResult(t, first, "review.record")
 	shown, _ := lifecycleResult(t, f.run("--json", "show", "FID-9f13aa"), "issue.show")
-	if shown["issue"].(map[string]any)["status"] != "in_review" {
-		t.Fatalf("review changed task state: %v", shown)
+	if shown["issue"].(map[string]any)["status"] != "in_progress" {
+		t.Fatalf("CHANGES did not return task to the builder: %v", shown)
 	}
 	before := reviewProjection(t, f)
 	conflict := recordReview(t, f, reviewInput(), "first", "human:courier")

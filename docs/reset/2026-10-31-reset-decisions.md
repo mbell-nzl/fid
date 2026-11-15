@@ -1336,6 +1336,33 @@ a nit and a major still open, through public commands. The cross-fingerprint
 closure test extends 1.6d's journal-backed second-hand-off fixture; public
 rework and its V8 journey still belong to 1.6f.
 
+**1.6f's choices (2026-11-15).** Migration 32 adds nullable
+`holds.rework_at`; the ended build hold keeps its hand-off time and `review`
+end reason, while its kept mode becomes `rework` from that round’s time.
+Projection cache version 14 rebuilds older projections. Existing
+`review.round-recorded` and `hold.taken` families suffice; both closed
+catalogs include the optional, exactly validated rework effects. The same
+review Event bumps only an `in_review` task’s revision and changes its own
+kept hand-off reservation. CHANGES while already `in_progress` and APPROVE
+never change state or a hold. A linked rework hold is allowed only for the
+same task and worktree; its model joins all other build-hold attribution.
+Rework replacement admission runs before the Event-v1 compatibility return,
+resolves legacy SQL table/key spelling, and requires a full Event-v2 new hold
+even when historical optional fields such as `last_heartbeat_at` are omitted.
+
+`next` returns rework before unblocking and new work; an existing live or
+interrupted session still resumes first. Repeating next after taking
+rework is an ordinary resume of that same hold. Rework elsewhere reuses
+`interrupted-elsewhere`, the existing informational reason for kept work;
+human text names rework. There is no second start:
+the task is already `in_progress`, so the fix goes directly through check
+and hand-off. Takeover and cancellation keep their existing command paths.
+V8 now uses public commands for the full fix/check/hand-off/approval loop,
+with stale first rounds and a later round closing their remaining major.
+A separate V8 task preserves its still-open-major coverage, since an
+approving round cannot leave its task’s major open. The earlier journal-only
+second-hand-off fixture now uses public rework too. No new dependency.
+
 **Approval** (moved from 2.3)
 
 21. **`fid approve <task> --actor human:<name> --reason <text>`.** Standard
@@ -2627,7 +2654,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   unconfirmed; the ownership test and production lock code are outside
   the frozen-lane coverage finding.
 
-- From this PR (1.6d): V8's public-command stale round lands with 1.6f's rework.
 - From this PR (1.6d): audit older writers for Events at or above 1 MiB.
   The journal's aggregate and sequence scanners cap lines there, while
   replay reads complete lines. New review Events refuse before append

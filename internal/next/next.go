@@ -222,7 +222,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	var replaces *string
 	if planned.own != nil {
 		ended[planned.own.ID] = true
-		if planned.kind == KindResume {
+		if planned.kind == KindResume || planned.kind == KindRework {
 			replaces = &planned.own.ID
 		}
 	}

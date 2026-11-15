@@ -55,5 +55,8 @@ func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
 	if hold.InReview() {
 		kept.Mode, kept.Reason, kept.Question = "review", nil, nil
 	}
+	if hold.Rework() {
+		kept.Mode, kept.Since, kept.Reason, kept.Question = "rework", *hold.ReworkAt, nil, nil
+	}
 	return kept
 }

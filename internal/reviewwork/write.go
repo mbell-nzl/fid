@@ -97,6 +97,11 @@ func Record(o Options) (Result, error) {
 		if err != nil {
 			return err
 		}
+		rework, err := journal.ReviewReworkEffects(conn, r)
+		if err != nil {
+			return err
+		}
+		effects = append(effects, rework...)
 		kind, actor, _ := strings.Cut(o.Actor, ":")
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.round-recorded", CommandName: "review.record", OccurredAt: now, ActorV2: journal.EventActor{ActorID: actor, ActorType: kind, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}, Aggregate: journal.Aggregate{ID: r.ID, Type: "review", Sequence: 1}, Effects: effects}
 		raw, err := json.Marshal(Result{Round: r, At: r.At})

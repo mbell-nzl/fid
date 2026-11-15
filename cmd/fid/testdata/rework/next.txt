@@ -1,0 +1,9 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ● FID-9f13aa  Harden login rate limiting                 in progress
+
+  Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
+
+  Rework here: fix the review findings, then check and hand off again.
+      → fid show FID-9f13aa
+╰──────────────────────────────────────────────────────────────────────╯

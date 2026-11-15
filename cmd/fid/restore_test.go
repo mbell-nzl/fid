@@ -310,7 +310,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 	}
 	assertV8MergeCI(t, workspace)
 	assertV8Reviews(t, workspace)
-	reviewTask := executeCommandForTest(workspace, "sql", `SELECT task_id FROM review_rounds LIMIT 1`)
+	reviewTask := executeCommandForTest(workspace, "sql", `SELECT task_id FROM review_rounds WHERE json_extract(record_json,'$.reviewer.session_id')='v8-primary'`)
 	if reviewTask.err != nil {
 		t.Fatal(reviewTask.err)
 	}
@@ -525,7 +525,7 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 4 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 2 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 5 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 3 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {

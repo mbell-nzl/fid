@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
@@ -40,8 +41,7 @@ func TestReviewFreshnessAfterJournalHandoff(t *testing.T) {
 				runGitForTest(t, f.workspace, "commit", "-m", "Edit task")
 			}
 			prepareSecondReviewHandoff(t, f, task)
-			// Use the real hand-off writer; both this and the state fixture append
-			// Events, never SQL. Public rework and its V8 journey belong to 1.6f.
+			// Both work return and the second hand-off use public commands.
 			reviewHandoffTask(t, f, "second-handoff", task)
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
@@ -65,39 +65,10 @@ func TestReviewFreshnessAfterJournalHandoff(t *testing.T) {
 
 func prepareSecondReviewHandoff(t *testing.T, f *statusFixture, task string) {
 	t.Helper()
-	// Model the future rework state only in this fixture. The product's public
-	// transition refusal remains intact; no alternate production path is added.
-	err := journal.WithLock(f.workspace, journal.LockOwner{Command: "second hand-off fixture"}, func(lock *journal.WriteLock) error {
-		conn, err := reviewwork.OpenProjection(f.workspace)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = conn.Close() }()
-		aggregate := journal.Aggregate{Type: "issue", ID: task}
-		aggregate.Sequence, err = journal.NextAggregateSequence(filepath.Join(config.LedgerDir(f.workspace), "journal"), aggregate)
-		if err != nil {
-			return err
-		}
-		now := statusNow
-		if f.clock != nil {
-			now = f.clock()
-		}
-		e := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "issue.transitioned", CommandName: "issue.transition", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "fixture", ActorType: "human", Producer: "test", ProvenanceRef: "review-rework-fixture"}, Aggregate: aggregate, Effects: []journal.Effect{
-			{Op: "update", Table: "issues", PK: map[string]any{"id": task}, Values: map[string]any{"status": "in_progress"}, Preconditions: map[string]any{"status": "in_review"}},
-			{Op: "activity", Table: "activity_log", PK: map[string]any{"id": "review-rework-fixture"}, Values: map[string]any{"ref_type": "issue", "ref_id": task, "event": "status-changed", "actor": "fixture", "occurred_at": now.UTC().Format("2006-01-02T15:04:05Z")}},
-		}}
-		prepared, err := journal.PrepareEvent(lock, e)
-		if err != nil {
-			return err
-		}
-		e.Effects[1].Values["journal_event_id"] = prepared.EventID
-		_, err = journal.CommitEvent(lock, conn, e)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
+	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
+	if taken["kind"] != "rework" || taken["task"].(map[string]any)["id"] != task {
+		t.Fatalf("second hand-off requires public rework: %v", taken)
 	}
-	lifecycleResult(t, f.run("--json", "takeover", task, "--actor", "human:builder", "--reason", "Second hand-off fixture", "--model", "codex/gpt-6.1-sol"), "task.takeover")
 }
 
 func canonicalReviewFixture(t *testing.T) (*statusFixture, string) {
@@ -107,7 +78,15 @@ func canonicalReviewFixture(t *testing.T) (*statusFixture, string) {
 
 func canonicalReviewFixtureWithLane(t *testing.T, lane string) (*statusFixture, string) {
 	t.Helper()
+	return canonicalReviewFixtureAt(t, lane, false)
+}
+
+func canonicalReviewFixtureAt(t *testing.T, lane string, linked bool) (*statusFixture, string) {
+	t.Helper()
 	f := newLifecycleFixture(t)
+	if linked {
+		f.workspace = gittest.AddWorktree(t, f.workspace)
+	}
 	now := time.Now().Add(time.Minute)
 	f.clock = func() time.Time { return now }
 	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Review freshness", "--lane", lane, "--actor", "human:mark", "--idempotency-key", "create"), "issue.create")

@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
@@ -40,6 +42,37 @@ func recordV8Reviews(t *testing.T, root, task string) {
 		}
 	}
 	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "close", ids[1], "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "v8-close"), "finding.close")
+	recordV8Rework(t, root, task, ids[2])
+}
+
+func recordV8Rework(t *testing.T, root, task, finding string) {
+	t.Helper()
+	taken, _ := lifecycleResult(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:fixer", "--model", "codex/gpt-6.1-sol"), "next.claim")
+	if taken["kind"] != "rework" || taken["task"].(map[string]any)["id"] != task || taken["hold"].(map[string]any)["replaces"] == nil {
+		t.Fatalf("V8 needs public rework: %v", taken)
+	}
+	hold := taken["hold"].(map[string]any)["id"].(string)
+	writeBackupTestFile(t, filepath.Join(root, "rework.txt"), "Fix the major review finding\n")
+	runGitForTest(t, root, "add", ".")
+	runGitForTest(t, root, "commit", "-qm", "Rework the reviewed change")
+	lifecycleResult(t, executeCommandForTest(root, "--json", "check", "--hold", hold, "--actor", "agent:fixer", "--idempotency-key", "v8-rework-check"), "check.execute")
+	lifecycleResult(t, executeCommandForTest(root, "--json", "handoff", "--hold", hold, "--actor", "agent:fixer", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-rework-handoff"), "task.handoff")
+	in := reviewInput()
+	in["reviewer"].(map[string]any)["session_id"] = "v8-fixed-primary"
+	in["dispositions"] = []any{disposition(finding, "resolved")}
+	f := &statusFixture{t: t, workspace: root, clock: time.Now}
+	lifecycleResult(t, recordReviewTask(t, f, in, "v8-fixed-review", "human:courier", task), "review.record")
+	// Preserve V8's open-major coverage on a separate task. An approving
+	// round cannot coexist with an unclosed major on its own task.
+	created, _ := lifecycleResult(t, executeCommandForTest(root, "--json", "issue", "create", "--kind", "task", "--title", "Open review finding at backup", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "v8-open-task"), "issue.create")
+	openTask := created["issue"].(map[string]any)["id"].(string)
+	other := gittest.AddWorktree(t, root)
+	took, _ := lifecycleResult(t, executeCommandForTest(other, "--json", "takeover", openTask, "--actor", "human:mark", "--reason", "Build the second review subject"), "task.takeover")
+	hold = took["hold_id"].(string)
+	lifecycleResult(t, executeCommandForTest(other, "--json", "start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "v8-open-start"), "task.start")
+	lifecycleResult(t, executeCommandForTest(other, "--json", "handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/64", "--idempotency-key", "v8-open-handoff"), "task.handoff")
+	f.workspace = other
+	lifecycleResult(t, recordReviewTask(t, f, changesInput("primary"), "v8-open-review", "human:courier", openTask), "review.record")
 }
 
 func assertV8Reviews(t *testing.T, workspace string) {
@@ -62,26 +95,34 @@ func assertV8Reviews(t *testing.T, workspace string) {
 			t.Fatal(err)
 		}
 	}
-	if rounds != 2 || findings != 5 || closures != 3 || models == 0 || manual == 0 {
+	if rounds != 4 || findings != 6 || closures != 4 || models == 0 || manual == 0 {
 		t.Fatalf("V8 reviews=%d findings=%d modeled holds=%d manual holds=%d closures=%d", rounds, findings, models, manual, closures)
 	}
 	for _, severity := range []string{"major", "minor", "nit"} {
 		var n int
-		if err := conn.QueryRow(`SELECT count(*) FROM round_findings WHERE json_extract(record_json,'$.severity')=?`, severity).Scan(&n); err != nil || n != map[string]int{"major": 3, "minor": 1, "nit": 1}[severity] {
+		if err := conn.QueryRow(`SELECT count(*) FROM round_findings WHERE json_extract(record_json,'$.severity')=?`, severity).Scan(&n); err != nil || n != map[string]int{"major": 4, "minor": 1, "nit": 1}[severity] {
 			t.Fatalf("V8 %s=%d/%v", severity, n, err)
 		}
 	}
 	var task string
-	if err := conn.QueryRow(`SELECT task_id FROM review_rounds LIMIT 1`).Scan(&task); err != nil {
+	if err := conn.QueryRow(`SELECT task_id FROM review_rounds WHERE json_extract(record_json,'$.reviewer.session_id')='v8-primary'`).Scan(&task); err != nil {
 		t.Fatal(err)
 	}
 	open, err := reviewrecord.OpenMajors(conn, task)
-	if err != nil || len(open) != 1 {
+	if err != nil || len(open) != 0 {
 		t.Fatalf("V8 open majors=%v/%v", open, err)
+	}
+	views, err := reviewwork.List(workspace, task)
+	if err != nil || len(views) != 3 || views[0].Current || views[1].Current || !views[2].Current || views[2].Verdict != "APPROVE" {
+		t.Fatalf("V8 stale and fixed rounds=%v/%v", views, err)
+	}
+	var outstanding int
+	if err := conn.QueryRow(`SELECT count(*) FROM round_findings f LEFT JOIN finding_closures c ON c.finding_id=f.id WHERE json_extract(f.record_json,'$.severity')='major' AND c.finding_id IS NULL`).Scan(&outstanding); err != nil || outstanding != 1 {
+		t.Fatalf("V8 must retain an open major: %d/%v", outstanding, err)
 	}
 	for _, stream := range []string{"primary", "separate"} {
 		var n int
-		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != 1 {
+		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 3, "separate": 1}[stream] {
 			t.Fatalf("V8 %s=%d/%v", stream, n, err)
 		}
 	}

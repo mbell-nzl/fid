@@ -33,11 +33,11 @@ func (hold Hold) Release(reason string, at time.Time) journal.Effect {
 // from missing without ever substituting another session's hold.
 func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 	var hold Hold
-	var ended, reason, replaces, endReason sql.NullString
+	var ended, reason, replaces, endReason, rework sql.NullString
 	var since, expires, heartbeat string
 	err := conn.QueryRow(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at,
- COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id, end_reason, model FROM holds WHERE id = ?`, id).
-		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces, &endReason, &hold.Model)
+ COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id, end_reason, model, rework_at FROM holds WHERE id = ?`, id).
+		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces, &endReason, &hold.Model, &rework)
 	if err != nil {
 		return Hold{}, err
 	}
@@ -48,6 +48,9 @@ func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 		if *stamp.target, err = time.Parse(time.RFC3339, stamp.raw); err != nil {
 			return Hold{}, fmt.Errorf("read hold time: %w", err)
 		}
+	}
+	if rework.Valid {
+		hold.ReworkAt = &rework.String
 	}
 	if endReason.Valid {
 		hold.EndReason = &endReason.String
@@ -70,5 +73,8 @@ func (hold Hold) Waiting() bool { return hold.Question != nil && hold.Question.R
 
 // InReview identifies the builder worktree reservation after hand-off.
 func (hold Hold) InReview() bool {
-	return hold.Kept && hold.EndReason != nil && *hold.EndReason == "review"
+	return hold.Kept && hold.EndReason != nil && *hold.EndReason == "review" && hold.ReworkAt == nil
 }
+
+// Rework identifies a review reservation returned to its builder worktree.
+func (hold Hold) Rework() bool { return hold.Kept && hold.ReworkAt != nil }

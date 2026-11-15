@@ -964,3 +964,23 @@ facts, a latest-merge reader and a CI-history reader. Readers order by
 journal insertion. The lock covers refresh, validation and append; network
 requests belong to the caller outside it. No public command is added in
 1.6b; `fid done` in 1.6i is the first caller.
+
+
+### Reset 1.6f - rework reservations
+
+Migration `0032_rework` adds nullable `holds.rework_at`. The ended build
+hold retains its original `end_reason = 'review'` and hand-off time. A
+`CHANGES` round on `in_review` atomically sets `rework_at`, guarded by the
+task’s own kept hand-off hold, and moves the task to `in_progress` with its
+next revision. The timestamp must not precede the hand-off. The existing
+unique indexes continue to cover kept reservations by task and worktree.
+
+`review.round-recorded` gains optional ordered task-update and hold-update
+stages before the retry response. Shared live/replay/import admission
+requires exactly those effects for a returning round and none for APPROVE
+or an already `in_progress` task. `hold.taken` releases rework only alongside
+a new hold on that task, in that worktree, linked by `replaces_hold_id`.
+Build models use the existing immutable hold attribution. No new Event
+family or dependency is introduced. Both closed catalogs admit these
+stages; archive profile 32 and projection cache version 14 cover the change.
+The down migration drops `rework_at`; it does not rewrite journal history.

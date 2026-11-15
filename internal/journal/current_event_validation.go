@@ -33,6 +33,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		if strings.EqualFold(effect.Table, "holds") {
 			for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
 				for column := range values {
+					if strings.EqualFold(column, "rework_at") && !validReworkColumn(event, effect, values[column]) {
+						return fmt.Errorf("rework reservation requires a review round")
+					}
 					if strings.EqualFold(column, "model") && (!event.IsV2() || effect.Op != "insert" || (event.EventType != "hold.taken" && event.EventType != "task.taken-over")) {
 						return fmt.Errorf("build models require a validated Event-v2 hold insert")
 					}
@@ -59,6 +62,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if !event.IsV2() && (event.EventType == "review.round-recorded" || event.EventType == "finding.closed") {
 		return fmt.Errorf("review rounds require Event-v2")
+	}
+	if err := validateReworkHold(tx, event); err != nil {
+		return err
 	}
 	if !event.IsV2() {
 		if event.EventType == "artifact.availability-observed" {
@@ -195,6 +201,9 @@ func validateCurrentEffect(event Event, effect Effect) error {
 			return err
 		}
 		if effect.Table == "holds" {
+			if _, present := row["rework_at"]; !present {
+				row["rework_at"] = nil
+			}
 			if _, present := row["model"]; !present {
 				row["model"] = ""
 			}

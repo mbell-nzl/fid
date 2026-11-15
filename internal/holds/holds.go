@@ -41,6 +41,7 @@ type Hold struct {
 	ExpiresAt       time.Time
 	LastHeartbeatAt time.Time
 	EndReason       *string
+	ReworkAt        *string
 	EndedAt         *string
 	ParkReason      *string
 	Kept            bool
@@ -62,7 +63,7 @@ func New(id, taskID, worktreeID, root, actor string, since time.Time, replaces *
 
 // Open reads current holds and ended holds that keep interrupted work, by ID.
 func Open(conn fiddb.Queryer) ([]Hold, error) {
-	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id, COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, end_reason, model
+	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id, COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, end_reason, model, rework_at
 		FROM holds WHERE ended_at IS NULL OR kept = 1 ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("read open holds: %w", err)
@@ -75,8 +76,9 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 			since, expiresAt                   string
 			replaces, ended, reason, endReason sql.NullString
 			heartbeat                          string
+			rework                             sql.NullString
 		)
-		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces, &heartbeat, &ended, &reason, &hold.Kept, &endReason, &hold.Model); err != nil {
+		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces, &heartbeat, &ended, &reason, &hold.Kept, &endReason, &hold.Model, &rework); err != nil {
 			return nil, fmt.Errorf("scan open hold: %w", err)
 		}
 		if hold.Since, err = time.Parse(time.RFC3339, since); err != nil {
@@ -87,6 +89,9 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 		}
 		if hold.LastHeartbeatAt, err = time.Parse(time.RFC3339, heartbeat); err != nil {
 			return nil, fmt.Errorf("read heartbeat: %w", err)
+		}
+		if rework.Valid {
+			hold.ReworkAt = &rework.String
 		}
 		if endReason.Valid {
 			hold.EndReason = &endReason.String
