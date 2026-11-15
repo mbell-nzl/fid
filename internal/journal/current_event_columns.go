@@ -18,7 +18,7 @@ var currentEventTables = map[string]currentTable{
 	"person_decisions":     currentTableColumns("id", "id:s kind:s actor:s subject_type:s subject_id:s reason:s binding_id:s decided_at:s"),
 	"policy_snapshots":     currentTableColumns("sequence", "sequence:i source_ref:s source_commit:s? digest:s effective_json:s"),
 	"activity_log":         currentTableColumns("id", "id:s journal_event_id:s ref_type:s ref_id:s event:s details:s? actor:s? occurred_at:s?"),
-	"holds":                currentTableColumns("id", "id:s task_id:s worktree_id:s worktree_root:s actor:s model:s since:s expires_at:s replaces_hold_id:s? ended_at:s? end_reason:s? last_heartbeat_at:s? kept:b park_reason:s?"),
+	"holds":                currentTableColumns("id", "id:s task_id:s worktree_id:s worktree_root:s actor:s model:s since:s expires_at:s replaces_hold_id:s? ended_at:s? end_reason:s? last_heartbeat_at:s? kept:b park_reason:s? rework_at:s?"),
 	"idempotency_results":  currentTableColumns("operation_scope idempotency_key", "operation_scope:s idempotency_key:s request_digest:s result_entity_id:s result_event_id:s aggregate_sequence:i result_json:s created_at:s request_field_digests_json:s"),
 	"referenced_artifacts": currentTableColumns("id", "id:s digest:s media_type:s size_bytes:i retention_class:s availability:s location_policy:s created_at:s expires_at:s?"),
 }

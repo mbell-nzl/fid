@@ -37,7 +37,7 @@ func (stage semanticEffectStage) accepts(table, operation string) bool {
 // repeated rows within a stage. An idempotency result, where present, is last.
 var semanticEventRules = map[string]semanticEventRule{
 	"finding.closed":                 semanticRule("finding", semanticStage(1, semanticEffectKey("person_decisions", "insert")), semanticStage(1, semanticEffectKey("finding_closures", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
-	"review.round-recorded":          semanticRule("review", semanticStage(1, semanticEffectKey("review_rounds", "insert")), semanticStage(0, semanticEffectKey("round_findings", "insert")), semanticStage(0, semanticEffectKey("finding_closures", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
+	"review.round-recorded":          semanticRule("review", semanticStage(1, semanticEffectKey("review_rounds", "insert")), semanticStage(0, semanticEffectKey("round_findings", "insert")), semanticStage(0, semanticEffectKey("finding_closures", "insert")), semanticStage(0, semanticEffectKey("issues", "update")), semanticStage(0, semanticEffectKey("holds", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"merge.observed":                 semanticRule("merge", semanticStage(1, semanticEffectKey("merge_observations", "insert"))),
 	"ci.result-recorded":             semanticRule("merge", semanticStage(1, semanticEffectKey("ci_results", "insert"))),
 	"check.completed":                semanticRule("check", semanticStage(1, semanticEffectKey("check_requests", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),

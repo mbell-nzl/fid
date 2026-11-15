@@ -730,11 +730,16 @@ nothing stops:
    worktree, and `--claim` takes a new hold that replaces the old one
    (kind `resume`). A lapsed hold on an unstarted task frees the task for
    any worktree, this one included.
-2. **Unblocking work:** tasks that another open task waits on, by a
+2. **Rework in this worktree:** a review round asking for changes returns
+   the builder’s kept task as kind `rework`, with a new hold linked to the
+   hand-off’s ended hold. It precedes unblocking and new work. The task is
+   already `in_progress`; the builder fixes, checks and hands it off again
+   without another `start`. Another worktree cannot take it while kept.
+3. **Unblocking work:** tasks that another open task waits on, by a
    `blocks` or `blocked_by` link, directly or through its open epic: a task
    that blocks an epic counts only while the epic has open tasks. Until
    task 3.1, all work counts as approved.
-3. **The other unstarted tasks**, in `fid status`'s order: an in-progress
+4. **The other unstarted tasks**, in `fid status`'s order: an in-progress
    epic's, then a to-do epic's, then those with no open epic; within each,
    sequence, priority (lower first), creation and ID, a missing sequence or
    priority last.
@@ -752,7 +757,7 @@ passed over with a typed reason, the first that applies:
 | Reason | When |
 |---|---|
 | `held-elsewhere` | another worktree's live hold |
-| `interrupted-elsewhere` | another worktree's lapsed or parked started work |
+| `interrupted-elsewhere` | another worktree's lapsed or parked started work, or its kept rework |
 | `epic-closed` | the task's epic is completed or cancelled |
 | `epic-blocked` | the task's epic has a blocker that isn't completed or cancelled |
 | `not-next-in-sequence` | its sequential epic serves another task first; `after` names the task the epic holds or serves, or, when it can serve none, its next task |
@@ -789,8 +794,8 @@ missing required agent model names `next.claim`.
 A hold records its ID (`HLD-` and 6 hex digits), the task, the worktree
 (the SHA-256 of its root path, and the path), the actor and model, `since` and
 `expires_at`, an hour later (D8), `last_heartbeat_at` (initially `since`), and,
-for a resume, the hold it replaces. Whether a hold has lapsed is read from
-the clock, never stored. `fid next` reads the clock once, just before it
+for a resume or rework return, the hold it replaces. Whether a hold has
+lapsed is read from the clock, never stored. `fid next` reads the clock once, just before it
 walks the order: after refreshing the projection and, with `--claim`, under
 the write lock, so a hold that lapses while it waits for the lock counts as
 lapsed. A hold ends when a new hold replaces it, or its
@@ -815,8 +820,8 @@ The JSON result, with exit 0 for every kind:
                      "epic_blocked_by": []}]}
 ```
 
-- `kind` is `new`, `resume` or `none`; task 2.1 adds `rework`, and `review`
-  is decided with 2.1 and the loop. A loop reads `.result.kind`,
+- `kind` is `new`, `resume`, `rework` or `none`; task 2.1 adds `review`.
+  A loop reads `.result.kind`,
   `.result.task.id` and `.result.hold.id`, and on failure the exit code and
   `.error.retryable`.
 - `worktree` is this worktree's root path. `task` is the served task in
@@ -861,6 +866,13 @@ included, and doesn't page:
 - Without `--claim`, a task handed out after others were passed over adds
   `Passed over N tasks ahead of this one` and `→ fid next --explain`;
   otherwise the next step is `→ fid show <ID>`.
+- Rework adds `Rework here: fix the review findings, then check and hand
+  off again.` and `→ fid show <ID>`. Kept JSON uses mode `rework` with
+  `since` set to the first returning round’s time. Show’s Working row says
+  `rework in <worktree> by <actor>, since <time>`; status and the queue
+  verdict say `rework in <dir>` (or `rework here`). After taking it,
+  `working` describes the new build hold and `kept` is null. Repeating
+  `next` now returns `resume` with that same live hold and no new Event.
 - A live hold re-run adds `Already yours in this worktree: carry on with
   it`. A resume after a lapse adds `⚠ Interrupted here: work stopped at
   <HH:MM> without a park.` and `Carry on from what's in this worktree.`,
@@ -1202,8 +1214,9 @@ error: FID-9f13aa has uncommitted changes; commit them before hand-off
 reason: tree-dirty; worktree=/w/fid-wt2
 ```
 
-After hand-off, kept work has mode `review`. Until the task is done (1.6)
-or cancelled, this worktree's next answer is kind `none`, with null hold,
+After hand-off, kept work has mode `review`. Until a round asks for
+changes, the task is done (1.6), or it is cancelled, this worktree's next
+answer is kind `none`, with null hold,
 task, epic and answer, and `waiting: {kind: "review", task_id: <id>}`.
 The queue retains its usual contents. Other worktrees carry on; a review
 reservation elsewhere uses the existing `held-elsewhere` queue reason.
@@ -1294,9 +1307,18 @@ different sessions. Reusing a separate session for a later primary is also
 refused. `CHANGES` is required exactly when a major is open after recording,
 including majors raised by earlier rounds on any fingerprint, after this
 round’s dispositions are applied. `resolved` and `not-applicable` close an
-earlier finding; `open` or no mention leaves it open. Rounds do not move task state;
-rework arrives in 1.6f. Posting, review selection and discovered work remain
-in 2.1.
+earlier finding; `open` or no mention leaves it open.
+
+As of RESET 1.6f, recording `CHANGES` in either stream on an `in_review`
+task moves it to `in_progress`, increments its revision, and changes its
+own hand-off’s kept review reservation to rework, in the same Event as the
+round. It requires that exact kept reservation; a round cannot move another
+task or an unstarted or finished task. A `CHANGES` round on a task already
+`in_progress` records evidence without moving it or changing any hold,
+including when the builder already has the new rework hold. `APPROVE`
+never moves state or changes a reservation. Person takeover, cancellation
+and missing-worktree NEEDS YOU work for rework as for other kept work.
+Posting, review selection, the rework cap and discovered work remain in 2.1.
 
 For example, this input adapts the actual 1.6b round-one jig-format review
 of conflicting merge retries (its second, minor finding is omitted here):
@@ -1334,8 +1356,9 @@ original prompt/command/output there. fid stores the complete supplied
 narrative and findings, so later rendering need not invent review text.
 
 One `review.round-recorded` Event inserts the immutable round, findings and
-any closures atomically. Dispositions are retained in the round; terminal
-dispositions also insert immutable `finding_closures` rows.
+any closures and the required rework effects atomically. Dispositions are
+retained in the round; terminal dispositions also insert immutable
+`finding_closures` rows.
 It records a `RND-<six-hex>` ID, task/hand-off IDs, the binding
 `{algorithm, fingerprint, base, head}`, recorder and UTC time. Stable finding
 IDs append their one-based position to the round ID, such as

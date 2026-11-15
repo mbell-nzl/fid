@@ -53,6 +53,9 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 		return err
 	}
 	for _, e := range event.Effects {
+		if e.Table == "issues" || e.Table == "holds" {
+			continue // Exact state and reservation effects are checked below.
+		}
 		if err := validateCurrentEffect(event, e); err != nil {
 			return err
 		}
@@ -65,7 +68,11 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 	if err := reviewrecord.Admit(tx, r); err != nil {
 		return err
 	}
-	if insert.PK["id"] != r.ID || insert.Values["task_id"] != r.TaskID || insert.Values["handoff_id"] != r.HandoffID || event.Aggregate.ID != r.ID || r.RecordedBy != event.ActorV2.ActorType+":"+event.ActorV2.ActorID || r.At != event.OccurredAt.UTC().Format(time.RFC3339) || len(event.Effects) != len(r.Findings)+closingCount(r)+2 {
+	rework, err := ReviewReworkEffects(tx, r)
+	if err != nil {
+		return err
+	}
+	if insert.PK["id"] != r.ID || insert.Values["task_id"] != r.TaskID || insert.Values["handoff_id"] != r.HandoffID || event.Aggregate.ID != r.ID || r.RecordedBy != event.ActorV2.ActorType+":"+event.ActorV2.ActorID || r.At != event.OccurredAt.UTC().Format(time.RFC3339) || len(event.Effects) != len(r.Findings)+closingCount(r)+len(rework)+2 {
 		return fmt.Errorf("review round differs from Event")
 	}
 	for i, f := range r.Findings {
@@ -86,6 +93,12 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 		e := event.Effects[index]
 		if e.PK["finding_id"] != d.FindingID || e.Values["round_id"] != r.ID || e.Values["decision_id"] != nil || e.Values["disposition"] != d.Disposition || e.Values["reason"] != d.Reason {
 			return fmt.Errorf("closure differs from round disposition")
+		}
+		index++
+	}
+	for _, want := range rework {
+		if !currentValuesEqual(event.Effects[index], want) {
+			return fmt.Errorf("review rework differs from task or its reservation")
 		}
 		index++
 	}

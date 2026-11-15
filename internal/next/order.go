@@ -12,6 +12,7 @@ import (
 const (
 	KindNew    = "new"
 	KindResume = "resume"
+	KindRework = "rework"
 	KindNone   = "none"
 )
 
@@ -118,6 +119,8 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		return planned
 	}
 	switch {
+	case resume != "" && planned.own.Rework():
+		planned.kind = KindRework
 	case resume != "":
 		planned.kind = KindResume
 	case planned.served >= 0:
