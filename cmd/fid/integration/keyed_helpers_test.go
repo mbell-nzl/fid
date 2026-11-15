@@ -31,11 +31,11 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	} else {
 		canonical = p24PermuteFlagPairs(canonical)
 	}
-	stdout, stderr, err := closureRunCommand(workspace, binary, canonical...)
+	stdout, stderr, err := p24RunCaptured(t, workspace, binary, operation, canonical...)
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "task.approve" || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -108,7 +108,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			}
 		}
 	}
-	conflict, conflictErr, runErr := closureRunCommand(workspace, binary, changed...)
+	conflict, conflictErr, runErr := p24RunCaptured(t, workspace, binary, operation, changed...)
 	if runErr == nil || processExitCode(t, runErr) != 4 || conflict != "" {
 		t.Fatalf("%s changed-input conflict = %v stdout=%q stderr=%q", operation, runErr, conflict, conflictErr)
 	}
@@ -124,6 +124,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 // under a field name, for p24AssertStoredFieldNames.
 var p24PositionalNames = map[string][]string{"check.execute": {"names"},
 	"review.record": {"task"},
+	"task.approve":  {"task"},
 	"finding.close": {"finding"},
 	"task.answer":   {"task", "text"},
 	"task.takeover": {"task"},
@@ -264,7 +265,7 @@ func p24AssertFamilyConflict(t *testing.T, workspace, binary, operation string, 
 			args = p24ChangeActor(args)
 		}
 	}
-	stdout, stderr, err := closureRunCommand(workspace, binary, args...)
+	stdout, stderr, err := p24RunCaptured(t, workspace, binary, operation, args...)
 	if err == nil || processExitCode(t, err) != 4 || stdout != "" {
 		t.Fatalf("%s %v conflict args=%v = %v stdout=%q stderr=%q", operation, changedNames, args, err, stdout, stderr)
 	}
@@ -349,4 +350,12 @@ func p24ReverseJSON(request map[string]any) []byte {
 		parts = append(parts, string(name)+" : "+string(value))
 	}
 	return []byte("{\n  " + strings.Join(parts, ",\n  ") + "\n}\n")
+}
+
+func p24RunCaptured(t *testing.T, workspace, binary, operation string, args ...string) (string, string, error) {
+	t.Helper()
+	if operation == "task.approve" {
+		return approvalCorpusCommand(t, workspace, binary, args...)
+	}
+	return closureRunCommand(workspace, binary, args...)
 }

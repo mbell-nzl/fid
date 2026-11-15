@@ -135,5 +135,9 @@ func reviewFailure(cmd *cobra.Command, operation string, cause error, actor stri
 	if errors.As(cause, &input) {
 		return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, input.Error(), nil, input.Details())
 	}
-	return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, cli.BoundedMessage(cause.Error()), nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"an independent review of the latest hand-off"}})
+	argument, allowed := "input", "an independent review of the latest hand-off"
+	if operation == "task.approve" {
+		argument, allowed = "task", "an interactive person approving a task in review with local hand-off objects"
+	}
+	return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, cli.BoundedMessage(cause.Error()), nil, map[string]any{"argument": argument, "value": nil, "allowed": []string{allowed}})
 }

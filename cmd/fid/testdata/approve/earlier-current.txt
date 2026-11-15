@@ -1,0 +1,18 @@
+Approve FID-9f13aa · standard
+Hand-off HOF-<new> · <fingerprint-or-commit>..<fingerprint-or-commit>
+Fingerprint: patch-id-verbatim-per-file-v1 · <fingerprint-or-commit>
+Diffstat:
+ notes.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Checks:
+  always: passed · counts=true · CHK-<new>
+  empty: passed · counts=true · CHK-<new>
+Reviews:
+  primary: APPROVE · agent:reviewer · claude/opus-5.5 · current · RND-<new>
+Open majors: none
+no other-model review
+Earlier approvals:
+  PDN-<new> · human:mark · current · <time> · Reviewed the full change
+Approval records your decision; done still requires every gate.
+Type FID-9f13aa to approve: <input>
+Approval cancelled; nothing recorded

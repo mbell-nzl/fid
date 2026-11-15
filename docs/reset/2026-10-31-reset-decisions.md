@@ -1375,6 +1375,55 @@ second-hand-off fixture now uses public rework too. No new dependency.
     still missing (the prompt shows them); `done` refuses those. The
     approval presentation in `fid status` and `fid show` stays in 2.3.
 
+
+**1.6g's choices (2026-11-15).** `fid approve` records `task.approved`
+(`task.approve`) on a decision aggregate, using the single person's-decision
+record with kind `approve`. Its task subject and nonblank reason remain
+explicit; `binding_id` is the fingerprint and nullable `binding_json` holds
+its algorithm, value, hand-off ID and recorded base/head. Other kinds keep
+null structured bindings and their existing rules. Migration 33 rebuilds
+the decisions and their referencing questions and finding closures together,
+preserving both answered questions and closure foreign keys; projection
+cache version 15 rebuilds caught-up older projections. Both closed catalogs
+admit the family. Admission checks recorded evidence without git or terminals,
+including task state at that journal position, exact latest hand-off endpoints
+and fingerprint form. Legacy/other families cannot insert or mutate approvals.
+The existing below-1-MiB Event budget is enforced before append.
+
+The lock spans the full preview, exact task-ID confirmation and append.
+Prompts go to stderr, results to stdout, including JSON. Cancellation or EOF
+records nothing and exits 0. Both stdin and stderr must be terminals even on
+a keyed retry. Optional retry keys cover actor, task and reason; an identical
+retry validates its stored response against the immutable decision and returns
+its original Event/time without another prompt or git computation. New
+approvals use new decisions and keys. `approvalrecord.Current` accepts the
+latest hand-off's computed fingerprint and returns current/stale/missing;
+matching algorithm and value determine freshness, independently of endpoints.
+Any matching immutable approval remains evidence of that exact change.
+
+`fingerprint.Inspect` uses the same private git view and pinned diff settings
+as computation for a full diffstat, with no file-count limit and name width
+large enough for every path in the bounded patch. Reviews in the prompt are
+the latest round of each required stream, with current/stale derived from the
+fingerprint; open majors come from the shared unclosed-finding reader. The
+existing other-model reader now treats a historical agent's unknown builder
+model conservatively, retaining `no other-model review`; an empty human model
+still means manual work. This closes a gap exposed by the approval disclosure
+test, without changing model attribution rules. Older command fixtures now
+attribute their seeded agent hold explicitly, preserving their other-model
+expectations. The command inventories and keyed corpus include `approve`;
+its integration retries use a real terminal even after the task enters rework.
+
+V6's named test and `make check-approval-binding` drive real terminal approvals
+through a clean rebase/new hand-off, edit/rework/new hand-off and re-approval.
+Their fixture uses a live clock for each command, matching the terminal child
+and avoiding a captured time from before UTC midnight.
+V8 creates approvals before and after its public rework edit, then compares
+both the stale decision and its current successor across backup/restore.
+Prompt and JSON goldens, export/import, forged archive refusals and replay
+cover the same record. No dependency is added. Approval in status/show (2.3)
+and the done evaluator (1.6h) remain their scheduled tasks.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2632,6 +2681,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From #84 (1.6g): make `TestReworkGolden`'s status text independent of
+  temporary config-path length, extending #76's path-wrapping follow-up below.
+  The fix-round coverage/no-git-identity CI run reported a mismatch at
+  `rework_golden_test.go:37`: the backup guidance kept `then` on the config
+  path's line instead of beginning `then fid backup` on the next line.
+  Rendering wraps the real config path before the fixture replaces it with
+  `<CONFIG>`. The test and its golden were kept unchanged in this fix round.
 
 - From Mark's question, 2026-11-15: jig's reviewer writes markdown, but
   `fid review record` (1.6d) takes structured JSON. Something must convert

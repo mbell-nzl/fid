@@ -43,6 +43,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			}
 		}
 		if strings.EqualFold(effect.Table, "person_decisions") {
+			if err := validateApprovalDecisionEffect(tx, event, effect); err != nil {
+				return err
+			}
 			if err := validateFindingDecisionEffect(tx, event, effect); err != nil {
 				return err
 			}
@@ -63,6 +66,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && (event.EventType == "review.round-recorded" || event.EventType == "finding.closed") {
 		return fmt.Errorf("review rounds require Event-v2")
 	}
+	if !event.IsV2() && event.EventType == "task.approved" {
+		return fmt.Errorf("approval requires Event-v2")
+	}
 	if err := validateReworkHold(tx, event); err != nil {
 		return err
 	}
@@ -81,6 +87,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
+	}
+	if event.EventType == "task.approved" {
+		return validateApproval(tx, event)
 	}
 	if event.EventType == "finding.closed" {
 		return validateFindingClosed(tx, event)
@@ -199,6 +208,11 @@ func validateCurrentEffect(event Event, effect Effect) error {
 		row, err := mergeEffectValues(effect.PK, effect.Values)
 		if err != nil {
 			return err
+		}
+		if effect.Table == "person_decisions" {
+			if _, present := row["binding_json"]; !present {
+				row["binding_json"] = nil
+			}
 		}
 		if effect.Table == "holds" {
 			if _, present := row["rework_at"]; !present {

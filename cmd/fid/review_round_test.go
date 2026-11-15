@@ -22,6 +22,9 @@ func reviewFixture(t *testing.T) *statusFixture {
 func reviewFixtureWith(t *testing.T, prepare func(*statusFixture)) *statusFixture {
 	t.Helper()
 	f := requiredCheckFixture(t, "[]")
+	// This fixture seeds its initial hold in SQL; give that agent the explicit
+	// attribution required of new work, rather than historical unknown metadata.
+	startSQL(t, f, `UPDATE holds SET model='codex/gpt-6.1-sol' WHERE id='HLD-aaaaaa'`)
 	if prepare != nil {
 		prepare(f)
 	}

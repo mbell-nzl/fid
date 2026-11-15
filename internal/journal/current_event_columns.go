@@ -15,7 +15,7 @@ var currentEventTables = map[string]currentTable{
 	"check_results":        currentTableColumns("check_id", "check_id:s result_json:s"),
 	"check_files":          currentTableColumns("check_id path", "check_id:s path:s artifact_id:s? reason:s?"),
 	"questions":            currentTableColumns("id", "id:s task_id:s hold_id:s text:s asker:s asked_at:s resolved_at:s? resolution:s? decision_id:s?"),
-	"person_decisions":     currentTableColumns("id", "id:s kind:s actor:s subject_type:s subject_id:s reason:s binding_id:s decided_at:s"),
+	"person_decisions":     currentTableColumns("id", "id:s kind:s actor:s subject_type:s subject_id:s reason:s binding_id:s decided_at:s binding_json:s?"),
 	"policy_snapshots":     currentTableColumns("sequence", "sequence:i source_ref:s source_commit:s? digest:s effective_json:s"),
 	"activity_log":         currentTableColumns("id", "id:s journal_event_id:s ref_type:s ref_id:s event:s details:s? actor:s? occurred_at:s?"),
 	"holds":                currentTableColumns("id", "id:s task_id:s worktree_id:s worktree_root:s actor:s model:s since:s expires_at:s replaces_hold_id:s? ended_at:s? end_reason:s? last_heartbeat_at:s? kept:b park_reason:s? rework_at:s?"),

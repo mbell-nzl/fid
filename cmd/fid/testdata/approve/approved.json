@@ -1,0 +1,26 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<time>"
+  },
+  "ok": true,
+  "operation": "task.approve",
+  "result": {
+    "decision": {
+      "decision_id": "PDN-<new>",
+      "task_id": "FID-9f13aa",
+      "actor": "human:mark",
+      "reason": "Reviewed the full change",
+      "at": "<time>",
+      "binding": {
+        "algorithm": "patch-id-verbatim-per-file-v1",
+        "fingerprint": "<fingerprint-or-commit>",
+        "handoff_id": "HOF-<new>",
+        "base": "<fingerprint-or-commit>",
+        "head": "<fingerprint-or-commit>"
+      }
+    },
+    "occurred_at": "<time>"
+  }
+}

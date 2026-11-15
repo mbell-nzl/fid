@@ -11,7 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-var p24LifecycleFields = map[string]string{"finding.close": "--reason", "review.record": "purpose", "task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
+var p24LifecycleFields = map[string]string{"task.approve": "--reason", "finding.close": "--reason", "review.record": "purpose", "task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -72,6 +72,11 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	resumed := call("next", "--claim", "--actor", "human:mark")
 	hold = p21PathString(t, resumed, "result", "hold", "id")
 	call("handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "lifecycle-handoff")
+	approvalArgs := []string{"--project", workspace, "--json", "approve", task, "--actor", "human:mark", "--reason", "Reviewed the full change", "--idempotency-key", "lifecycle-approve"}
+	if stdout, stderr, err := approvalCorpusCommand(t, workspace, binary, approvalArgs...); err != nil || stderr != "" {
+		t.Fatalf("approval corpus: %v stdout=%s stderr=%s", err, stdout, stderr)
+	}
+
 	input := p21Input(t, workspace, "review", map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "codex/gpt-6.1-sol", "session_id": "keyed-review"}, "stream": "primary", "profiles": []string{"code"}, "verdict": "CHANGES", "purpose": "Record held work through hand-off.", "findings": []any{map[string]any{"profile": "code", "severity": "major", "summary": "Missing regression", "location": nil, "evidence": "The failing retry is untested", "fix": "Add the regression"}}, "verification": "The checks passed."})
 	review := call("review", "record", task, "--input", input, "--actor", "human:courier", "--idempotency-key", "lifecycle-review")
 	finding := p21Path(t, review, "result", "round", "findings").([]any)[0].(map[string]any)["id"].(string)

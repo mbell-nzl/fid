@@ -79,6 +79,8 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "issue.show"
 	case "fid check":
 		return "check.execute"
+	case "fid approve":
+		return "task.approve"
 	case "fid handoff":
 		return "task.handoff"
 	case "fid start":
@@ -114,7 +116,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 38 || len(groups) != 13 {
+	if len(leaves) != 39 || len(groups) != 13 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
