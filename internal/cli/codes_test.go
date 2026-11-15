@@ -41,6 +41,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeTreeDirty, CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringDetails("worktree")},
 		{CodeTestPathsNotConfigured, CategoryPrecondition, false, []SubjectType{SubjectIssue}, nil},
 		{CodeComparisonUnavailable, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{nullableStringDetail("ref"), stringDetail("problem")}},
+		{CodeKeptArtifactUnavailable, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("artifact_ids")}},
 		{CodeChecksUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("checks"), stringsDetail("latest_result_ids")}},
 		{CodeChecksNotConfigured, CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringDetails("lane")},
 		{CodeCheckUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids"), stringsDetail("outcomes")}},

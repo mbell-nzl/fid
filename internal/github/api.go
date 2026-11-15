@@ -89,7 +89,7 @@ func (client *Client) MergeCommitCI(ctx context.Context, sha string) (CI, error)
 			observed = append(observed, run)
 		}
 		if len(observed) == total {
-			return evaluateCI(sha, observed), nil
+			return EvaluateCI(sha, observed), nil
 		}
 	}
 	return CI{}, unavailable(OversizedOutput, "CI pagination exceeded page limit", nil)

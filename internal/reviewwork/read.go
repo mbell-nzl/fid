@@ -52,6 +52,22 @@ func List(root, task string) ([]RoundView, error) {
 	if err != nil {
 		return nil, err
 	}
+	return currentViews(conn, rounds, fp)
+}
+
+// CurrentViews is the shared freshness/closure reader for done. The caller
+// supplies the latest hand-off's locally computed fingerprint and projection
+// snapshot; no git or network is used here.
+func CurrentViews(conn reviewrecord.Queryer, task string, fp fingerprint.Result) ([]RoundView, error) {
+	rounds, err := reviewrecord.Read(conn, task)
+	if err != nil {
+		return nil, err
+	}
+	return currentViews(conn, rounds, reviewrecord.Bind(fp))
+}
+
+func currentViews(conn reviewrecord.Queryer, rounds []reviewrecord.Round, fp reviewrecord.Binding) ([]RoundView, error) {
+	views := []RoundView{}
 	for _, r := range rounds {
 		other, err := reviewrecord.OtherModel(conn, r.TaskID, r.Reviewer.Model)
 		if err != nil {
