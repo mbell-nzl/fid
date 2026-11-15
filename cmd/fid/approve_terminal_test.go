@@ -191,3 +191,40 @@ func TestApproveRealTerminalBoundaries(t *testing.T) {
 		})
 	}
 }
+
+func TestApproveRevertedChangeUsesOriginalDecision(t *testing.T) {
+	t.Parallel()
+	f, task := canonicalReviewFixtureWithClock(t, "standard", false, time.Now)
+	approveSuccess(t, approvePublicForTest(t, f.workspace, task, task+"\n", true, true, true))
+	first := assertApprovalState(t, f.workspace, task, "current")
+	requestChanges := changesInput("primary")
+	lifecycleResult(t, recordReviewTask(t, f, requestChanges, "edit-request", "human:courier", task), "review.record")
+	prepareSecondReviewHandoff(t, f, task)
+	writeBackupTestFile(t, filepath.Join(f.workspace, "notes.md"), "different change for approval\n")
+	runGitForTest(t, f.workspace, "add", ".")
+	runGitForTest(t, f.workspace, "commit", "-m", "Edit approved change")
+	editHead := strings.TrimSpace(identityGit(t, f.workspace, "rev-parse", "HEAD"))
+	reviewHandoffTask(t, f, "edited-handoff", task)
+	assertApprovalState(t, f.workspace, task, "stale")
+	approveSuccess(t, approvePublicForTest(t, f.workspace, task, task+"\n", true, true, true))
+	second := assertApprovalState(t, f.workspace, task, "current")
+	if second.Decision.ID == first.Decision.ID || second.Decision.Binding.Fingerprint == first.Decision.Binding.Fingerprint {
+		t.Fatal("edited change must have a different approval and fingerprint")
+	}
+	requestChanges["findings"] = []any{}
+	lifecycleResult(t, recordReviewTask(t, f, requestChanges, "revert-request", "human:courier", task), "review.record")
+	prepareSecondReviewHandoff(t, f, task)
+	runGitForTest(t, f.workspace, "revert", "--no-edit", editHead)
+	reviewHandoffTask(t, f, "reverted-handoff", task)
+	for _, rebuild := range []bool{false, true} {
+		if rebuild {
+			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+				t.Fatal(err)
+			}
+		}
+		restored := assertApprovalState(t, f.workspace, task, "current")
+		if *restored.Decision != *first.Decision {
+			t.Fatalf("rebuild=%t: reverted change approval=%+v, want original %+v", rebuild, restored.Decision, first.Decision)
+		}
+	}
+}

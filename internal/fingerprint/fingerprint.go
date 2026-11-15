@@ -109,7 +109,7 @@ func inspect(root, base, head string, stat bool) (Result, string, error) {
 		// A path in the bounded patch cannot exceed MaxDiffBytes. These
 		// widths keep every quoted name, including renames; no count limit.
 		args := diffArgs(base, head)
-		args = slices.Insert(args, len(args)-3, "--no-patch", fmt.Sprintf("--stat=%d,%d,40", MaxDiffBytes+128, MaxDiffBytes))
+		args = slices.Insert(args, len(args)-3, "--no-patch", fmt.Sprintf("--stat=%d,%d", MaxDiffBytes+128, MaxDiffBytes), "--stat-graph-width=40")
 		diffstat, err = runGit(root, nil, MaxDiffBytes, args...)
 		if err != nil {
 			return Result{}, "", &Failure{Kind: GitFailure, Err: err}
