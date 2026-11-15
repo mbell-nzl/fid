@@ -38,11 +38,13 @@ func evaluateRemote(o *Outcome, s Snapshot) {
 	}
 	o.set(MergeGate, Satisfied, EvidenceSatisfied)
 	m := s.Merge
-	switch {
-	case m == nil:
+	if m == nil {
 		o.set(MergeGate, Missing, MergeMissing)
-	case m.TaskID != s.Task.ID || m.HandoffID != h.ID || m.PR != h.PR || m.Number != pr.Number || m.Repository != s.Target.Repository.String() || m.BaseBranch != pr.BaseRef || m.MergeCommit != pr.MergeCommit || m.HeadSHA != pr.HeadSHA || m.HeadTree != s.GitHub.HeadTree:
-		o.set(MergeGate, Stale, MergeMismatch)
+	} else {
+		recorded, err := github.ParsePRURL(m.PR)
+		if err != nil || recorded != expected || m.TaskID != s.Task.ID || m.HandoffID != h.ID || m.Number != pr.Number || m.Repository != s.Target.Repository.String() || m.BaseBranch != pr.BaseRef || m.MergeCommit != pr.MergeCommit || m.HeadSHA != pr.HeadSHA || m.HeadTree != s.GitHub.HeadTree {
+			o.set(MergeGate, Stale, MergeMismatch)
+		}
 	}
 	evaluateCI(o, s)
 }
