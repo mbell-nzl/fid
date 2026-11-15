@@ -1628,10 +1628,12 @@ and 1.6l. This is a friction-log entry in RESET.md, not a new task row.
 
 Builder's transactional choices: one shared command-test helper creates a
 private temporary directory, resolves its absolute path, and pads a child
-to exactly 120 characters. This accommodates long TMPDIRs while keeping
+to exactly 120 display columns, measured with the renderer's
+`display.VisibleWidth` so non-ASCII parents have the same width as ASCII
+parents (round 1 of #91). This accommodates long TMPDIRs while keeping
 refusal details below their existing 200-character cap. The fixture puts
 its workspace, `config` and `home` beneath it, giving each path a constant
-total length and preserving the existing workspace basenames. The
+total display width and preserving the existing workspace basenames. The
 lifecycle fixture now creates its paths directly instead of moving its
 workspace to another random directory. The linked worktree used by health
 goldens uses the same helper, replacing its separate padding scheme.
@@ -1640,8 +1642,9 @@ no padding room fails clearly and asks for a shorter TMPDIR or fixture
 parent. No dependency or production
 code changes. Path placeholders also cover HOME, and still precede rework's
 hex-ID masking. Regressions compare real status/show output after masking
-under short and long parents, including HOME's config fallback, and check
-the allocator's fixed length and cleanup.
+under short, long and non-ASCII parents, including HOME's config fallback,
+and check the allocator's fixed display width and cleanup. Linked-worktree
+health goldens also cover these explicit parents.
 
 ## Products
 
@@ -2902,7 +2905,7 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 ## Later list
 
 - From #76 (1.5e), #84 (1.6g) and this stack's 1.6l: resolved by
-  golden-wrap on 2026-11-15. Text goldens now render fixed-length fixture
+  golden-wrap on 2026-11-15. Text goldens now render fixed-width fixture
   paths before masking them. The status/config and lifecycle/worktree
   wrapping no longer depends on TMPDIR, test names or random suffixes.
 

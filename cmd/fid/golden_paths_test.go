@@ -6,12 +6,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/display"
 )
 
-// goldenTempPathLength leaves room for long TMPDIRs while keeping paths in
+// goldenTempPathWidth leaves room for long TMPDIRs while keeping paths in
 // refusal details below their 200-character limit. Each fixture child then has
-// a fixed total path length before fid wraps it, regardless of random suffixes.
-const goldenTempPathLength = 120
+// a fixed rendered path width before fid wraps it, regardless of random suffixes
+// or non-ASCII parents. Use the renderer's width measure, rather than byte length.
+const goldenTempPathWidth = 120
 
 func newGoldenTempDir(t testing.TB, parent string) string {
 	t.Helper()
@@ -36,9 +39,9 @@ func newGoldenTempDir(t testing.TB, parent string) string {
 			t.Error(err)
 		}
 	})
-	padding := goldenTempPathLength - len(base) - 1
+	padding := goldenTempPathWidth - display.VisibleWidth(base) - 1
 	if padding < 1 {
-		t.Fatalf("golden fixture base %q exceeds the %d-character path budget; use a shorter TMPDIR or fixture parent", base, goldenTempPathLength)
+		t.Fatalf("golden fixture base %q exceeds the %d-column path budget; use a shorter TMPDIR or fixture parent", base, goldenTempPathWidth)
 	}
 	path := filepath.Join(base, strings.Repeat("p", padding))
 	if err := os.Mkdir(path, 0o700); err != nil {
@@ -61,7 +64,7 @@ func goldenTestParents(t *testing.T) []string {
 		}
 	})
 	var parents []string
-	for _, name := range []string{"s", strings.Repeat("long", 16)} {
+	for _, name := range []string{"s", strings.Repeat("long", 16), strings.Repeat("🧪", 18)} {
 		parent := filepath.Join(base, name)
 		if err := os.MkdirAll(parent, 0o700); err != nil {
 			t.Fatal(err)
@@ -109,21 +112,23 @@ func TestGoldenTextIgnoresTempRootLength(t *testing.T) {
 				}
 				outputs = append(outputs, masked)
 			}
-			if outputs[0] != outputs[1] {
-				t.Fatalf("masked output depends on temp root length:\n--- short\n%s\n--- long\n%s", outputs[0], outputs[1])
+			for i, output := range outputs[1:] {
+				if outputs[0] != output {
+					t.Fatalf("masked output depends on temp root %q:\n--- short\n%s\n--- other\n%s", parents[i+1], outputs[0], output)
+				}
 			}
 		})
 	}
 }
 
-func TestGoldenTempDirLengthAndCleanup(t *testing.T) {
+func TestGoldenTempDirWidthAndCleanup(t *testing.T) {
 	t.Parallel()
 	for i, parent := range goldenTestParents(t) {
 		var directory string
-		t.Run([]string{"short", "long"}[i], func(t *testing.T) {
+		t.Run([]string{"short", "long", "non-ASCII"}[i], func(t *testing.T) {
 			directory = newGoldenTempDir(t, parent)
-			if len(directory) != goldenTempPathLength {
-				t.Fatalf("golden directory length = %d, want %d", len(directory), goldenTempPathLength)
+			if width := display.VisibleWidth(directory); width != goldenTempPathWidth {
+				t.Fatalf("golden directory width = %d, want %d", width, goldenTempPathWidth)
 			}
 			if _, err := os.Stat(directory); err != nil {
 				t.Fatal(err)
