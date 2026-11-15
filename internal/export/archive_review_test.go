@@ -15,7 +15,12 @@ import (
 
 func reviewArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
-	v, h := handoffArchiveFixture(t)
+	return reviewArchiveFixtureWithLane(t, "standard")
+}
+
+func reviewArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator, journal.Event) {
+	t.Helper()
+	v, h := handoffArchiveFixtureWithLane(t, lane)
 	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 30); err != nil {
 		t.Fatal(err)
 	}

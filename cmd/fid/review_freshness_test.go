@@ -102,10 +102,15 @@ func prepareSecondReviewHandoff(t *testing.T, f *statusFixture, task string) {
 
 func canonicalReviewFixture(t *testing.T) (*statusFixture, string) {
 	t.Helper()
+	return canonicalReviewFixtureWithLane(t, "standard")
+}
+
+func canonicalReviewFixtureWithLane(t *testing.T, lane string) (*statusFixture, string) {
+	t.Helper()
 	f := newLifecycleFixture(t)
 	now := time.Now().Add(time.Minute)
 	f.clock = func() time.Time { return now }
-	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Review freshness", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "create"), "issue.create")
+	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Review freshness", "--lane", lane, "--actor", "human:mark", "--idempotency-key", "create"), "issue.create")
 	task := created["issue"].(map[string]any)["id"].(string)
 	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	hold := taken["hold"].(map[string]any)["id"].(string)

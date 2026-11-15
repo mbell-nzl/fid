@@ -2462,6 +2462,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #80 (1.6d): investigate the intermittent write-lock refusal in
+  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first fix-round
+  `make test` failed at `check_ownership_test.go:117` with
+  `task.takeover: write lock unavailable`; an unchanged focused rerun with
+  `-count=3` and an unchanged full-suite retry passed. The cause is
+  unconfirmed; the ownership test and production lock code are outside
+  the frozen-lane coverage finding.
+
 - From this PR (1.6d): V8's public-command stale round lands with 1.6f's rework.
 - From this PR (1.6d): audit older writers for Events at or above 1 MiB.
   The journal's aggregate and sequence scanners cap lines there, while
