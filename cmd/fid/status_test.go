@@ -39,12 +39,28 @@ type statusFixture struct {
 
 func newStatusFixture(t *testing.T, started time.Duration) *statusFixture {
 	t.Helper()
-	workspace := gittest.NewWorkspace(t)
+	return newStatusFixtureAt(t, started, "")
+}
+
+func newStatusFixtureAt(t *testing.T, started time.Duration, parent string) *statusFixture {
+	t.Helper()
+	base, err := os.MkdirTemp(parent, "g-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(base); err != nil {
+			t.Error(err)
+		}
+	})
+	workspace := filepath.Join(base, "worktree")
+	if err := gittest.InitRepository(workspace); err != nil {
+		t.Fatal(err)
+	}
 	runInitCommand(t, workspace, "init", "--json")
 	backdateGenesis(t, workspace, statusNow.Add(-started))
 	appendPolicy(t, workspace, configuredStatusPolicy)
 	policyOrigin(t, workspace)
-	base := t.TempDir()
 	return &statusFixture{t: t, workspace: workspace, configHome: filepath.Join(base, "config"), home: filepath.Join(base, "home")}
 }
 
