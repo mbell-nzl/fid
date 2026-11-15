@@ -1639,7 +1639,9 @@ workspace to another random directory. The linked worktree used by health
 goldens uses the same helper, replacing its separate padding scheme.
 Cleanup removes the private parent, including padding. A parent that leaves
 no padding room fails clearly and asks for a shorter TMPDIR or fixture
-parent. A resolved parent containing any whitespace fails before allocation,
+parent. A deterministic over-budget regression pins that fatal diagnostic
+and checks private-allocation cleanup after refusal (round 3 of #91).
+A resolved parent containing any whitespace fails before allocation,
 with a diagnostic requiring a whitespace-free TMPDIR (round 2 of #91);
 wrapping splits paths at whitespace before masking. Regressions pin that
 fatal diagnostic for ASCII spaces, tabs and Unicode spaces. No dependency

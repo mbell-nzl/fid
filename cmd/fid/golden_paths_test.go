@@ -147,6 +147,42 @@ func TestGoldenTempDirWidthAndCleanup(t *testing.T) {
 	}
 }
 
+func TestGoldenTempDirRejectsOverBudgetParent(t *testing.T) {
+	t.Parallel()
+	// The parent alone exceeds the budget, independent of MkdirTemp's suffix.
+	parent := filepath.Join(goldenTestParents(t)[0], strings.Repeat("b", goldenTempPathWidth))
+	if err := os.Mkdir(parent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	parent, err := filepath.EvalSymlinks(parent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("refusal", func(t *testing.T) {
+		// Run cleanup before the enclosing test checks the private allocation.
+		recorder := &goldenTempFatalTB{TB: t}
+		finished := make(chan struct{})
+		go func() {
+			defer close(finished)
+			newGoldenTempDir(recorder, parent)
+		}()
+		<-finished
+		entries, err := os.ReadDir(parent)
+		if err != nil || len(entries) != 1 || !entries[0].IsDir() {
+			t.Fatalf("allocator's private allocation = %v, %v; want one directory", entries, err)
+		}
+		base := filepath.Join(parent, entries[0].Name())
+		want := fmt.Sprintf("golden fixture base %q exceeds the %d-column path budget; use a shorter TMPDIR or fixture parent", base, goldenTempPathWidth)
+		if recorder.message != want {
+			t.Errorf("allocator fatal message = %q, want %q", recorder.message, want)
+		}
+	})
+	entries, err := os.ReadDir(parent)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("allocator's private allocation survived cleanup: %v, %v", entries, err)
+	}
+}
+
 func TestGoldenTempDirRejectsWhitespace(t *testing.T) {
 	t.Parallel()
 	parent := goldenTestParents(t)[0]
