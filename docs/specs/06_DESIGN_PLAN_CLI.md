@@ -1277,7 +1277,7 @@ actor, operation and `review` action in the standard authority details.
 Admission examines **every** build hold of the task, including ended,
 lapsed and replaced holds. A reviewer who ever held it is refused. There
 must be a latest hand-off; the round binds to its recorded base and head
-using the local `patch-id-verbatim-v1` fingerprint, never fetching missing
+using the local `patch-id-verbatim-per-file-v1` fingerprint, never fetching missing
 objects. Every round must include the required profiles selected from that
 hand-off's lane, changed paths and policy snapshot: `code` for Standard and
 Assured, plus `test-adequacy` in any lane whose paths match the frozen test

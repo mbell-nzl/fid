@@ -19,7 +19,7 @@ func TestReviewGolden(t *testing.T) {
 		s = f.placeholders(s)
 		s = regexp.MustCompile(`RND-[0-9a-f]{6}`).ReplaceAllString(s, "RND-<new>")
 		s = regexp.MustCompile(`HOF-[0-9a-f]{6}`).ReplaceAllString(s, "HOF-<new>")
-		s = regexp.MustCompile(`\b[0-9a-f]{40}\b`).ReplaceAllString(s, "<fingerprint-or-commit>")
+		s = regexp.MustCompile(`\b(?:[0-9a-f]{64}|[0-9a-f]{40})\b`).ReplaceAllString(s, "<fingerprint-or-commit>")
 		return s
 	}
 	assertGolden(t, filepath.Join("review", "record.json"), normalize(first.stdout))

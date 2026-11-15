@@ -65,7 +65,7 @@ func TestReviewRoundCourierAndRetry(t *testing.T) {
 		t.Fatalf("retry=%#v", got)
 	}
 	listed, _ := lifecycleResult(t, f.run("--json", "review", "list", "FID-9f13aa"), "review.list")
-	if !strings.Contains(first.stdout, "RND-") || !strings.Contains(first.stdout, "patch-id-verbatim-v1") || len(listed["rounds"].([]any)) != 1 {
+	if !strings.Contains(first.stdout, "RND-") || !strings.Contains(first.stdout, "patch-id-verbatim-per-file-v1") || len(listed["rounds"].([]any)) != 1 {
 		t.Fatalf("round=%#v list=%v", first, listed)
 	}
 }

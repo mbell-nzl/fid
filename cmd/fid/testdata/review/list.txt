@@ -3,7 +3,8 @@
   RND-<new> · primary · CHANGES · current
     agent:reviewer · claude/opus-5.5 · other model: true
     Session review-session-1 · profiles: code, test-adequacy
-    patch-id-verbatim-v1 <fingerprint-or-commit>
+    patch-id-verbatim-per-file-v1
+    <fingerprint-or-commit>
     RND-<new>-1 · major · open
       Retry conflicts lack coverage
       cmd/fid/merge_records_test.go:111

@@ -67,7 +67,7 @@
         "output": "## Review: APPROVE\n### Findings\nNone."
       },
       "binding": {
-        "algorithm": "patch-id-verbatim-v1",
+        "algorithm": "patch-id-verbatim-per-file-v1",
         "fingerprint": "<fingerprint-or-commit>",
         "base": "<fingerprint-or-commit>",
         "head": "<fingerprint-or-commit>"

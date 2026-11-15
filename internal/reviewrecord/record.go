@@ -87,6 +87,10 @@ var token = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 var actor = regexp.MustCompile(policy.ActorPattern)
 var hexID = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
+// fingerprintHex is the form of fingerprint.Algorithm's value: a SHA-256 over
+// the per-file patch-ids.
+var fingerprintHex = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
 func (in Input) Validate() error {
 	if !actor.MatchString(in.Reviewer.Actor) || !policy.Allows(in.Reviewer.Actor, policy.WorkSet) || !token.MatchString(in.Reviewer.SessionID) {
 		return fmt.Errorf("reviewer requires a work actor and session ID")
@@ -145,7 +149,7 @@ func (r Round) Validate() error {
 		return fmt.Errorf("invalid review time")
 	}
 	b := r.Binding
-	if b.Algorithm != fingerprint.Algorithm || !hexID.MatchString(b.Fingerprint) || !hexID.MatchString(b.Base) || !hexID.MatchString(b.Head) {
+	if b.Algorithm != fingerprint.Algorithm || !fingerprintHex.MatchString(b.Fingerprint) || !hexID.MatchString(b.Base) || !hexID.MatchString(b.Head) {
 		return fmt.Errorf("invalid review fingerprint")
 	}
 	ids := []string{}
