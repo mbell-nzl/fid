@@ -1575,19 +1575,20 @@ refusals use `invalid-argument` (exit 2) and change nothing. Existing project,
 lock and journal refusal envelopes still apply.
 
 
-### Task completion (RESET 1.6i)
+### Task completion and reconciliation (RESET 1.6i–1.6j)
 
 ```text
 fid done <task> --actor <actor> [--idempotency-key <key>] [--json]
+fid done --actor <actor> [--json]
 ```
 
 The operation is `task.done`, accepting `--project`. Agents and people may
 finish a task; services get `authority-denied`. No live hold is required.
 The task must be `in_review` with its latest hand-off's review reservation.
 An epic is `invalid-argument` (exit 2), with the message
-"fid done closes tasks; closing an epic arrives in 1.6k". No task argument
-is a usage error until 1.6j adds reconciliation. Subtasks use their plain
-transitions.
+"fid done closes tasks; closing an epic arrives in 1.6k". Subtasks use their
+plain transitions. With no task, fid reconciles the current in-review work
+as described below.
 
 Each invocation observes GitHub once, outside the ledger write lock. The
 PR comes from the latest hand-off, the repository from `origin`, and the
@@ -1649,8 +1650,53 @@ precondition (exit 4), Issue subject, exact details `{reason, merged}`;
 `reason` comes from the GitHub adapter's unavailable reason. Local policy
 failures retain `policy-unavailable`. Every refusal supplies a repair in
 human text. A hard evidence failure takes precedence over waiting, with
-gates considered in the evaluator's fixed order. Offline status/show
-presentation and reconciliation remain in 1.6j.
+gates considered in the evaluator's fixed order.
+
+**Reconciliation.** With no task argument, the same `task.done` operation
+selects every task currently `in_review` with a hand-off, ordered by task ID.
+It runs the exact single-task observation, locked revalidation, recording,
+evaluation and completion path once per selected task. A task changing during
+observation is refused for that task; the other tasks continue. Tasks completed
+before the next invocation are excluded. Identical merge and completed CI
+observations reuse their natural keys and append nothing.
+
+All per-task outcomes go to stdout and the command exits 0, including when
+none complete. Command failures (such as no ledger, unavailable write lock,
+policy failure or invalid usage/actor) retain their ordinary nonzero exit
+contract. No task argument still requires `--actor`. `--idempotency-key` is
+invalid without a task (exit 2); per-task completion and observation keys
+already make repetition harmless. The live and keyed-leaf inventories keep
+one `done` leaf; only its explicit-task form is keyed.
+
+Text prints one task per line, with `Completed`, `Waiting`, `Refused` or
+`GitHub unavailable`, its ID, and the reason/repair. A refusal includes its
+gate. No eligible tasks prints `No tasks in review to reconcile.` JSON has
+`event: null` and `result: {outcomes: [...]}` (an empty array when none).
+Each outcome has `task_id`, `status` and exactly one of `completion` or
+`refusal`. Status is `completed`, `waiting`, `refused` or
+`github-unavailable`. Waiting covers not merged and pending/missing CI;
+failed CI is refused. A completion is the ordinary immutable completion
+record. A refusal has `{code, message, next_action, details}`, preserving the
+single-task code and gate/reason/record IDs (or GitHub reason/merged fields).
+
+**Offline reads.** `status` and `show` never contact GitHub. For an in-review
+task without a completion, only a merge bound to the latest hand-off counts.
+When its recorded CI results are not yet green, status's existing IN PROGRESS
+row says `merged, waiting for CI`; a selected completed failure says
+`merged, CI not green`. Show adds the same text in a `Merge` row after
+`Hand-off`. Selection uses the same latest-attempt, push-event, exact-commit
+and skipped-result rule as `done`, applied only to durable completed receipts.
+A merge without completed results is waiting. Rework, cancellation, completion
+and a newer hand-off without a merge remove that view.
+
+Both JSON answers add `merge: {merge_commit, ci}` only when that offline
+merge exists: on each in-progress task in status, and at result level in
+show. `ci` is `waiting`, `not-green` or `green`. When the recorded results
+are all green but another gate has blocked completion, text keeps its usual
+`in review` wording. Green receipts alone are never fresh confirmation that
+all current GitHub CI is green: pending attempts are not durable. Only
+`done` confirms GitHub; it continues to say `merged, waiting for confirmation`
+when GitHub is unavailable after this hand-off's merge has been recorded.
 
 ## 4. Common Mutation Behavior
 

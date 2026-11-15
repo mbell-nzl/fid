@@ -1531,6 +1531,34 @@ dependency. Reconciliation/status wording, epics and V5's verifier remain
 public commands, retaining its separate in-review, rework and unanswered
 question subjects alongside the completed task.
 
+**1.6j's choices (2026-11-15).** The no-task form keeps the `task.done`
+operation and one live/keyed command leaf. It takes a stable ID-ordered list
+of in-review tasks with a hand-off, then calls 1.6i's `donework.Finish` for
+each. It adds no evaluator, observation writer, record or dependency. Each
+per-task refusal becomes a stdout outcome; ordinary command failures remain
+nonzero. JSON `outcomes` have `task_id`, `status` and `completion` or
+`refusal` (`code`, `message`, `next_action`, `details`). Statuses are
+`completed`, `waiting`, `refused`, `github-unavailable`; not merged and
+missing/pending CI wait, while failed CI is refused. Text includes each
+refusal's gate and repair. Empty work succeeds with an empty array. A
+no-task retry key is invalid usage: the existing natural observation keys
+and per-task completion already make retries harmless.
+
+Offline reads share `mergerecord.ReadReviewState`, binding receipts to the
+latest hand-off of an in-review task with no completion. It reuses
+`github.EvaluateCI` over completed receipts; no network or write is added.
+Status keeps its IN PROGRESS grouping and snapshot and changes the row's
+verdict; show adds a Merge row after Hand-off. Both JSON views add optional
+`merge: {merge_commit, ci}` (`waiting`, `not-green`, `green`). Text says
+"merged, waiting for CI" or "merged, CI not green". All-green recorded
+receipts with another unsatisfied gate retain "in review" in text; they
+cannot prove current CI is green. "Merged, waiting for confirmation" remains
+`done`'s GitHub-unavailable message, as the approved 1.6j brief clarifies;
+RESET's task wording now matches it. Rework, a superseding hand-off,
+cancellation or completion removes the old merge view. V8 adds pending
+and failed merge subjects through public commands and compares these new
+status/show fields alongside every existing comparison.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
