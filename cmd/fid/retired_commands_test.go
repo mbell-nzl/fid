@@ -11,7 +11,7 @@ import (
 
 func TestRetiredCommandsAreUnknown(t *testing.T) {
 	t.Parallel()
-	for _, name := range strings.Fields("activation attention capabilities claim concern decision deviation envelope evidence finding gate human-outcome ready receipt requirement resume run stats stop workflow") {
+	for _, name := range strings.Fields("activation attention capabilities claim concern decision deviation envelope evidence gate human-outcome ready receipt requirement resume run stats stop workflow") {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			for _, jsonMode := range []bool{false, true} {
@@ -99,6 +99,32 @@ func TestRetiredReviewInputRemainsRefused(t *testing.T) {
 			got := recordReview(t, f, in, "old-input", "human:courier")
 			if got.err == nil || !strings.Contains(got.stderr, "input."+field) || reviewProjection(t, f) != before {
 				t.Fatalf("retired input=%#v", got)
+			}
+		})
+	}
+}
+
+// RESET 1.6e restores only the person's close command. Retired finding
+// operations remain unavailable, in both human text and the JSON contract.
+func TestRetiredFindingOperationsRemainRefused(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{"address", "resolve", "record", "defer", "list", "show"} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			for _, jsonMode := range []bool{false, true} {
+				args := []string{"finding", name}
+				if jsonMode {
+					args = append([]string{"--json"}, args...)
+				}
+				got := executeCommandForTest(t.TempDir(), args...)
+				if cli.ExitCode(got.err) != 2 || got.stdout != "" {
+					t.Fatalf("retired finding %s=%#v", name, got)
+				}
+				if jsonMode {
+					assertJSONFailureCode(t, got.stderr, "finding", "operation-unavailable")
+				} else if !strings.Contains(got.stderr, fmt.Sprintf("unknown command %q for %q", name, "fid finding")) {
+					t.Fatal(got.stderr)
+				}
 			}
 		})
 	}

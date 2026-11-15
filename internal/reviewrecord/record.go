@@ -41,6 +41,16 @@ type Provenance struct {
 	Output  string `json:"output,omitempty"`
 }
 
+type Disposition struct {
+	FindingID   string `json:"finding_id"`
+	Disposition string `json:"disposition"`
+	Reason      string `json:"reason"`
+}
+
+func (d Disposition) Closes() bool {
+	return d.Disposition == "resolved" || d.Disposition == "not-applicable"
+}
+
 type Input struct {
 	Reviewer     Reviewer       `json:"reviewer"`
 	Stream       string         `json:"stream"`
@@ -48,6 +58,7 @@ type Input struct {
 	Verdict      string         `json:"verdict"`
 	Purpose      string         `json:"purpose"`
 	Findings     []FindingInput `json:"findings"`
+	Dispositions []Disposition  `json:"dispositions,omitempty"`
 	Verification string         `json:"verification"`
 	Provenance   *Provenance    `json:"provenance,omitempty"`
 }
@@ -67,20 +78,21 @@ type Finding struct {
 }
 
 type Round struct {
-	ID           string      `json:"id"`
-	TaskID       string      `json:"task_id"`
-	HandoffID    string      `json:"handoff_id"`
-	Reviewer     Reviewer    `json:"reviewer"`
-	Stream       string      `json:"stream"`
-	Profiles     []string    `json:"profiles"`
-	Verdict      string      `json:"verdict"`
-	Purpose      string      `json:"purpose"`
-	Findings     []Finding   `json:"findings"`
-	Verification string      `json:"verification"`
-	Provenance   *Provenance `json:"provenance,omitempty"`
-	Binding      Binding     `json:"binding"`
-	RecordedBy   string      `json:"recorded_by"`
-	At           string      `json:"at"`
+	ID           string        `json:"id"`
+	TaskID       string        `json:"task_id"`
+	HandoffID    string        `json:"handoff_id"`
+	Reviewer     Reviewer      `json:"reviewer"`
+	Stream       string        `json:"stream"`
+	Profiles     []string      `json:"profiles"`
+	Verdict      string        `json:"verdict"`
+	Purpose      string        `json:"purpose"`
+	Findings     []Finding     `json:"findings"`
+	Dispositions []Disposition `json:"dispositions,omitempty"`
+	Verification string        `json:"verification"`
+	Provenance   *Provenance   `json:"provenance,omitempty"`
+	Binding      Binding       `json:"binding"`
+	RecordedBy   string        `json:"recorded_by"`
+	At           string        `json:"at"`
 }
 
 var token = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
@@ -125,6 +137,13 @@ func (in Input) Validate() error {
 			return fmt.Errorf("finding location requires a file and positive line")
 		}
 	}
+	seenFindings := map[string]bool{}
+	for _, d := range in.Dispositions {
+		if d.FindingID == "" || seenFindings[d.FindingID] || (d.Disposition != "open" && !d.Closes()) || !text(d.Reason) {
+			return fmt.Errorf("disposition requires a unique finding, resolved, not-applicable or open, and a reason")
+		}
+		seenFindings[d.FindingID] = true
+	}
 	return nil
 }
 
@@ -135,7 +154,7 @@ func (r Round) Input() Input {
 	for i, f := range r.Findings {
 		findings[i] = f.FindingInput
 	}
-	return Input{r.Reviewer, r.Stream, r.Profiles, r.Verdict, r.Purpose, findings, r.Verification, r.Provenance}
+	return Input{r.Reviewer, r.Stream, r.Profiles, r.Verdict, r.Purpose, findings, r.Dispositions, r.Verification, r.Provenance}
 }
 
 func (r Round) Validate() error {

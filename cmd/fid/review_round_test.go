@@ -137,7 +137,7 @@ func reviewFinding(severity string) map[string]any {
 func reviewProjection(t *testing.T, f *statusFixture) string {
 	t.Helper()
 	// Journal count catches any append, and SQL covers round/finding/retry writes.
-	got := f.run("sql", `SELECT 'round' AS kind,id AS value FROM review_rounds UNION ALL SELECT 'finding',id FROM round_findings UNION ALL SELECT 'retry',result_json FROM idempotency_results ORDER BY kind,value`)
+	got := f.run("sql", `SELECT 'round' AS kind,id AS value FROM review_rounds UNION ALL SELECT 'finding',id FROM round_findings UNION ALL SELECT 'retry',result_json FROM idempotency_results UNION ALL SELECT 'closure',finding_id || ':' || coalesce(round_id,decision_id) || ':' || disposition || ':' || reason FROM finding_closures UNION ALL SELECT 'decision',id || ':' || binding_id || ':' || reason FROM person_decisions ORDER BY kind,value`)
 	if got.err != nil {
 		t.Fatal(got)
 	}

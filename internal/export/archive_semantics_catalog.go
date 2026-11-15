@@ -36,7 +36,8 @@ func (stage semanticEffectStage) accepts(table, operation string) bool {
 // the accepted projection order while allowing the documented optional and
 // repeated rows within a stage. An idempotency result, where present, is last.
 var semanticEventRules = map[string]semanticEventRule{
-	"review.round-recorded":          semanticRule("review", semanticStage(1, semanticEffectKey("review_rounds", "insert")), semanticStage(0, semanticEffectKey("round_findings", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
+	"finding.closed":                 semanticRule("finding", semanticStage(1, semanticEffectKey("person_decisions", "insert")), semanticStage(1, semanticEffectKey("finding_closures", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
+	"review.round-recorded":          semanticRule("review", semanticStage(1, semanticEffectKey("review_rounds", "insert")), semanticStage(0, semanticEffectKey("round_findings", "insert")), semanticStage(0, semanticEffectKey("finding_closures", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"merge.observed":                 semanticRule("merge", semanticStage(1, semanticEffectKey("merge_observations", "insert"))),
 	"ci.result-recorded":             semanticRule("merge", semanticStage(1, semanticEffectKey("ci_results", "insert"))),
 	"check.completed":                semanticRule("check", semanticStage(1, semanticEffectKey("check_requests", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
@@ -71,7 +72,7 @@ var semanticEventRules = map[string]semanticEventRule{
 
 // semanticFirstProfile is the first projection schema that holds each
 // family added since schema 19. An archive of an earlier schema holds none.
-var semanticFirstProfile = map[string]int{"review.round-recorded": 30, "merge.observed": 28, "ci.result-recorded": 28, "task.handed-off": 26, "check.completed": 25, "check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
+var semanticFirstProfile = map[string]int{"finding.closed": 31, "review.round-recorded": 30, "merge.observed": 28, "ci.result-recorded": 28, "task.handed-off": 26, "check.completed": 25, "check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
 
 func init() {
 	for eventType, rule := range semanticEventRules {

@@ -86,7 +86,7 @@ func Record(o Options) (Result, error) {
 			return err
 		}
 		in := o.Input
-		r := reviewrecord.Round{ID: id, TaskID: o.TaskID, HandoffID: h.ID, Reviewer: in.Reviewer, Stream: in.Stream, Profiles: in.Profiles, Verdict: in.Verdict, Purpose: in.Purpose, Findings: []reviewrecord.Finding{}, Verification: in.Verification, Provenance: in.Provenance, Binding: reviewrecord.Bind(binding), RecordedBy: o.Actor, At: now.Format(time.RFC3339)}
+		r := reviewrecord.Round{ID: id, TaskID: o.TaskID, HandoffID: h.ID, Reviewer: in.Reviewer, Stream: in.Stream, Profiles: in.Profiles, Verdict: in.Verdict, Purpose: in.Purpose, Findings: []reviewrecord.Finding{}, Dispositions: in.Dispositions, Verification: in.Verification, Provenance: in.Provenance, Binding: reviewrecord.Bind(binding), RecordedBy: o.Actor, At: now.Format(time.RFC3339)}
 		for i, f := range in.Findings {
 			r.Findings = append(r.Findings, reviewrecord.Finding{ID: fmt.Sprintf("%s-%d", id, i+1), FindingInput: f})
 		}
@@ -175,7 +175,23 @@ func Effects(r reviewrecord.Round) ([]journal.Effect, error) {
 		}
 		effects = append(effects, journal.Effect{Op: "insert", Table: "round_findings", PK: map[string]any{"id": f.ID}, Values: map[string]any{"round_id": r.ID, "record_json": string(raw)}})
 	}
+	for _, d := range r.Dispositions {
+		if d.Closes() {
+			effects = append(effects, ClosureEffect(d.FindingID, r.ID, "", d.Disposition, d.Reason))
+		}
+	}
 	return effects, nil
+}
+
+func ClosureEffect(finding, round, decision, disposition, reason string) journal.Effect {
+	var rnd, pdn any
+	if round != "" {
+		rnd = round
+	}
+	if decision != "" {
+		pdn = decision
+	}
+	return journal.Effect{Op: "insert", Table: "finding_closures", PK: map[string]any{"finding_id": finding}, Values: map[string]any{"round_id": rnd, "decision_id": pdn, "disposition": disposition, "reason": reason}}
 }
 
 // OpenProjection is shared by read adapters; queries do not mutate records.

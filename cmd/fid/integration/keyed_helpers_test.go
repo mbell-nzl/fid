@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -124,6 +124,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 // under a field name, for p24AssertStoredFieldNames.
 var p24PositionalNames = map[string][]string{"check.execute": {"names"},
 	"review.record": {"task"},
+	"finding.close": {"finding"},
 	"task.answer":   {"task", "text"},
 	"task.takeover": {"task"},
 	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},

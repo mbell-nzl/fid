@@ -101,8 +101,8 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 17 {
-		t.Fatalf("retained keyed leaves=%v, want all 17 remaining keyed leaves", want)
+	if len(want) != 18 {
+		t.Fatalf("retained keyed leaves=%v, want all 18 remaining keyed leaves", want)
 	}
 	return want
 }

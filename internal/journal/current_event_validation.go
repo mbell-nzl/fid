@@ -39,6 +39,14 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 				}
 			}
 		}
+		if strings.EqualFold(effect.Table, "person_decisions") {
+			if err := validateFindingDecisionEffect(tx, event, effect); err != nil {
+				return err
+			}
+		}
+		if strings.EqualFold(effect.Table, "finding_closures") && (!event.IsV2() || event.EventType != "review.round-recorded" && event.EventType != "finding.closed") {
+			return fmt.Errorf("finding closures require their Event-v2 family")
+		}
 		if (strings.EqualFold(effect.Table, "review_rounds") || strings.EqualFold(effect.Table, "round_findings")) && (!event.IsV2() || event.EventType != "review.round-recorded") {
 			return fmt.Errorf("review tables require their Event-v2 family")
 		}
@@ -49,7 +57,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && (event.EventType == "merge.observed" || event.EventType == "ci.result-recorded") {
 		return fmt.Errorf("merge/CI observations require Event-v2")
 	}
-	if !event.IsV2() && event.EventType == "review.round-recorded" {
+	if !event.IsV2() && (event.EventType == "review.round-recorded" || event.EventType == "finding.closed") {
 		return fmt.Errorf("review rounds require Event-v2")
 	}
 	if !event.IsV2() {
@@ -67,6 +75,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
+	}
+	if event.EventType == "finding.closed" {
+		return validateFindingClosed(tx, event)
 	}
 	if event.EventType == "review.round-recorded" {
 		return validateReviewRound(tx, event)

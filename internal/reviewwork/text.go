@@ -37,7 +37,18 @@ func WriteText(w io.Writer, task string, views []RoundView, renderer display.Ren
 		prose("    ", "Session "+v.Reviewer.SessionID+" · profiles: "+strings.Join(v.Profiles, ", "))
 		prose("    ", v.Binding.Algorithm+" "+v.Binding.Fingerprint)
 		for _, f := range v.Findings {
-			prose("    ", f.ID+" · "+f.Severity+" · open")
+			state := "open"
+			if !f.Open {
+				state = "closed"
+			}
+			prose("    ", f.ID+" · "+f.Severity+" · "+state)
+			if f.Closure != nil {
+				by := f.Closure.RoundID
+				if by == "" {
+					by = f.Closure.DecisionID
+				}
+				prose("      ", "By "+by+" · "+f.Closure.Disposition+" · "+f.Closure.Reason)
+			}
 			prose("      ", f.Summary)
 			if f.Location != nil {
 				prose("      ", fmt.Sprintf("%s:%d", f.Location.File, f.Location.Line))

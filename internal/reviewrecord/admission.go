@@ -104,9 +104,20 @@ func Admit(conn Queryer, r Round) error {
 		if r.Stream != prior.Stream && r.Reviewer.SessionID == prior.Reviewer.SessionID {
 			return fmt.Errorf("separate review must use a different session from every primary round")
 		}
-		for _, f := range prior.Findings {
-			major = major || f.Severity == "major"
+	}
+	if err := AdmitDispositions(conn, r); err != nil {
+		return err
+	}
+	open, err := OpenMajors(conn, r.TaskID)
+	if err != nil {
+		return err
+	}
+	for _, f := range open {
+		closed := false
+		for _, d := range r.Dispositions {
+			closed = closed || d.FindingID == f.ID && d.Closes()
 		}
+		major = major || !closed
 	}
 	for _, f := range r.Findings {
 		major = major || f.Severity == "major"
