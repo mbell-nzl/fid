@@ -14,6 +14,7 @@ import (
 
 func recordV8Reviews(t *testing.T, root, task string) {
 	t.Helper()
+	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-before-edit"))
 	var ids []string
 	for i, stream := range []string{"primary", "separate"} {
 		in := reviewInput()
@@ -43,6 +44,7 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	}
 	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "close", ids[1], "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "v8-close"), "finding.close")
 	recordV8Rework(t, root, task, ids[2])
+	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-after-edit"))
 }
 
 func recordV8Rework(t *testing.T, root, task, finding string) {

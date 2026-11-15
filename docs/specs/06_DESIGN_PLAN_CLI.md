@@ -1498,6 +1498,76 @@ retained with that failure contract. The message names the missing Artifact.
 Availability updates never rewrite immutable check results or emit kernel
 readiness records.
 
+
+### Approval (RESET 1.6g)
+
+```text
+fid approve <task> --actor human:<name> --reason <text> [--idempotency-key <key>] [--json]
+```
+
+The operation is `task.approve`. It accepts `--project`. Only a person may
+approve: agent and service actors receive `authority-denied`, regardless of
+their terminal. The reason must contain non-whitespace text. Both standard
+input and standard error must be terminals, including with `--json` and on a
+keyed retry. A piped human invocation is refused. Standard output may be a
+pipe: the prompt is on standard error and the success result is on standard
+output, so the prompt never mixes with JSON.
+
+The subject must be a task in `in_review`, with a latest hand-off. fid
+computes `patch-id-verbatim-per-file-v1` from that receipt's recorded base
+and head using local objects, never fetching. Missing objects refuse with
+a repair to restore those objects locally and retry. It does not bind to
+the current checkout, a new merge-base, the head SHA or the hand-off ID.
+
+Before asking, the prompt shows the task and lane at hand-off, the full
+base..head diffstat with pinned rendering, each required check's recorded
+counting result and ID, each review stream's latest round with its verdict,
+reviewer, model and current/stale state, every open major (including stale
+rounds' findings), and earlier approvals with their freshness and reasons.
+Missing streams are explicit. Assured work shows both primary and separate
+streams. `no other-model review` appears when no current review's known
+model family differs from every model that built the task. A historical
+agent build with an unknown model cannot establish that difference; a
+person without a model built by hand.
+
+The person types the exact task ID, followed by Enter. A different line or
+end of input cancels with exit 0, a cancellation message on standard error,
+no result and no Event. There is no `--yes` flag. Missing reviews and open
+majors do not prevent approval; `done` will enforce its gates separately.
+The ledger lock covers the preview, confirmation and append.
+
+The success result contains `decision` and `occurred_at`. The decision has
+`decision_id`, `task_id`, `actor`, `reason`, `at` and a `binding` with
+`algorithm`, `fingerprint`, `handoff_id`, `base`, and `head`. The ordinary
+success envelope names the approval Event and its time. Text says
+`✓ Approved <task> · decision <id>`.
+
+Approval is an immutable person's decision of kind `approve`, subject the
+task. Its binding ID is the fingerprint; its structured binding retains the
+algorithm and explanatory hand-off endpoints. Replay/import validate actor,
+reason, task state at that journal position, fingerprint form and the latest
+hand-off's task/base/head without git or a terminal. The same admission runs
+before live append. Other person's-decision kinds keep their binding rules.
+The full Event must fit below the journal's existing 1 MiB line budget.
+
+A decision is current when its algorithm and fingerprint match the latest
+hand-off's change, even after a clean rebase with new endpoints; otherwise
+it is stale. `approvalrecord.Current` supplies the shared current/stale/missing
+reader for the done evaluator. Any matching immutable approval is evidence
+of the current change; a new decision after edits preserves the old one.
+The prompt always shows the full diffstat when a new decision is requested.
+Status/show presentation stays in task 2.3.
+
+An optional retry key covers actor, task and reason in the project's
+`task.approve` scope. An identical retry returns the original decision,
+Event and time without re-prompting, recomputing git evidence or requiring
+the task still to be in review. It still requires a person on terminals.
+Changed inputs under the same key receive `idempotency-conflict`; a new
+approval after an edit needs a fresh key. Semantic, fingerprint and terminal
+refusals use `invalid-argument` (exit 2) and change nothing. Existing project,
+lock and journal refusal envelopes still apply.
+
+
 ## 4. Common Mutation Behavior
 
 Every mutation:

@@ -95,14 +95,14 @@ func retainedKeyedLeaves(t *testing.T) []string {
 			t.Fatalf("invalid keyed row %q", row)
 		}
 		operation := strings.ReplaceAll(name, " ", ".")
-		if mapped := map[string]string{"check": "check.execute", "handoff": "task.handoff", "start": "task.start", "park": "hold.park", "answer": "task.answer", "takeover": "task.takeover"}[name]; mapped != "" {
+		if mapped := map[string]string{"approve": "task.approve", "check": "check.execute", "handoff": "task.handoff", "start": "task.start", "park": "hold.park", "answer": "task.answer", "takeover": "task.takeover"}[name]; mapped != "" {
 			operation = mapped
 		}
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 18 {
-		t.Fatalf("retained keyed leaves=%v, want all 18 remaining keyed leaves", want)
+	if len(want) != 19 {
+		t.Fatalf("retained keyed leaves=%v, want all 19 remaining keyed leaves", want)
 	}
 	return want
 }

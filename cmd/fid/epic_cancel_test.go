@@ -112,8 +112,13 @@ func newEpicCancellationFixture(t *testing.T) (*statusFixture, string) {
 func assertEpicCancellationDecision(t *testing.T, f *statusFixture, want map[string]any) {
 	t.Helper()
 	answer := f.run("sql", "SELECT * FROM person_decisions ORDER BY id")
+	rowWant := map[string]any{}
+	for k, v := range want {
+		rowWant[k] = v
+	}
+	rowWant["binding_json"] = nil
 	var rows []map[string]any
-	if answer.err != nil || answer.stderr != "" || json.Unmarshal([]byte(answer.stdout), &rows) != nil || !reflect.DeepEqual(rows, []map[string]any{want}) {
+	if answer.err != nil || answer.stderr != "" || json.Unmarshal([]byte(answer.stdout), &rows) != nil || !reflect.DeepEqual(rows, []map[string]any{rowWant}) {
 		t.Fatalf("complete epic cancellation decision = %#v, want %v", answer, want)
 	}
 }

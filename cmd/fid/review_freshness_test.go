@@ -83,12 +83,17 @@ func canonicalReviewFixtureWithLane(t *testing.T, lane string) (*statusFixture, 
 
 func canonicalReviewFixtureAt(t *testing.T, lane string, linked bool) (*statusFixture, string) {
 	t.Helper()
+	now := time.Now().Add(time.Minute)
+	return canonicalReviewFixtureWithClock(t, lane, linked, func() time.Time { return now })
+}
+
+func canonicalReviewFixtureWithClock(t *testing.T, lane string, linked bool, clock func() time.Time) (*statusFixture, string) {
+	t.Helper()
 	f := newLifecycleFixture(t)
 	if linked {
 		f.workspace = gittest.AddWorktree(t, f.workspace)
 	}
-	now := time.Now().Add(time.Minute)
-	f.clock = func() time.Time { return now }
+	f.clock = clock
 	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Review freshness", "--lane", lane, "--actor", "human:mark", "--idempotency-key", "create"), "issue.create")
 	task := created["issue"].(map[string]any)["id"].(string)
 	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")

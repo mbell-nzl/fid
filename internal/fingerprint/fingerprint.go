@@ -58,20 +58,31 @@ var patchID = regexp.MustCompile(`^([0-9a-f]{40}) 000000000000000000000000000000
 // MaxDiffBytes and its producer must succeed before patch-id receives any bytes.
 // This prevents patch-id's successful hashing of a prefix from becoming evidence.
 func Compute(root, base, head string) (Result, error) {
+	result, _, err := inspect(root, base, head, false)
+	return result, err
+}
+
+// Inspect also renders the full diffstat with the fingerprint's private git
+// view and pinned settings. No checkout attributes or user config can affect it.
+func Inspect(root, base, head string) (Result, string, error) {
+	return inspect(root, base, head, true)
+}
+
+func inspect(root, base, head string, stat bool) (Result, string, error) {
 	if !oid.MatchString(base) || !oid.MatchString(head) {
-		return Result{}, &Failure{Kind: GitFailure, Err: fmt.Errorf("base and head must be full lowercase 40-hex commit IDs")}
+		return Result{}, "", &Failure{Kind: GitFailure, Err: fmt.Errorf("base and head must be full lowercase 40-hex commit IDs")}
 	}
 	view, err := objectView(root, head)
 	if err != nil {
-		return Result{}, &Failure{Kind: GitFailure, Err: err}
+		return Result{}, "", &Failure{Kind: GitFailure, Err: err}
 	}
 	defer func() { _ = os.RemoveAll(view) }()
 	root = view
 	if err := checkCommits(root, base, head); err != nil {
-		return Result{}, err
+		return Result{}, "", err
 	}
 	if err := prepareAttributes(root, head); err != nil {
-		return Result{}, &Failure{Kind: GitFailure, Err: err}
+		return Result{}, "", &Failure{Kind: GitFailure, Err: err}
 	}
 	diff, err := runGit(root, nil, MaxDiffBytes, diffArgs(base, head)...)
 	if err != nil {
@@ -79,21 +90,32 @@ func Compute(root, base, head string) (Result, error) {
 		if errors.Is(err, errOutputLimit) {
 			kind = OversizedDiff
 		}
-		return Result{}, &Failure{Kind: kind, Err: err}
+		return Result{}, "", &Failure{Kind: kind, Err: err}
 	}
 	if len(diff) == 0 {
-		return Result{}, &Failure{Kind: EmptyChange, Err: fmt.Errorf("base and head have no change")}
+		return Result{}, "", &Failure{Kind: EmptyChange, Err: fmt.Errorf("base and head have no change")}
 	}
 	// Committed attributes may force binary data into text hunks. patch-id
 	// silently truncates such lines at NUL, including in --verbatim mode.
 	if bytes.IndexByte(diff, 0) >= 0 {
-		return Result{}, &Failure{Kind: GitFailure, Err: fmt.Errorf("diff contains NUL text that patch-id cannot hash completely")}
+		return Result{}, "", &Failure{Kind: GitFailure, Err: fmt.Errorf("diff contains NUL text that patch-id cannot hash completely")}
 	}
 	id, err := fingerprintDiff(root, diff)
 	if err != nil {
-		return Result{}, &Failure{Kind: GitFailure, Err: err}
+		return Result{}, "", &Failure{Kind: GitFailure, Err: err}
 	}
-	return Result{Algorithm: Algorithm, Fingerprint: id, Base: base, Head: head}, nil
+	var diffstat []byte
+	if stat {
+		// A path in the bounded patch cannot exceed MaxDiffBytes. These
+		// widths keep every quoted name, including renames; no count limit.
+		args := diffArgs(base, head)
+		args = slices.Insert(args, len(args)-3, "--no-patch", fmt.Sprintf("--stat=%d,%d,40", MaxDiffBytes+128, MaxDiffBytes))
+		diffstat, err = runGit(root, nil, MaxDiffBytes, args...)
+		if err != nil {
+			return Result{}, "", &Failure{Kind: GitFailure, Err: err}
+		}
+	}
+	return Result{Algorithm: Algorithm, Fingerprint: id, Base: base, Head: head}, string(diffstat), nil
 }
 
 // Git's patch-id can skip the next file header after a binary patch (observed

@@ -16,3 +16,4 @@ takeover	--reason
 handoff	--pr
 review record	purpose
 finding close	--reason
+approve	--reason

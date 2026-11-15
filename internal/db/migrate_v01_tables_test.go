@@ -201,7 +201,7 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 func TestDecideProjectionFreshnessRequiresPolicySchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 14 {
+	if ProjectionSchemaVersion != 15 {
 		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 14)
 	}
 

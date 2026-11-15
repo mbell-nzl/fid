@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test check-approval-binding
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -45,3 +45,8 @@ coverage:
 
 build:
 	go build -o /tmp/fid ./cmd/fid
+
+# V6 (RESET.md), check:approval-binding: a real-terminal approval survives a
+# clean rebase, becomes stale on an edit, and is renewed by a new decision.
+check-approval-binding:
+	go test -count=1 -run '^TestV6ApprovalSurvivesCleanRebaseAndStalesOnEdit$$' ./cmd/fid

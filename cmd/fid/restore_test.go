@@ -310,6 +310,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 	}
 	assertV8MergeCI(t, workspace)
 	assertV8Reviews(t, workspace)
+	assertV8Approvals(t, workspace)
 	reviewTask := executeCommandForTest(workspace, "sql", `SELECT task_id FROM review_rounds WHERE json_extract(record_json,'$.reviewer.session_id')='v8-primary'`)
 	if reviewTask.err != nil {
 		t.Fatal(reviewTask.err)

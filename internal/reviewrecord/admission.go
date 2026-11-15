@@ -149,7 +149,9 @@ func Read(conn Queryer, task string) ([]Round, error) {
 	return rounds, rows.Err()
 }
 
-// OtherModel compares with all model-bearing build holds, including ended ones.
+// OtherModel compares with every build hold, including ended ones. A historical
+// agent without model attribution cannot establish a different model family;
+// a person without a model built by hand.
 func OtherModel(conn Queryer, task, model string) (bool, error) {
 	if model == "" {
 		return false, nil
@@ -158,15 +160,18 @@ func OtherModel(conn Queryer, task, model string) (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	rows, err := conn.Query(`SELECT model FROM holds WHERE task_id=? AND model<>''`, task)
+	rows, err := conn.Query(`SELECT actor,model FROM holds WHERE task_id=?`, task)
 	if err != nil {
 		return false, err
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var built string
-		if err := rows.Scan(&built); err != nil {
+		var actor, built string
+		if err := rows.Scan(&actor, &built); err != nil {
 			return false, err
+		}
+		if built == "" && strings.HasPrefix(actor, "agent:") {
+			return false, nil
 		}
 		if len(built) > len(family) && built[:len(family)+1] == family+"/" {
 			return false, nil
