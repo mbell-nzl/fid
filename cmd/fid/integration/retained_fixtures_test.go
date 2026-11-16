@@ -97,6 +97,16 @@ func TestPortableAssertCorruptEventsRejected(t *testing.T) {
 	assertLeanIntegrationJournal(t, source)
 	encoded, err := json.Marshal(found.Event)
 	p22FaultOK(t, err)
+	// The baseline stops before the policy snapshot start writes, so the
+	// started Event takes the ID the writers allocate next there, as replay
+	// requires.
+	var nextID string
+	p22FaultOK(t, journal.WithLock(baseline, journal.LockOwner{Command: "fixture"}, func(lock *journal.WriteLock) error {
+		prepared, err := journal.PrepareEvent(lock, journal.Event{EventSchema: journal.EventSchemaV1, OccurredAt: found.Event.OccurredAt})
+		nextID = prepared.EventID
+		return err
+	}))
+	encoded = bytes.ReplaceAll(encoded, []byte(found.Event.EventID), []byte(nextID))
 	for _, kind := range []string{"healthy", "unknown-effect-table", "missing-required-effect", "malformed-body", "unknown-family"} {
 		t.Run(kind, func(t *testing.T) {
 			for _, mode := range []string{"live", "replay"} {
