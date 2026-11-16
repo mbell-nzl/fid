@@ -38,6 +38,10 @@ func journalArchiveEntries(workspaceRoot, scratch string) ([]archiveEntry, int, 
 		err = readEventLines(input, func(line []byte) error {
 			lineNumber++
 			hash, err := validateJournalLine(line, tracker)
+			if err == nil {
+				// A backup never holds history that restore would refuse.
+				err = validateExportedLine(line)
+			}
 			if err != nil {
 				var unsupported *journal.SchemaUnsupportedError
 				if errors.As(err, &unsupported) {
@@ -145,6 +149,14 @@ func validateJournalLine(line []byte, tracker *journalTracker) (string, error) {
 		return "", fmt.Errorf("event is not canonical")
 	}
 	return journal.HashEvent(event)
+}
+
+func validateExportedLine(line []byte) error {
+	var event journal.Event
+	if err := event.UnmarshalJSON(line); err != nil {
+		return err
+	}
+	return journal.ValidateEventShape(event)
 }
 
 type journalTracker struct {
