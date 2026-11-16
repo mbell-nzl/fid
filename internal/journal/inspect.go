@@ -76,6 +76,13 @@ func FindEvent(journalDir, eventID string) (FoundEvent, error) {
 }
 
 func inspectJournal(journalDir, checkpointFile string, checkpointOffset int64) (journalInspection, error) {
+	return inspectJournalTracked(journalDir, checkpointFile, checkpointOffset, nil)
+}
+
+// inspectJournalTracked also feeds every Event to tracker, when set, which
+// refuses the rules that span lines: a repeated Event ID and an aggregate's
+// broken sequence.
+func inspectJournalTracked(journalDir, checkpointFile string, checkpointOffset int64, tracker *aggregateSequenceTracker) (journalInspection, error) {
 	files, err := orderedJournalFiles(journalDir)
 	if err != nil {
 		return journalInspection{}, err
@@ -83,7 +90,7 @@ func inspectJournal(journalDir, checkpointFile string, checkpointOffset int64) (
 
 	var inspection journalInspection
 	for _, fileName := range files {
-		if err := inspectJournalFile(journalDir, fileName, checkpointFile, checkpointOffset, &inspection); err != nil {
+		if err := inspectJournalFile(journalDir, fileName, checkpointFile, checkpointOffset, &inspection, tracker); err != nil {
 			return journalInspection{}, err
 		}
 	}
@@ -122,7 +129,7 @@ func findEventInFile(journalDir, fileName, eventID string) (FoundEvent, bool, er
 	}
 }
 
-func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointOffset int64, inspection *journalInspection) error {
+func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointOffset int64, inspection *journalInspection, tracker *aggregateSequenceTracker) error {
 	path := filepath.Join(journalDir, fileName)
 	file, err := os.Open(path)
 	if err != nil {
@@ -142,7 +149,7 @@ func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointO
 		}
 
 		offset += int64(len(lineBytes))
-		checkpoint, hasEvent, err := inspectCheckpointLine(path, lineNumber, offset, lineBytes)
+		checkpoint, hasEvent, err := inspectCheckpointLine(path, lineNumber, offset, lineBytes, tracker)
 		if err != nil {
 			return err
 		}
@@ -170,8 +177,9 @@ func (line checkpointLine) FileMatches(fileName, checkpointFile string, offset, 
 }
 
 // inspectCheckpointLine also pre-scans each line with admission's shape
-// rules, so replay refuses before it applies any Event.
-func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
+// rules and, given a tracker, the rules that span lines, so replay refuses
+// before it applies any Event.
+func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte, tracker *aggregateSequenceTracker) (checkpointLine, bool, error) {
 	// The writers' scanners hold every stored byte before the newline,
 	// padding and carriage returns included.
 	if !withinLineBudget(len(bytes.TrimSuffix(lineBytes, []byte("\n")))) {
@@ -197,6 +205,11 @@ func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes 
 	}
 	if err := validateEventShape(stored, len(canonical)); err != nil {
 		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+	}
+	if tracker != nil {
+		if err := tracker.add(stored); err != nil {
+			return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+		}
 	}
 	sum := sha256.Sum256(canonical)
 	_ = offset

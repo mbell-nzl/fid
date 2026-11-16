@@ -65,14 +65,15 @@ func replayJournal(journalDir string, options *ReplayOptions, project func(Proje
 		return ReplayStats{}, err
 	}
 
-	if _, err := inspectJournal(journalDir, "", 0); err != nil {
+	// The pre-scan reads the whole journal before replay projects any Event,
+	// so a refusal changes nothing, even after valid pending Events.
+	if _, err := inspectJournalTracked(journalDir, "", 0, newReplayTracker()); err != nil {
 		return ReplayStats{}, err
 	}
 
 	var stats ReplayStats
-	tracker := newReplayTracker()
 	for _, fileName := range files {
-		fileReplayed, err := replayJournalFile(project, journalDir, fileName, options, &stats, tracker)
+		fileReplayed, err := replayJournalFile(project, journalDir, fileName, options, &stats)
 		if err != nil {
 			return ReplayStats{}, err
 		}
@@ -84,7 +85,7 @@ func replayJournal(journalDir string, options *ReplayOptions, project func(Proje
 	return stats, nil
 }
 
-func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats, tracker *aggregateSequenceTracker) (bool, error) {
+func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats) (bool, error) {
 	path := filepath.Join(journalDir, fileName)
 	file, err := os.Open(path)
 	if err != nil {
@@ -127,13 +128,6 @@ func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName
 
 		var stored Event
 		if err := json.Unmarshal(trimmed, &stored); err != nil {
-			return false, &CorruptJournalError{
-				File: filepath.ToSlash(path),
-				Line: lineNumber,
-				Err:  err,
-			}
-		}
-		if err := tracker.add(stored); err != nil {
 			return false, &CorruptJournalError{
 				File: filepath.ToSlash(path),
 				Line: lineNumber,

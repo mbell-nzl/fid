@@ -456,30 +456,56 @@ func TestForgedEventIdentityRefusedOnEveryJournalPath(t *testing.T) {
 
 // Export refuses a journal that repeats an Event ID, so replay must too, or
 // every later backup would fail. Like aggregate sequences, the check spans
-// lines, so it runs as replay reads them: rebuild replays into a scratch
-// projection and catch-up stops at the repeat, changing nothing.
+// lines. Replay's pre-scan makes both checks before it projects any Event,
+// so a refusal changes nothing, even after valid pending Events.
 func TestReplayRefusesRepeatedEventID(t *testing.T) {
 	t.Parallel()
-	for _, mode := range []string{"catch-up", "freshen", "rebuild"} {
-		t.Run(mode, func(t *testing.T) {
-			t.Parallel()
-			w := newAdmissionWorkspace(t, admissionPrefix(), mode)
-			repeated := admissionLaneRaise()
-			repeated.EventID = admissionPrefix()[1].EventID
-			repeated.Effects[2].Values["journal_event_id"] = repeated.EventID
-			conn := openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
-			before := currentProjectionSnapshot(t, conn)
-			closeProjectDB(t, conn)
-			err := w.admit(t, mode, repeated)
-			var corrupt *CorruptJournalError
-			if !errors.As(err, &corrupt) || corrupt.Line != len(admissionPrefix())+1 || !strings.Contains(err.Error(), "repeats Event ID") {
-				t.Fatalf("%s = %v, want the repeated ID refused", mode, err)
-			}
-			conn = openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
-			defer closeProjectDB(t, conn)
-			if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
-				t.Fatalf("%s refusal changed the projection", mode)
-			}
-		})
+	repeated := admissionLaneRaise()
+	repeated.EventID = admissionPrefix()[1].EventID
+	repeated.Effects[2].Values["journal_event_id"] = repeated.EventID
+	repeatedHold := admissionHoldTaken()
+	repeatedHold.EventID = admissionPrefix()[1].EventID
+	skippedHold := admissionHoldTaken()
+	skippedHold.EventID, skippedHold.Aggregate.Sequence = "EVT-20261110-000005", 2
+	cases := []struct {
+		name    string
+		pending []Event
+		reason  string
+	}{
+		{"repeat after the checkpoint", []Event{repeated}, "repeats Event ID"},
+		{"repeat after a valid pending Event", []Event{admissionLaneRaise(), repeatedHold}, "repeats Event ID"},
+		{"sequence gap after a valid pending Event", []Event{admissionLaneRaise(), skippedHold}, "sequence 2, want 1"},
+	}
+	for _, tc := range cases {
+		for _, mode := range []string{"replay", "catch-up", "freshen", "rebuild"} {
+			t.Run(tc.name+"/"+mode, func(t *testing.T) {
+				t.Parallel()
+				w := newAdmissionWorkspace(t, admissionPrefix(), mode)
+				stored := append([]byte{}, w.prefix...)
+				for _, event := range tc.pending {
+					line, err := MarshalCanonicalJSON(event)
+					if err != nil {
+						t.Fatal(err)
+					}
+					stored = append(append(stored, line...), '\n')
+				}
+				if err := os.WriteFile(w.file, stored, 0o644); err != nil {
+					t.Fatal(err)
+				}
+				conn := openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
+				before := currentProjectionSnapshot(t, conn)
+				closeProjectDB(t, conn)
+				err := w.replayStored(t, mode)
+				var corrupt *CorruptJournalError
+				if !errors.As(err, &corrupt) || corrupt.Line != len(admissionPrefix())+len(tc.pending) || !strings.Contains(err.Error(), tc.reason) {
+					t.Fatalf("%s = %v, want line %d refused naming %q", mode, err, len(admissionPrefix())+len(tc.pending), tc.reason)
+				}
+				conn = openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
+				defer closeProjectDB(t, conn)
+				if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
+					t.Fatalf("%s refusal changed the projection", mode)
+				}
+			})
+		}
 	}
 }
