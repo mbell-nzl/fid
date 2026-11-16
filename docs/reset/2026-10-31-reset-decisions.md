@@ -3185,9 +3185,11 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   later write. Lifting the limit means storing changed paths outside the
   Event (for example a digest and an Artifact). Mark's call when a real
   change hits it.
-- From this PR (1.9): a caller-supplied Event ID isn't checked for
-  uniqueness on live append; no writer supplies one, and replay and export
-  refuse a repeated ID. The catalog's `issue.label-added` and
+- From this PR (1.9): a caller-supplied Event ID without a date (not
+  `<prefix>-YYYYMMDD-<n>`) isn't checked for uniqueness on live append; no
+  writer supplies one, and replay and export refuse a repeated ID. A dated
+  one must take its date's next sequence (review round 2), so it can't
+  repeat. The catalog's `issue.label-added` and
   `issue.label-removed` have no writer (`fid issue label` writes
   `issue.label.added` and `issue.label.removed`); remove them in the 3.2
   baseline if nothing needs them.
@@ -3206,6 +3208,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   checkpoint on the last of them: a consistent prefix, and the next read
   refuses at the same Event. All-or-nothing catch-up would need one
   transaction over the pending Events; nothing needs it yet.
+- From #93 (1.9): admission reads a dated Event ID's sequence by value and
+  doesn't tie the ID's date to the Event's time or file. So it admits IDs
+  no writer writes, such as `EVT-20261110-4` for the writers'
+  `EVT-20261110-000004`, or the next ID of another date. None of them
+  harms allocation, because each must still take its date's next sequence.
+  Tighten to the writers' exact form only if something comes to rely on it.
 
 **Resolved.** Later work resolved these, so 1.8 doesn't import them. Dates
 are merge dates, in New Zealand time.
