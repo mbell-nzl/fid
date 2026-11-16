@@ -152,10 +152,18 @@ func validateFamilyShape(event Event) error {
 	if !strings.Contains(" "+rule.actors+" ", " "+event.ActorV2.ActorType+" ") {
 		return fmt.Errorf("current Event %s: %s actor not admitted", event.EventType, event.ActorV2.ActorType)
 	}
-	// An Issue Event changes only its own Issue row.
+	// SQL takes any column as a key, so an issues Effect names its Issue by
+	// the primary key alone. An Issue Event changes only its own Issue row.
 	for _, effect := range event.Effects {
-		if id, keyed := effect.PK["id"]; keyed && rule.aggregate == "issue" && effect.Table == "issues" && id != event.Aggregate.ID {
-			return fmt.Errorf("issues identity differs from Event aggregate")
+		if effect.Table != "issues" {
+			continue
+		}
+		id, keyed := effect.PK["id"].(string)
+		if rule.aggregate == "issue" && (len(effect.PK) != 1 || id != event.Aggregate.ID) {
+			return fmt.Errorf("issues Effect must key the Event aggregate %q by id alone", event.Aggregate.ID)
+		}
+		if len(effect.PK) != 1 || !keyed {
+			return fmt.Errorf("issues Effect must key one Issue by id alone")
 		}
 	}
 	// A retry result belongs to the Event's own request, and only then.

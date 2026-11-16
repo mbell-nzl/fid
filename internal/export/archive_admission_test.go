@@ -82,6 +82,14 @@ func TestImportRefusesForgedEventsLikeTheJournal(t *testing.T) {
 		{"dated ID without the EVT prefix", "Event ID", hold, func(e journal.Event) journal.Event { e.EventID = "BAD-20261115-000009"; return e }},
 		{"update control", "", retitle, func(e journal.Event) journal.Event { return e }},
 		{"update retry result without its request", "idempotency", retitle, unbound},
+		{"update keyed by another column", "primary key", retitle, func(e journal.Event) journal.Event {
+			e.Effects[0].PK = map[string]any{"title": "Epic"}
+			return e
+		}},
+		{"update without a key", "primary key", retitle, func(e journal.Event) journal.Event {
+			e.Effects[1].PK = map[string]any{}
+			return e
+		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()

@@ -71,6 +71,31 @@ func admissionHoldTaken() Event {
 	return event
 }
 
+// admissionIssueCreated creates a third task, FID-c, as the create writer does.
+func admissionIssueCreated() Event {
+	event := admissionEvent("EVT-20261110-000004", "issue.created", "issue", "FID-c", 1,
+		Effect{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-c"}, Values: map[string]any{"kind": "task", "title": "Task FID-c", "workflow_id": "task-default", "status": "todo", "lane": "standard", "created_at": admissionStamp(1), "updated_at": admissionStamp(1)}},
+		admissionActivity("EVT-20261110-000004", "ACT-FID-c", "FID-c", "created"))
+	event.CommandName = "issue.create"
+	return event
+}
+
+// admissionLinkAdded links FID-a to FID-b and bumps both revisions, as the
+// link writer does.
+func admissionLinkAdded() Event {
+	link := func(from, relation, to string) Effect {
+		return Effect{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": from, "relation": relation, "to_type": "issue", "to_id": to}, Values: map[string]any{"created_at": admissionStamp(1)}}
+	}
+	bump := func(issue string) Effect {
+		return Effect{Op: "update", Table: "issues", PK: map[string]any{"id": issue}, Values: map[string]any{"revision": 2}, Prior: map[string]any{"revision": 1}, Preconditions: map[string]any{"revision": 1}}
+	}
+	event := admissionEvent("EVT-20261110-000004", "link.added", "link", "FID-a:blocks:FID-b", 1,
+		link("FID-a", "blocks", "FID-b"), link("FID-b", "blocked_by", "FID-a"), bump("FID-a"), bump("FID-b"),
+		admissionActivity("EVT-20261110-000004", "ACT-link", "FID-a", "link-added"))
+	event.CommandName = "link.add"
+	return event
+}
+
 func TestForgedEventsRefusedOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
 	legacy := func(event Event) Event {
@@ -103,6 +128,36 @@ func TestForgedEventsRefusedOnEveryJournalPath(t *testing.T) {
 		{"update moves another issue", "aggregate", func() Event {
 			e := admissionLaneRaise()
 			e.Effects[0].PK["id"], e.Effects[1].PK["id"] = "FID-b", "FID-b"
+			return e
+		}},
+		// SQL takes any column as a key, so only the id names one Issue.
+		{"update keys another issue by its title", "aggregate", func() Event {
+			e := admissionLaneRaise()
+			e.Effects[0].PK = map[string]any{"title": "Task FID-b"}
+			e.Effects[0].Values = map[string]any{"title": "Changed other issue", "updated_at": admissionStamp(1)}
+			return e
+		}},
+		{"update keys its issue by more than its id", "aggregate", func() Event {
+			e := admissionLaneRaise()
+			e.Effects[1].PK["title"] = "Task FID-a"
+			return e
+		}},
+		{"update without a key", "aggregate", func() Event {
+			e := admissionLaneRaise()
+			e.Effects[1].PK = map[string]any{}
+			return e
+		}},
+		{"create names another issue only in its values", "aggregate", func() Event {
+			e := admissionIssueCreated()
+			e.Effects[0].PK = map[string]any{}
+			e.Effects[0].Values["id"] = "FID-d"
+			e.Effects[1].Values["ref_id"] = "FID-d"
+			return e
+		}},
+		{"link keys an issue by its title", "by id alone", func() Event {
+			e := admissionLinkAdded()
+			e.Effects[3].PK = map[string]any{"title": "Task FID-b"}
+			e.Effects[3].Values["title"] = "Changed other issue"
 			return e
 		}},
 		{"migration state", "Effect grammar", func() Event {
@@ -170,7 +225,7 @@ func withEffect(event Event, effect Effect) Event {
 // The unforged Events pass every path, so each refusal above is the forgery's.
 func TestAdmissionControlsAcceptedOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
-	for name, event := range map[string]Event{"lane raise": admissionLaneRaise(), "hold taken": admissionHoldTaken()} {
+	for name, event := range map[string]Event{"lane raise": admissionLaneRaise(), "hold taken": admissionHoldTaken(), "issue created": admissionIssueCreated(), "link added": admissionLinkAdded()} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			for _, mode := range admissionModes(event) {
