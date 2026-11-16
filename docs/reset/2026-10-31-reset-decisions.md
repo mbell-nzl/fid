@@ -3191,6 +3191,21 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `issue.label-removed` have no writer (`fid issue label` writes
   `issue.label.added` and `issue.label.removed`); remove them in the 3.2
   baseline if nothing needs them.
+- From #93 (1.9), for proposed row 1.9c: two more Issue-table gaps, both
+  probed in review round 1's fix. Every `issues` Effect now keys one Issue
+  by id alone, and an Issue Event's keys its own, but an `issue.updated`
+  can still set `id` in its values and rename its own Issue (`FID-a`
+  became `FID-z` on commit); import's "immutable columns on update" rule
+  would refuse it. And a `link.added` or `link.removed` may bump the
+  revision of any Issue, not only the link's two ends.
+- From #93 (1.9): catch-up projects pending Events one transaction at a
+  time. Rules that need only the journal (shape, size, repeated Event IDs,
+  aggregate sequences) refuse in replay's pre-scan, before any Event
+  projects. A refusal that needs projection state, from a family's
+  validator, still leaves the valid Events before it projected, with the
+  checkpoint on the last of them: a consistent prefix, and the next read
+  refuses at the same Event. All-or-nothing catch-up would need one
+  transaction over the pending Events; nothing needs it yet.
 
 **Resolved.** Later work resolved these, so 1.8 doesn't import them. Dates
 are merge dates, in New Zealand time.
