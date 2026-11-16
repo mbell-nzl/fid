@@ -313,7 +313,7 @@ func (validator *semanticValidator) validateEvent(event journal.Event) error {
 }
 
 // validateEffects checks each Effect against the archive's own projection
-// profile. The family's Effect grammar is the journal's (ValidateEventShape).
+// profile. The family's Effect grammar is the journal's (ValidateEventGrammar).
 func (validator *semanticValidator) validateEffects(event journal.Event) error {
 	for index, effect := range event.Effects {
 		if err := validateSemanticUpdate(effect); err != nil {
