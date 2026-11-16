@@ -70,7 +70,7 @@ func replayJournal(journalDir string, options *ReplayOptions, project func(Proje
 	}
 
 	var stats ReplayStats
-	tracker := newAggregateSequenceTracker()
+	tracker := newReplayTracker()
 	for _, fileName := range files {
 		fileReplayed, err := replayJournalFile(project, journalDir, fileName, options, &stats, tracker)
 		if err != nil {

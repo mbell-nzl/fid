@@ -9,9 +9,6 @@ func validateArtifactAvailability(tx *sql.Tx, event Event) error {
 	if event.CommandName != "artifact.verify" || event.Repository != nil || event.ActorV2.ActorType != "agent" && event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("invalid Artifact availability command or actor")
 	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
-		return err
-	}
 	updates, results := 0, 0
 	for _, effect := range event.Effects {
 		if err := validateCurrentEffect(event, effect); err != nil {

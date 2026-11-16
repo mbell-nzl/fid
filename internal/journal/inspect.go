@@ -2,6 +2,9 @@ package journal
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -166,7 +169,13 @@ func (line checkpointLine) FileMatches(fileName, checkpointFile string, offset, 
 	return fileName == checkpointFile && offset == checkpointOffset
 }
 
+// inspectCheckpointLine also pre-scans each line with admission's shape
+// rules, so replay refuses before it applies any Event.
 func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
+	// The writers' scanners read the stored line, padding included.
+	if !withinLineBudget(len(bytes.TrimRight(lineBytes, "\r\n"))) {
+		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: fmt.Errorf("line exceeds the journal's 1 MiB line budget")}
+	}
 	trimmed := bytesTrimSpace(lineBytes)
 	if len(trimmed) == 0 {
 		return checkpointLine{}, false, nil
@@ -181,16 +190,16 @@ func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes 
 		}
 	}
 
-	if err := ValidateEventSupport(stored); err != nil {
-		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
-	}
-
-	eventHash, err := HashEvent(stored)
+	canonical, err := MarshalCanonicalJSON(stored)
 	if err != nil {
 		return checkpointLine{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, filepath.Base(path), lineNumber, err)
 	}
+	if err := validateEventShape(stored, len(canonical)); err != nil {
+		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+	}
+	sum := sha256.Sum256(canonical)
 	_ = offset
-	return checkpointLine{EventID: stored.EventID, EventHash: eventHash}, true, nil
+	return checkpointLine{EventID: stored.EventID, EventHash: "sha256:" + hex.EncodeToString(sum[:])}, true, nil
 }
 
 func inspectJournalLine(path string, lineNumber int, lineBytes []byte, eventID string) (FoundEvent, bool, error) {

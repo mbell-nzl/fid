@@ -67,21 +67,11 @@ func ValidateFindingCloseRetry(conn reviewrecord.Queryer, raw, findingID, entity
 }
 
 func validateFindingClosed(tx *sql.Tx, event Event) error {
-	encoded, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return err
-	}
-	if len(encoded)+1 >= 1<<20 {
-		return fmt.Errorf("finding close Event exceeds the journal's 1 MiB line budget")
-	}
 
 	if event.CommandName != "finding.close" || event.Aggregate.Type != "finding" || event.Aggregate.Sequence != 1 || event.Repository != nil || event.ActorV2.ActorType != "human" || !policy.Allows("human:"+event.ActorV2.ActorID, policy.PersonDecisions) {
 		return fmt.Errorf("finding closure requires a person's decision")
 	}
 	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
 		return err
 	}
 	n := 2

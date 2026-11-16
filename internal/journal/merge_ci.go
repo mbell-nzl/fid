@@ -11,7 +11,6 @@ import (
 )
 
 func validateMergeCI(tx *sql.Tx, event Event) error {
-	rule := retainedCurrentRules[event.EventType]
 	command := "merge.observe"
 	if event.EventType == "ci.result-recorded" {
 		command = "ci.record"
@@ -20,9 +19,6 @@ func validateMergeCI(tx *sql.Tx, event Event) error {
 		return fmt.Errorf("invalid merge/CI command, actor or aggregate")
 	}
 	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if err := validateCurrentStages(event, rule); err != nil {
 		return err
 	}
 	if event.EventType == "merge.observed" && len(event.Effects) != 1 {

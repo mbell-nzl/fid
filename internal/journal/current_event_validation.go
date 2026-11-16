@@ -24,11 +24,12 @@ func currentTableColumns(primary, columns string) currentTable {
 }
 
 func validateCurrentEvent(tx *sql.Tx, event Event) error {
-	if err := ValidateEventSupport(event); err != nil {
+	if err := ValidateEventShape(event); err != nil {
 		return err
 	}
-	// These tables have no legacy writer. Guard SQLite's case-insensitive
-	// table resolution before the legacy/retained Issue compatibility path.
+	// These tables have no legacy writer. The shape rules already refuse case
+	// aliases, and Event-v1 Effects outside the Issue tables; these guards
+	// stay as defence in depth before the Event-v1 compatibility return.
 	for _, effect := range event.Effects {
 		if err := validateEpicCloseOwnership(tx, event, effect); err != nil {
 			return err
@@ -97,13 +98,8 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		}
 		return nil
 	}
-	for _, effect := range event.Effects {
-		switch effect.Op {
-		case "insert", "update", "delete", "activity":
-		default:
-			return fmt.Errorf("project event %q: unsupported effect op %q", event.EventID, effect.Op)
-		}
-	}
+	// The shape rules have checked the family, its actor, aggregate and
+	// Effect grammar. The family validators check the projection state.
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
 	}
@@ -134,46 +130,13 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if err := validateTaskLane(tx, event); err != nil {
 		return err
 	}
-	retained, found := retainedCurrentRules[event.EventType]
-	if !found {
-		return fmt.Errorf("current Event: unsupported Event family %q", event.EventType)
-	}
-	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if event.Aggregate.Type != retained.aggregate {
-		return fmt.Errorf("current Event: retained aggregate mismatch")
-	}
 	if event.EventType == "artifact.availability-observed" {
 		return validateArtifactAvailability(tx, event)
-	}
-	if leanEventFamilies[event.EventType] {
-		if err := validateCurrentStages(event, retained); err != nil {
-			return err
-		}
-		if err := validateHoldLifecycle(tx, event); err != nil {
-			return err
-		}
-		return validatePolicySnapshot(tx, event)
 	}
 	if err := validateHoldLifecycle(tx, event); err != nil {
 		return err
 	}
-	// Retained Issue writers keep their historical SQL/precondition semantics.
-	// They cannot write a lean domain table owned by another family.
-	for _, effect := range event.Effects {
-		if _, relevant := currentEventTables[effect.Table]; !relevant || effect.Table == "idempotency_results" {
-			continue
-		}
-		allowed := false
-		for _, stage := range retained.stages {
-			allowed = allowed || stage.allowed[currentEffectKey(effect.Table, effect.Op)]
-		}
-		if !allowed {
-			return fmt.Errorf("current Event %s: unrelated domain Effect", event.EventType)
-		}
-	}
-	return nil
+	return validatePolicySnapshot(tx, event)
 }
 
 func validateCurrentStages(event Event, rule currentEventRule) error {
@@ -182,19 +145,19 @@ func validateCurrentStages(event Event, rule currentEventRule) error {
 		key := currentEffectKey(effect.Table, effect.Op)
 		for stage < len(rule.stages) && !rule.stages[stage].allowed[key] {
 			if count < rule.stages[stage].minimum {
-				return fmt.Errorf("current Event %s: missing or reordered Effect stage %d", event.EventType, stage+1)
+				return fmt.Errorf("current Event %s: Effect grammar: missing or reordered stage %d", event.EventType, stage+1)
 			}
 			stage++
 			count = 0
 		}
 		if stage == len(rule.stages) {
-			return fmt.Errorf("current Event %s: unrelated or reordered Effect %s", event.EventType, key)
+			return fmt.Errorf("current Event %s: Effect grammar: unrelated or reordered Effect %s", event.EventType, key)
 		}
 		count++
 	}
 	for stage < len(rule.stages) {
 		if count < rule.stages[stage].minimum {
-			return fmt.Errorf("current Event %s: missing Effect stage %d", event.EventType, stage+1)
+			return fmt.Errorf("current Event %s: Effect grammar: missing stage %d", event.EventType, stage+1)
 		}
 		stage++
 		count = 0

@@ -23,18 +23,16 @@ func leanStartProjectionEvent() Event {
 	return event
 }
 
+// Admission refuses Event-v1 writes to holds, so the fixture seeds its rows
+// directly, as the archive fixtures do.
 func seedLeanStartProjection(t *testing.T, conn *sql.DB) {
 	t.Helper()
-	event := retainedProjectionEvent()
-	event.Effects = []Effect{
-		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-start"}, Values: map[string]any{"kind": "task", "title": "Fixture task", "workflow_id": "task-default", "status": "todo", "lane": "standard", "created_at": "2026-09-06T00:00:00Z", "updated_at": "2026-09-06T00:00:00Z"}},
-		{Op: "insert", Table: "holds", PK: map[string]any{"id": "HLD-start"}, Values: map[string]any{"task_id": "FID-start", "worktree_id": "WT-start", "worktree_root": "/fixture", "actor": "agent:builder", "since": "2026-09-06T00:00:00Z", "expires_at": "2026-09-06T01:00:00Z", "last_heartbeat_at": "2026-09-06T00:00:00Z"}},
-	}
-	hash, err := HashEvent(event)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := ProjectEvent(conn, ProjectionInput{Event: event, EventHash: hash}); err != nil {
-		t.Fatal(err)
+	for _, statement := range []string{
+		`INSERT INTO issues (id, kind, title, workflow_id, status, lane, created_at, updated_at) VALUES ('FID-start', 'task', 'Fixture task', 'task-default', 'todo', 'standard', '2026-09-06T00:00:00Z', '2026-09-06T00:00:00Z')`,
+		`INSERT INTO holds (id, task_id, worktree_id, worktree_root, actor, since, expires_at, last_heartbeat_at) VALUES ('HLD-start', 'FID-start', 'WT-start', '/fixture', 'agent:builder', '2026-09-06T00:00:00Z', '2026-09-06T01:00:00Z', '2026-09-06T00:00:00Z')`,
+	} {
+		if _, err := conn.Exec(statement); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

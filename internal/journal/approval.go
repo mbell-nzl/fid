@@ -63,20 +63,10 @@ func ReadApprovalRetry(conn reviewrecord.Queryer, raw, entity string) (approvalr
 }
 
 func validateApproval(tx *sql.Tx, event Event) error {
-	encoded, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return err
-	}
-	if len(encoded)+1 >= 1<<20 {
-		return fmt.Errorf("approval Event exceeds the journal's 1 MiB line budget")
-	}
 	if event.CommandName != "task.approve" || event.Aggregate.Type != "decision" || event.Aggregate.Sequence != 1 || event.Repository != nil || event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("approval requires a person's decision")
 	}
 	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
 		return err
 	}
 	n := 1

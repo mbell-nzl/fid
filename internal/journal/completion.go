@@ -35,16 +35,6 @@ func validateCompletion(tx *sql.Tx, event Event) error {
 	if err := validateV2Event(event); err != nil {
 		return err
 	}
-	encoded, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return err
-	}
-	if len(encoded)+1 >= 1<<20 {
-		return fmt.Errorf("completion Event exceeds the journal's 1 MiB line budget")
-	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
-		return err
-	}
 	var open int
 	if err := tx.QueryRow(`SELECT count(*) FROM questions WHERE task_id=? AND resolved_at IS NULL`, event.Aggregate.ID).Scan(&open); err != nil {
 		return err

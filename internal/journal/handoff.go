@@ -73,9 +73,6 @@ func validateHandoff(tx *sql.Tx, event Event) error {
 	if err := validateV2Event(event); err != nil {
 		return err
 	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
-		return err
-	}
 	if err := validateCurrentIdempotency(event); err != nil {
 		return err
 	}

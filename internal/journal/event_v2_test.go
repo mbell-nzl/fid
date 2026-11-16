@@ -37,11 +37,16 @@ func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
 	workspace := newReplayWorkspace(t)
 	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-22.jsonl")
 	first := eventV2ForSequence(1)
-	first.EventID = "EVT-20260822-000001"
-	first.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
-	second := eventV2ForSequence(3)
+	// The second Event is admissible but for its sequence: its retry result
+	// names its own Event and key.
+	second := testIdempotentLabelEvent()
 	second.EventID = "EVT-20260822-000002"
 	second.OccurredAt = time.Date(2026, time.August, 22, 0, 1, 0, 0, time.UTC)
+	second.Aggregate.Sequence = 3
+	request := testIdempotencyRequest()
+	request.IdempotencyKey = "projection-fixture-2"
+	second.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, RequestDigest: request.RequestDigest, Scope: request.OperationScope}
+	second.Effects = append(second.Effects, idempotencyResultEffect(request, second, "ledger", testLabelResultJSON(request.IdempotencyKey, false)))
 	writeReplayEvents(t, journalPath, first, second)
 
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))

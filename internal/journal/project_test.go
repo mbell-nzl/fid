@@ -833,7 +833,8 @@ func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *t
 	}
 
 	err = DryRunProjectEvent(conn, Event{
-		EventType: "issue.created",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
 		Actor: Actor{
 			Role: "developer",
 		},
@@ -921,7 +922,8 @@ func TestDryRunProjectEventRollsBackOnProjectionFailure(t *testing.T) {
 	}
 
 	err = DryRunProjectEvent(conn, Event{
-		EventType: "issue.created",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
 		Actor: Actor{
 			Role: "developer",
 		},
