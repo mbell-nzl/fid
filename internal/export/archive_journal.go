@@ -161,11 +161,12 @@ func validateExportedLine(line []byte) error {
 
 type journalTracker struct {
 	eventIDs   map[string]struct{}
+	dated      *journal.DatedEventIDs
 	aggregates map[string]int
 }
 
 func newJournalTracker() *journalTracker {
-	return &journalTracker{eventIDs: make(map[string]struct{}), aggregates: make(map[string]int)}
+	return &journalTracker{eventIDs: make(map[string]struct{}), dated: journal.NewDatedEventIDs(), aggregates: make(map[string]int)}
 }
 
 func (tracker *journalTracker) add(event journal.Event) error {
@@ -173,6 +174,10 @@ func (tracker *journalTracker) add(event journal.Event) error {
 		return fmt.Errorf("duplicate Event ID %q", event.EventID)
 	}
 	tracker.eventIDs[event.EventID] = struct{}{}
+	// Each dated ID takes its date's next sequence, as the writers allocate.
+	if err := tracker.dated.Admit(event.EventID); err != nil {
+		return err
+	}
 	if event.EventSchema != journal.EventSchemaV2 {
 		return fmt.Errorf("unsupported Event schema %d", event.EventSchema)
 	}

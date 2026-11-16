@@ -102,6 +102,8 @@ func prepareEventWithClockOptions(lock *WriteLock, event Event, now func() time.
 		if err != nil {
 			return Event{}, err
 		}
+	} else if err := validateSuppliedEventID(journalDir, chosenDate, sequence, event.EventID); err != nil {
+		return Event{}, err
 	}
 	if event.IsV2() {
 		if err := validateV2EventFields(event, !allowIdempotencyEffectOnly); err != nil {
@@ -205,15 +207,39 @@ func lastEventDate(path string) (string, bool, error) {
 	return "", false, nil
 }
 
+// A caller-supplied dated Event ID must be the one the writer would
+// allocate for its date, as replay and import require (DatedEventIDs).
+func validateSuppliedEventID(journalDir, chosenDate string, next int, id string) error {
+	date, sequence, dated, err := datedEventSequence(id)
+	if err != nil || !dated {
+		return err
+	}
+	if date != strings.ReplaceAll(chosenDate, "-", "") {
+		if next, err = nextDatedSequence(journalDir, date); err != nil {
+			return err
+		}
+	}
+	if sequence != next {
+		return outOfOrderEventIDError(id, next)
+	}
+	return nil
+}
+
 func nextSequence(journalPath string) (int, error) {
-	date := strings.TrimSuffix(filepath.Base(journalPath), ".jsonl")
-	files, err := orderedJournalFiles(filepath.Dir(journalPath))
+	date := strings.ReplaceAll(strings.TrimSuffix(filepath.Base(journalPath), ".jsonl"), "-", "")
+	return nextDatedSequence(filepath.Dir(journalPath), date)
+}
+
+// nextDatedSequence returns one past the highest sequence of the Event IDs
+// dated date (YYYYMMDD), across the whole journal.
+func nextDatedSequence(journalDir, date string) (int, error) {
+	files, err := orderedJournalFiles(journalDir)
 	if err != nil {
 		return 0, err
 	}
 	highest := 0
 	for _, name := range files {
-		file, err := os.Open(filepath.Join(filepath.Dir(journalPath), name))
+		file, err := os.Open(filepath.Join(journalDir, name))
 		if err != nil {
 			return 0, fmt.Errorf("open journal file %q for sequence scan: %w", name, err)
 		}
@@ -230,7 +256,7 @@ func nextSequence(journalPath string) (int, error) {
 				return 0, fmt.Errorf("scan journal file %q: decode Event: %w", name, err)
 			}
 			parts := strings.Split(event.EventID, "-")
-			if len(parts) != 3 || parts[1] != strings.ReplaceAll(date, "-", "") {
+			if len(parts) != 3 || parts[1] != date {
 				continue
 			}
 			sequence, err := parseEventSequence(event.EventID)

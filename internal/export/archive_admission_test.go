@@ -1,6 +1,11 @@
 package export
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -110,4 +115,91 @@ func TestImportRefusesForgedEventsLikeTheJournal(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The writers allocate each dated Event ID as one past its date's highest
+// sequence. An archive whose last ID skips ahead, up to the ceiling, would
+// leave the restored ledger's writers a sequence admission refuses, so
+// import refuses it and changes nothing. The same target then restores from
+// the unforged archive and takes a write with an allocated ID.
+func TestImportRefusesEventIDsTheWritersWouldNotAllocate(t *testing.T) {
+	t.Parallel()
+	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
+		t.Helper()
+		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Before the backup", Actor: "human:mark", IdempotencyKey: "task"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return task.ID
+	})
+	original := archiveContents(t, fixture.archive)
+	path := archivePathWithPrefix(t, original, "journal/")
+	lines := bytes.Split(bytes.TrimSuffix(original[path], []byte{'\n'}), []byte{'\n'})
+	var last journal.Event
+	if err := last.UnmarshalJSON(lines[len(lines)-1]); err != nil {
+		t.Fatal(err)
+	}
+	parts := strings.Split(last.EventID, "-")
+	sequence, err := strconv.Atoi(parts[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name     string
+		sequence int
+	}{{"at the ceiling", 999999999}, {"one below the ceiling", 999999998}, {"a skipped sequence", sequence + 1}} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			forgedID := fmt.Sprintf("%s-%s-%06d", parts[0], parts[1], tc.sequence)
+			forgedLines := append(append([][]byte{}, lines[:len(lines)-1]...), bytes.ReplaceAll(lines[len(lines)-1], []byte(last.EventID), []byte(forgedID)))
+			var forged journal.Event
+			if err := forged.UnmarshalJSON(forgedLines[len(forgedLines)-1]); err != nil {
+				t.Fatal(err)
+			}
+			hash, err := journal.HashEvent(forged)
+			if err != nil {
+				t.Fatal(err)
+			}
+			entries := make(map[string][]byte, len(original))
+			for name, data := range original {
+				entries[name] = bytes.Clone(data)
+			}
+			entries[path] = append(bytes.Join(forgedLines, []byte{'\n'}), '\n')
+			manifest := decodeManifestMap(t, entries["manifest.json"])
+			manifest["terminal_event_hash"] = hash
+			updateManifestEntry(t, manifest, path, entries[path])
+			entries["manifest.json"] = encodeManifestMap(t, manifest)
+			archive := filepath.Join(t.TempDir(), "forged.zip")
+			writeTestArchive(t, archive, entries)
+
+			_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			assertEventIDCheck(t, err, forgedID)
+			target := gittest.NewWorkspace(t)
+			before := workspaceTreeDigest(t, target)
+			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "forged"})
+			assertEventIDCheck(t, err, forgedID)
+			if workspaceTreeDigest(t, target) != before {
+				t.Fatal("refused import changed the target")
+			}
+			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "unforged"}); err != nil {
+				t.Fatalf("import of the unforged archive = %v", err)
+			}
+			if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After the restore", Actor: "human:mark", IdempotencyKey: "after"}); err != nil {
+				t.Fatalf("write with an allocated ID after the restore = %v", err)
+			}
+		})
+	}
+}
+
+func assertEventIDCheck(t *testing.T, err error, id string) {
+	t.Helper()
+	var invalid *InvalidArchiveError
+	if errors.As(err, &invalid) {
+		for _, check := range invalid.Checks {
+			if check.Code == "journal-invalid" && strings.Contains(check.Detail, "Event ID \""+id+"\"") {
+				return
+			}
+		}
+	}
+	t.Fatalf("archive error = %#v, want journal-invalid naming Event ID %s", err, id)
 }

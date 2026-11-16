@@ -51,28 +51,60 @@ func validateEventShape(event Event, encodedLength int) error {
 	return validateFamilyShape(event)
 }
 
-// maxEventSequence bounds a day's Event sequence far beyond any real day,
-// so the next sequence always exists.
+// maxEventSequence bounds a day's Event sequence far beyond any real day.
+// Each dated ID takes its date's next sequence (DatedEventIDs), so only
+// that many real Events in one day reach it.
 const maxEventSequence = 999999999
+
+func validateDatedEventID(id string) error {
+	_, _, _, err := datedEventSequence(id)
+	return err
+}
 
 // The writers allocate an Event ID by reading every ID of its day
 // (nextSequence): each ID of three dash-separated parts whose middle part is
-// that date, whatever its prefix. An ID the scanner cannot parse, or that
-// leaves no next sequence, would stop every write on that date, so each ID
-// dated that way must parse as the scanner parses it. IDs without a date
-// there are never read.
-func validateDatedEventID(id string) error {
+// that date, whatever its prefix. An ID the scanner cannot parse would stop
+// every write on that date, so each ID dated that way must parse as the
+// scanner parses it. IDs without a date there are never read: dated is
+// false for them.
+func datedEventSequence(id string) (date string, sequence int, dated bool, err error) {
 	parts := strings.Split(id, "-")
 	if len(parts) != 3 {
-		return nil
+		return "", 0, false, nil
 	}
 	if _, err := time.Parse("20060102", parts[1]); err != nil {
-		return nil
+		return "", 0, false, nil
 	}
-	if sequence, err := parseEventSequence(id); err != nil || sequence > maxEventSequence {
-		return fmt.Errorf("Event ID %q needs the form EVT-<date>-<sequence>, with a sequence from 1 to %d", id, maxEventSequence)
+	if sequence, err = parseEventSequence(id); err != nil || sequence > maxEventSequence {
+		return "", 0, true, fmt.Errorf("Event ID %q needs the form EVT-<date>-<sequence>, with a sequence from 1 to %d", id, maxEventSequence)
 	}
+	return parts[1], sequence, true, nil
+}
+
+// DatedEventIDs admits Event IDs in journal order as the writers allocate
+// them: a dated ID takes the next sequence of its date, one past the
+// highest before it. A date's IDs then run 1, 2, 3, ..., so the sequence
+// the writers allocate next is always the one admission takes next, and an
+// admitted ID can't skip ahead to leave them one it refuses.
+type DatedEventIDs struct{ highest map[string]int }
+
+func NewDatedEventIDs() *DatedEventIDs { return &DatedEventIDs{highest: map[string]int{}} }
+
+// Admit takes the next Event ID in journal order.
+func (ids *DatedEventIDs) Admit(id string) error {
+	date, sequence, dated, err := datedEventSequence(id)
+	if err != nil || !dated {
+		return err
+	}
+	if next := ids.highest[date] + 1; sequence != next {
+		return outOfOrderEventIDError(id, next)
+	}
+	ids.highest[date] = sequence
 	return nil
+}
+
+func outOfOrderEventIDError(id string, next int) error {
+	return fmt.Errorf("Event ID %q is out of order: its date's next sequence is %d", id, next)
 }
 
 // The families that checked their own size before it was shared keep
