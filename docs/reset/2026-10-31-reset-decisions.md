@@ -1597,6 +1597,31 @@ compares their decisions, state and NEEDS YOU answers. No dependency,
 epic validations/approval (3.1), V5 verifier (1.6l), or epic reconciliation
 is added.
 
+**1.6l's choices (2026-11-15).** V5's named verifier is
+`TestV5DoneRefusesWithoutReceiptsAndAcceptsMergedGreenWork`, selected by
+`make check-done-refusals` and included in ordinary `make test` discovery.
+Its ledger setup and all evidence writes use public commands: agent work
+starts through `next --claim --model` and `start`, then checks, hand-offs,
+review rounds, finding closures and completion. Assured approval reuses
+1.6g's real-terminal helper. The fixture's live clock matches those child
+processes across midnight. The strict offline `gh` executable and
+fetch-rejecting git wrapper come from 1.6j; GitHub facts use the public
+hand-off's base/head and local git tree, with distinct PRs for the mixed
+reconciliation journey. No SQL seed, internal writer or gate override
+supplies evidence.
+
+Each refusal checks its public code and exit status. `show` before and
+after proves the Issue (including revision), checks, hand-off, questions
+and worktree ownership stay unchanged. Confirmed merge and completed CI
+observations may still be retained, as 1.6i requires. Successful completion
+also checks that the worktree reservation is released. Missing checks,
+kept bytes and CI, open majors (later-round and person closure), an edited
+Assured approval, unmerged/mismatched PRs, failed/pending CI, every actor's
+task/epic transition bypass, agent epic closure and mixed reconciliation
+have separate cases. Routine with and without changed test paths, Standard
+and Assured each complete with their required evidence. Product Go changes
+by zero lines; no dependency or product behavior changes.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2854,6 +2879,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.6l): the existing #84 `TestReworkGolden` path-wrapping
+  follow-up below reproduced in the first `make test` run. At
+  `rework_golden_test.go:37`, actual status put `then` after
+  `<CONFIG>/fid/config.toml,` while the golden expected `then fid backup`
+  on its own line. The V5 verifier passed; the unchanged display test
+  remains outside this task. Resolve it with #84's recorded follow-up.
 
 - From this PR (1.6k): status's existing READY epic row says "no tasks"
   for an epic with only cancelled tasks, because it counts only tasks in
