@@ -315,8 +315,51 @@ func assertForgedRefusedEveryJournalPath(t *testing.T, prefix []Event, forged Ev
 }
 
 // The writers' scanners read each stored line, so a line padded past the
-// budget would stop every later write even though its Event is small.
+// budget would stop every later write even though its Event is small. They
+// hold every byte before the newline, carriage returns included.
 func TestReplayRefusesStoredLineOverBudget(t *testing.T) {
+	t.Parallel()
+	pads := map[string]func(line []byte) []byte{
+		"inner spaces": func(line []byte) []byte {
+			return append(append([]byte("{"), bytes.Repeat([]byte(" "), journalLineBudget)...), line[1:]...)
+		},
+		"trailing carriage returns": func(line []byte) []byte {
+			return append(append([]byte{}, line...), bytes.Repeat([]byte("\r"), journalLineBudget)...)
+		},
+	}
+	for name, pad := range pads {
+		for _, mode := range []string{"replay", "catch-up", "freshen", "rebuild"} {
+			t.Run(name+"/"+mode, func(t *testing.T) {
+				t.Parallel()
+				w := newAdmissionWorkspace(t, admissionPrefix(), mode)
+				line, err := MarshalCanonicalJSON(admissionLaneRaise())
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(w.file, append(append(append([]byte{}, w.prefix...), pad(line)...), '\n'), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				conn := openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
+				before := currentProjectionSnapshot(t, conn)
+				closeProjectDB(t, conn)
+				err = w.replayStored(t, mode)
+				var corrupt *CorruptJournalError
+				if !errors.As(err, &corrupt) || corrupt.Line != len(admissionPrefix())+1 || !strings.Contains(err.Error(), "1 MiB line budget") {
+					t.Fatalf("%s = %v, want the padded line refused", mode, err)
+				}
+				conn = openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
+				defer closeProjectDB(t, conn)
+				if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
+					t.Fatalf("%s refusal changed the projection", mode)
+				}
+			})
+		}
+	}
+}
+
+// A line ending in a carriage return and newline is read whole by the
+// writers' scanners; replay admits it while it fits the budget.
+func TestReplayAdmitsCarriageReturnLineWithinBudget(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"replay", "catch-up", "freshen", "rebuild"} {
 		t.Run(mode, func(t *testing.T) {
@@ -326,22 +369,15 @@ func TestReplayRefusesStoredLineOverBudget(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			padded := append(append([]byte("{"), bytes.Repeat([]byte(" "), journalLineBudget)...), line[1:]...)
-			if err := os.WriteFile(w.file, append(append(append([]byte{}, w.prefix...), padded...), '\n'), 0o644); err != nil {
+			if err := os.WriteFile(w.file, append(append(append([]byte{}, w.prefix...), line...), '\r', '\n'), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			conn := openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
-			before := currentProjectionSnapshot(t, conn)
-			closeProjectDB(t, conn)
-			err = w.replayStored(t, mode)
-			var corrupt *CorruptJournalError
-			if !errors.As(err, &corrupt) || corrupt.Line != len(admissionPrefix())+1 || !strings.Contains(err.Error(), "1 MiB line budget") {
-				t.Fatalf("%s = %v, want the padded line refused", mode, err)
+			if err := w.replayStored(t, mode); err != nil {
+				t.Fatalf("%s refused a carriage-return line: %v", mode, err)
 			}
-			conn = openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
-			defer closeProjectDB(t, conn)
-			if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
-				t.Fatalf("%s refusal changed the projection", mode)
+			sequence, err := nextSequence(w.file)
+			if err != nil || sequence != len(admissionPrefix())+2 {
+				t.Fatalf("next sequence = %d, %v; want %d", sequence, err, len(admissionPrefix())+2)
 			}
 		})
 	}

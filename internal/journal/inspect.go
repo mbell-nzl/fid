@@ -172,8 +172,9 @@ func (line checkpointLine) FileMatches(fileName, checkpointFile string, offset, 
 // inspectCheckpointLine also pre-scans each line with admission's shape
 // rules, so replay refuses before it applies any Event.
 func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
-	// The writers' scanners read the stored line, padding included.
-	if !withinLineBudget(len(bytes.TrimRight(lineBytes, "\r\n"))) {
+	// The writers' scanners hold every stored byte before the newline,
+	// padding and carriage returns included.
+	if !withinLineBudget(len(bytes.TrimSuffix(lineBytes, []byte("\n")))) {
 		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: fmt.Errorf("line exceeds the journal's 1 MiB line budget")}
 	}
 	trimmed := bytesTrimSpace(lineBytes)
