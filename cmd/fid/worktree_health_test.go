@@ -13,19 +13,21 @@ import (
 
 func TestKeptWorktreeHealth(t *testing.T) {
 	t.Parallel()
-	for _, test := range []struct{ name, mode string }{
-		{"removed", "removed"},
-		{"replaced", "replaced"},
-		{"unverified", "unverified"},
-		{"short", "unverified"},
-		{"unverified-with-a-longer-temporary-path", "unverified"},
+	parents := goldenTestParents(t)
+	for _, test := range []struct{ name, mode, parent string }{
+		{"removed", "removed", ""},
+		{"replaced", "replaced", ""},
+		{"unverified", "unverified", ""},
+		{"short", "unverified", parents[0]},
+		{"unverified-with-a-longer-temporary-path", "unverified", parents[1]},
+		{"non-ASCII", "unverified", parents[2]},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mode := test.mode
-			f := newLifecycleFixture(t)
+			f := newStatusFixtureAt(t, 100*time.Hour, test.parent, "worktree")
 			nextWork(f)
 			main := f.workspace
-			other := fixedWidthHealthWorktree(t, main)
+			other := fixedWidthHealthWorktree(t, main, test.parent)
 			f.workspace = other
 			f.hold("HLD-aaaaaa", "FID-71a0c2", "", time.Minute)
 			parkWaiting(t, f, "HLD-aaaaaa", waitingQuestion, "wait")
@@ -81,16 +83,10 @@ func TestKeptWorktreeHealth(t *testing.T) {
 
 // Move the real Git worktree before recording its hold: replacing its path
 // after rendering cannot undo line breaks caused by a variable-width path.
-func fixedWidthHealthWorktree(t *testing.T, repository string) string {
+func fixedWidthHealthWorktree(t *testing.T, repository, parent string) string {
 	t.Helper()
 	original := gittest.AddWorktree(t, repository)
-	parent := gittest.ResolvedPath(t, filepath.Dir(repository))
-	const pathWidth = 61
-	nameWidth := pathWidth - len(parent) - 1
-	if nameWidth < 1 {
-		t.Fatalf("health fixture parent %q is too long for a %d-column path", parent, pathWidth)
-	}
-	worktree := filepath.Join(parent, strings.Repeat("w", nameWidth))
+	worktree := filepath.Join(newGoldenTempDir(t, parent), "linked")
 	if output, err := exec.Command("git", "-C", repository, "worktree", "move", original, worktree).CombinedOutput(); err != nil {
 		t.Fatalf("move health worktree: %v: %s", err, output)
 	}
