@@ -388,7 +388,7 @@ func TestReplayAdmitsCarriageReturnLineWithinBudget(t *testing.T) {
 // write on that date.
 func TestForgedEventIdentityRefusedOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
-	for _, id := range []string{"EVT-20261110-00000x", "EVT-20261110-", "EVT-20261110-000000", "EVT-20261110-9223372036854775807"} {
+	for _, id := range []string{"EVT-20261110-00000x", "EVT-20261110-", "EVT-20261110-000000", "EVT-20261110-9223372036854775807", "BAD-20261110-000004", "evt-20261110-000004"} {
 		t.Run(id, func(t *testing.T) {
 			t.Parallel()
 			forged := admissionLaneRaise()

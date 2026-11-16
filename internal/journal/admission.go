@@ -2,7 +2,6 @@ package journal
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -56,19 +55,22 @@ func validateEventShape(event Event, encodedLength int) error {
 // so the next sequence always exists.
 const maxEventSequence = 999999999
 
-// The writers allocate an Event ID by reading every dated ID of its day
-// (nextSequence). A dated ID whose sequence they cannot read, or that leaves
-// no next one, would stop every write on that date. Undated IDs are not read.
+// The writers allocate an Event ID by reading every ID of its day
+// (nextSequence): each ID of three dash-separated parts whose middle part is
+// that date, whatever its prefix. An ID the scanner cannot parse, or that
+// leaves no next sequence, would stop every write on that date, so each ID
+// dated that way must parse as the scanner parses it. IDs without a date
+// there are never read.
 func validateDatedEventID(id string) error {
 	parts := strings.Split(id, "-")
-	if len(parts) != 3 || parts[0] != "EVT" {
+	if len(parts) != 3 {
 		return nil
 	}
 	if _, err := time.Parse("20060102", parts[1]); err != nil {
 		return nil
 	}
-	if sequence, err := strconv.Atoi(parts[2]); err != nil || sequence < 1 || sequence > maxEventSequence {
-		return fmt.Errorf("Event ID %q needs a sequence from 1 to %d", id, maxEventSequence)
+	if sequence, err := parseEventSequence(id); err != nil || sequence > maxEventSequence {
+		return fmt.Errorf("Event ID %q needs the form EVT-<date>-<sequence>, with a sequence from 1 to %d", id, maxEventSequence)
 	}
 	return nil
 }

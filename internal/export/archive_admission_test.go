@@ -78,6 +78,8 @@ func TestImportRefusesForgedEventsLikeTheJournal(t *testing.T) {
 			return e
 		}},
 		{"hold retry result without its request", "idempotency", hold, unbound},
+		// The writers read every ID dated like theirs to choose the next.
+		{"dated ID without the EVT prefix", "Event ID", hold, func(e journal.Event) journal.Event { e.EventID = "BAD-20261115-000009"; return e }},
 		{"update control", "", retitle, func(e journal.Event) journal.Event { return e }},
 		{"update retry result without its request", "idempotency", retitle, unbound},
 	} {
