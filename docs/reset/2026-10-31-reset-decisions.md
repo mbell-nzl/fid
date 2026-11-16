@@ -2939,68 +2939,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   production lock code, and the test hasn't changed since #64 (1.5a5) added
   it.
 
-- From this PR (1.6d): audit older writers for Events at or above 1 MiB.
-  The journal's aggregate and sequence scanners cap lines there, while
-  replay reads complete lines. New review Events refuse before append
-  when their full encoding reaches that existing budget.
-  Resolved by RESET 1.9 on 2026-11-16: every family's Event is checked
-  against the budget on live append, replay and import, and replay's
-  pre-scan also measures each stored line. A hand-off of a very wide
-  change was the one public command that could reach it.
-
-- From this PR (1.6b): the broader retained-table ownership audit from
-  #73 remains, including the pre-existing Event-v1 early-return path in
-  `validateCurrentEvent`. This PR fences the new merge/CI tables against
-  legacy writes and SQLite case aliases; audit the older lean tables in
-  separately scoped work.
-  Resolved by RESET 1.9 on 2026-11-16: Event-v1 may change only the V1
-  schema's own tables, and every Event-v2 family only the tables and
-  operations of its catalog grammar, so every lean table is fenced on
-  every path. Ownership of the `issues.status` column remains (1.9b
-  below).
-
-- From #73 (1.5d1): audit the retained-table ownership and column guards for
-  SQLite case aliases. `validateCurrentEvent` still indexes
-  `currentEventTables` using the raw `Effect.Table`, while SQLite resolves
-  bare identifiers without regard to ASCII case. Round 1 fixes the retired
-  catalogs; changing retained-domain validation is outside its findings.
-  Resolved by RESET 1.9 on 2026-11-16: admission refuses any table or
-  column name that isn't lowercase, on every path.
-
-- From this PR (1.9), proposed row 1.9b: the `issues.status` column belongs
-  to the commands that own each move, in admission as in the commands.
-  A forged `issue.transitioned` (or Event-v1 history) can move a task to
-  `done`, `in_review`, `in_progress` or `cancelled` on every path, around
-  `fid done`, hand-off, `fid start` and the person's cancel decision
-  (probe in the 1.9 PR); `issue.updated` can change `status` too. Share
-  `internal/issues/fixed_states.go`'s rules with admission, decide what
-  Event-v1 history may still move, and rebuild the test fixtures that
-  move tasks with plain transitions (`cmd/fid/review_state_fixture_test.go`
-  and others).
-
-- From this PR (1.9), proposed row 1.9c: exact row identity and
-  cardinality for the Issue families. Admission binds the `issues` row
-  to the Event's Issue, but not `acceptance_criteria.issue_id`,
-  `issue_labels.issue_id`, `activity_log.ref_id` and `journal_event_id`,
-  `labels.name` or the `links` key, and a stage may repeat. Import still
-  checks more than live append and replay: `*_event_id` references,
-  immutable columns on update, column names and types against the
-  archive's schema, and duplicate JSON keys. Move each into the shared
-  rules or record why it stays import-only.
-
-- From this PR (1.9): a hand-off of a very wide change (about 5,000 or more
-  long paths) is now refused before append, rather than stopping every
-  later write. Lifting the limit means storing changed paths outside the
-  Event (for example a digest and an Artifact). Mark's call when a real
-  change hits it.
-
-- From this PR (1.9): a caller-supplied Event ID isn't checked for
-  uniqueness on live append; no writer supplies one, and replay and
-  export refuse a repeated ID. The catalog's `issue.label-added` and
-  `issue.label-removed` have no writer (`fid issue label` writes
-  `issue.label.added` and `issue.label.removed`); remove them in the 3.2
-  baseline if nothing needs them.
-
 - From #71 (1.5c2): `fid artifact verify`'s missing-Artifact failure still
   says `allowed: ["accepted gate registration input"]`; 1.5c2 kept it so
   the failure contract didn't change during removal. Reword it when that
@@ -3224,10 +3162,52 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `linguist-generated`, and add a "What to read" section to PR
   descriptions. Golden files were about 35–70% of the lines each 1.5a PR
   added.
+- From this PR (1.9), proposed row 1.9b: the `issues.status` column belongs
+  to the commands that own each move, in admission as in the commands. A
+  forged `issue.transitioned` (or Event-v1 history) can move a task to
+  `done`, `in_review`, `in_progress` or `cancelled` on every path, around
+  `fid done`, hand-off, `fid start` and the person's cancel decision (probe
+  in the 1.9 PR); `issue.updated` can change `status` too. Share
+  `internal/issues/fixed_states.go`'s rules with admission, decide what
+  Event-v1 history may still move, and rebuild the test fixtures that move
+  tasks with plain transitions (`cmd/fid/review_state_fixture_test.go` and
+  others).
+- From this PR (1.9), proposed row 1.9c: exact row identity and cardinality
+  for the Issue families. Admission binds the `issues` row to the Event's
+  Issue, but not `acceptance_criteria.issue_id`, `issue_labels.issue_id`,
+  `activity_log.ref_id` and `journal_event_id`, `labels.name` or the
+  `links` key, and a stage may repeat. Import still checks more than live
+  append and replay: `*_event_id` references, immutable columns on update,
+  column names and types against the archive's schema, and duplicate JSON
+  keys. Move each into the shared rules or record why it stays import-only.
+- From this PR (1.9): a hand-off of a very wide change (about 5,000 or more
+  long paths) is now refused before append, rather than stopping every
+  later write. Lifting the limit means storing changed paths outside the
+  Event (for example a digest and an Artifact). Mark's call when a real
+  change hits it.
+- From this PR (1.9): a caller-supplied Event ID isn't checked for
+  uniqueness on live append; no writer supplies one, and replay and export
+  refuse a repeated ID. The catalog's `issue.label-added` and
+  `issue.label-removed` have no writer (`fid issue label` writes
+  `issue.label.added` and `issue.label.removed`); remove them in the 3.2
+  baseline if nothing needs them.
 
 **Resolved.** Later work resolved these, so 1.8 doesn't import them. Dates
 are merge dates, in New Zealand time.
 
+- From #80 (1.6d): audit older writers for Events at or above 1 MiB, which
+  the journal's aggregate and sequence scanners can't read. Resolved by
+  1.9, this PR: every family's Event is checked against the line budget on
+  live append, replay and import, and replay's pre-scan also measures each
+  stored line.
+- From #78 (1.6b): the broader retained-table ownership audit, including
+  the Event-v1 early return in `validateCurrentEvent`. Resolved by 1.9,
+  this PR: Event-v1 may change only the V1 schema's tables, and each
+  Event-v2 family only those of its catalog grammar, on every path.
+  Ownership of `issues.status` remains (1.9b, above).
+- From #73 (1.5d1): retained-table ownership and column guards against
+  SQLite case aliases. Resolved by 1.9, this PR: admission refuses any
+  table or column name that isn't lowercase, on every path.
 - From #76 (1.5e), #84 (1.6g) and #90 (1.6l): text goldens wrapped real
   temp paths before masking them, so their line breaks varied with TMPDIR's
   length. Resolved by #91 (golden-wrap), 2026-11-16: fixture paths have a
