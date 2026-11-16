@@ -2914,13 +2914,7 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   mid-path). Decide in later display work whether paths should be kept whole;
   the text-golden fixtures require a whitespace-free TMPDIR meanwhile.
 
-- From #76 (1.5e), #84 (1.6g) and this stack's 1.6l: resolved by
-  golden-wrap on 2026-11-15. Text goldens now render fixed-width fixture
-  paths before masking them. The status/config and lifecycle/worktree
-  wrapping no longer depends on the length of a whitespace-free TMPDIR,
-  test names or random suffixes.
-
-- From this PR (1.6k): status's existing READY epic row says "no tasks"
+- From #89 (1.6k): status's existing READY epic row says "no tasks"
   for an epic with only cancelled tasks, because it counts only tasks in
   its displayed section, which omits cancelled children
   (`internal/status/text.go`, `epicCount`). The new epic status golden
@@ -2935,19 +2929,15 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   work into fid), 2.1 (posting rounds) or 2.5 (the loop), whichever
   records a real review first.
 
-- From this PR (1.5f): the existing #51 local-midnight follow-up below
-  remains: `TestStatusAndShowPageOnARealTerminal` compares the date in
-  separate processes' status headers. This journal-file task leaves that
-  display comparison unchanged; check the header date separately and
-  normalise it before comparing when that follow-up is taken.
-
-- From #80 (1.6d): investigate the intermittent write-lock refusal in
-  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first fix-round
-  `make test` failed at `check_ownership_test.go:117` with
-  `task.takeover: write lock unavailable`; an unchanged focused rerun with
-  `-count=3` and an unchanged full-suite retry passed. The cause is
-  unconfirmed; the ownership test and production lock code are outside
-  the frozen-lane coverage finding.
+- From #68 (1.5b1) and #80 (1.6d): investigate the intermittent write-lock
+  refusal in `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. Twice a
+  full `make test` failed at `check_ownership_test.go:117` with
+  `task.takeover: write lock unavailable`: #68's first run (the subtest took
+  62.74s) and #80's first fix-round run. Each time an unchanged focused
+  rerun (1.343s in #68; `-count=3` in #80) and a complete rerun passed. The
+  cause is not established. Neither PR changed the ownership test or the
+  production lock code, and the test hasn't changed since #64 (1.5a5) added
+  it.
 
 - From this PR (1.6d): audit older writers for Events at or above 1 MiB.
   The journal's aggregate and sequence scanners cap lines there, while
@@ -3016,27 +3006,16 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   the failure contract didn't change during removal. Reword it when that
   failure is next touched.
 
-
-- From this PR (1.5c2): `cli.RegisteredCodes` still omits the existing,
+- From #71 (1.5c2): `cli.RegisteredCodes` still omits the existing,
   reachable `idempotency-conflict` code. Its established supplemental process
   pair remains; decide separately whether the public enumeration should
-  include it. This PR only removes codes whose producers have retired.
+  include it. #71 only removed codes whose producers had retired.
 
-- From this PR (1.5b1): investigate the full-suite lock failure in unchanged
-  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first `make test`
-  failed at `check_ownership_test.go:117` with `task.takeover: write lock
-  unavailable`; the isolated test then passed in 1.343s. The cause is not
-  established; no ownership code or test was changed in this PR. A complete
-  rerun and the coverage/no-identity CI runner subsequently passed.
-
-- From this PR (1.5b1): Q3 keeps frozen V1 `agent_runs`, `triage_events`
+- From #68 (1.5b1): Q3 keeps frozen V1 `agent_runs`, `triage_events`
   and `triage_status`; remove them only in separately scoped cleanup.
-- From this PR (1.5b1): Q4 keeps dead config keys
+- From #68 (1.5b1): Q4 keeps dead config keys
   `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`;
   withdraw them in separately scoped config/archive work.
-- From this PR (1.5b1): Q7 leaves Artifact availability after a passing
-  check for 1.6: decide whether hand-off and `done` require kept files still
-  available, while preserving immutable recorded check results.
 
 - Task 1.8 brings this later list into fid along with the remaining reset
   tasks (decided 7 November 2026).
@@ -3046,7 +3025,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   (`git worktree add .git/fid`) isn't caught; fid run from a git hook with a
   relative `GIT_DIR` and `--project <subdir>` is refused as not-a-repository;
   with git older than 2.31, the refusal doesn't mention the git version.
-- From #43 (1.1d5): older specs and test comments still call the ledger `.fid/`.
+- From #43 (1.1d5) and the orchestrator's queue for Mark (2026-11-12): the
+  specs lag the reset. Three spec lines still call the ledger `.fid/`
+  (`01_PRD.md` PRD-OPS-009, `02_TRD.md` §2 and `05_DESIGN_PLAN.md` §6), as
+  does the comment on `p24FailureFilesystem` in the integration tests. The
+  spec bodies still describe the kernel: Concerns, Activations, Envelopes
+  and Gates, and `fid ready` in the flows. Meanwhile ADR-0013 and RESET.md
+  win where they conflict (AGENTS.md).
 - From #46 (1.2b), `fid backup`:
   - Copies of one ledger share a genesis Event, so the folder check doesn't
     tell them apart. A ledger directory copied by hand, or a ledger restored
@@ -3065,29 +3050,27 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     target lock unavailable`), rather than a typed refusal.
   - If reading the genesis Event fails after successful import, the ledger
     is installed but restore reports `internal-error`.
-  - The export-manifest project ID check, disk placement of scratch, private
-    archive permissions and relative-`TMPDIR` finding were handled in 1.2d
-    (decisions above). Unzipped backup storage and cache packing also resolve
-    #46's compressed-archive storage follow-up.
-- From 1.2d: the v2 folder retains the original export ZIP's digest but
+- From #49 (1.2d): the v2 folder retains the original export ZIP's digest but
   reconstructs its bytes from members. V8 proves byte identity on the current
   toolchain. Future export-header or Go compressor changes may change ZIP
   bytes; assess cross-toolchain compatibility before the supported baseline
   and permanent ledger in 3.2. Preserving the digest's meaning doesn't waive
-  this compatibility concern.
-- From 1.2d review, accepted by Mark on 8 November 2026: resolve backup
-  storage for Artifacts larger than the target's per-file limit before
-  permanent backups in 3.2. Exports accept up to 1 GiB per Artifact, stored
-  as one raw blob in v2. Journal chunking does not cover Artifacts; no
-  smaller Artifact ceiling or chunking design has been chosen.
+  this compatibility concern (planned: 3.2).
+- From #49's review (1.2d), accepted by Mark on 8 November 2026: resolve
+  backup storage for Artifacts larger than the target's per-file limit
+  before permanent backups in 3.2. Exports accept up to 1 GiB per Artifact,
+  stored as one raw blob in v2. Journal chunking does not cover Artifacts;
+  no smaller Artifact ceiling or chunking design has been chosen
+  (planned: 3.2).
 - From #50 and #51 (1.3), `fid status` and `fid show`. 1.3b took #50's
-  long lines, title cuts and kernel-word check. Mark placed two more on 9
-  November 2026: 1.7 replaces the kernel-word pattern that
-  `internal/status`'s unit tests copy, and 3.2 tidies `go.mod`, which marks
-  `golang.org/x/sys` indirect although `internal/backup` and
-  `internal/display` import it. A `$PAGER` with arguments that names a
-  missing program loses the text to the shell's "not found". git's does
-  too, so it stays. These remain:
+  long lines, title cuts and kernel-word check, and 1.7 took the
+  kernel-word pattern that `internal/status`'s unit tests copied (Resolved,
+  below). A `$PAGER` with arguments that names a missing program loses the
+  text to the shell's "not found". git's does too, so it stays. These
+  remain:
+  - `go.mod` marks `golang.org/x/sys` indirect although `internal/backup`,
+    `internal/display` and `internal/export` import it. Mark placed tidying
+    it with 3.2 on 2026-11-09 (planned: 3.2).
   - Wide characters (CJK, most emoji) count as one column. They misalign
     the columns in `status` and `show`, and make the pager undercount a
     line's rows. Fixing it needs East Asian width tables, a new
@@ -3107,28 +3090,19 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   - `TestStatusAndShowPageOnARealTerminal` compares `status` output from
     separate processes, including the date in the box's top border, so a
     run that straddles local midnight fails (Codex, #51 round 2, minor;
-    answered, not fixed). The window is about half a second. Treat it like
-    the UTC-midnight test failure under "CI test time" below: if it ever
-    fails CI, fix it in test code by checking the header date separately
-    and normalising it before comparing.
+    answered, not fixed). The window is about half a second. #81 (1.5f)
+    fixed the UTC-midnight journal-file failures but left this display
+    comparison unchanged, and repeated the follow-up. If it ever fails CI,
+    fix it in test code by checking the header date separately and
+    normalising it before comparing.
 - Genuine cuts in product Go, from the read-only assessment of 9 November
   2026 (the line budget, in the 1.3 details above). #53 removed
-  `pricing.toml` and the dead V1 leftovers, about 235 lines. These remain:
-  - Helpers that only tests call (about 120–150 lines, such as
-    `evidence.Execute` and `workflow.EvaluateObligations`) wait for the
-    dead-code cleanup further down this list, since removing them means
-    rewriting tests.
-  - Removing legacy manifest-v1 validation support (about 30 lines) is
-    Assured and Mark's call, since it withdraws an archive-format promise:
-    `fid export validate` still accepts Phase 21 manifest-v1 archives,
-    though `fid export import` already refuses them as
-    `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
-    Decided 10 November 2026 (ADR-0014): removed with the kernel's catalogs
-    in 1.5d, together with that test. Completed in RESET 1.5d1 on
-    2026-11-15: validation and import both refuse v1, and the acceptance test
-    is replaced with a refusal/nonmutation test.
-  - The kernel's removal (1.5b–1.5d) takes the test-only helpers that belong
-    to the kernel.
+  `pricing.toml` and the dead V1 leftovers, about 235 lines. Helpers that
+  only tests call (about 120–150 lines then) wait for the dead-code cleanup
+  further down this list, since removing them means rewriting tests. The
+  assessment's examples, `evidence.Execute` and
+  `workflow.EvaluateObligations`, went with the kernel's packages in #72
+  (1.5c3); the `internal/project` helpers from #72, below, remain.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
@@ -3148,8 +3122,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 - A kit skill that helps build a project-specific loop, after two or three
   real loops exist.
 - Bot identity for agents with required review from Mark on Assured paths.
-- Branch protection on `main` for fid and kauri, before any lane gets
-  `auto_merge` (needs GitHub Pro or a public repo).
+- Mark's GitHub settings, from RESET.md's friction log (2026-10-31) and the
+  orchestrator's queue for Mark (2026-11-14): branch protection on `main`
+  for fid and kauri, before any lane gets `auto_merge` (needs GitHub Pro or
+  a public repo). fid's repository has been public since 2026-11-14, and a
+  `main` ruleset was made that day (pull request required, no force push
+  or deletion). On 2026-11-16 GitHub's API reported that ruleset's
+  enforcement as disabled and no rule active on `main`. Required status
+  checks (such as `checks`, `tests (0)` and `quality`) aren't set yet.
 - Cloud-session support for the ledger (read-only, then single-writer).
 - Declared paths per task, if shared-file conflicts become a regular cost.
 - Collapse candidates after the trial: any concept the leak test keeps
@@ -3165,40 +3145,40 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   it with 3.2, before the permanent ledger; the restore drill should cover
   it. Mark decided that restore ignores the archive's projection and
   rebuilds it from the archive's journal with the running fid, so any older
-  archive restores, and refuses an archive from a newer fid.
+  archive restores, and refuses an archive from a newer fid (planned: 3.2).
 - A key to opt out of `done` waiting for CI on the merge commit, for a
   project whose merge commits get no CI run. Not until a project needs one
   (Mark, 11 November 2026, item 8).
 - Replay reports `line: 0` for a current-event prior conflict (found in
   1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).
-- CI test time (from 1.1c1, 4 November 2026; partly done in 0.7). 0.7
-  dropped the race detector outside goroutine packages (G) and cut the
-  shards from four to one. Shards are still balanced by measured time from
+- CI test time, from #36 (1.1c1), 4 November 2026. #44 (0.7) dropped the
+  race detector outside goroutine packages (G), cut the shards from four
+  to one and balances them by measured time from
   `.github/scripts/durations.json`; `ci_tests.py durations` rewrites that
   file from a run's shard logs. Restore tests from #48 (1.2c) are absent
   from that file; harmless with one shard, include them when timings are
-  refreshed. Two things remain. First, review whether
-  every test earns its run time. Measured without race on 2 CPUs,
-  `cmd/fid` is the long pole at 231 s, and four corpora take 309 s of its
+  refreshed. Two things remain. First, review whether every test earns its
+  run time. Measured without race on 2 CPUs before the kernel's removal,
+  `cmd/fid` was the long pole at 231 s, and four corpora took 309 s of its
   523 s of test time: the grammar built-binary corpus 94 s, and the
   descriptor variant, judgment validation and review-and-finding corpora
-  66–80 s each. Second, fix the tests that depend on their environment.
-  About 33 fail when `TMPDIR` is behind a symlink (12 in `internal/`, 11 in
-  `cmd/fid`, 10 in integration), on `main` too. They compare paths without
-  resolving symlinks; P24 observation tests, for example, hash an
-  unresolved worktree path. Found in 1.1c2; no PR since added one.
-  The UTC-midnight failure (`journal files = 2, want 1`, found in 0.7's
-  round-3 review) is resolved by RESET 1.5f on 2026-11-15: test assertions
-  read every dated journal file, with forced-crossing regressions in the
-  command and integration suites. No product clock change was needed.
-  Do the rest when a shard's test step passes 10 minutes, and all of it
-  before the trial at the latest.
-- Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
+  66–80 s each. #71 (1.5c2) deleted the judgment and review-and-finding
+  corpora with their commands, so measure again first. Second, fix the
+  tests that depend on their environment. About 33 failed when `TMPDIR` is
+  behind a symlink (12 in `internal/`, 11 in `cmd/fid`, 10 in
+  integration), on `main` too, counted before the kernel's removal. They
+  compare paths without resolving symlinks; P24 observation tests, for
+  example, hash an unresolved worktree path. Found in 1.1c2. Do the rest
+  when a shard's test step passes 10 minutes, and all of it before the
+  trial at the latest. That trigger has fired: on 2026-11-15 the one
+  shard's test step took 430–743 s on GitHub, over 10 minutes in 6 of the
+  10 runs that passed.
+- Stale ledger staging, from #40 (1.1d3), 6 November 2026. A crash during
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
   `git status` doesn't show it, and nothing removes it. Add cleanup once
   one turns up; it needs a rule for when staging is safe to delete.
-- From the read-replay fix (2026-11-14, after 1.5a5):
+- From #67 (replay-race, 2026-11-14):
   - Replay reports any error while projecting an Event as a malformed
     journal entry (`journal-replay-stopped`, integrity, not retryable),
     naming a line that may be fine. Only a line that doesn't parse should
@@ -3213,10 +3193,71 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   helpers with no production caller, only their own tests:
   `ObserveRecordedRepository` and `ResolveSourceInput` (`source.go`),
   `ExpectedRepository` and `MatchesRecordedRepository`
-  (`expected_repository.go`) and `IsAncestor` (`repository.go`). Delete
-  them, with their tests, unless 1.6 or 2.1 turns out to need them.
+  (`expected_repository.go`) and `IsAncestor` (`repository.go`). 1.6a–1.6l
+  didn't need them, and they still have no production caller.
+  Delete them, with their tests, unless 2.1 turns out to need them.
 - CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
-  with the v0.2.0 release.
+  with the v0.2.0 release (planned: 3.2).
+- From CI on #85 (1.6h), 2026-11-15, a watch item:
+  `TestTwoWorktreesShareOneLedger` failed once on GitHub's runner (git
+  2.56.1). `git worktree add` in `gittest.AddWorktree` stopped with `could
+  not open '.git/worktrees/linked/locked' for writing: No such file or
+  directory`. The rerun passed, as did 20 of 20 local runs on git 2.53.0
+  and, on 2026-11-16, 20 of 20 runs of the test alone on git 2.56.1. No CI
+  run since has needed a rerun for it. If it recurs, investigate creating
+  worktrees in parallel under newer git.
+- From #56 (1.4a), round 1: `fid next --claim --actor service:ci` printed
+  `operation=next.claim` in its human refusal; #56 fixed that refusal. On
+  2026-11-12 the orchestrator routed the general case, operation names in
+  any human refusal, to 1.7's leak test, but #75 (1.7) checks kernel nouns
+  and IDs only. That catches `next.claim` through "claim", but not names
+  such as `task.takeover`. Two refusals probed on 2026-11-16 (`next
+  --claim` by a service actor, `takeover` by an agent) named no operation.
+- Mark's GitHub settings, from the orchestrator's queue for Mark
+  (2026-11-14): pin the workflows' actions to full-length commit SHAs (they
+  name tags, such as `actions/checkout@v7`; an Assured change), then turn
+  on the repository's "Require actions to be pinned to a full-length commit
+  SHA".
+- Mark to decide, from RESET.md's friction log (2026-11-14, 1.5a) and the
+  orchestrator's queue for Mark: collapse golden files in GitHub's diffs,
+  for example with a `.gitattributes` that marks test data
+  `linguist-generated`, and add a "What to read" section to PR
+  descriptions. Golden files were about 35–70% of the lines each 1.5a PR
+  added.
+
+**Resolved.** Later work resolved these, so 1.8 doesn't import them. Dates
+are merge dates, in New Zealand time.
+
+- From #76 (1.5e), #84 (1.6g) and #90 (1.6l): text goldens wrapped real
+  temp paths before masking them, so their line breaks varied with TMPDIR's
+  length. Resolved by #91 (golden-wrap), 2026-11-16: fixture paths have a
+  fixed display width.
+- From #80 (1.6d): V8's public-command stale round. Resolved by #83 (1.6f),
+  2026-11-15: V8 runs the public rework loop and checks stale first rounds
+  after backup, wipe and restore.
+- From #68 (1.5b1), Q7: whether hand-off and `done` need a passing check's
+  kept Artifacts still available. Resolved by #85 (1.6h), 2026-11-15: both
+  refuse with `kept-artifact-unavailable` (Decided 2026-11-15, item 8), and
+  recorded results stay immutable.
+- From #50 and #51 (1.3): `internal/status`'s unit tests copied the
+  kernel-word pattern. Resolved by #75 (1.7), 2026-11-15: they use the
+  shared `internal/leaktest`.
+- From the 2026-11-09 assessment: remove legacy manifest-v1
+  validation. Resolved by #73 (1.5d1), 2026-11-15: validation and import
+  both refuse v1.
+- From the 2026-11-09 assessment: the kernel's test-only helpers.
+  Resolved by #72 (1.5c3), 2026-11-15, which deleted the kernel's domain
+  packages.
+- From #48 (1.2c): the export-manifest project ID check, scratch placement
+  on disk, private archive permissions and the relative-`TMPDIR` finding;
+  from #46 (1.2b), compressed-archive storage. Resolved by #49 (1.2d),
+  2026-11-08.
+- From #36 (1.1c1): balance CI shards by measured time. Resolved by #44
+  (0.7), 2026-11-07.
+- From #44's round-3 review (0.7): the UTC-midnight failure (`journal files
+  = 2, want 1`). Resolved by #81 (1.5f), 2026-11-15: test assertions read
+  every dated journal file, with forced-crossing regressions; no product
+  clock change was needed.
 
 ## Next steps
 
