@@ -30,6 +30,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	// These tables have no legacy writer. Guard SQLite's case-insensitive
 	// table resolution before the legacy/retained Issue compatibility path.
 	for _, effect := range event.Effects {
+		if err := validateEpicCloseOwnership(tx, event, effect); err != nil {
+			return err
+		}
 		if strings.EqualFold(effect.Table, "questions") {
 			for _, row := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
 				for column, value := range row {
@@ -79,6 +82,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && (event.EventType == "review.round-recorded" || event.EventType == "finding.closed") {
 		return fmt.Errorf("review rounds require Event-v2")
 	}
+	if !event.IsV2() && event.EventType == "epic.closed" {
+		return fmt.Errorf("epic close requires Event-v2")
+	}
 	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.finished") {
 		return fmt.Errorf("approval requires Event-v2")
 	}
@@ -100,6 +106,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
+	}
+	if event.EventType == "epic.closed" {
+		return validateEpicClose(tx, event)
 	}
 	if event.EventType == "task.finished" {
 		return validateCompletion(tx, event)

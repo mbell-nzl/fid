@@ -73,6 +73,8 @@ var p24CodeRows = map[string]p24CodeFactory{
 var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
+	"done-epic-not-open":             epicDoneCodePair("done-epic-not-open"),
+	"done-epic-open-tasks":           epicDoneCodePair("done-epic-open-tasks"),
 	"done-task-not-in-review":        doneCodePair("done-task-not-in-review"),
 	"done-checks-unsatisfied":        doneCodePair("done-checks-unsatisfied"),
 	"done-kept-artifact-unavailable": doneCodePair("done-kept-artifact-unavailable"),

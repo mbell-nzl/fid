@@ -16,6 +16,8 @@ func fixedTransition(current issueTransitionState, to string) error {
 	switch {
 	case current.Kind == "task" && category == "completed":
 		rule, message, next = "use-done", current.ID+" completes with fid done", "fid done "+current.ID+" --actor <actor>"
+	case current.Kind == "epic" && category == "completed":
+		rule, message, next = "use-done", "Close the epic with fid done "+current.ID, `fid done `+current.ID+` --actor human:<name> --reason "<why>"`
 	case to == "in_progress":
 		rule, message, next = "use-start", current.ID+" starts with fid start", "fid start --hold <hold> --actor <actor> --idempotency-key <key>"
 	case current.Kind == "task" && to == "in_review":

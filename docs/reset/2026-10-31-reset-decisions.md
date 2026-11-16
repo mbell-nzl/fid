@@ -1567,6 +1567,36 @@ cancellation or completion removes the old merge view. V8 adds pending
 and failed merge subjects through public commands and compares these new
 status/show fields alongside every existing comparison.
 
+**1.6k's choices (2026-11-15).** The explicit Issue's kind dispatches
+`fid done` to the task path or the person's epic close, under the existing
+`task.done` operation and keyed leaf. The epic path needs a human actor
+and a nonblank reason, with no terminal or network. `epicrecord` reads all
+direct task states and shares the fixed-state eligibility predicate between
+command, journal admission and status's single snapshot. Empty epics may
+close; only nonempty eligible epics show `epic-ready-to-close` in NEEDS YOU.
+The command rechecks eligibility after refreshing under the write lock.
+`done-epic-not-open` and `done-epic-open-tasks` are exit-4 preconditions with
+`{gate, reason, record_ids}`; open child IDs are sorted and uncapped.
+
+Migration 35 adds the `close-epic` decision kind with an epic-only subject;
+projection cache version 17 rebuilds the cache. The `epic.closed` Event
+inserts exactly one decision, moves exactly that epic to done with its
+revision bump and optionally stores the retry result. Both catalogs admit
+it; live projection, replay and import check actor/reason/subject/time,
+no open task at that journal point and exact effect ownership/counts.
+Close decisions are immutable, and an epic completion in any other family
+is refused even through legacy or SQL case aliases. The command owns the
+`todo → done` exception without adding a generic workflow edge. Keyed
+retries return the original response and Event; changed requests conflict.
+Dispatch consults a stored retry before looking up the requested Issue kind,
+so a changed ID under an existing key keeps the task path's conflict refusal,
+even when that ID does not exist. Each selected writer validates the complete
+request before returning the stored result.
+V8 adds closed, eligible and blocked epics through public commands and
+compares their decisions, state and NEEDS YOU answers. No dependency,
+epic validations/approval (3.1), V5 verifier (1.6l), or epic reconciliation
+is added.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2824,6 +2854,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.6k): status's existing READY epic row says "no tasks"
+  for an epic with only cancelled tasks, because it counts only tasks in
+  its displayed section, which omits cancelled children
+  (`internal/status/text.go`, `epicCount`). The new epic status golden
+  shows this alongside a correct NEEDS YOU close action. Clarify the
+  row wording in later display work; eligibility already counts actual task
+  presence and correctly permits all-cancelled epics.
 
 - From #84 (1.6g): make `TestReworkGolden`'s status text independent of
   temporary config-path length, extending #76's path-wrapping follow-up below.

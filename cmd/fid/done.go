@@ -7,13 +7,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/donework"
 	"github.com/mbell-nzl/fid/internal/github"
+	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/spf13/cobra"
 )
 
 func init() { rootFlagCapabilities["done"] = rootFlagCapability{Project: true, JSON: true} }
 func newDoneCommand(run github.Runner) *cobra.Command {
-	var actor, key string
-	cmd := &cobra.Command{Use: "done [task]", Short: "Complete a reviewed task, or reconcile every task in review.", Args: doneArgs, RunE: func(cmd *cobra.Command, args []string) error {
+	var actor, key, reason string
+	cmd := &cobra.Command{Use: "done [issue]", Short: "Complete a reviewed task, close an epic, or reconcile tasks in review.", Args: doneArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireCanonicalFlag(cmd, "task.done", "actor"); err != nil {
 			return err
 		}
@@ -24,10 +25,24 @@ func newDoneCommand(run github.Runner) *cobra.Command {
 		if err != nil {
 			return renderCheckOperationFailure(cmd, "task.done", err)
 		}
+		if len(args) == 0 && cmd.Flags().Changed("reason") {
+			return doneReasonUsage(cmd, reason)
+		}
 		if len(args) == 0 {
 			return reconcileDone(cmd, donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Actor: actor, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
 		}
-		result, err := donework.Finish(cmd.Context(), donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
+		options := donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, IdempotencyKey: key, Reason: reason, Clock: commandDisplayEnvironment(cmd).now, Runner: run}
+		epic, err := donework.EpicTarget(options)
+		if err != nil {
+			return renderCheckOperationFailure(cmd, "task.done", err)
+		}
+		if epic {
+			return finishEpic(cmd, options)
+		}
+		if cmd.Flags().Changed("reason") {
+			return doneReasonUsage(cmd, reason)
+		}
+		result, err := donework.Finish(cmd.Context(), options)
 		if err != nil {
 			return renderDoneFailure(cmd, args[0], err)
 		}
@@ -42,6 +57,7 @@ func newDoneCommand(run github.Runner) *cobra.Command {
 		return err
 	}}
 	cmd.Flags().StringVar(&actor, "actor", "", "Actor attribution")
+	cmd.Flags().StringVar(&reason, "reason", "", "Reason for closing an epic")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Retry key")
 	return cmd
 }
@@ -112,4 +128,28 @@ func reconcileDone(cmd *cobra.Command, options donework.Options) error {
 		}
 	}
 	return nil
+}
+
+func finishEpic(cmd *cobra.Command, o donework.Options) error {
+	result, err := donework.CloseEpic(o)
+	if err != nil {
+		var required *persondecision.ReasonRequiredError
+		if errors.As(err, &required) {
+			return renderHoldFailure(cmd, "task.done", err)
+		}
+		return renderDoneFailure(cmd, o.TaskID, err)
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "task.done", map[string]any{"status": result.Status, "decision": result.Decision, "revision": result.Revision}, &cli.Event{ID: result.EventID, OccurredAt: result.Decision.At})
+	}
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "✓ Closed %s · %s\n", cli.EscapeControlText(o.TaskID), cli.EscapeControlText(o.Reason))
+	return err
+}
+
+func doneReasonUsage(cmd *cobra.Command, reason string) error {
+	return writeGrammarFailure(cmd, "task.done", cli.CodeInvalidArgument, "--reason requires an epic", map[string]any{"argument": "--reason", "value": reason, "allowed": []string{"supply an epic"}})
 }

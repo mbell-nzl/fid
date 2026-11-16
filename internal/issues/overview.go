@@ -7,6 +7,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/epicrecord"
 	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -33,6 +34,8 @@ type Overview struct {
 	ToDo OverviewSection
 	// Empty says the project has no epics or tasks at all.
 	Empty bool
+	// ClosableEpics contains nonempty open epics with all tasks finished, from this snapshot.
+	ClosableEpics []string
 }
 
 type OverviewSection struct {
@@ -130,7 +133,17 @@ func ReadOverviewFrom(conn fiddb.Queryer) (Overview, error) {
 	if err != nil {
 		return Overview{}, err
 	}
-	return sortOverview(epics, tasks), nil
+	overview := sortOverview(epics, tasks)
+	for _, epic := range epics {
+		eligibility, err := epicrecord.ReadEligibility(conn, epic.ID)
+		if err != nil {
+			return Overview{}, err
+		}
+		if len(eligibility.Children) > 0 && eligibility.CanClose() {
+			overview.ClosableEpics = append(overview.ClosableEpics, epic.ID)
+		}
+	}
+	return overview, nil
 }
 
 func sortOverview(epics []*overviewEpic, tasks []OverviewTask) Overview {

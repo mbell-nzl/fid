@@ -123,3 +123,45 @@ func snapshotReady(t *testing.T, result Result) readySnapshot {
 }
 
 func snapshotLane() *string { lane := "standard"; return &lane }
+
+func TestEpicNeedsYouUsesStatusSnapshot(t *testing.T) {
+	t.Parallel()
+	options, _ := snapshotWorkspace(t)
+	epic, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "epic", Title: "All tasks finished", Scheduling: "prioritised", Actor: "human:mark", IdempotencyKey: "epic"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	child, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "task", Title: "Cancelled", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "child"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, ID: child.ID, ToState: "cancelled", Actor: "human:mark", Reason: "Not needed"}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := build(options, func() {
+		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "task", Title: "New open task", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "new-child"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hasEpic := func(r Result) bool {
+		for _, item := range r.NeedsYou {
+			if item.Kind == "epic-ready-to-close" && item.Subject.ID == epic.ID {
+				return true
+			}
+		}
+		return false
+	}
+	if !hasEpic(result) {
+		t.Fatal("status mixed snapshots and lost the eligible epic")
+	}
+	later, err := Build(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasEpic(later) {
+		t.Fatal("later status ignored new open task")
+	}
+}

@@ -3,6 +3,7 @@ package status
 import (
 	"fmt"
 
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/next"
 	"github.com/mbell-nzl/fid/internal/project"
 )
@@ -27,5 +28,12 @@ func (result *Result) checkWorktrees(root string, planned next.Result) {
 			action := fmt.Sprintf(`fid takeover %s --actor human:<name> --reason "<why>"`, entry.ID)
 			result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "worktree-missing", Subject: &Subject{Type: "task", ID: entry.ID}, Summary: fmt.Sprintf("%s is kept for a worktree that no longer exists: %s", entry.ID, worktree), NextAction: &action})
 		}
+	}
+}
+
+func (result *Result) addClosableEpics(overview issues.Overview) {
+	for _, id := range overview.ClosableEpics {
+		action := fmt.Sprintf(`fid done %s --actor human:<name> --reason "<why>"`, id)
+		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "epic-ready-to-close", Subject: &Subject{Type: "epic", ID: id}, Summary: id + " has no open tasks and is ready to close", NextAction: &action})
 	}
 }

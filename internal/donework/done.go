@@ -22,9 +22,9 @@ import (
 )
 
 type Options struct {
-	WorkspaceRoot, MigrationsDir, TaskID, Actor, IdempotencyKey string
-	Clock                                                       func() time.Time
-	Runner                                                      github.Runner
+	WorkspaceRoot, MigrationsDir, TaskID, Actor, IdempotencyKey, Reason string
+	Clock                                                               func() time.Time
+	Runner                                                              github.Runner
 }
 
 type Refusal struct {
@@ -189,7 +189,7 @@ func preflight(s doneeval.Snapshot) error {
 		return &Refusal{Code: "issue-not-found", Message: "task not found", Details: map[string]any{"id": ""}}
 	}
 	if s.Task.Kind != "task" {
-		message := "fid done closes tasks; closing an epic arrives in 1.6k"
+		message := "closing an epic requires a person and --reason"
 		if s.Task.Kind != "epic" {
 			message = "fid done closes tasks; use issue transition for subtasks"
 		}

@@ -1007,3 +1007,29 @@ Only the completion family may write that resolution. It preserves the
 original question, has a resolution time and null decision/answer, and lands
 atomically with the task's completion and reservation release. Historical
 replay/import do not reacquire external or filesystem evidence.
+
+
+### Epic close decisions (RESET 1.6k)
+
+Migration 0035 extends `person_decisions.kind` with `close-epic`, restricted
+by SQL to an epic subject, bound to that epic. It preserves the full decision
+rows, approval bindings, questions (including `finished-before-answer`)
+and finding closures while rebuilding the referenced table. Projection
+cache version 17 forces rebuild; the active migration/export profile is 35.
+No workflow registry edge is added: `fid done` alone accepts `todo → done`
+for an epic, as well as `in_progress → done`.
+
+Both Event-v2 catalogs register `epic.closed` / `task.done` on the epic
+aggregate. Admission checks exactly one complete `close-epic` decision
+insert, one move of that same epic with status/revision guards and a
+revision bump, and only the requested optional retry-result insert.
+The decision must match the human Event actor, epic subject/binding,
+nonblank reason and Event time. At that journal point the epic must be
+open with no open direct task; `done` and `cancelled` are finished. Replay
+and import use this same predicate without networking or external evidence.
+An epic state move to done through any other Event, a close decision in
+another family, or mutation of a close decision is refused, including legacy
+Events and SQL identifier case aliases. Keyed results bind to the epic and
+contain its immutable decision and resulting revision. No new table is
+added. V8 retains a closed epic and decision, a nonempty epic needing a
+person, and an epic with an open task, all built through public commands.
