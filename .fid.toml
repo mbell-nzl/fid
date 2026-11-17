@@ -1,0 +1,53 @@
+# fid's own policy (RESET 1.8). fid reads this file only from origin/main,
+# so an edit counts once it's merged and fetched. The shape is the one Mark
+# approved for 2.2a on 2026-11-11.
+[project]
+id = "project-5e1b9c41fba0f1104438c7886c68de74"
+
+# Checks fid runs itself. defined_by: files that change what the check
+# does; a change to any of them is Assured.
+[checks.fmt]
+run = ["make", "fmt-check"]
+timeout = "2m"
+defined_by = ["Makefile"]
+
+[checks.lint]
+run = ["make", "lint"]
+timeout = "10m"
+defined_by = ["Makefile", ".golangci.yml", ".github/scripts/**"]
+
+[checks.test]
+run = ["make", "test"]
+timeout = "15m"
+defined_by = ["Makefile", ".github/scripts/**"]
+
+[checks.build]
+run = ["make", "build"]
+timeout = "5m"
+defined_by = ["Makefile"]
+
+# The suite builds fid in a subprocess, which Go's test cache doesn't
+# track, so a cached pass can hide a broken binary. -count=1 always runs it.
+[checks.integration]
+run = ["go", "test", "-count=1", "-tags", "integration", "./cmd/fid/integration/..."]
+timeout = "20m"
+when_changed = ["cmd/**", "internal/**", "migrations/**", "go.mod", "go.sum"]
+
+# A change's lane floor is the highest lane any changed path needs (2.2b).
+# A path in no list is Standard. .fid.toml and .github/workflows/** are
+# always Assured; that's built into fid and can't be waived.
+[lanes.routine]
+paths = ["docs/**", "**/*.md"]
+checks = ["fmt", "lint", "test", "build"]
+
+[lanes.standard]
+checks = ["fmt", "lint", "test", "build", "integration"]
+
+# No token_budget until 2.6 has usage data to set it from (ADR-0014).
+[lanes.assured]
+paths = ["migrations/**", "internal/journal/**", "go.mod", "go.sum"]
+checks = ["fmt", "lint", "test", "build", "integration"]
+
+# Changes to these paths need a test-adequacy review in every lane.
+[review]
+test_adequacy = ["**/*_test.go", "**/testdata/**"]
