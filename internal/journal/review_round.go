@@ -30,23 +30,10 @@ func ValidateReviewResult(raw string) error {
 }
 
 func validateReviewRound(tx *sql.Tx, event Event) error {
-	// The existing sequence/aggregate scanners accept lines below 1 MiB.
-	// Check the complete Event (including duplicated retry/finding JSON) before
-	// a live append, and enforce the same boundary on replay/import.
-	encoded, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return err
-	}
-	if len(encoded)+1 >= 1<<20 {
-		return fmt.Errorf("review Event exceeds the journal's 1 MiB line budget")
-	}
 	if event.CommandName != "review.record" || event.Aggregate.Type != "review" || event.Aggregate.Sequence != 1 || event.Repository != nil || event.ActorV2.ActorType != "agent" && event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("invalid review command, work actor or aggregate")
 	}
 	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
 		return err
 	}
 	if err := validateCurrentIdempotency(event); err != nil {

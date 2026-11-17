@@ -2,6 +2,9 @@ package journal
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,6 +76,13 @@ func FindEvent(journalDir, eventID string) (FoundEvent, error) {
 }
 
 func inspectJournal(journalDir, checkpointFile string, checkpointOffset int64) (journalInspection, error) {
+	return inspectJournalTracked(journalDir, checkpointFile, checkpointOffset, nil)
+}
+
+// inspectJournalTracked also feeds every Event to tracker, when set, which
+// refuses the rules that span lines: a repeated Event ID and an aggregate's
+// broken sequence.
+func inspectJournalTracked(journalDir, checkpointFile string, checkpointOffset int64, tracker *aggregateSequenceTracker) (journalInspection, error) {
 	files, err := orderedJournalFiles(journalDir)
 	if err != nil {
 		return journalInspection{}, err
@@ -80,7 +90,7 @@ func inspectJournal(journalDir, checkpointFile string, checkpointOffset int64) (
 
 	var inspection journalInspection
 	for _, fileName := range files {
-		if err := inspectJournalFile(journalDir, fileName, checkpointFile, checkpointOffset, &inspection); err != nil {
+		if err := inspectJournalFile(journalDir, fileName, checkpointFile, checkpointOffset, &inspection, tracker); err != nil {
 			return journalInspection{}, err
 		}
 	}
@@ -119,7 +129,7 @@ func findEventInFile(journalDir, fileName, eventID string) (FoundEvent, bool, er
 	}
 }
 
-func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointOffset int64, inspection *journalInspection) error {
+func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointOffset int64, inspection *journalInspection, tracker *aggregateSequenceTracker) error {
 	path := filepath.Join(journalDir, fileName)
 	file, err := os.Open(path)
 	if err != nil {
@@ -139,7 +149,7 @@ func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointO
 		}
 
 		offset += int64(len(lineBytes))
-		checkpoint, hasEvent, err := inspectCheckpointLine(path, lineNumber, offset, lineBytes)
+		checkpoint, hasEvent, err := inspectCheckpointLine(path, lineNumber, offset, lineBytes, tracker)
 		if err != nil {
 			return err
 		}
@@ -166,7 +176,15 @@ func (line checkpointLine) FileMatches(fileName, checkpointFile string, offset, 
 	return fileName == checkpointFile && offset == checkpointOffset
 }
 
-func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
+// inspectCheckpointLine also pre-scans each line with admission's shape
+// rules and, given a tracker, the rules that span lines, so replay refuses
+// before it applies any Event.
+func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte, tracker *aggregateSequenceTracker) (checkpointLine, bool, error) {
+	// The writers' scanners hold every stored byte before the newline,
+	// padding and carriage returns included.
+	if !withinLineBudget(len(bytes.TrimSuffix(lineBytes, []byte("\n")))) {
+		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: fmt.Errorf("line exceeds the journal's 1 MiB line budget")}
+	}
 	trimmed := bytesTrimSpace(lineBytes)
 	if len(trimmed) == 0 {
 		return checkpointLine{}, false, nil
@@ -181,16 +199,21 @@ func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes 
 		}
 	}
 
-	if err := ValidateEventSupport(stored); err != nil {
-		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
-	}
-
-	eventHash, err := HashEvent(stored)
+	canonical, err := MarshalCanonicalJSON(stored)
 	if err != nil {
 		return checkpointLine{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, filepath.Base(path), lineNumber, err)
 	}
+	if err := validateEventShape(stored, len(canonical)); err != nil {
+		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+	}
+	if tracker != nil {
+		if err := tracker.add(stored); err != nil {
+			return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+		}
+	}
+	sum := sha256.Sum256(canonical)
 	_ = offset
-	return checkpointLine{EventID: stored.EventID, EventHash: eventHash}, true, nil
+	return checkpointLine{EventID: stored.EventID, EventHash: "sha256:" + hex.EncodeToString(sum[:])}, true, nil
 }
 
 func inspectJournalLine(path string, lineNumber int, lineBytes []byte, eventID string) (FoundEvent, bool, error) {

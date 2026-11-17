@@ -18,7 +18,8 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 	}{
 		{"table", "no such", Effect{Op: "insert", Table: "escalations", PK: map[string]any{"id": "ESC-retired"}, Values: map[string]any{"status": "open"}}},
 		{"triage column", "no such", Effect{Op: "update", Table: "triage_events", PK: map[string]any{"id": "TRI-retired"}, Values: map[string]any{"esc_id": "ESC-retired"}}},
-		{"triage column case", "no such", Effect{Op: "update", Table: "TRIAGE_EVENTS", PK: map[string]any{"ID": "TRI-retired"}, Values: map[string]any{"ESC_ID": "ESC-retired"}}},
+		// Admission refuses a case alias before SQL would resolve it.
+		{"triage column case", "must be lowercase", Effect{Op: "update", Table: "TRIAGE_EVENTS", PK: map[string]any{"ID": "TRI-retired"}, Values: map[string]any{"ESC_ID": "ESC-retired"}}},
 		{"concern column", "schema-unsupported", Effect{Op: "update", Table: "concerns", PK: map[string]any{"id": "CON-retired"}, Values: map[string]any{"escalated_to_esc_id": "ESC-retired"}}},
 		{"concern column case", "schema-unsupported", Effect{Op: "update", Table: "CoNcErNs", PK: map[string]any{"ID": "CON-retired"}, Values: map[string]any{"ESCALATED_TO_ESC_ID": "ESC-retired"}}},
 	} {
@@ -26,7 +27,7 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 			workspace := newReplayWorkspace(t)
 			conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			defer closeProjectDB(t, conn)
-			event := Event{EventID: "EVT-20260607-000902", EventSchema: EventSchemaV1, EventType: "retired.effect.probe", OccurredAt: time.Date(2026, 6, 7, 16, 0, 0, 0, time.UTC), Actor: Actor{Role: "developer"}, Command: Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}}
+			event := Event{EventID: "EVT-20260607-000001", EventSchema: EventSchemaV1, EventType: "retired.effect.probe", OccurredAt: time.Date(2026, 6, 7, 16, 0, 0, 0, time.UTC), Actor: Actor{Role: "developer"}, Command: Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}}
 			event.Effects = []Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": "must-rollback"}}, test.effect}
 			hash, err := HashEvent(event)
 			if err != nil {

@@ -585,16 +585,16 @@ func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
 	writeReplayEvents(
 		t,
 		journalPath,
-		replayRoleEvent("EVT-20260613-000200", "developer"),
+		replayRoleEvent("EVT-20260613-000001", "developer"),
 		projectActivityEvent(
-			"EVT-20260613-000201",
+			"EVT-20260613-000002",
 			"FID-rebuild-activity",
 			[]Effect{
-				projectActivityEffect("EVT-20260613-000201", "ACT-rebuild-001", "FID-rebuild-activity", "status_changed", map[string]any{
+				projectActivityEffect("EVT-20260613-000002", "ACT-rebuild-001", "FID-rebuild-activity", "status_changed", map[string]any{
 					"to":   "in_progress",
 					"from": "todo",
 				}),
-				projectActivityEffect("EVT-20260613-000201", "ACT-rebuild-002", "FID-rebuild-activity", "comment_added", map[string]any{
+				projectActivityEffect("EVT-20260613-000002", "ACT-rebuild-002", "FID-rebuild-activity", "comment_added", map[string]any{
 					"text": "Ready for review",
 				}),
 			},
@@ -833,7 +833,8 @@ func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *t
 	}
 
 	err = DryRunProjectEvent(conn, Event{
-		EventType: "issue.created",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
 		Actor: Actor{
 			Role: "developer",
 		},
@@ -921,7 +922,8 @@ func TestDryRunProjectEventRollsBackOnProjectionFailure(t *testing.T) {
 	}
 
 	err = DryRunProjectEvent(conn, Event{
-		EventType: "issue.created",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
 		Actor: Actor{
 			Role: "developer",
 		},

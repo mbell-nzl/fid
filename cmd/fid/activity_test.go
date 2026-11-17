@@ -190,11 +190,26 @@ func newActivityCommandSeedIdentity(t *testing.T, workspace string, sequence int
 	baseDate := latestActivityCommandJournalDate(t, workspace)
 	occurredAt := baseDate.Add(offset).UTC()
 
+	// The Event ID is the one the writers allocate next, so seed each entry
+	// right after taking its identity.
 	return activityCommandSeedIdentity{
-		eventID:    fmt.Sprintf("EVT-%s-%06d", occurredAt.Format("20060102"), sequence),
+		eventID:    nextCommandSeedEventID(t, workspace, occurredAt),
 		activityID: fmt.Sprintf("ACT-%s-%06d", occurredAt.Format("20060102"), sequence),
 		occurredAt: occurredAt.Format(time.RFC3339),
 	}
+}
+
+func nextCommandSeedEventID(t *testing.T, workspace string, occurredAt time.Time) string {
+	t.Helper()
+	var eventID string
+	if err := journal.WithLock(workspace, journal.LockOwner{Command: "fid maintenance seed"}, func(lock *journal.WriteLock) error {
+		prepared, err := journal.PrepareEvent(lock, journal.Event{EventSchema: journal.EventSchemaV1, OccurredAt: occurredAt})
+		eventID = prepared.EventID
+		return err
+	}); err != nil {
+		t.Fatalf("PrepareEvent() error = %v", err)
+	}
+	return eventID
 }
 
 func latestActivityCommandJournalDate(t *testing.T, workspace string) time.Time {

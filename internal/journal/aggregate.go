@@ -10,13 +10,30 @@ import (
 
 type aggregateSequenceTracker struct {
 	sequences map[string]int
+	// eventIDs and dated, when set, refuse a repeated Event ID and a dated
+	// ID that isn't its date's next sequence, as export does.
+	eventIDs map[string]struct{}
+	dated    *DatedEventIDs
 }
 
 func newAggregateSequenceTracker() *aggregateSequenceTracker {
 	return &aggregateSequenceTracker{sequences: make(map[string]int)}
 }
 
+func newReplayTracker() *aggregateSequenceTracker {
+	return &aggregateSequenceTracker{sequences: make(map[string]int), eventIDs: make(map[string]struct{}), dated: NewDatedEventIDs()}
+}
+
 func (tracker *aggregateSequenceTracker) add(event Event) error {
+	if tracker.eventIDs != nil {
+		if _, repeated := tracker.eventIDs[event.EventID]; repeated {
+			return fmt.Errorf("journal repeats Event ID %q", event.EventID)
+		}
+		tracker.eventIDs[event.EventID] = struct{}{}
+		if err := tracker.dated.Admit(event.EventID); err != nil {
+			return err
+		}
+	}
 	if !event.IsV2() {
 		return nil
 	}

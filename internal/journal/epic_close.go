@@ -47,13 +47,6 @@ func validateEpicCloseOwnership(tx *sql.Tx, event Event, e Effect) error {
 	return nil
 }
 func validateEpicClose(tx *sql.Tx, event Event) error {
-	encoded, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return err
-	}
-	if len(encoded)+1 >= 1<<20 {
-		return fmt.Errorf("epic close Event exceeds the journal's 1 MiB line budget")
-	}
 	if !event.IsV2() || event.CommandName != "task.done" || event.Aggregate.Type != "epic" || event.Repository != nil || event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("epic close requires a person's decision and its command")
 	}
@@ -69,9 +62,6 @@ func validateEpicClose(tx *sql.Tx, event Event) error {
 	}
 	if len(event.Effects) != n {
 		return fmt.Errorf("epic close requires exactly one decision, one state move and optional retry result")
-	}
-	if err := validateCurrentStages(event, retainedCurrentRules[event.EventType]); err != nil {
-		return err
 	}
 	decision, move := event.Effects[0], event.Effects[1]
 	if decision.Table != "person_decisions" || decision.Op != "insert" || move.Table != "issues" || move.Op != "update" {

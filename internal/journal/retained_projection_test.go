@@ -56,7 +56,7 @@ func TestProjectEventPopulatesRetainedRepresentativeTablesViaJournalEffects(t *t
 
 func retainedProjectionEvent() Event {
 	return Event{
-		EventID:     "EVT-20260607-000902",
+		EventID:     "EVT-20260607-000001",
 		EventSchema: EventSchemaV1,
 		EventType:   "retained.projection.seeded",
 		OccurredAt:  time.Date(2026, time.June, 7, 16, 0, 0, 0, time.UTC),
@@ -170,7 +170,7 @@ func retainedProjectionEvent() Event {
 				Table: "activity_log",
 				PK:    map[string]any{"id": "ACT-p2-001"},
 				Values: map[string]any{
-					"journal_event_id": "EVT-20260607-000902",
+					"journal_event_id": "EVT-20260607-000001",
 					"ref_type":         "issue",
 					"ref_id":           "FID-p2-task-a",
 					"event":            "status_changed",
@@ -201,7 +201,7 @@ func assertRetainedProjectionRows(t *testing.T, conn *sql.DB) {
 		{`SELECT issue_id||'|'||scheduling||'|'||brief_md_path||'|'||date(target_start)||'|'||date(target_end) FROM epic_metadata`, "FID-p2-epic|sequential|project-docs/epics/phase-2.md|2026-06-07|2026-06-21"},
 		{`SELECT id||'|'||issue_id||'|'||ordinal||'|'||text FROM acceptance_criteria`, "AC-p2-001|FID-p2-task-a|1|Ref triggers protect widened schema rows"},
 		{`SELECT from_type||'|'||from_id||'|'||relation||'|'||to_type||'|'||to_id FROM links`, "issue|FID-p2-task-a|blocks|issue|FID-p2-task-b"},
-		{`SELECT id||'|'||journal_event_id||'|'||ref_type||'|'||ref_id||'|'||event||'|'||details||'|'||actor FROM activity_log`, `ACT-p2-001|EVT-20260607-000902|issue|FID-p2-task-a|status_changed|{"from":"todo","to":"blocked"}|developer`},
+		{`SELECT id||'|'||journal_event_id||'|'||ref_type||'|'||ref_id||'|'||event||'|'||details||'|'||actor FROM activity_log`, `ACT-p2-001|EVT-20260607-000001|issue|FID-p2-task-a|status_changed|{"from":"todo","to":"blocked"}|developer`},
 	} {
 		var got string
 		if err := conn.QueryRow(row.query).Scan(&got); err != nil || got != row.want {

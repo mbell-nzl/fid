@@ -18,6 +18,7 @@ func TestRemovedFamiliesRefusedWithoutMutation(t *testing.T) {
 	prefix := removedFamilyEvent("project.initialized", EventSchemaV2)
 	prefix.EventID, prefix.Aggregate.ID = "EVT-prefix", "PRJ-prefix"
 	prefix.Aggregate.Type = "project"
+	prefix.ActorV2.ActorType = "service" // fid initialises the project itself
 	assertReplayPrefix(t, prefix)
 	raw, err := os.ReadFile("testdata/removed-families.txt")
 	if err != nil {

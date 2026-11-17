@@ -28,14 +28,11 @@ func decodeCheckJSON(raw any, target any) error {
 }
 
 func validateLeanCheck(tx *sql.Tx, event Event) error {
-	rule, ok := retainedCurrentRules[event.EventType]
+	_, ok := retainedCurrentRules[event.EventType]
 	if !ok || event.CommandName != "check.execute" || event.Aggregate.Type != "check" || event.Repository != nil || event.ActorV2.ActorType != "agent" && event.ActorV2.ActorType != "human" {
 		return fmt.Errorf("invalid lean check family, command or actor")
 	}
 	if err := validateV2Event(event); err != nil {
-		return err
-	}
-	if err := validateCurrentStages(event, rule); err != nil {
 		return err
 	}
 	for _, effect := range event.Effects {

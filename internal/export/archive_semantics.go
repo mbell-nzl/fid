@@ -207,6 +207,12 @@ func (validator *semanticValidator) accept(raw []byte) error {
 	if err := validator.validateEvent(event); err != nil {
 		return semanticFailure("effect-invalid", "validate Event family", err)
 	}
+	// Every family's Effect grammar is the journal's own. The journal's other
+	// admission rules run when the Event is applied below, as on live append
+	// and replay.
+	if err := journal.ValidateEventGrammar(event); err != nil {
+		return semanticFailure("effect-invalid", "validate Event family", err)
+	}
 	if event.EventType == "project.initialized" {
 		if validator.bootstrapID != "" {
 			return semanticFailure("effect-invalid", "validate project bootstrap", fmt.Errorf("event %q repeats project initialization", event.EventID))
@@ -300,42 +306,18 @@ func (validator *semanticValidator) validateEvent(event journal.Event) error {
 	if event.EventSchema != journal.EventSchemaV2 {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported schema %d for projection schema %d", event.EventID, event.EventSchema, validator.profile)
 	}
-	rule, found := semanticEventRules[event.EventType]
-	if !found || validator.profile < semanticFirstProfile[event.EventType] {
+	if validator.profile < semanticFirstProfile[event.EventType] {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported type %q", event.EventID, event.EventType)
-	}
-	if event.Aggregate.Type != rule.aggregate {
-		return fmt.Errorf("semantic archive validation: Event %q aggregate %q does not match type %q", event.EventID, event.Aggregate.Type, event.EventType)
 	}
 	return nil
 }
 
+// validateEffects checks each Effect against the archive's own projection
+// profile. The family's Effect grammar is the journal's (ValidateEventGrammar).
 func (validator *semanticValidator) validateEffects(event journal.Event) error {
-	rule := semanticEventRules[event.EventType]
-	if len(event.Effects) == 0 {
-		if event.EventType == "project.initialized" {
-			return nil
-		}
-		return fmt.Errorf("semantic archive validation: Event %q has no Effects", event.EventID)
-	}
-	stageIndex := 0
-	stageCounts := make([]int, len(rule.stages))
 	for index, effect := range event.Effects {
 		if err := validateSemanticUpdate(effect); err != nil {
 			return err
-		}
-		for stageIndex < len(rule.stages) && !rule.stages[stageIndex].accepts(effect.Table, effect.Op) {
-			if stageCounts[stageIndex] < rule.stages[stageIndex].minimum {
-				return fmt.Errorf("event %q Effect %d %s/%s is out of order; expected stage %d", event.EventID, index+1, effect.Table, effect.Op, stageIndex+1)
-			}
-			stageIndex++
-		}
-		if stageIndex == len(rule.stages) {
-			return fmt.Errorf("event %q Effect %d table/operation %s/%s is not accepted for %q", event.EventID, index+1, effect.Table, effect.Op, event.EventType)
-		}
-		stageCounts[stageIndex]++
-		if maximum := rule.stages[stageIndex].maximum; maximum >= 0 && stageCounts[stageIndex] > maximum {
-			return fmt.Errorf("event %q Effect %d exceeds accepted repetitions for %s/%s", event.EventID, index+1, effect.Table, effect.Op)
 		}
 		table, found := validator.tables[effect.Table]
 		if !found {
@@ -351,11 +333,6 @@ func (validator *semanticValidator) validateEffects(event journal.Event) error {
 		}
 		if created, found := effect.Values["created_event_id"]; found && created != event.EventID {
 			return fmt.Errorf("event %q Effect %d created_event_id does not match Event identity", event.EventID, index+1)
-		}
-	}
-	for index := stageIndex; index < len(rule.stages); index++ {
-		if stageCounts[index] < rule.stages[index].minimum {
-			return fmt.Errorf("event %q omits required Effect stage %d", event.EventID, index+1)
 		}
 	}
 	return nil

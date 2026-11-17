@@ -220,9 +220,11 @@ func TestMergeAndCIArchiveAndReplayBindings(t *testing.T) {
 					case "live":
 						err = journal.DryRunProjectEvent(v.conn, event)
 					case "replay":
-						// This isolated journal begins at sequence one; the private
-						// projection already contains the referenced hand-off/merge.
+						// This isolated journal begins at sequence one, for its
+						// aggregate and its date; the private projection already
+						// contains the referenced hand-off/merge.
 						event.Aggregate.Sequence = 1
+						event.EventID = "EVT-20261110-000001"
 						directory := t.TempDir()
 						var raw []byte
 						raw, err = journal.MarshalCanonicalJSON(event)

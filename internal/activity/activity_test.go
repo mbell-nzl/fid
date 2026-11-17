@@ -28,35 +28,29 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 	secondEntry := newActivitySeedIdentity(t, workspace, 101, 35*time.Hour)
 	thirdEntry := newActivitySeedIdentity(t, workspace, 102, 35*time.Hour)
 
-	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        secondEntry.eventID,
-		activityID:     secondEntry.activityID,
-		refID:          secondaryIssueID,
-		eventName:      "comment_added",
-		actor:          "qa_reviewer",
-		occurredAt:     secondEntry.occurredAt,
-		details:        map[string]any{"text": "Needs evidence"},
-		journalEventID: secondEntry.eventID,
+	secondEntry.eventID = appendActivityEvent(t, workspace, activitySeedEvent{
+		activityID: secondEntry.activityID,
+		refID:      secondaryIssueID,
+		eventName:  "comment_added",
+		actor:      "qa_reviewer",
+		occurredAt: secondEntry.occurredAt,
+		details:    map[string]any{"text": "Needs evidence"},
 	})
-	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        firstEntry.eventID,
-		activityID:     firstEntry.activityID,
-		refID:          primaryIssueID,
-		eventName:      "status_changed",
-		actor:          "developer",
-		occurredAt:     firstEntry.occurredAt,
-		details:        map[string]any{"from": "todo", "to": "in_progress"},
-		journalEventID: firstEntry.eventID,
+	firstEntry.eventID = appendActivityEvent(t, workspace, activitySeedEvent{
+		activityID: firstEntry.activityID,
+		refID:      primaryIssueID,
+		eventName:  "status_changed",
+		actor:      "developer",
+		occurredAt: firstEntry.occurredAt,
+		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
-	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        thirdEntry.eventID,
-		activityID:     thirdEntry.activityID,
-		refID:          primaryIssueID,
-		eventName:      "issue_updated",
-		actor:          "developer",
-		occurredAt:     thirdEntry.occurredAt,
-		details:        map[string]any{"field": "title", "to": "Refined title"},
-		journalEventID: thirdEntry.eventID,
+	thirdEntry.eventID = appendActivityEvent(t, workspace, activitySeedEvent{
+		activityID: thirdEntry.activityID,
+		refID:      primaryIssueID,
+		eventName:  "issue_updated",
+		actor:      "developer",
+		occurredAt: thirdEntry.occurredAt,
+		details:    map[string]any{"field": "title", "to": "Refined title"},
 	})
 
 	got, err := List(ListOptions{
@@ -119,34 +113,28 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 	}
 
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        firstEntry.eventID,
-		activityID:     firstEntry.activityID,
-		refID:          primaryIssueID,
-		eventName:      "status_changed",
-		actor:          "developer",
-		occurredAt:     firstEntry.occurredAt,
-		details:        map[string]any{"from": "todo", "to": "in_progress"},
-		journalEventID: firstEntry.eventID,
+		activityID: firstEntry.activityID,
+		refID:      primaryIssueID,
+		eventName:  "status_changed",
+		actor:      "developer",
+		occurredAt: firstEntry.occurredAt,
+		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        secondEntry.eventID,
-		activityID:     secondEntry.activityID,
-		refID:          primaryIssueID,
-		eventName:      "status_changed",
-		actor:          "developer",
-		occurredAt:     secondEntry.occurredAt,
-		details:        map[string]any{"from": "in_progress", "to": "qa_review"},
-		journalEventID: secondEntry.eventID,
+		activityID: secondEntry.activityID,
+		refID:      primaryIssueID,
+		eventName:  "status_changed",
+		actor:      "developer",
+		occurredAt: secondEntry.occurredAt,
+		details:    map[string]any{"from": "in_progress", "to": "qa_review"},
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        thirdEntry.eventID,
-		activityID:     thirdEntry.activityID,
-		refID:          secondaryIssueID,
-		eventName:      "issue_updated",
-		actor:          "qa_reviewer",
-		occurredAt:     thirdEntry.occurredAt,
-		details:        map[string]any{"field": "title", "to": "Evidence review"},
-		journalEventID: thirdEntry.eventID,
+		activityID: thirdEntry.activityID,
+		refID:      secondaryIssueID,
+		eventName:  "issue_updated",
+		actor:      "qa_reviewer",
+		occurredAt: thirdEntry.occurredAt,
+		details:    map[string]any{"field": "title", "to": "Evidence review"},
 	})
 
 	tests := []struct {
@@ -223,14 +211,12 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 }
 
 type activitySeedEvent struct {
-	eventID        string
-	activityID     string
-	refID          string
-	eventName      string
-	actor          string
-	occurredAt     string
-	details        map[string]any
-	journalEventID string
+	activityID string
+	refID      string
+	eventName  string
+	actor      string
+	occurredAt string
+	details    map[string]any
 }
 
 type activitySeedIdentity struct {
@@ -289,14 +275,16 @@ func newActivitySeedIdentity(t *testing.T, workspace string, sequence int, offse
 
 	occurredAt := latestActivityJournalDate(t, workspace).Add(offset).UTC()
 
+	// The Event ID is the writers' next one when the entry is appended.
 	return activitySeedIdentity{
-		eventID:    fmt.Sprintf("EVT-%s-%06d", occurredAt.Format("20060102"), sequence),
 		activityID: fmt.Sprintf("ACT-%s-%06d", occurredAt.Format("20060102"), sequence),
 		occurredAt: occurredAt.Format(time.RFC3339),
 	}
 }
 
-func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent) {
+// appendActivityEvent appends one seeded entry under the Event ID the
+// writers allocate next, as they do, and returns that ID.
+func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent) string {
 	t.Helper()
 
 	occurredAt, err := time.Parse(time.RFC3339, seed.occurredAt)
@@ -305,7 +293,6 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 	}
 
 	event := journal.Event{
-		EventID:     seed.eventID,
 		EventSchema: journal.EventSchemaV1,
 		EventType:   "activity.seeded",
 		OccurredAt:  occurredAt,
@@ -325,7 +312,7 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 					"id": seed.activityID,
 				},
 				Values: map[string]any{
-					"journal_event_id": seed.journalEventID,
+					"journal_event_id": nil,
 					"ref_type":         "issue",
 					"ref_id":           seed.refID,
 					"event":            seed.eventName,
@@ -337,14 +324,22 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 		},
 	}
 
+	var eventID string
 	if err := journal.WithLock(workspace, journal.LockOwner{
 		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
-		_, err := journal.AppendEvent(lock, event)
+		prepared, err := journal.PrepareEvent(lock, event)
+		if err != nil {
+			return err
+		}
+		eventID = prepared.EventID
+		prepared.Effects[0].Values["journal_event_id"] = eventID
+		_, err = journal.AppendEvent(lock, prepared)
 		return err
 	}); err != nil {
 		t.Fatalf("AppendEvent() error = %v", err)
 	}
+	return eventID
 }
 
 func testActivityMigrationsDir(t *testing.T) string {

@@ -349,7 +349,7 @@ func scaleIssueLinkEvent(sequence, issueIndex int) Event {
 }
 
 func scaleEvent(sequence int, eventType string, aggregate Aggregate, effects []Effect) Event {
-	return Event{
+	event := Event{
 		EventID:     fmt.Sprintf("EVT-20260607-%06d", sequence),
 		EventSchema: EventSchemaV2,
 		EventType:   eventType,
@@ -364,6 +364,26 @@ func scaleEvent(sequence int, eventType string, aggregate Aggregate, effects []E
 		CommandName: "benchmark.replay",
 		Effects:     effects,
 	}
+	// Admission requires each family's whole Effect grammar, as its writer
+	// produces it: the Issue's own update, its activity and the retry result.
+	at := scaleEventTime(sequence).Format(time.RFC3339)
+	if eventType == "issue.ac-added" || eventType == "issue.label-added" {
+		event.Effects = append(event.Effects, Effect{Op: "update", Table: "issues", PK: map[string]any{"id": aggregate.ID}, Values: map[string]any{"updated_at": at}})
+	}
+	if strings.HasPrefix(eventType, "issue.") || strings.HasPrefix(eventType, "link.") {
+		issue := aggregate.ID
+		if eventType == "link.added" {
+			issue, _ = effects[0].PK["from_id"].(string)
+		}
+		event.Effects = append(event.Effects, Effect{Op: "activity", Table: "activity_log", PK: map[string]any{"id": fmt.Sprintf("ACT-scale-%06d", sequence)}, Values: map[string]any{
+			"journal_event_id": event.EventID, "ref_type": "issue", "ref_id": issue, "event": eventType, "details": nil, "actor": "service:actor-benchmark", "occurred_at": at}})
+	}
+	if eventType == "label.added" {
+		request := IdempotencyRequest{OperationScope: "benchmark.replay:project-scale", IdempotencyKey: fmt.Sprintf("scale-%06d", sequence), RequestDigest: "sha256:" + strings.Repeat("0", 64)}
+		event.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, RequestDigest: request.RequestDigest, Scope: request.OperationScope}
+		event.Effects = append(event.Effects, idempotencyResultEffect(request, event, aggregate.ID, `{"replayed":false}`))
+	}
+	return event
 }
 
 func scaleEventTime(sequence int) time.Time {

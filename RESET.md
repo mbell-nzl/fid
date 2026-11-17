@@ -108,6 +108,7 @@ criteria below.
 | **1.6l** | Merge-aware `done`, part 12: V5's verifier, `check:done-refusals`, through public commands | Assured | V5 (done 2026-11-15) |
 | **1.7** | Leak test for kernel words in human output; it replaces the copy of the kernel-word pattern in `internal/status`'s unit tests | Assured | V2; no test keeps its own copy of the pattern (done 2026-11-15) |
 | **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
+| **1.9** | Journal admission audit: every Event kind is admitted by one rule set for shape, exact ownership, cardinality and size, identical on live append, replay and import; SQLite case aliases fenced (Mark, 2026-11-16, after four near misses in 1.6) | Assured | A matrix of every Event kind and admission path is in the PR; forged and oversized Events are refused on every path and change nothing; the Later-list audit items from #73, 1.6b and 1.6d are resolved (done 2026-11-16) |
 | **2.1** | Review delivery and work selection, on 1.6d–1.6f's records: each round posted to the PR, rendered from fid's record; `next` hands out review work as kind `review`, to an actor that didn't build the task, after resume and rework and before unblocking and new work; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status`; the builder answers a finding or defers a minor one or a nit as discovered work; accepting discovered work; the rework cap (decisions record: 11 November 2026, item 11; 12 November 2026, item 13; 2026-11-15) | Assured | V5 still passes; that NEEDS YOU item; the rework cap and discovered work are covered |
 | **2.2b** | Lane floor; hard floors; `fid waive` | Assured | fid computes a task's floor from its changed paths; only a person lowers a lane, with `fid waive`, never below a hard floor, and an edit to the change makes the waiver stale |
 | **2.3** | The approval presentation in `fid status` and `fid show`: missing, current and stale approvals, and "no other-model review" for Assured work none of whose reviews came from another model family (`fid approve` itself landed in 1.6g; decisions record, 2026-11-15) | Assured | Text and JSON show missing, current and stale approvals and the flag, offline; V6 still passes |
@@ -133,6 +134,7 @@ On 2026-11-15 Mark added 1.5e after the test suites were found to leak temporary
 On 2026-11-15 the orchestrator split 1.6 into 1.6a-1.6l, all Assured, under Mark's delegation,
 bringing forward the recording parts of 2.1 and 2.3 that `done` needs.
 On 2026-11-15 Mark added 1.5f after a local CI run that crossed UTC midnight failed 47 tests.
+On 2026-11-16 Mark added 1.9 after review caught four admission gaps in 1.6.
 
 Weeks 4–6 run the trial; it may slip to week 7.
 
