@@ -1651,6 +1651,75 @@ after masking under short, long and non-ASCII parents, including HOME's
 config fallback, and check the allocator's fixed display width and cleanup.
 Linked-worktree health goldens also cover these explicit parents.
 
+## Decided 2026-11-17
+
+Mark made these decisions on 2026-11-17, after 1.9 (#93) merged. Items 1
+and 2 are also in their tasks' rows in `RESET.md`.
+
+1. **1.9b and 1.9c join the reset**, both Assured, from 1.9's audit (G10
+   and G11 in #93). 1.9b runs before 2.1, since the golden path relies on
+   `done` meaning done. 1.9c runs alongside phase 2. Their scope, moved
+   here from the Later list:
+   - **1.9b: admission owns `issues.status`.** The commands own each
+     fixed-state move, but admission doesn't: a forged `issue.transitioned`
+     (or Event-v1 history) can move a task to `done`, `in_review`,
+     `in_progress` or `cancelled` on every path, around `fid done`, the
+     hand-off, `fid start` and the person's cancel decision (probed in
+     #93), and `issue.updated` can change `status` too. Share
+     `internal/issues/fixed_states.go`'s rules with admission, decide what
+     Event-v1 history may still move, and rebuild the test fixtures that
+     move tasks with plain transitions (`cmd/fid/review_state_fixture_test.go`
+     and others).
+   - **1.9c: row identity and cardinality for the Issue families.**
+     Admission binds the `issues` row to the Event's Issue, by `id` alone,
+     but not `acceptance_criteria.issue_id`, `issue_labels.issue_id`,
+     `activity_log.ref_id` and `journal_event_id`, `labels.name` or the
+     `links` key, and a stage may repeat. Two gaps were probed in #93's
+     first fix round: an `issue.updated` can set `id` in its values and
+     rename its own Issue (`FID-a` became `FID-z` on commit), and a
+     `link.added` or `link.removed` may bump the revision of any Issue, not
+     only the link's two ends. Import still checks more than live append
+     and replay: `*_event_id` references, immutable columns on update (which
+     would refuse the rename), column names and types against the
+     archive's schema, and duplicate JSON keys. Move each into the shared
+     rules or record why it stays import-only.
+2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
+   epic's tasks, so a second loop can build a small feature while a long
+   one holds the main line, without disturbing it. Inside the scope the
+   usual order and rules apply; tasks outside it are passed over with a
+   reason, and with nothing to serve in the scope, `next` returns `none`
+   rather than work from another epic. An unscoped worker is unchanged,
+   and holds still keep two workers off one task. 2.4 settles the reason's
+   name and whether a scoped worker also takes review work outside its
+   epic. Epic priority stays the tool for filling gaps (a side epic ranked
+   just below the main line is served whenever the main line has nothing
+   ready); a label scope is on the Later list.
+3. **How 1.8 moves the reset into fid** (Mark's calls on the 1.8 playbook):
+   - Every task from 1.9b on runs fid's whole golden path: take, start,
+     check, hand-off, review record, approve, done.
+   - 1.8 imports the fid-repo rows still open: 1.9b, 1.9c, 2.1 to 2.6, 3.1
+     and 3.2. 3.3 (the kit's repo) and 3.4 (kauri) stay in `RESET.md`,
+     since `fid done` sees only this repo's PRs. The Later list goes in as
+     one epic, blocked by 3.2.
+   - Phase 2 is a prioritised epic with its real dependencies as links:
+     2.4 after 2.1, 2.5 after 2.4 and 2.6 after 2.5; 1.9b and 1.9c join it,
+     with 2.1 after 1.9b. Phase 3 runs in sequence, blocked by phase 2.
+   - While Codex both builds and reviews, Assured tasks show "no
+     other-model review" at approval. Mark accepts it as the standing
+     fallback, now visible in the record.
+   - Review input until 2.1: the reviewer writes its markdown review for
+     the PR comment and also `fid review record`'s JSON. The recorder keeps
+     the markdown in the round's provenance and checks that the two agree,
+     and a later round's prompt carries fid's IDs for the earlier findings.
+     From 2.1, fid posts the comment from its own record (decided 3
+     November 2026), so the reviewer writes the JSON only. A jig option
+     that emits fid's input belongs to the kit's work (3.3).
+   - fid runs from a binary pinned to a known `main` commit in
+     `~/.local/bin/fid`, upgraded at each epic close or when a merged fix
+     is needed (D11). Backups go to the private `fid-ledgers` repository
+     over HTTPS, after `gh auth setup-git`, so the orchestrator and later
+     the loop can back up too.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2368,7 +2437,8 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
-two-worktree test. Mark expects mostly one sequential loop.
+two-worktree test. Mark expects mostly one sequential loop. (Amended
+2026-11-17: a second loop can be scoped to one epic with `next --epic`, 2.4.)
 
 - Claims last about an hour. The loop sends a heartbeat during long agent
   sessions, since a builder may not touch fid for an hour. Tasks waiting on
@@ -2922,13 +2992,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   row wording in later display work; eligibility already counts actual task
   presence and correctly permits all-cancelled epics.
 
-- From Mark's question, 2026-11-15: jig's reviewer writes markdown, but
-  `fid review record` (1.6d) takes structured JSON. Something must convert
-  one to the other: the recorder (the orchestrator or the loop) or a jig
-  option that emits fid's input. Settle it with 1.8 (moving the reset's
-  work into fid), 2.1 (posting rounds) or 2.5 (the loop), whichever
-  records a real review first.
-
 - From #68 (1.5b1) and #80 (1.6d): investigate the intermittent write-lock
   refusal in `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. Twice a
   full `make test` failed at `check_ownership_test.go:117` with
@@ -3162,30 +3225,15 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `linguist-generated`, and add a "What to read" section to PR
   descriptions. Golden files were about 35–70% of the lines each 1.5a PR
   added.
-- From this PR (1.9), proposed row 1.9b: the `issues.status` column belongs
-  to the commands that own each move, in admission as in the commands. A
-  forged `issue.transitioned` (or Event-v1 history) can move a task to
-  `done`, `in_review`, `in_progress` or `cancelled` on every path, around
-  `fid done`, hand-off, `fid start` and the person's cancel decision (probe
-  in the 1.9 PR); `issue.updated` can change `status` too. Share
-  `internal/issues/fixed_states.go`'s rules with admission, decide what
-  Event-v1 history may still move, and rebuild the test fixtures that move
-  tasks with plain transitions (`cmd/fid/review_state_fixture_test.go` and
-  others).
-- From this PR (1.9), proposed row 1.9c: exact row identity and cardinality
-  for the Issue families. Admission binds the `issues` row to the Event's
-  Issue, but not `acceptance_criteria.issue_id`, `issue_labels.issue_id`,
-  `activity_log.ref_id` and `journal_event_id`, `labels.name` or the
-  `links` key, and a stage may repeat. Import still checks more than live
-  append and replay: `*_event_id` references, immutable columns on update,
-  column names and types against the archive's schema, and duplicate JSON
-  keys. Move each into the shared rules or record why it stays import-only.
-- From this PR (1.9): a hand-off of a very wide change (about 5,000 or more
+- From Mark, 2026-11-17: a label scope for `next` (`fid next --label
+  <label>`), like 2.4's `--epic` scope but across epics, for a feature
+  whose tasks span epics. Add it when a real feature needs it.
+- From #93 (1.9): a hand-off of a very wide change (about 5,000 or more
   long paths) is now refused before append, rather than stopping every
   later write. Lifting the limit means storing changed paths outside the
   Event (for example a digest and an Artifact). Mark's call when a real
   change hits it.
-- From this PR (1.9): a caller-supplied Event ID without a date (not
+- From #93 (1.9): a caller-supplied Event ID without a date (not
   `<prefix>-YYYYMMDD-<n>`) isn't checked for uniqueness on live append; no
   writer supplies one, and replay and export refuse a repeated ID. A dated
   one must take its date's next sequence (review round 2), so it can't
@@ -3193,13 +3241,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `issue.label-removed` have no writer (`fid issue label` writes
   `issue.label.added` and `issue.label.removed`); remove them in the 3.2
   baseline if nothing needs them.
-- From #93 (1.9), for proposed row 1.9c: two more Issue-table gaps, both
-  probed in review round 1's fix. Every `issues` Effect now keys one Issue
-  by id alone, and an Issue Event's keys its own, but an `issue.updated`
-  can still set `id` in its values and rename its own Issue (`FID-a`
-  became `FID-z` on commit); import's "immutable columns on update" rule
-  would refuse it. And a `link.added` or `link.removed` may bump the
-  revision of any Issue, not only the link's two ends.
 - From #93 (1.9): catch-up projects pending Events one transaction at a
   time. Rules that need only the journal (shape, size, repeated Event IDs,
   aggregate sequences) refuse in replay's pre-scan, before any Event
@@ -3215,22 +3256,29 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   harms allocation, because each must still take its date's next sequence.
   Tighten to the writers' exact form only if something comes to rely on it.
 
-**Resolved.** Later work resolved these, so 1.8 doesn't import them. Dates
-are merge dates, in New Zealand time.
+**Resolved.** Later work or decisions resolved these, so 1.8 doesn't
+import them. Dates are merge or decision dates, in New Zealand time.
+
+- From #93 (1.9): proposed rows 1.9b and 1.9c, with the two Issue-table
+  gaps #93's first fix round found for 1.9c. They became RESET rows 1.9b
+  and 1.9c on 2026-11-17; "Decided 2026-11-17", item 1, keeps their scope.
+- From Mark's question, 2026-11-15: how jig's markdown review becomes
+  `fid review record`'s JSON. Settled 2026-11-17 ("Decided 2026-11-17",
+  item 3).
 
 - From #80 (1.6d): audit older writers for Events at or above 1 MiB, which
   the journal's aggregate and sequence scanners can't read. Resolved by
-  1.9, this PR: every family's Event is checked against the line budget on
-  live append, replay and import, and replay's pre-scan also measures each
-  stored line.
+  #93 (1.9), 2026-11-17: every family's Event is checked against the line
+  budget on live append, replay and import, and replay's pre-scan also
+  measures each stored line.
 - From #78 (1.6b): the broader retained-table ownership audit, including
-  the Event-v1 early return in `validateCurrentEvent`. Resolved by 1.9,
-  this PR: Event-v1 may change only the V1 schema's tables, and each
-  Event-v2 family only those of its catalog grammar, on every path.
-  Ownership of `issues.status` remains (1.9b, above).
+  the Event-v1 early return in `validateCurrentEvent`. Resolved by #93
+  (1.9), 2026-11-17: Event-v1 may change only the V1 schema's tables, and
+  each Event-v2 family only those of its catalog grammar, on every path.
+  Ownership of `issues.status` is RESET 1.9b.
 - From #73 (1.5d1): retained-table ownership and column guards against
-  SQLite case aliases. Resolved by 1.9, this PR: admission refuses any
-  table or column name that isn't lowercase, on every path.
+  SQLite case aliases. Resolved by #93 (1.9), 2026-11-17: admission
+  refuses any table or column name that isn't lowercase, on every path.
 - From #76 (1.5e), #84 (1.6g) and #90 (1.6l): text goldens wrapped real
   temp paths before masking them, so their line breaks varied with TMPDIR's
   length. Resolved by #91 (golden-wrap), 2026-11-16: fixture paths have a
