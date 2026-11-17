@@ -1711,8 +1711,8 @@ and 2 are also in their tasks' rows in `RESET.md`.
      the PR comment and also `fid review record`'s JSON. The recorder keeps
      the markdown in the round's provenance and checks that the two agree,
      and a later round's prompt carries fid's IDs for the earlier findings.
-     From 2.1, fid posts the comment from its own record (decided 3
-     November 2026), so the reviewer writes the JSON only. A jig option
+     From 2.1, fid posts the comment from its own record (decided
+     2026-11-03), so the reviewer writes the JSON only. A jig option
      that emits fid's input belongs to the kit's work (3.3).
    - fid runs from a binary pinned to a known `main` commit in
      `~/.local/bin/fid`, upgraded at each epic close or when a merged fix
