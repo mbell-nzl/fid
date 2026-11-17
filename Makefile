@@ -8,6 +8,11 @@ fmt-check:
 	if [ -n "$$files" ]; then printf 'gofmt would reformat:\n%s\n' "$$files"; exit 1; fi; \
 	echo "gofmt: $(FMT_DIRS) formatted"
 
+# golangci-lint caches each result with the path of the worktree that first
+# linted it. Once that worktree is removed, lint elsewhere can't read the
+# file's nolint comment and reports the issue. A gitignored cache in each
+# worktree goes with it.
+lint: export GOLANGCI_LINT_CACHE = $(CURDIR)/.golangci-cache
 lint:
 	golangci-lint run ./...
 	golangci-lint run .github/scripts/race_packages.go
