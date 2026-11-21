@@ -368,7 +368,7 @@ func scaleWriterTemplates(tb testing.TB) scaleTemplates {
 }
 
 // The templates were captured from issue/label/link commands in a guarded
-// temporary repository. Scale only changes identifiers, clocks and observed
+// temporary repository. Scale changes identifiers, clocks, label/criterion text and observed
 // revisions; the owning commands supply each Effect's shape and order.
 func scaleTemplateEvent(tb testing.TB, templates scaleTemplates, revisions map[string]int, sequence int, family string, issueIndex, aggregateSequence int, label string) Event {
 	tb.Helper()
@@ -414,7 +414,11 @@ func scaleTemplateEvent(tb testing.TB, templates scaleTemplates, revisions map[s
 					revisions[id] = prior + 1
 				}
 			}
+		case "labels":
+			fx.Values["colour"] = fmt.Sprintf("#%06d", sequence)
+			fx.Values["description"] = "scale seed " + label
 		case "acceptance_criteria":
+			fx.Values["text"] = fmt.Sprintf("Acceptance criterion for scale task %04d", issueIndex)
 			fx.PK["id"] = fmt.Sprintf("AC-scale-%05d", issueIndex)
 		case "person_decisions":
 			fx.PK["id"] = fmt.Sprintf("PDN-%06x", sequence)
