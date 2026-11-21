@@ -3009,6 +3009,12 @@ such a task waits for Mark to accept it; until then the epic's wait for
   `issue.transitioned` end a hold as `task-completed`, though no command
   can now complete a task through it; only `task-cancelled` is reachable.
   Tidy in 1.9c.
+- From #97 (1.9b): Event-v1 history can still rename an Issue (set
+  `issues.id`) or delete one and insert another under its id, on replay.
+  Since #97's first fix round admission checks each state change against
+  the row it lands on, so neither can redirect a move, but the identity
+  change itself is admitted. 1.9c's "an Event can't rename its Issue"
+  should cover Event-v1 too, or record why it doesn't.
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
