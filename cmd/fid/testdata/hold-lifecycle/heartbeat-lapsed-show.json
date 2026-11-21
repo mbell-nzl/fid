@@ -10,6 +10,7 @@
     "checks_base": null,
     "children": [],
     "epic": null,
+    "floor": null,
     "handoff": null,
     "issue": {
       "lane": null,

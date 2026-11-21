@@ -94,6 +94,11 @@ func canonicalReviewFixtureWithClock(t *testing.T, lane string, linked bool, clo
 		f.workspace = gittest.AddWorktree(t, f.workspace)
 	}
 	f.clock = clock
+	if lane == "routine" {
+		trustedShowPolicy(t, f, func(raw string) string {
+			return strings.Replace(raw, "[lanes.routine]", "[lanes.routine]\npaths=['**/*.md']", 1)
+		})
+	}
 	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Review freshness", "--lane", lane, "--actor", "human:mark", "--idempotency-key", "create"), "issue.create")
 	task := created["issue"].(map[string]any)["id"].(string)
 	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")

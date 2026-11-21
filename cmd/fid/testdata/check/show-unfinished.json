@@ -154,6 +154,12 @@
         "total": 1
       }
     },
+    "floor": {
+      "lane": null,
+      "paths": [],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": null,
     "issue": {
       "lane": "standard",

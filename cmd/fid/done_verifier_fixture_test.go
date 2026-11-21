@@ -30,7 +30,7 @@ func newV5Journey(t *testing.T, lane string, testsChanged bool) *v5Journey {
 	t.Helper()
 	f := newJournalStatusFixture(t)
 	f.clock = time.Now // Match real-terminal approval children, even across midnight.
-	appendPolicy(t, f.workspace, "\n[review]\ntest_adequacy=['**/*_test.go']\n[checks.evidence]\nrun=['true']\ntimeout='1m'\nartifacts=['notes.md']\n[lanes.routine]\nchecks=['evidence']\n[lanes.standard]\nchecks=['evidence']\n[lanes.assured]\nchecks=['evidence']\n")
+	appendPolicy(t, f.workspace, "\n[review]\ntest_adequacy=['**/*_test.go']\n[checks.evidence]\nrun=['true']\ntimeout='1m'\nartifacts=['notes.md']\n[lanes.routine]\npaths=['**/*.md','**/*_test.go']\nchecks=['evidence']\n[lanes.standard]\nchecks=['evidence']\n[lanes.assured]\nchecks=['evidence']\n")
 	policyOrigin(t, f.workspace)
 	runGitForTest(t, f.workspace, "remote", "set-url", "origin", "https://github.com/mbell-nzl/fid.git")
 	j := &v5Journey{f: f, prNumber: 63, stub: newReconcileStub(t, f.workspace)}

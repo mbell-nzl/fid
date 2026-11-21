@@ -58,6 +58,7 @@ func (process Process) Validate() error {
 }
 
 type Start struct {
+	ChangedPathBytes  [][]byte   `json:"changed_path_bytes,omitempty"`
 	ID                string     `json:"id"`
 	TaskID            string     `json:"task_id"`
 	HoldID            string     `json:"hold_id"`
