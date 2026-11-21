@@ -79,6 +79,15 @@ func stateCreated(issue, kind, workflow, status string) Event {
 	return event
 }
 
+// stateRedirected is an Event-v1 move of subtask FID-s to done, after
+// Effects that may change which row FID-s names.
+func stateRedirected(redirect ...Effect) Event {
+	event := stateLegacy(stateTransition("FID-s", "done", stateAgent))
+	move := Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-s"}, Values: map[string]any{"status": "done", "updated_at": admissionStamp(60)}}
+	event.Effects = append(append(redirect, move), event.Effects[2])
+	return event
+}
+
 func stateLegacy(event Event) Event {
 	event.EventSchema = EventSchemaV1
 	event.Actor = Actor{Role: "developer"}
@@ -137,6 +146,24 @@ func TestForgedStateMovesRefusedOnEveryJournalPath(t *testing.T) {
 		event.CommandName, event.ActorV2 = "issue.ac.add", stateAgent
 		return event
 	}}
+	// Admission checks the row a state change lands on, so an earlier Effect
+	// can't make a subtask's id name a task by then.
+	cases["legacy rename redirects a subtask's move to a task"] = probe{"FID-s", "todo", "done", func() Event {
+		return stateRedirected(
+			Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-s"}, Values: map[string]any{"id": "FID-x"}},
+			Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"id": "FID-s"}})
+	}}
+	cases["legacy re-creation redirects a subtask's move to a task"] = probe{"FID-s", "todo", "done", func() Event {
+		task := stateCreated("FID-s", "task", "task-default", "todo").Effects[0]
+		return stateRedirected(Effect{Op: "delete", Table: "issues", PK: map[string]any{"id": "FID-s"}}, task)
+	}}
+	// The projector inserts the key and the values as one row.
+	cases["legacy creation keys its state"] = probe{"FID-c", "", "in_review", func() Event {
+		event := stateLegacy(stateCreated("FID-c", "task", "task-default", "in_review"))
+		delete(event.Effects[0].Values, "status")
+		event.Effects[0].PK["status"] = "in_review"
+		return event
+	}}
 	cases["link moves its end"] = probe{"FID-b", "todo", "done", func() Event {
 		event := admissionLinkAdded()
 		event.EventID = stateMoveEventID
@@ -156,7 +183,13 @@ func TestForgedStateMovesRefusedOnEveryJournalPath(t *testing.T) {
 // a person's cancellation and a subtask's plain transition.
 func TestOwnedStateMovesAcceptedOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
+	// The projector inserts the key and the values as one row, so a
+	// creation's kind may sit in its key.
+	keyedKind := stateLegacy(stateCreated("FID-u", "subtask", "subtask-default", "in_progress"))
+	keyedKind.Effects[0].PK["kind"], keyedKind.Effects[0].Values["parent_id"] = "subtask", "FID-b"
+	delete(keyedKind.Effects[0].Values, "kind")
 	for name, event := range map[string]Event{
+		"legacy kind in its key":  keyedKind,
 		"person cancels a task":   stateCancel("FID-a", "task"),
 		"person cancels an epic":  stateCancel("FID-e", "epic"),
 		"subtask moves":           stateTransition("FID-s", "in_progress", stateAgent),

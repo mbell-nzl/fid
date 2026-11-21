@@ -12,7 +12,7 @@ import (
 // Admission applies one rule set to every Event, whichever path brings it
 // into the ledger: a live append (checked before the write), replay
 // (catch-up and rebuild) and archive import. This file holds the rules that
-// need no projection state, and validateStateMoves, which reads only the
+// need no projection state, and the state-move rule, which reads only the
 // moved Issue's kind and state. The family validators in
 // validateCurrentEvent follow them, inside the projection transaction.
 
@@ -218,8 +218,13 @@ func validateFamilyShape(event Event) error {
 // of the command that owns the move (issuestate.MoveOwner): fid start, the
 // hand-off, a review round asking for changes, fid done or a person's
 // cancellation for a task or an epic, and fid issue transition for a
-// subtask's moves. A task or an epic is created in todo. It reads only the
-// moved Issue's kind and state, before the Event applies.
+// subtask's moves. A task or an epic is created in todo. Each Event changes
+// an Issue's state at most once.
+//
+// It runs before the family validators, against the projection as the Event
+// finds it. An earlier Effect of the same Event can change which row an id
+// names (Event-v1 history may rename, delete and insert Issues), so
+// applyEventEffects checks each Effect again, against the row it lands on.
 //
 // Event-v1 history may still create Issues and move subtasks, but it can't
 // move a task or an epic: none of the commands that own those moves ever
@@ -227,48 +232,71 @@ func validateFamilyShape(event Event) error {
 func validateStateMoves(tx *sql.Tx, event Event) error {
 	moved := map[string]bool{}
 	for _, effect := range event.Effects {
-		to, sets := effect.Values["status"]
-		if effect.Table != "issues" || !sets {
-			continue
-		}
-		move := StateMoveError{EventID: event.EventID, Family: event.EventType}
-		move.To, _ = to.(string)
-		switch effect.Op {
-		case "insert":
-			move.IssueID, _ = effect.PK["id"].(string)
-			move.Kind, _ = effect.Values["kind"].(string)
-		case "update":
-			id, keyed := effect.PK["id"].(string)
-			if len(effect.PK) != 1 || !keyed || moved[id] {
+		if _, sets := effect.Values["status"]; effect.Table == "issues" && effect.Op == "update" && sets {
+			id, _ := effect.PK["id"].(string)
+			if moved[id] {
 				return fmt.Errorf("project event %q: a state change keys one Issue by id alone, once per Event", event.EventID)
 			}
-			moved[id], move.IssueID = true, id
-			if err := tx.QueryRow(`SELECT kind, status FROM issues WHERE id=?`, id).Scan(&move.Kind, &move.From); err != nil {
-				return fmt.Errorf("project event %q: read the Issue whose state changes: %w", event.EventID, err)
-			}
-		default:
-			return fmt.Errorf("project event %q: an Issue's state changes only by insert or update", event.EventID)
+			moved[id] = true
 		}
-		owner, owned := issuestate.MoveOwner(move.Kind, move.From, move.To)
-		move.Owner = owner
-		switch {
-		case !event.IsV2() && issuestate.HasFixedStates(move.Kind) && move.From != "":
-			move.Legacy = true
-		case !owned:
-		case move.From == "":
-			// A creation needs only its first state here: Event-v2's grammar
-			// lets only issue.created insert an Issue, and Event-v1 history
-			// named its families freely.
-			continue
-		case owner != event.EventType:
-		case owner == issuestate.FamilyTransition && issuestate.HasFixedStates(move.Kind) && cancelDecisions(event) != 1:
-			move.Undecided = true
-		default:
-			continue
+		if err := validateStateMove(tx, event, effect); err != nil {
+			return err
 		}
-		return &move
 	}
 	return nil
+}
+
+// validateStateMove checks one Effect's change of an Issue's state against
+// the row it changes, as the projection stands: an insert's row merged from
+// its key and values, as the projector inserts it, or the row an update's
+// id names.
+func validateStateMove(tx *sql.Tx, event Event, effect Effect) error {
+	to, sets := effect.Values["status"]
+	if effect.Table != "issues" || (!sets && effect.Op != "insert") {
+		return nil
+	}
+	move := StateMoveError{EventID: event.EventID, Family: event.EventType}
+	switch effect.Op {
+	case "insert":
+		// Every insert is a creation, with the first state its row holds.
+		row, err := mergeEffectValues(effect.PK, effect.Values)
+		if err != nil {
+			return fmt.Errorf("project event %q: insert issues: %w", event.EventID, err)
+		}
+		to = row["status"]
+		move.IssueID, _ = row["id"].(string)
+		move.Kind, _ = row["kind"].(string)
+	case "update":
+		id, keyed := effect.PK["id"].(string)
+		if len(effect.PK) != 1 || !keyed {
+			return fmt.Errorf("project event %q: a state change keys one Issue by id alone, once per Event", event.EventID)
+		}
+		move.IssueID = id
+		if err := tx.QueryRow(`SELECT kind, status FROM issues WHERE id=?`, id).Scan(&move.Kind, &move.From); err != nil {
+			return fmt.Errorf("project event %q: read the Issue whose state changes: %w", event.EventID, err)
+		}
+	default:
+		return fmt.Errorf("project event %q: an Issue's state changes only by insert or update", event.EventID)
+	}
+	move.To, _ = to.(string)
+	owner, owned := issuestate.MoveOwner(move.Kind, move.From, move.To)
+	move.Owner = owner
+	switch {
+	case !event.IsV2() && issuestate.HasFixedStates(move.Kind) && move.From != "":
+		move.Legacy = true
+	case !owned:
+	case move.From == "":
+		// A creation needs only its first state here: Event-v2's grammar
+		// lets only issue.created insert an Issue, and Event-v1 history
+		// named its families freely.
+		return nil
+	case owner != event.EventType:
+	case owner == issuestate.FamilyTransition && issuestate.HasFixedStates(move.Kind) && cancelDecisions(event) != 1:
+		move.Undecided = true
+	default:
+		return nil
+	}
+	return &move
 }
 
 func cancelDecisions(event Event) int {
