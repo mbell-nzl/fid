@@ -1,16 +1,20 @@
 package journal
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 // Admission applies one rule set to every Event, whichever path brings it
 // into the ledger: a live append (checked before the write), replay
 // (catch-up and rebuild) and archive import. This file holds the rules that
-// need no projection state; the family validators in validateCurrentEvent
-// follow them, inside the projection transaction.
+// need no projection state, and validateStateMoves, which reads only the
+// moved Issue's kind and state. The family validators in
+// validateCurrentEvent follow them, inside the projection transaction.
 
 // journalLineBudget is the journal's line cap: the aggregate and sequence
 // scanners, and archive import, read lines shorter than this, newline
@@ -208,4 +212,97 @@ func validateFamilyShape(event Event) error {
 		return err
 	}
 	return nil
+}
+
+// validateStateMoves admits a change of an Issue's state only from the Event
+// of the command that owns the move (issuestate.MoveOwner): fid start, the
+// hand-off, a review round asking for changes, fid done or a person's
+// cancellation for a task or an epic, and fid issue transition for a
+// subtask's moves. A task or an epic is created in todo. It reads only the
+// moved Issue's kind and state, before the Event applies.
+//
+// Event-v1 history may still create Issues and move subtasks, but it can't
+// move a task or an epic: none of the commands that own those moves ever
+// wrote Event-v1.
+func validateStateMoves(tx *sql.Tx, event Event) error {
+	moved := map[string]bool{}
+	for _, effect := range event.Effects {
+		to, sets := effect.Values["status"]
+		if effect.Table != "issues" || !sets {
+			continue
+		}
+		move := StateMoveError{EventID: event.EventID, Family: event.EventType}
+		move.To, _ = to.(string)
+		switch effect.Op {
+		case "insert":
+			move.IssueID, _ = effect.PK["id"].(string)
+			move.Kind, _ = effect.Values["kind"].(string)
+		case "update":
+			id, keyed := effect.PK["id"].(string)
+			if len(effect.PK) != 1 || !keyed || moved[id] {
+				return fmt.Errorf("project event %q: a state change keys one Issue by id alone, once per Event", event.EventID)
+			}
+			moved[id], move.IssueID = true, id
+			if err := tx.QueryRow(`SELECT kind, status FROM issues WHERE id=?`, id).Scan(&move.Kind, &move.From); err != nil {
+				return fmt.Errorf("project event %q: read the Issue whose state changes: %w", event.EventID, err)
+			}
+		default:
+			return fmt.Errorf("project event %q: an Issue's state changes only by insert or update", event.EventID)
+		}
+		owner, owned := issuestate.MoveOwner(move.Kind, move.From, move.To)
+		move.Owner = owner
+		switch {
+		case !event.IsV2() && issuestate.HasFixedStates(move.Kind) && move.From != "":
+			move.Legacy = true
+		case !owned:
+		case move.From == "":
+			// A creation needs only its first state here: Event-v2's grammar
+			// lets only issue.created insert an Issue, and Event-v1 history
+			// named its families freely.
+			continue
+		case owner != event.EventType:
+		case owner == issuestate.FamilyTransition && issuestate.HasFixedStates(move.Kind) && cancelDecisions(event) != 1:
+			move.Undecided = true
+		default:
+			continue
+		}
+		return &move
+	}
+	return nil
+}
+
+func cancelDecisions(event Event) int {
+	n := 0
+	for _, effect := range event.Effects {
+		if effect.Table == "person_decisions" && effect.Op == "insert" && effect.Values["kind"] == "cancel" {
+			n++
+		}
+	}
+	return n
+}
+
+// StateMoveError refuses a change of an Issue's state that its Event's
+// family doesn't own. Owner is the family that owns the move, if any.
+type StateMoveError struct {
+	EventID, Family, IssueID, Kind, From, To, Owner string
+	// Legacy: Event-v1 moved a task or an epic. Undecided: a task's or an
+	// epic's cancellation came without exactly one person's cancel decision.
+	Legacy, Undecided bool
+}
+
+func (err *StateMoveError) Error() string {
+	move := fmt.Sprintf("move %s %s from %s to %s", err.Kind, err.IssueID, err.From, err.To)
+	if err.From == "" {
+		move = fmt.Sprintf("create %s %s in %s", err.Kind, err.IssueID, err.To)
+	}
+	why := "no command makes that move"
+	switch {
+	case err.Legacy:
+		why = "Event-v1 can't move a task or an epic"
+	case err.Undecided:
+		why = "it needs exactly one person's cancel decision"
+	case err.Owner != "":
+		why = "only " + issuestate.OwnerCommand(err.Owner) + " makes that move"
+	}
+	return fmt.Sprintf("Event %q (%s) can't %s: %s", err.EventID, err.Family, move, why)
 }

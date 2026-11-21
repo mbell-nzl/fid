@@ -367,7 +367,7 @@ func seedIssueListFixture(t *testing.T, workspace string) {
 			"task",
 			"FID-epic01",
 			"Started task",
-			"in_progress",
+			"todo",
 			"task-default",
 			0,
 			1,
@@ -380,7 +380,7 @@ func seedIssueListFixture(t *testing.T, workspace string) {
 			"task",
 			"FID-epic01",
 			"Completed task",
-			"done",
+			"todo",
 			"task-default",
 			2,
 			3,
@@ -392,7 +392,7 @@ func seedIssueListFixture(t *testing.T, workspace string) {
 			"FID-task04",
 			"task",
 			"Backlog task",
-			"done",
+			"todo",
 			"task-default",
 			1,
 			"developer",
@@ -436,8 +436,8 @@ func seedIssueListFixture(t *testing.T, workspace string) {
 		}
 	}
 	appendIssueJournalEvent(t, workspace, journal.Event{EventSchema: journal.EventSchemaV1, EventType: "issue.read-fixture", Actor: journal.Actor{Role: "developer"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}, Effects: effects})
-	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsDir(t)); err != nil {
-		t.Fatal(err)
+	for id, status := range map[string]string{"FID-task02": "in_progress", "FID-task03": "done", "FID-task04": "done"} {
+		seedIssueStatus(t, workspace, id, status)
 	}
 }
 

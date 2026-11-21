@@ -197,7 +197,7 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 		}
 
 		if issueIndex%5 == 0 {
-			if !appendEvent(scaleIssueTransitionEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
+			if !appendEvent(scaleIssueCancelEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
 				return
 			}
 			nextSequence++
@@ -298,30 +298,31 @@ func scaleIssueLabelEvent(sequence, issueIndex int, label string, aggregateSeque
 	)
 }
 
-func scaleIssueTransitionEvent(sequence, issueIndex, aggregateSequence int) Event {
-	occurredAt := scaleEventTime(sequence)
-
-	return scaleEvent(
+// scaleIssueCancelEvent is a person's cancellation of a task: the one move
+// of a task that issue.transitioned may make (RESET 1.9b).
+func scaleIssueCancelEvent(sequence, issueIndex, aggregateSequence int) Event {
+	at := scaleEventTime(sequence).Format(time.RFC3339)
+	issueID := scaleIssueID(issueIndex)
+	event := scaleEvent(
 		sequence,
 		"issue.transitioned",
-		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
+		Aggregate{ID: issueID, Type: "issue", Sequence: aggregateSequence},
 		[]Effect{{
-			Op:    "update",
-			Table: "issues",
-			PK:    map[string]any{"id": scaleIssueID(issueIndex)},
-			Values: map[string]any{
-				"status":     "in_progress",
-				"updated_at": occurredAt.Format(time.RFC3339),
-			},
-			Prior: map[string]any{
-				"status": "todo",
-			},
-			Preconditions: map[string]any{
-				"status":      "todo",
-				"workflow_id": "task-default",
-			},
+			Op:            "update",
+			Table:         "issues",
+			PK:            map[string]any{"id": issueID},
+			Values:        map[string]any{"status": "cancelled", "updated_at": at},
+			Prior:         map[string]any{"status": "todo"},
+			Preconditions: map[string]any{"status": "todo", "workflow_id": "task-default"},
+		}, {
+			Op:     "insert",
+			Table:  "person_decisions",
+			PK:     map[string]any{"id": fmt.Sprintf("PDN-%06x", issueIndex)},
+			Values: map[string]any{"kind": "cancel", "actor": "human:benchmark", "subject_type": "task", "subject_id": issueID, "reason": "Out of scope", "binding_id": issueID, "decided_at": at},
 		}},
 	)
+	event.ActorV2.ActorID, event.ActorV2.ActorType = "benchmark", "human"
+	return event
 }
 
 func scaleIssueLinkEvent(sequence, issueIndex int) Event {

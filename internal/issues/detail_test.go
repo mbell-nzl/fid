@@ -196,7 +196,7 @@ func seedIssueDetailFixture(t *testing.T, workspace string) {
 	appendIssueJournalEvent(t, workspace, journal.Event{EventSchema: journal.EventSchemaV1, EventType: "issue.detail-fixture", Actor: journal.Actor{Role: "developer"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}, Effects: []journal.Effect{
 		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-e1f2g3"}, Values: map[string]any{"kind": "epic", "title": "Core persistence layer", "status": "todo", "workflow_id": "epic-default", "owner_role": "developer", "created_at": "2026-05-25T08:00:00Z", "updated_at": "2026-05-25T08:00:00Z"}},
 		{Op: "insert", Table: "epic_metadata", PK: map[string]any{"issue_id": "FID-e1f2g3"}, Values: map[string]any{"scheduling": "sequential"}},
-		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-a1b2c3"}, Values: map[string]any{"kind": "task", "parent_id": "FID-e1f2g3", "title": "Implement journal append with flush", "workflow_id": "task-default", "status": "in_progress", "priority": 1, "sequence": 3, "owner_role": "developer", "created_at": "2026-05-25T09:00:00Z", "updated_at": "2026-05-27T10:20:00Z"}},
+		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-a1b2c3"}, Values: map[string]any{"kind": "task", "parent_id": "FID-e1f2g3", "title": "Implement journal append with flush", "workflow_id": "task-default", "status": "todo", "priority": 1, "sequence": 3, "owner_role": "developer", "created_at": "2026-05-25T09:00:00Z", "updated_at": "2026-05-27T10:20:00Z"}},
 		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-7c3e9f"}, Values: map[string]any{"kind": "task", "title": "Schema migration runner", "status": "todo", "workflow_id": "task-default", "owner_role": "developer", "created_at": "2026-05-25T09:05:00Z", "updated_at": "2026-05-25T09:05:00Z"}},
 		{Op: "insert", Table: "labels", PK: map[string]any{"name": "core"}, Values: map[string]any{}},
 		{Op: "insert", Table: "labels", PK: map[string]any{"name": "journal"}, Values: map[string]any{}},
@@ -208,9 +208,7 @@ func seedIssueDetailFixture(t *testing.T, workspace string) {
 		{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": "FID-a1b2c3", "relation": "blocks", "to_type": "issue", "to_id": "FID-7c3e9f"}, Values: map[string]any{"created_at": "2026-05-27T10:18:00Z"}},
 		{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": "FID-a1b2c3", "relation": "relates_to", "to_type": "issue", "to_id": "FID-7c3e9f"}, Values: map[string]any{"created_at": "2026-05-27T10:19:00Z"}},
 	}})
-	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsDir(t)); err != nil {
-		t.Fatal(err)
-	}
+	seedIssueStatus(t, workspace, "FID-a1b2c3", "in_progress")
 }
 
 // Kernel-only detail assertions leave with Concerns in 1.5c2.

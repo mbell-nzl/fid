@@ -27,6 +27,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if err := ValidateEventShape(event); err != nil {
 		return err
 	}
+	if err := validateStateMoves(tx, event); err != nil {
+		return err
+	}
 	// These tables have no legacy writer. The shape rules already refuse case
 	// aliases, and Event-v1 Effects outside the Issue tables; these guards
 	// stay as defence in depth before the Event-v1 compatibility return.

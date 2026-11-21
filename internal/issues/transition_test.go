@@ -537,7 +537,7 @@ func assertRetiredTaskStates(t *testing.T, states []string) {
 		t.Fatal(err)
 	}
 	seedTransitionAcceptanceCriteria(t, workspace, created.ID, acceptanceCriterionSeed{ID: "AC-retired", Ordinal: 1, Text: "Existing criterion"})
-	seedTransitionStatusUpdate(t, workspace, created.ID, "task-default", "todo", "in_progress")
+	seedIssueStatus(t, workspace, created.ID, "in_progress")
 	before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
 	if err != nil {
 		t.Fatal(err)
@@ -572,14 +572,10 @@ func TestTransitionRejectsRetiredEpicStatesWithOpenOrFinishedChildren(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	seedTransitionStatusUpdate(t, workspace, epic.ID, "epic-default", "todo", "in_progress")
+	seedIssueStatus(t, workspace, epic.ID, "in_progress")
 	for _, childState := range []string{"todo", "done", "cancelled"} {
 		if childState != "todo" {
-			from := "todo"
-			if childState == "cancelled" {
-				from = "done"
-			}
-			seedTransitionStatusUpdate(t, workspace, child.ID, "task-default", from, childState)
+			seedIssueStatus(t, workspace, child.ID, childState)
 		}
 		before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: epic.ID})
 		if err != nil {
@@ -743,39 +739,6 @@ func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, c
 			FIDVersion: fidVersion,
 		},
 		Effects: effects,
-	})
-}
-
-func seedTransitionStatusUpdate(t *testing.T, workspace, issueID, workflowID, fromStatus, toStatus string) {
-	t.Helper()
-
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "issue.seed_status_changed",
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{{
-			Op:    "update",
-			Table: "issues",
-			PK:    map[string]any{"id": issueID},
-			Values: map[string]any{
-				"status":     toStatus,
-				"updated_at": "2026-06-13T10:10:00Z",
-			},
-			Prior: map[string]any{
-				"status": fromStatus,
-			},
-			Preconditions: map[string]any{
-				"status":      fromStatus,
-				"workflow_id": workflowID,
-			},
-		}},
 	})
 }
 
