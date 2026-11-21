@@ -2979,6 +2979,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+1.8 imported this list into fid on 2026-11-21, as 43 tasks in the epic
+"Later list (after the trial)", which waits for 3.2. Items marked
+"(planned: 2.2b)" or "(planned: 3.2)" went onto that task instead, as
+acceptance criteria, except tidying `go.mod`, which 3.2's row already
+covers.
+
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
   mid-path). Decide in later display work whether paths should be kept whole;
@@ -3018,8 +3024,6 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`;
   withdraw them in separately scoped config/archive work.
 
-- Task 1.8 brings this later list into fid along with the remaining reset
-  tasks (decided 7 November 2026).
 - Build the PR's "Left over" section from `discovered_from` links, the same
   way the review comment is built from fid's record; not needed for the trial.
 - From #42 (1.1d4): a worktree at `<common>/fid`
@@ -3272,6 +3276,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
+- Task 1.8 brings this later list into fid along with the remaining reset
+  tasks (decided 2026-11-07). Done 2026-11-21; see the note at the top of
+  the list.
 - From #93 (1.9): proposed rows 1.9b and 1.9c, with the two Issue-table
   gaps #93's first fix round found for 1.9c. They became RESET rows 1.9b
   and 1.9c on 2026-11-17; "Decided 2026-11-17", item 1, keeps their scope.
