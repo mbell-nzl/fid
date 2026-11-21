@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/show"
 )
 
 func laneFloorFixture(t *testing.T, lane string) *statusFixture {
@@ -69,8 +70,29 @@ func TestLaneFloorChecksAndAtomicHandoff(t *testing.T) {
 			}
 			// Check executes the effective lane without editing the task.
 			detail := f.run("--json", "show", "FID-9f13aa")
-			if !strings.Contains(detail.stdout, `"lane":"`+tc.lane+`"`) {
-				t.Fatalf("check changed task lane: %s", detail.stdout)
+			var beforeHandoff struct {
+				Result struct {
+					Issue struct {
+						Lane string `json:"lane"`
+					} `json:"issue"`
+					Checks []show.Check `json:"checks"`
+				} `json:"result"`
+			}
+			if detail.err != nil {
+				t.Fatalf("show before hand-off: %v: %s", detail.err, detail.stderr)
+			}
+			if err := json.Unmarshal([]byte(detail.stdout), &beforeHandoff); err != nil {
+				t.Fatal(err)
+			}
+			required := []string{}
+			for _, check := range beforeHandoff.Result.Checks {
+				if check.Required != nil && *check.Required {
+					required = append(required, check.Name)
+				}
+			}
+			slices.Sort(required)
+			if beforeHandoff.Result.Issue.Lane != tc.lane || !slices.Equal(required, tc.names) {
+				t.Fatalf("show before hand-off: lane=%s required=%v, want %s and %v", beforeHandoff.Result.Issue.Lane, required, tc.lane, tc.names)
 			}
 			lifecycleResult(t, f.run(append([]string{"--json"}, handoffArgs("floor-handoff")...)...), "task.handoff")
 			var record handoffrecord.Record
@@ -152,6 +174,7 @@ func TestLaneFloorSelectsConfiguredHigherLaneEvenWhenPlannedLaneIsUnset(t *testi
 			if empty && len(names) != 0 || !empty && !slices.Equal(names, []string{"always", "go"}) {
 				t.Fatalf("checks=%v", names)
 			}
+			lifecycleResult(t, f.run(append([]string{"--json"}, handoffArgs("configured-floor-handoff")...)...), "task.handoff")
 		})
 	}
 }

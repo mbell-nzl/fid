@@ -34,3 +34,33 @@ func TestHistoricalHandoffDoesNotAcquireLaterFloorSemantics(t *testing.T) {
 		t.Fatalf("later floor changed historical gates: %+v", got)
 	}
 }
+
+func TestDoneRefusesAnUncomputablePolicyFloor(t *testing.T) {
+	t.Parallel()
+	for _, source := range []string{"hard paths", "assured paths", "routine paths", "check definition"} {
+		t.Run(source, func(t *testing.T) {
+			t.Parallel()
+			s := completeSnapshot("assured", false)
+			switch source {
+			case "hard paths":
+				s.Policy.HardAssured = []string{"***"}
+			case "assured paths", "routine paths":
+				name := "assured"
+				if source == "routine paths" {
+					name = "routine"
+				}
+				lane := s.Policy.Lanes[name]
+				lane.Paths = []string{"***"}
+				s.Policy.Lanes[name] = lane
+			case "check definition":
+				check := s.Policy.Checks["test"]
+				check.DefinedBy = []string{"***"}
+				s.Policy.Checks["test"] = check
+			}
+			got := Evaluate(s)
+			if got.Status != Refused || got.Gates[PolicyGate].Reason != PolicyMismatch {
+				t.Fatalf("uncomputable floor accepted: %+v", got)
+			}
+		})
+	}
+}

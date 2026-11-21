@@ -12,7 +12,7 @@ import (
 func TestHandoffFloorAdmissionEveryPath(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"replay", "import"} {
-		for _, name := range []string{"raised", "below floor", "wrong floor", "missing floor", "wrong hard paths", "unnecessary raise", "lowering", "missing raise attribution", "missing lane update", "inconsistent path bytes", "invalid UTF-8"} {
+		for _, name := range []string{"raised", "below floor", "wrong floor", "missing floor", "wrong hard paths", "unnecessary raise", "lowering", "missing raise attribution", "wrong raise attribution", "attribution without raise", "missing attribution and lane update", "missing lane update", "inconsistent path bytes", "invalid UTF-8"} {
 			t.Run(mode+"/"+name, func(t *testing.T) {
 				t.Parallel()
 				v, e := handoffArchiveFixtureWithLane(t, "standard")
@@ -67,6 +67,20 @@ func TestHandoffFloorAdmissionEveryPath(t *testing.T) {
 					r.Floor = &empty
 				case "missing raise attribution":
 					r.RaisedFrom = nil
+				case "wrong raise attribution":
+					previous := "routine"
+					r.RaisedFrom = &previous
+				case "attribution without raise":
+					r.ChangedPaths = []string{"main.go"}
+					unchanged, err := policy.ComputeFloor(p, r.ChangedPaths)
+					if err != nil {
+						t.Fatal(err)
+					}
+					r.Floor, r.Lane = &unchanged, "standard"
+					e.Effects[1].Values["lane"] = "standard"
+				case "missing attribution and lane update":
+					r.RaisedFrom = nil
+					delete(e.Effects[1].Values, "lane")
 				case "missing lane update":
 					delete(e.Effects[1].Values, "lane")
 				case "inconsistent path bytes":

@@ -7,6 +7,41 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 )
 
+func TestFloorRaiseUsesHigherLaneIncludingUnplannedTasks(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		floor, planned, want string
+	}{
+		{"", "", ""},
+		{"", "routine", "routine"},
+		{"", "standard", "standard"},
+		{"", "assured", "assured"},
+		{"routine", "", "routine"},
+		{"standard", "", "standard"},
+		{"assured", "", "assured"},
+		{"routine", "routine", "routine"},
+		{"standard", "routine", "standard"},
+		{"assured", "routine", "assured"},
+		{"routine", "standard", "standard"},
+		{"standard", "standard", "standard"},
+		{"assured", "standard", "assured"},
+		{"routine", "assured", "assured"},
+		{"standard", "assured", "assured"},
+		{"assured", "assured", "assured"},
+	} {
+		t.Run(tc.floor+"/"+tc.planned, func(t *testing.T) {
+			t.Parallel()
+			floor := Floor{}
+			if tc.floor != "" {
+				floor.Lane = &tc.floor
+			}
+			if got := floor.Raise(tc.planned); got != tc.want {
+				t.Fatalf("raise %q with floor %q = %q, want %q", tc.planned, tc.floor, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestFloorUsesHighestChangedPathAndOnlyBuiltInHardFloors(t *testing.T) {
 	t.Parallel()
 	file, err := config.DecodeProject([]byte(`[lanes.routine]
