@@ -33,7 +33,7 @@ func TestLaneFloorPublicJourney(t *testing.T) {
 	closureRun(t, root, "git", "remote", "add", "origin", root)
 	closureRun(t, root, "git", "update-ref", "refs/remotes/origin/trunk", "HEAD")
 	closureRun(t, root, "git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
-	task := p21PathString(t, call("issue", "create", "--kind", "task", "--title", "Lane floor journey", "--lane", "routine", "--actor", "human:mark"), "result", "issue", "id")
+	task := p21PathString(t, call("issue", "create", "--kind", "task", "--title", "Lane floor journey", "--lane", "routine", "--actor", "human:mark", "--idempotency-key", "create"), "result", "issue", "id")
 	hold := p21PathString(t, call("takeover", task, "--actor", "human:mark", "--reason", "Build the journey"), "result", "hold_id")
 	call("start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "start")
 	if err := os.MkdirAll(filepath.Join(root, "secure"), 0o700); err != nil {
