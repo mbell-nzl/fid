@@ -2985,6 +2985,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 acceptance criteria, except tidying `go.mod`, which 3.2's row already
 covers.
 
+New items (Mark, 2026-11-21): until 3.2, an item goes in this list
+first, as before, and the orchestrator also files it as a task in fid's
+Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
+such a task waits for Mark to accept it; until then the epic's wait for
+3.2 holds it back.
+
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
   mid-path). Decide in later display work whether paths should be kept whole;
@@ -3272,6 +3278,10 @@ covers.
   run, would usually catch it, and CI passes `-count=1`. The fix,
   `-count=1` in `ci_tests.py`'s local mode, changes a check's definition,
   so it's Assured.
+- From 1.8 (#96): two display problems in the friction log. `fid status`
+  lists tasks whose epic is blocked under READY, and `fid next --explain`
+  lists every open task, with blocked tasks that others wait on above the
+  ready ones. Fix them in later display work.
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
