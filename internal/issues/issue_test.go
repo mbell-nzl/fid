@@ -1100,6 +1100,24 @@ func openIssueDB(t *testing.T, dbPath string) *sql.DB {
 	return conn
 }
 
+// seedIssueStatus puts a task or an epic in a state. Only fid start, the
+// hand-off, a review round asking for changes, fid done and a person's
+// cancellation move one, and admission refuses any other Event that tries,
+// creation outside todo included (RESET 1.9b). Those commands import this
+// package, so the state is set in the projection, as the command tests'
+// fixtures do.
+func seedIssueStatus(t *testing.T, workspace, issueID, status string) {
+	t.Helper()
+	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsDir(t)); err != nil {
+		t.Fatal(err)
+	}
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	defer closeIssueTestDB(t, conn)
+	if _, err := conn.Exec(`UPDATE issues SET status = ? WHERE id = ?`, status, issueID); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func closeIssueTestDB(t *testing.T, conn interface{ Close() error }) {
 	t.Helper()
 

@@ -301,14 +301,21 @@ func (w admissionWorkspace) admit(t *testing.T, mode string, event Event) error 
 		}
 		return ProjectEvent(conn, ProjectionInput{Event: event, EventHash: hash, File: filepath.Base(w.file), Line: 4, Offset: int64(len(w.prefix)) + 1})
 	}
+	if err := os.WriteFile(w.file, w.journalWith(t, event), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return w.replayStored(t, mode)
+}
+
+// journalWith is the journal the replay paths read: the prefix, then
+// event's line.
+func (w admissionWorkspace) journalWith(t *testing.T, event Event) []byte {
+	t.Helper()
 	line, err := MarshalCanonicalJSON(event)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(w.file, append(append(append([]byte{}, w.prefix...), line...), '\n'), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return w.replayStored(t, mode)
+	return append(append(append([]byte{}, w.prefix...), line...), '\n')
 }
 
 // replayStored reads the journal as it stands through one replay path.
@@ -356,10 +363,17 @@ func assertForgedRefusedEveryJournalPath(t *testing.T, prefix []Event, forged Ev
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
-			if mode == "commit" || mode == "dry-run" || mode == "project" {
-				if !reflect.DeepEqual(journal, w.prefix) {
-					t.Fatalf("%s refusal changed the journal", mode)
-				}
+			// A live path leaves the prefix; a replay path leaves the journal
+			// exactly as it was supplied.
+			live := mode == "commit" || mode == "dry-run" || mode == "project"
+			want := w.journalWith(t, forged)
+			if live {
+				want = w.prefix
+			}
+			if !bytes.Equal(journal, want) {
+				t.Fatalf("%s refusal changed the journal", mode)
+			}
+			if live {
 				// The ledger still takes a valid write after the refusal.
 				if err := w.admit(t, "commit", admissionLaneRaise()); err != nil {
 					t.Fatalf("valid write after %s refusal: %v", mode, err)

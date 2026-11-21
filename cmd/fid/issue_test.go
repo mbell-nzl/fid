@@ -722,6 +722,10 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		workspace := clonePristineWorkspace(t)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--actor", "agent:developer")
+		parentID := parseCreatedIssueID(t, stderr)
+		// A subtask's plain transition, so the stale precondition is what
+		// stops replay: no Event-v1 may move a task (RESET 1.9b).
+		_, stderr = runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", parentID, "--title", "Catch-up conflict", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
 
 		stdout := mustGetIssueJSON(t, workspace, issueID)
