@@ -3255,6 +3255,19 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `EVT-20261110-000004`, or the next ID of another date. None of them
   harms allocation, because each must still take its date's next sequence.
   Tighten to the writers' exact form only if something comes to rely on it.
+- From 1.8's policy PR: fid's `.fid.toml` makes `migrations/**`,
+  `internal/journal/**`, `go.mod` and `go.sum` Assured, as in the example
+  Mark approved on 2026-11-11. RESET.md's by-hand rule also makes the trust
+  boundary and releases Assured, and no path list names them yet. Lane
+  paths do nothing until 2.2b computes floors. Mark decides the list at
+  2.2b's start (D1: Mark owns lane policy) (planned: 2.2b).
+- From 1.8's policy PR: local `make test` runs `go test` without
+  `-count=1`. `internal/export`'s tests build fid in a subprocess, which
+  Go's test cache doesn't track, so under `fid check` a cached pass of
+  that package can hide a broken binary. `cmd/fid`'s tests, in the same
+  run, would usually catch it, and CI passes `-count=1`. The fix,
+  `-count=1` in `ci_tests.py`'s local mode, changes a check's definition,
+  so it's Assured.
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
