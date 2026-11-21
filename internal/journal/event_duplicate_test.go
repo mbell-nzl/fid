@@ -24,7 +24,7 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 			t.Parallel()
 			var decoded Event
 			if err := json.Unmarshal(malformed, &decoded); err == nil {
-				t.Fatal("malformed duplicate keys decoded")
+				t.Error("malformed duplicate keys decoded")
 			}
 			for _, mode := range []string{"replay", "catch-up", "freshen", "rebuild"} {
 				t.Run(mode, func(t *testing.T) {
