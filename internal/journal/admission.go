@@ -2,6 +2,7 @@ package journal
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -222,9 +223,10 @@ func validateFamilyShape(event Event) error {
 // an Issue's state at most once.
 //
 // It runs before the family validators, against the projection as the Event
-// finds it. An earlier Effect of the same Event can change which row an id
-// names (Event-v1 history may rename, delete and insert Issues), so
-// applyEventEffects checks each Effect again, against the row it lands on.
+// finds it. An earlier Effect of the same Event can create the Issue a later
+// one moves, or change which row an id names (Event-v1 history may rename,
+// delete and insert Issues), so applyEventEffects checks each Effect again,
+// against the row it lands on.
 //
 // Event-v1 history may still create Issues and move subtasks, but it can't
 // move a task or an epic: none of the commands that own those moves ever
@@ -272,7 +274,14 @@ func validateStateMove(tx *sql.Tx, event Event, effect Effect) error {
 			return fmt.Errorf("project event %q: a state change keys one Issue by id alone, once per Event", event.EventID)
 		}
 		move.IssueID = id
-		if err := tx.QueryRow(`SELECT kind, status FROM issues WHERE id=?`, id).Scan(&move.Kind, &move.From); err != nil {
+		err := tx.QueryRow(`SELECT kind, status FROM issues WHERE id=?`, id).Scan(&move.Kind, &move.From)
+		if errors.Is(err, sql.ErrNoRows) {
+			// An earlier Effect of this Event may create the Issue: the move
+			// is judged when it lands. An Issue that is never there changes
+			// no row, and the write refuses it (applyUpdate).
+			return nil
+		}
+		if err != nil {
 			return fmt.Errorf("project event %q: read the Issue whose state changes: %w", event.EventID, err)
 		}
 	default:

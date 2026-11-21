@@ -93,6 +93,16 @@ func stateRedirected(redirect ...Effect) Event {
 	return event
 }
 
+// stateCreatedAndMoved is an Event-v1 transition that first creates its
+// Issue in todo.
+func stateCreatedAndMoved(issue, kind, to string) Event {
+	event := stateLegacy(stateTransition(issue, to, stateAgent))
+	created := stateCreated(issue, kind, kind+"-default", "todo").Effects[0]
+	move := Effect{Op: "update", Table: "issues", PK: map[string]any{"id": issue}, Values: map[string]any{"status": to, "updated_at": admissionStamp(60)}}
+	event.Effects = []Effect{created, move, event.Effects[2]}
+	return event
+}
+
 func stateLegacy(event Event) Event {
 	event.EventSchema = EventSchemaV1
 	event.Actor = Actor{Role: "developer"}
@@ -167,6 +177,10 @@ func TestForgedStateMovesRefusedOnEveryJournalPath(t *testing.T) {
 		task := stateCreated("FID-s", "task", "task-default", "todo").Effects[0]
 		return stateRedirected(Effect{Op: "delete", Table: "issues", PK: map[string]any{"id": "FID-s"}}, task)
 	}}
+	// A move of an Issue its own Event creates is judged when it lands.
+	cases["legacy task created and moved"] = probe{"FID-c", "todo", "done", func() Event {
+		return stateCreatedAndMoved("FID-c", "task", "done")
+	}}
 	// The projector inserts the key and the values as one row.
 	cases["legacy creation keys its state"] = probe{"FID-c", "", "in_review", func() Event {
 		event := stateLegacy(stateCreated("FID-c", "task", "task-default", "in_review"))
@@ -200,6 +214,7 @@ func TestOwnedStateMovesAcceptedOnEveryJournalPath(t *testing.T) {
 	delete(keyedKind.Effects[0].Values, "kind")
 	for name, event := range map[string]Event{
 		"legacy kind in its key":  keyedKind,
+		"legacy create and move":  stateCreatedAndMoved("FID-n", "subtask", "in_progress"),
 		"person cancels a task":   stateCancel("FID-a", "task"),
 		"person cancels an epic":  stateCancel("FID-e", "epic"),
 		"subtask moves":           stateTransition("FID-s", "in_progress", stateAgent),
@@ -254,6 +269,18 @@ func TestStateChangeKeysOneIssueByIDOncePerEvent(t *testing.T) {
 			})
 		})
 	}
+}
+
+// The state-move rule judges an Issue that its own Event creates when the
+// move lands. An Issue that is never there changes no row: the write refuses
+// it, as a precondition conflict when the Effect has preconditions.
+func TestStateChangeOfAMissingIssueIsAPreconditionConflict(t *testing.T) {
+	t.Parallel()
+	forged := stateLegacy(stateTransition("FID-z", "done", stateAgent))
+	assertStateWriteRefused(t, forged, "a PreconditionConflictError for FID-z", func(err error) bool {
+		var conflict *PreconditionConflictError
+		return errors.As(err, &conflict) && conflict.PK["id"] == "FID-z"
+	})
 }
 
 // assertStateMoveRefused offers forged on every journal path: each refuses it
