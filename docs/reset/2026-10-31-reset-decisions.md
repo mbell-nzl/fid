@@ -1672,10 +1672,12 @@ and 2 are also in their tasks' rows in `RESET.md`.
      and others).
      - 2026-11-21, settled in 1.9b: Event-v1 history can't move a task or
        an epic. It may still create one, in todo only, and create and move
-       subtasks. None of the commands that own a fixed move ever wrote
-       Event-v1, import already refuses it, and no ledger holds any (Mark's
-       live ledger holds only Event-v2). On every path, whatever its schema,
-       a task or an epic is created only in todo.
+       subtasks, in one Event too. As on Event-v2, a subtask's move comes
+       only from the family that owns it, `issue.transitioned`. None of the
+       commands that own a fixed move ever wrote Event-v1, import already
+       refuses it, and no ledger holds any (Mark's live ledger holds only
+       Event-v2). On every path, whatever its schema, a task or an epic is
+       created only in todo.
    - **1.9c: row identity and cardinality for the Issue families.**
      Admission binds the `issues` row to the Event's Issue, by `id` alone,
      but not `acceptance_criteria.issue_id`, `issue_labels.issue_id`,
@@ -3015,6 +3017,13 @@ such a task waits for Mark to accept it; until then the epic's wait for
   the row it lands on, so neither can redirect a move, but the identity
   change itself is admitted. 1.9c's "an Event can't rename its Issue"
   should cover Event-v1 too, or record why it doesn't.
+- From #97 (1.9b): a refused subtask move names the wrong owner. When a
+  family other than `issue.transitioned` moves a subtask (an
+  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
+  that creates and moves it), `StateMoveError` says "only a person's
+  cancellation makes that move". That is `issue.transitioned`'s owner for
+  a task or an epic; a subtask's moves are `fid issue transition`'s, by
+  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
