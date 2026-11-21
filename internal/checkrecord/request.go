@@ -3,17 +3,18 @@ package checkrecord
 // Response is retained under the retry key from the first start, or from an
 // empty request's completion. Unstarted names never get results.
 type Response struct {
-	TaskID     string    `json:"task_id"`
-	Lane       string    `json:"lane,omitempty"`
-	Names      []string  `json:"names"`
-	CheckIDs   []string  `json:"check_ids"`
-	Checks     []Summary `json:"checks"`
-	NotStarted []string  `json:"not_started"`
-	Complete   bool      `json:"complete"`
-	Replayed   bool      `json:"replayed"`
-	Failure    *Refusal  `json:"failure"`
-	EventID    string    `json:"event_id"`
-	OccurredAt string    `json:"occurred_at"`
+	ChangedPathBytes [][]byte  `json:"changed_path_bytes,omitempty"`
+	TaskID           string    `json:"task_id"`
+	Lane             string    `json:"lane,omitempty"`
+	Names            []string  `json:"names"`
+	CheckIDs         []string  `json:"check_ids"`
+	Checks           []Summary `json:"checks"`
+	NotStarted       []string  `json:"not_started"`
+	Complete         bool      `json:"complete"`
+	Replayed         bool      `json:"replayed"`
+	Failure          *Refusal  `json:"failure"`
+	EventID          string    `json:"event_id"`
+	OccurredAt       string    `json:"occurred_at"`
 }
 
 type Summary struct {

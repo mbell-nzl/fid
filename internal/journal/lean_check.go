@@ -199,6 +199,13 @@ func validateCheckStart(tx *sql.Tx, event Event) error {
 	if err := json.Unmarshal([]byte(policyJSON), &effective); err != nil {
 		return err
 	}
+	if start.ChangedPathBytes != nil {
+		floor, err := policy.ComputeFloor(effective, policy.PathsFromBytes(start.ChangedPathBytes))
+		if err != nil {
+			return err
+		}
+		lane.String = floor.Raise(lane.String)
+	}
 	check, defined := effective.Checks[start.Name]
 	if !defined || !effective.Lanes[lane.String].ChecksSet || !reflect.DeepEqual(start.Definition.Run, check.Run) || start.Definition.Timeout != check.Timeout || !slices.Equal(start.Definition.Artifacts, check.Artifacts) || !slices.Equal(start.Definition.Environment, checkrecord.EnvironmentNames()) {
 		return fmt.Errorf("check definition differs from trusted policy")

@@ -12,7 +12,7 @@ import (
 )
 
 // BuiltInRulesVersion changes whenever built-in policy semantics change.
-const BuiltInRulesVersion = 2
+const BuiltInRulesVersion = 3
 
 type ActionSet string
 

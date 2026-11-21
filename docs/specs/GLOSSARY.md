@@ -607,6 +607,16 @@ and fid records the policy in force at that point.
 Use when: saying which results and which policy a review and `done` rely on.
 Avoid: the retired V1 `handoff` document (Retired Product Terms).
 
+**Lane floor**
+Definition: The highest lane required by the committed changed paths between
+HEAD and its merge-base with the local origin default branch. Assured rules
+win over Routine paths; unmatched paths are Standard; unsupported Git paths
+are Assured. No changed paths leaves the planned lane unchanged. Only
+`.fid.toml` and `.github/workflows/**` set unwaivable hard floors.
+Use when: explaining the checks selected before hand-off and a lane raised
+at hand-off. Fingerprint-bound waivers remain the proposed 2.2c follow-up.
+Avoid: treating a configured Assured path or a check's `defined_by` as hard.
+
 **Policy snapshot**
 Definition: fid's record of the policy it trusts: its source (`origin/<default
 branch>` at a commit, or the built-in defaults), the digest of the effective

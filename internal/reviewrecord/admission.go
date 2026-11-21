@@ -33,7 +33,7 @@ func RequiredProfiles(h handoffrecord.Record, p policy.Effective) ([]string, err
 		if err != nil {
 			return nil, err
 		}
-		for _, path := range h.ChangedPaths {
+		for _, path := range h.Paths() {
 			required = required || !pathglob.ValidPath(path) || g.Match(path)
 		}
 	}

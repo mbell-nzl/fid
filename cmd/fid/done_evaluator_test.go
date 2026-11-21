@@ -21,7 +21,7 @@ func doneBuildFixture(t *testing.T, lane string, trigger bool) (*statusFixture, 
 	t.Helper()
 	f := newJournalStatusFixture(t)
 	f.clock = time.Now
-	appendPolicy(t, f.workspace, "\n[review]\ntest_adequacy=['**/*_test.go']\n[checks.evidence]\nrun=['true']\ntimeout='1m'\nartifacts=['notes.md']\n[lanes.routine]\nchecks=['evidence']\n[lanes.standard]\nchecks=['evidence']\n[lanes.assured]\nchecks=['evidence']\n")
+	appendPolicy(t, f.workspace, "\n[review]\ntest_adequacy=['**/*_test.go']\n[checks.evidence]\nrun=['true']\ntimeout='1m'\nartifacts=['notes.md']\n[lanes.routine]\npaths=['**/*.md','**/*_test.go']\nchecks=['evidence']\n[lanes.standard]\nchecks=['evidence']\n[lanes.assured]\nchecks=['evidence']\n")
 	policyOrigin(t, f.workspace)
 	runGitForTest(t, f.workspace, "checkout", "-qb", "task")
 	writeBackupTestFile(t, filepath.Join(f.workspace, "notes.md"), "A task change\n")

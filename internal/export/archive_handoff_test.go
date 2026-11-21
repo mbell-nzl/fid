@@ -50,6 +50,11 @@ func handoffArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidato
 	event := archiveStartEvent(t)
 	event.EventType, event.CommandName = "task.handed-off", "task.handoff"
 	record := handoffrecord.Record{View: handoffrecord.View{ID: "HOF-100001", PR: "https://github.com/owner/repo/pull/63", Head: strings.Repeat("a", 40), Base: strings.Repeat("b", 40), RequiredChecks: []string{}, ResultIDs: []string{}, At: "2026-11-10T09:05:00Z"}, TaskID: "FID-a", HoldID: "HLD-1", Actor: "agent:builder", Tree: strings.Repeat("c", 40), Lane: lane, PolicySnapshot: 1, DefinitionDigests: map[string]string{}, ChangedPaths: []string{}}
+	floor, err := policy.ComputeFloor(effective, record.ChangedPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record.Floor = &floor
 	encoded, err = json.Marshal(record)
 	if err != nil {
 		t.Fatal(err)

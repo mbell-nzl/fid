@@ -95,6 +95,7 @@
       }
     ],
     "epic": null,
+    "floor": null,
     "handoff": null,
     "issue": {
       "lane": null,
