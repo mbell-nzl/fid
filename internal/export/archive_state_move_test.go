@@ -31,7 +31,7 @@ func stateMoveArchiveFixture(t *testing.T) *semanticValidator {
 	return v
 }
 
-var stateMoveWorkflows = map[string]string{"FID-todo": "task-default", "FID-started": "task-default", "FID-review": "task-default", "FID-epic": "epic-default"}
+var stateMoveWorkflows = map[string]string{"FID-todo": "task-default", "FID-started": "task-default", "FID-review": "task-default", "FID-epic": "epic-default", "FID-sub": "subtask-default"}
 
 // stateMoveEvent writes to as fid issue transition or fid issue update
 // would: the state, the revision, then the activity row.
@@ -124,6 +124,32 @@ func TestImportRefusesForgedStateMoves(t *testing.T) {
 			t.Fatal("refused import changed the projection")
 		}
 	})
+}
+
+// Import keys a state change to one Issue once per Event, as live append and
+// replay do. A subtask's moves are free, so nothing else refuses two in one
+// Event; the same Event with one move then imports.
+func TestImportRefusesTwoStateChangesInOneEvent(t *testing.T) {
+	t.Parallel()
+	v := stateMoveArchiveFixture(t)
+	if _, err := v.conn.Exec(`INSERT INTO issues(id,kind,parent_id,title,workflow_id,status,owner_role,created_at,updated_at) VALUES('FID-sub','subtask','FID-todo','Subtask','subtask-default','todo','developer','2026-11-15T00:00:00Z','2026-11-15T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	twice := stateMoveEvent("issue.transitioned", "FID-sub", "todo", "in_progress", "agent:builder")
+	again := journal.Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-sub"}, Values: map[string]any{"status": "done", "updated_at": stateMoveAt.Format(time.RFC3339)}, Prior: map[string]any{"status": "in_progress"}, Preconditions: map[string]any{"status": "in_progress"}}
+	twice.Effects = append([]journal.Effect{twice.Effects[0], again}, twice.Effects[1:]...)
+	before := handoffProjectionSnapshot(t, v)
+	err := applyLeanEmptyEvent(v, "import", twice)
+	var semantic *semanticValidationError
+	if reason := "a state change keys one Issue by id alone, once per Event"; !errors.As(err, &semantic) || semantic.Code != "reference-invalid" || !strings.Contains(err.Error(), reason) {
+		t.Fatalf("import = %v (%T), want reference-invalid naming %q", err, err, reason)
+	}
+	if before != handoffProjectionSnapshot(t, v) {
+		t.Fatal("refused import changed the projection")
+	}
+	if err := applyLeanEmptyEvent(v, "import", stateMoveEvent("issue.transitioned", "FID-sub", "todo", "in_progress", "agent:builder")); err != nil {
+		t.Fatalf("one move of the subtask after the refusal = %v", err)
+	}
 }
 
 // A person's cancellation still imports, for a task in each open state and

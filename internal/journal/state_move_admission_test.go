@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -225,10 +226,52 @@ func TestOwnedStateMovesAcceptedOnEveryJournalPath(t *testing.T) {
 	}
 }
 
+// A state change keys one Issue by id alone, once per Event. A subtask's
+// moves are free, so nothing else refuses these: two moves of one subtask in
+// an Event, and an Event-v1 move keyed by id and another column.
+func TestStateChangeKeysOneIssueByIDOncePerEvent(t *testing.T) {
+	t.Parallel()
+	const reason = "a state change keys one Issue by id alone, once per Event"
+	twice := func() Event {
+		event := stateTransition("FID-s", "in_progress", stateAgent)
+		again := Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-s"}, Values: map[string]any{"status": "done", "updated_at": admissionStamp(60)}, Prior: map[string]any{"status": "in_progress"}, Preconditions: map[string]any{"status": "in_progress"}}
+		event.Effects = append([]Effect{event.Effects[0], again}, event.Effects[1:]...)
+		return event
+	}
+	for name, forge := range map[string]func() Event{
+		"subtask moved twice":        twice,
+		"legacy subtask moved twice": func() Event { return stateLegacy(twice()) },
+		"legacy subtask keyed by id and kind": func() Event {
+			event := stateLegacy(stateTransition("FID-s", "done", stateAgent))
+			event.Effects[0].PK["kind"] = "subtask"
+			return event
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assertStateWriteRefused(t, forge(), fmt.Sprintf("a refusal naming %q", reason), func(err error) bool {
+				return err != nil && strings.Contains(err.Error(), reason)
+			})
+		})
+	}
+}
+
 // assertStateMoveRefused offers forged on every journal path: each refuses it
 // with a StateMoveError naming the move, and changes nothing, and the ledger
 // still takes a valid write.
 func assertStateMoveRefused(t *testing.T, forged Event, issue, from, to string) {
+	t.Helper()
+	want := fmt.Sprintf("a StateMoveError for %s %s -> %s by %s", issue, from, to, forged.EventType)
+	assertStateWriteRefused(t, forged, want, func(err error) bool {
+		var refused *StateMoveError
+		return errors.As(err, &refused) && refused.IssueID == issue && refused.From == from && refused.To == to && refused.Family == forged.EventType
+	})
+}
+
+// assertStateWriteRefused offers forged on every journal path: each refuses
+// it as refusal expects, and changes nothing, and the ledger still takes a
+// valid write.
+func assertStateWriteRefused(t *testing.T, forged Event, want string, refusal func(error) bool) {
 	t.Helper()
 	for _, mode := range admissionModes(forged) {
 		t.Run(mode, func(t *testing.T) {
@@ -241,10 +284,8 @@ func assertStateMoveRefused(t *testing.T, forged Event, issue, from, to string) 
 				reference = newAdmissionWorkspace(t, stateMovePrefix(), "project")
 			}
 			before := stateProjection(t, reference.root)
-			err := w.admit(t, mode, forged)
-			var refused *StateMoveError
-			if !errors.As(err, &refused) || refused.IssueID != issue || refused.From != from || refused.To != to || refused.Family != forged.EventType {
-				t.Fatalf("%s = %v (%T), want a StateMoveError for %s %s -> %s by %s", mode, err, err, issue, from, to, forged.EventType)
+			if err := w.admit(t, mode, forged); !refusal(err) {
+				t.Fatalf("%s = %v (%T), want %s", mode, err, err, want)
 			}
 			if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
 				t.Fatalf("%s refusal changed the projection", mode)
