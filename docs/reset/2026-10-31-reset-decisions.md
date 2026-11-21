@@ -2724,7 +2724,7 @@ The built-in hard paths and check-defining paths still apply independently.
 
 The orchestrator settled the following design under Mark's delegation, for
 his review. The builder used the brief's explicit size split: this PR builds
-the floor; `fid waive` is proposed as 2.2c before 2.3. RESET's 2.2b done mark
+the floor; `fid waive` is proposed as 2.2c, after 2.3. RESET's 2.2b done mark
 applies to the narrowed floor slice; the proposed 2.2c row keeps the remaining
 acceptance criteria open.
 
@@ -2767,8 +2767,10 @@ including check requirements, review profiles, separate review, approval
 and rollback. Without a current waiver the recorded hand-off lane applies.
 The issue-update lowering refusal will name waive after hand-off. Show will
 list current/stale waivers in JSON and explain them in the Lane row; status
-will mark stale waivers. Shared person-decision currency code must also serve
-2.3's approval presentation. The new Event must join shared admission on
+will mark stale waivers. The orchestrator ordered 2.3 before 2.2c (2026-11-21,
+under Mark's delegation): approvals already exist, so 2.3 builds the shared
+current/stale presentation for a fingerprint-bound person decision, and 2.2c
+reuses it for waivers. The new Event must join shared admission on
 live append, replay and import, with catalog, restore/V8, typed-refusal,
 terminal, staleness and golden coverage. Its Event name and refusal codes
 remain the follow-up builder's transactional choices.
@@ -3376,8 +3378,8 @@ such a task waits for Mark to accept it; until then the epic's wait for
 
 - From this PR (2.2b): proposed 2.2c carries the approved fingerprint-bound
   `fid waive` design, its done gates, journal admission, restore coverage,
-  and current/stale show/status display. The brief authorized this size
-  split. See "Decided for 2.2b, 2026-11-21"; the proposed RESET row and this
+  and current/stale show/status display, after 2.3, reusing 2.3's
+  current/stale presentation. The brief authorized this size split. See "Decided for 2.2b, 2026-11-21"; the proposed RESET row and this
   allocation are for Mark's review.
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
