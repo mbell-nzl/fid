@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/status"
 )
@@ -28,6 +29,7 @@ type Result struct {
 	Kept       *holds.Kept
 	Now        time.Time
 	Checks     []Check
+	Floor      *policy.Floor
 	ChecksBase *string
 	Warnings   []status.Warning
 }
@@ -53,6 +55,7 @@ func Build(options Options) (Result, error) {
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
 	fields := map[string]any{
+		"floor":       result.Floor,
 		"handoff":     result.Handoff,
 		"questions":   result.Questions,
 		"checks":      result.Checks,

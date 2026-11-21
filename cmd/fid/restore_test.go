@@ -209,7 +209,16 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	tookReview, _ := lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "takeover", stillReview, "--actor", "human:mark", "--reason", "Keep the review reservation"), "task.takeover")
 	holdReview := tookReview["hold_id"].(string)
 	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "start", "--hold", holdReview, "--actor", "human:mark", "--idempotency-key", "v8-still-review-start"), "task.start")
+	// A hard-floor change raises this planned Standard task. V8 preserves
+	// the raised task, floor paths and prior lane through backup and replay.
+	writeBackupTestFile(t, filepath.Join(reviewTree, ".github/workflows/restore.yml"), "name: restore\n")
+	runGitForTest(t, reviewTree, "add", ".")
+	runGitForTest(t, reviewTree, "commit", "-qm", "V8 hard-floor change")
 	lifecycleResult(t, executeCommandForTest(reviewTree, "--json", "handoff", "--hold", holdReview, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/65", "--idempotency-key", "v8-still-review-handoff"), "task.handoff")
+	shownFloor := executeCommandForTest(reviewTree, "--json", "show", stillReview)
+	if shownFloor.err != nil || !strings.Contains(shownFloor.stdout, `"hard_floor":"assured"`) || !strings.Contains(shownFloor.stdout, `"raised_from":"standard"`) {
+		t.Fatalf("V8 lacks raised floor: %#v", shownFloor)
+	}
 	recordV8OfflineMerge(t, reviewTree, stillReview, 65, false)
 	ids = append(ids, addV8FailedMerge(t, workspace))
 	ids = append(ids, addV8Epics(t, workspace)...)

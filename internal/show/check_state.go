@@ -30,6 +30,9 @@ func (result *Result) readChecks(root string) {
 	loaded, err := policy.Load(root)
 	if err != nil {
 		result.Warnings = append(result.Warnings, status.PolicyUnavailableWarning(err))
+		if result.Handoff != nil {
+			result.Floor = result.Handoff.Floor
+		}
 		result.selectChecks(nil, nil, false, checkread.Evaluation{})
 		return
 	}
@@ -53,10 +56,28 @@ func (result *Result) readChecks(root string) {
 
 func (result *Result) requiredChecks(root string, effective policy.Effective) (map[string]*bool, bool) {
 	required := map[string]*bool{}
+	lane := ""
+	if result.Issue.Lane != nil {
+		lane = *result.Issue.Lane
+	}
+	comparison, comparisonErr := policy.Compare(root, result.Issue.ID)
+	if comparisonErr == nil {
+		floor, err := policy.ComputeFloor(effective, comparison.Paths)
+		if err != nil {
+			result.comparisonWarning(err)
+		} else {
+			result.Floor = &floor
+			lane = floor.Raise(lane)
+		}
+	} else {
+		result.comparisonWarning(comparisonErr)
+		if result.Handoff != nil {
+			result.Floor = result.Handoff.Floor
+		}
+	}
 	if result.Issue.Lane == nil {
 		return required, false
 	}
-	lane := *result.Issue.Lane
 	configured := effective.Lanes[lane]
 	if !configured.ChecksSet {
 		result.Warnings = append(result.Warnings, status.ChecksNotConfiguredWarning([]string{lane}))
@@ -72,9 +93,7 @@ func (result *Result) requiredChecks(root string, effective policy.Effective) (m
 	if !conditional {
 		return required, true
 	}
-	comparison, err := policy.Compare(root, result.Issue.ID)
-	if err != nil {
-		result.comparisonWarning(err)
+	if comparisonErr != nil {
 		return required, true
 	}
 	names, err := policy.Required(effective, lane, result.Issue.ID, comparison.Paths)

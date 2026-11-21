@@ -59,7 +59,12 @@ func evaluateLocal(o *Outcome, s Snapshot) {
 		return
 	}
 	p := *s.Policy
-	required, err := policy.Required(p, h.Lane, s.Task.ID, h.ChangedPaths)
+	floor, floorErr := policy.ComputeFloor(p, h.Paths())
+	if p.RulesVersion >= 3 && (floorErr != nil || floor.Raise(h.Lane) != h.Lane) {
+		o.set(PolicyGate, RefusedState, PolicyMismatch)
+		return
+	}
+	required, err := policy.Required(p, h.Lane, s.Task.ID, h.Paths())
 	switch {
 	case !p.Lanes[h.Lane].ChecksSet:
 		o.set(PolicyGate, Missing, ChecksNotConfigured)

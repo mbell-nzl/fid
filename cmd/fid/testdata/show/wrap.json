@@ -10,6 +10,12 @@
     "checks_base": null,
     "children": [],
     "epic": null,
+    "floor": {
+      "lane": null,
+      "paths": [],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": null,
     "issue": {
       "lane": null,

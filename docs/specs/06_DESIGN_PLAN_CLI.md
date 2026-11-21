@@ -939,7 +939,7 @@ push" · Standard`. A lane-only update reads `updated issue FID-c2d4e5 ·
 Assured`. Agents may set or raise a lane, never lower it (`authority-denied`).
 A person may lower a todo task's lane as a planning correction. Otherwise
 lowering is refused as `transition-not-permitted`, unsatisfied
-`lane-lowering-requires-waiver`, until `waive` in 2.2b.
+`lane-lowering-requires-waiver`; `waive` remains the proposed 2.2c follow-up.
 
 Start (`task.start`) validates the exact live hold under the write lock:
 existence, open/unexpired status, actor, and current worktree. It needs a
@@ -1173,7 +1173,7 @@ All four flags are required. The PR must be a GitHub pull request URL,
 `https://github.com/<owner>/<repo>/pull/<n>`. It is recorded locally, without
 contacting GitHub or running checks. 1.6 verifies it with `gh`.
 The exact hold must be live, owned by this actor and this worktree, and
-its task must be `in_progress`. The task's lane must have a `checks` key,
+its task must be `in_progress`. The higher of the task's lane and its computed floor must have a `checks` key,
 and `[review] test_adequacy` must be configured (an empty list is valid).
 The worktree must be clean, including untracked files and excluding ignored
 files. fid recomputes the committed comparison base with the local
@@ -1190,7 +1190,20 @@ One `task.handed-off` Event records the immutable hand-off receipt, moves
 the task to `in_review`, ends its builder's hold, and keeps the task for its
 worktree. The receipt records the PR, head commit, tree, base, lane,
 policy snapshot, required names, definition digests, counting result IDs
-and time. A same-key retry returns the original result and Event even
+and time. RESET 2.2b adds `floor: {lane, paths, hard_floor, hard_paths}`
+and optional `raised_from` to the receipt. Both floor lanes are nullable;
+arrays are empty when no changed paths set a floor. A higher floor raises
+the task's lane in the same state update; hand-off never lowers a lane.
+The public hand-off success response retains its existing fields.
+
+Show adds the current floor in `result.floor`, null when unavailable, and
+keeps the immutable floor on `result.handoff`. When hand-off raised the task,
+the Lane row explains it, for example `Assured · floor: internal/policy/a.go
+and 2 others · raised from Standard`. Read-only show warns when it cannot
+compute the current floor and retains the recorded explanation when known.
+Invalid UTF-8 Git names have a readable replacement in the floor's path
+strings and a lossless base64 `changed_path_bytes` list in the receipt;
+checks, reviews and done use those exact bytes. A same-key retry returns the original result and Event even
 after the hold ends; changed request fields cause `idempotency-conflict`.
 
 Text success (with no required checks, use `no checks required`):
@@ -1769,7 +1782,9 @@ detectable catch-up state and never a reason to append a duplicate Event.
 
 `fid check <name>... --hold <id> --actor <a> --idempotency-key <k>` executes
 trusted `[checks.<name>]` definitions at the worktree root, in name order,
-dropping duplicates. With no names it selects the lane's required checks,
+dropping duplicates. With no names it selects the required checks at the higher
+of the task's lane and the committed changed-path floor, without changing the
+task's lane,
 filtering `when_changed` against committed files since the freshly computed
 merge-base with local `origin/<default>`. Deletions and both rename paths
 count; absent or empty `when_changed` always requires the check. Unknown names
@@ -1784,9 +1799,14 @@ explicit empty set permits named checks. Unreadable policy gives
 `policy-unavailable`. A changed effective digest records a policy snapshot.
 Missing `[review] test_adequacy` does not stop check. An empty required set
 records a completed request with no starts or results; text says
-`✓ No checks required for Standard` (using the task's lane), JSON has
+`✓ No checks required for Standard` (using the lane selected for this check), JSON has
 `{task_id, checks: []}` and the completion Event, and the exit is 0. Retry
 returns that same recorded response even if policy or the comparison changes.
+When a floor raises the selected lane, the check start and stored retry
+response retain the comparison's `changed_path_bytes` as base64 bytes, so journal
+admission can recompute that selection even for unsupported Git names. The
+same rule admits a configured higher lane when the planned lane is not set
+up. Explicitly named checks keep the existing lane and need no comparison.
 The start is durable before spawning. The write lock is released while the
 child executes; process identity is recorded as soon as known. Every five
 minutes the command renews its exact hold, one Event each. A refused renewal

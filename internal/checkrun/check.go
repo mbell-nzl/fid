@@ -109,7 +109,7 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 		if err != nil {
 			return err
 		}
-		if err := ex.validateTask(db); err != nil {
+		if err := ex.validateTask(db, comparison.Paths); err != nil {
 			return err
 		}
 		if len(options.Names) == 0 {
@@ -249,7 +249,7 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 	return ex.response, responseError(ex.response)
 }
 
-func (ex *execution) validateTask(db store) error {
+func (ex *execution) validateTask(db store, paths []string) error {
 	allowed := []string{}
 	for name := range ex.policy.Effective.Checks {
 		allowed = append(allowed, name)
@@ -272,6 +272,17 @@ func (ex *execution) validateTask(db store) error {
 		return &holdwork.Refusal{Code: "lane-not-set", TaskID: ex.response.TaskID, Message: "the task has no lane", Details: map[string]any{"task_id": ex.response.TaskID}}
 	}
 	ex.response.Lane = lane.String
+	if len(ex.options.Names) == 0 {
+		floor, err := policy.ComputeFloor(ex.policy.Effective, paths)
+		if err != nil {
+			return err
+		}
+		ex.response.Lane = floor.Raise(ex.response.Lane)
+		if ex.response.Lane != lane.String {
+			ex.response.ChangedPathBytes = policy.PathBytes(paths)
+		}
+	}
+	lane.String = ex.response.Lane
 	if !ex.policy.Effective.Lanes[lane.String].ChecksSet {
 		return &checkrecord.Refusal{Code: "checks-not-configured", TaskID: ex.response.TaskID, Message: "no checks set for " + lane.String + " in .fid.toml", Details: map[string]any{"lane": lane.String}, Next: "add checks to [lanes." + lane.String + "], then merge .fid.toml and git fetch"}
 	}
@@ -326,7 +337,7 @@ func (ex *execution) start(db store, name string) (checkrecord.Start, error) {
 	}
 	check := ex.policy.Effective.Checks[name]
 	definition := checkrecord.DefinitionFor(check)
-	start := checkrecord.Start{ID: id, TaskID: ex.response.TaskID, HoldID: ex.options.HoldID, Actor: ex.options.Actor, Name: name, Definition: definition, DefinitionDigest: checkrecord.Digest(definition), EnvironmentDigest: checkrecord.Digest(ex.env), StartedAt: db.now.Format(time.RFC3339Nano), Tree: tree(observation), Owner: owner}
+	start := checkrecord.Start{ChangedPathBytes: ex.response.ChangedPathBytes, ID: id, TaskID: ex.response.TaskID, HoldID: ex.options.HoldID, Actor: ex.options.Actor, Name: name, Definition: definition, DefinitionDigest: checkrecord.Digest(definition), EnvironmentDigest: checkrecord.Digest(ex.env), StartedAt: db.now.Format(time.RFC3339Nano), Tree: tree(observation), Owner: owner}
 	if err := db.conn.QueryRow(`SELECT sequence FROM policy_snapshots WHERE digest=? ORDER BY sequence DESC LIMIT 1`, ex.policy.Effective.Digest()).Scan(&start.PolicySnapshot); err != nil {
 		return start, err
 	}

@@ -101,6 +101,7 @@
         "total": 1
       }
     },
+    "floor": null,
     "handoff": null,
     "issue": {
       "lane": "standard",

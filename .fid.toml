@@ -33,7 +33,7 @@ run = ["go", "test", "-count=1", "-tags", "integration", "./cmd/fid/integration/
 timeout = "20m"
 when_changed = ["cmd/**", "internal/**", "migrations/**", "go.mod", "go.sum"]
 
-# A change's lane floor is the highest lane any changed path needs (2.2b).
+# A change's lane floor is the highest lane any committed changed path needs.
 # A path in no list is Standard. .fid.toml and .github/workflows/** are
 # always Assured; that's built into fid and can't be waived.
 [lanes.routine]
@@ -45,7 +45,20 @@ checks = ["fmt", "lint", "test", "build", "integration"]
 
 # No token_budget until 2.6 has usage data to set it from (ADR-0014).
 [lanes.assured]
-paths = ["migrations/**", "internal/journal/**", "go.mod", "go.sum"]
+# The trust boundary: code that decides what an agent may do, or makes the
+# receipts Mark relies on at approval and done (Mark, 2026-11-21; D5).
+paths = [
+  "migrations/**", "internal/journal/**", "go.mod", "go.sum",
+  "internal/policy/**", "internal/pathglob/**",
+  "internal/fingerprint/**",
+  "internal/persondecision/**", "internal/approvalrecord/**", "internal/approvalwork/**", "cmd/fid/approve.go",
+  "internal/doneeval/**", "internal/donework/**", "internal/mergerecord/**", "internal/mergework/**",
+  "internal/github/**",
+  "internal/reviewrecord/**", "internal/reviewwork/**",
+  "internal/checkrun/**", "internal/checkrecord/**", "internal/checkread/**",
+  "internal/handoffrecord/**",
+  "internal/issuestate/**",
+]
 checks = ["fmt", "lint", "test", "build", "integration"]
 
 # Changes to these paths need a test-adequacy review in every lane.

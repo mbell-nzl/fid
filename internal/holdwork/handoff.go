@@ -38,11 +38,15 @@ func Handoff(options Options) (Result, error) {
 		if err := ctx.conn.QueryRow(`SELECT revision FROM issues WHERE id=?`, hold.TaskID).Scan(&revision); err != nil {
 			return journal.Event{}, nil, err
 		}
+		change := map[string]any{"status": "in_review", "revision": revision + 1, "updated_at": record.At}
+		if record.RaisedFrom != nil {
+			change["lane"] = record.Lane
+		}
 		end := holds.End(hold.ID, "review", ctx.now)
 		end.Values["kept"] = true
 		effects := []journal.Effect{
 			{Op: "insert", Table: "handoffs", PK: map[string]any{"id": record.ID}, Values: map[string]any{"task_id": hold.TaskID, "hold_id": hold.ID, "policy_snapshot": record.PolicySnapshot, "record_json": string(raw)}},
-			{Op: "update", Table: "issues", PK: map[string]any{"id": hold.TaskID}, Values: map[string]any{"status": "in_review", "revision": revision + 1, "updated_at": record.At}, Preconditions: map[string]any{"status": "in_progress", "revision": revision}},
+			{Op: "update", Table: "issues", PK: map[string]any{"id": hold.TaskID}, Values: change, Preconditions: map[string]any{"status": "in_progress", "revision": revision}},
 			end,
 		}
 		return journal.Event{EventType: "task.handed-off", Aggregate: journal.Aggregate{ID: hold.TaskID, Type: "task"}, Effects: effects}, record.Fields(), nil
@@ -66,9 +70,6 @@ func (ctx writeContext) prepareHandoff(hold holds.Hold) (handoffrecord.Record, e
 	if !lane.Valid {
 		return record, &Refusal{Code: "lane-not-set", TaskID: hold.TaskID, Message: hold.TaskID + " has no lane", Details: map[string]any{"task_id": hold.TaskID}}
 	}
-	if _, err := policy.Required(loaded.Effective, lane.String, hold.TaskID, nil); err != nil {
-		return record, err
-	}
 	if !loaded.Effective.TestAdequacySet {
 		return record, &checkrecord.Refusal{Code: "test-paths-not-configured", TaskID: hold.TaskID, Message: "no test paths set in .fid.toml", Details: map[string]any{}, Next: "add [review] test_adequacy, then merge .fid.toml and git fetch"}
 	}
@@ -86,7 +87,12 @@ func (ctx writeContext) prepareHandoff(hold holds.Hold) (handoffrecord.Record, e
 	if comparison.Head != observation.HeadOID {
 		return record, fmt.Errorf("repository changed during hand-off")
 	}
-	required, err := policy.Required(loaded.Effective, lane.String, hold.TaskID, comparison.Paths)
+	floor, err := policy.ComputeFloor(loaded.Effective, comparison.Paths)
+	if err != nil {
+		return record, err
+	}
+	effectiveLane := floor.Raise(lane.String)
+	required, err := policy.Required(loaded.Effective, effectiveLane, hold.TaskID, comparison.Paths)
 	if err != nil {
 		return record, err
 	}
@@ -128,8 +134,13 @@ func (ctx writeContext) prepareHandoff(hold holds.Hold) (handoffrecord.Record, e
 		return record, err
 	}
 	record.View = handoffrecord.View{ID: id, PR: ctx.options.PR, Head: observation.HeadOID, Base: comparison.Base, RequiredChecks: required, ResultIDs: []string{}, At: holds.Timestamp(ctx.now)}
-	record.TaskID, record.HoldID, record.Actor, record.Tree, record.Lane = hold.TaskID, hold.ID, ctx.options.Actor, observation.TreeOID, lane.String
-	record.DefinitionDigests, record.ChangedPaths = map[string]string{}, comparison.Paths
+	record.TaskID, record.HoldID, record.Actor, record.Tree, record.Lane = hold.TaskID, hold.ID, ctx.options.Actor, observation.TreeOID, effectiveLane
+	record.Floor = &floor
+	if effectiveLane != lane.String {
+		record.RaisedFrom = &lane.String
+	}
+	record.DefinitionDigests = map[string]string{}
+	record.SetPaths(comparison.Paths)
 	for _, name := range required {
 		record.DefinitionDigests[name] = checkrecord.Digest(checkrecord.DefinitionFor(loaded.Effective.Checks[name]))
 		record.ResultIDs = append(record.ResultIDs, evaluation.LatestResultIDs[name])

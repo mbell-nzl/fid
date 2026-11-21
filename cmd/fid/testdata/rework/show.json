@@ -20,7 +20,23 @@
         "total": 1
       }
     },
+    "floor": {
+      "lane": "standard",
+      "paths": [
+        "notes.md"
+      ],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": {
+      "floor": {
+        "lane": "standard",
+        "paths": [
+          "notes.md"
+        ],
+        "hard_floor": null,
+        "hard_paths": []
+      },
       "id": "HOF-<new>",
       "pr": "https://github.com/mbell-nzl/fid/pull/63",
       "head": "<commit-or-tree>",
