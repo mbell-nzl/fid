@@ -665,7 +665,7 @@ every read, records no Event and makes no network calls. Text output is
   `status` does. A subtask has no children.
 - Sequence, revision, workflow ID and times appear only in the JSON's
   `issue`. Neither text nor JSON shows open concerns, triage status, the
-  owner role or actor (apart from the actor in Working), or links other than
+  owner role or actor (apart from actors in Working and Approval), or links other than
   `blocks` and `blocked_by`.
 - Text fid didn't write is escaped, fitted and wrapped as in `status`,
   and long text pages as `status`'s does.
@@ -1614,10 +1614,10 @@ The full Event must fit below the journal's existing 1 MiB line budget.
 A decision is current when its algorithm and fingerprint match the latest
 hand-off's change, even after a clean rebase with new endpoints; otherwise
 it is stale. `approvalrecord.Current` supplies the shared current/stale/missing
-reader for the done evaluator. Any matching immutable approval is evidence
+reader for done, status and show. Any matching immutable approval is evidence
 of the current change; a new decision after edits preserves the old one.
 The prompt always shows the full diffstat when a new decision is requested.
-Status/show presentation stays in task 2.3.
+Status and show present that state as described in section 3 (RESET 2.3).
 
 An optional retry key covers actor, task and reason in the project's
 `task.approve` scope. An identical retry returns the original decision,

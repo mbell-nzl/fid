@@ -2819,7 +2819,8 @@ there is no approval state. Other lanes have no approval presentation.
   with missing or stale approval. The summary names the state and appends
   `, no other-model review` when applicable. Its next action is `fid approve
   <task> --actor human:<name> --reason <text>`. IN PROGRESS JSON carries the
-  same approval and disclosure fields, including current approvals.
+  same approval and disclosure fields, including current approvals and the
+  latest hand-off's evidence during rework; rework does not request approval.
 - The approve prompt, done and both displays use one disclosure predicate
   over `reviewrecord.CurrentViews`: no current primary or separate round
   establishes another model family than the builders'. Unknown models are
