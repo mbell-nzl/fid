@@ -394,6 +394,9 @@ func scaleTemplateEvent(tb testing.TB, templates scaleTemplates, revisions map[s
 		if fx.Table == "idempotency_results" {
 			continue
 		}
+		if fx.Values == nil {
+			fx.Values = map[string]any{}
+		}
 		for _, column := range []string{"created_at", "updated_at", "occurred_at", "decided_at"} {
 			if _, has := fx.Values[column]; has {
 				fx.Values[column] = at
