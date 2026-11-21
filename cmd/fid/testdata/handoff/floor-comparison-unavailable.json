@@ -4,6 +4,9 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": {
+      "state": "missing"
+    },
     "blocked_by": [],
     "blocks": [],
     "checks": [
@@ -176,6 +179,7 @@
       "actor": "agent:claude-builder",
       "model": ""
     },
+    "no_other_model_review": true,
     "progress": null,
     "questions": [],
     "scheduling": null,

@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [],
@@ -47,6 +48,7 @@
       ]
     },
     "kept": null,
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,

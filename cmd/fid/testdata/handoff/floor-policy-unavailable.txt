@@ -5,6 +5,8 @@
   Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
   Lane        Assured · floor: secure/a.md and 2 others · raised from
               Routine
+  Approval    ○ missing
+              no other-model review
   Checks      ✓ always passed at 22:00
               ⚠ Policy unavailable: origin's default branch is unknown
   Hand-off    22:00 · PR #63 · always passed on <head>

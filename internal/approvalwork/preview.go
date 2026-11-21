@@ -39,20 +39,15 @@ func previewFor(conn reviewrecord.Queryer, task string, h handoffrecord.Record, 
 		}
 		p.Checks = append(p.Checks, fmt.Sprintf("%s: %s · counts=%t · %s", name, result.Outcome, result.Counts, h.ResultIDs[i]))
 	}
-	rounds, err := reviewrecord.Read(conn, task)
+	rounds, err := reviewrecord.CurrentViews(conn, task, fp)
 	if err != nil {
 		return p, err
 	}
+	p.NoOtherModel = reviewrecord.NoOtherModelReview(task, rounds)
 	for _, r := range rounds {
-		current := r.Binding.Algorithm == fp.Algorithm && r.Binding.Fingerprint == fp.Fingerprint
 		freshness := "stale"
-		if current {
+		if r.Current {
 			freshness = "current"
-			other, err := reviewrecord.OtherModel(conn, task, r.Reviewer.Model)
-			if err != nil {
-				return p, err
-			}
-			p.NoOtherModel = p.NoOtherModel && !other
 		}
 		model := r.Reviewer.Model
 		if model == "" {

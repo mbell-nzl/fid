@@ -636,6 +636,15 @@ Use when: recording or showing a person's call.
 Avoid: "Human Outcome", "Deviation" or "Attention Item", which it replaces,
 and confusing it with a Protected Decision, which is project prose.
 
+**No other-model review**
+Definition: An Assured hand-off has no current primary or separate review
+round whose known model family differs from every builder's. Unknown agent
+builder models and unknown reviewer models cannot establish that coverage.
+Use when: disclosing the same-model fallback in the approve prompt, show,
+status and done, so a person approves knowingly. Stale rounds do not count.
+Avoid: treating this flag as a missing separate session; Assured work still
+requires the separate review session under same-model fallback.
+
 **Check result**
 Definition: The outcome of one check, from one of two sources. A local result
 comes from fid running the check itself: it records the check's start
@@ -655,4 +664,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-11-10 (lean core terms, ADR-0014)*
+*Last updated: 2026-11-22 (approval disclosure, RESET 2.3)*

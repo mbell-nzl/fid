@@ -15,6 +15,18 @@ type FindingView struct {
 	Closure *Closure `json:"closure,omitempty"`
 }
 
+// NoOtherModelReview is the shared Assured disclosure for the approve prompt,
+// done and read views. Every current primary or separate round can establish
+// coverage; stale rounds and rounds for another task cannot.
+func NoOtherModelReview(task string, rounds []RoundView) bool {
+	for _, r := range rounds {
+		if r.TaskID == task && r.Current && (r.Stream == "primary" || r.Stream == "separate") && r.OtherModel {
+			return false
+		}
+	}
+	return true
+}
+
 func CurrentViews(conn Queryer, task string, fp fingerprint.Result) ([]RoundView, error) {
 	rounds, err := Read(conn, task)
 	if err != nil {

@@ -66,7 +66,9 @@
                 "hold_id": "HLD-0b0b0b",
                 "actor": "agent:claude-builder",
                 "model": ""
-              }
+              },
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         },
@@ -103,7 +105,9 @@
                 "last_heartbeat_at": "2026-11-08T08:40:00Z",
                 "lapsed": false
               },
-              "kept": null
+              "kept": null,
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         }
@@ -138,7 +142,9 @@
             "hold_id": "HLD-0c0c0c",
             "actor": "agent:claude-builder",
             "model": ""
-          }
+          },
+          "approval": null,
+          "no_other_model_review": null
         },
         {
           "id": "FID-999999",
@@ -150,7 +156,9 @@
           "priority": null,
           "blocked_by": [],
           "working": null,
-          "kept": null
+          "kept": null,
+          "approval": null,
+          "no_other_model_review": null
         }
       ]
     },

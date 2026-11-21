@@ -137,12 +137,7 @@ func evaluateReviews(o *Outcome, s Snapshot) {
 }
 
 func evaluateAssured(o *Outcome, s Snapshot, profiles []string, profilesKnown bool) {
-	o.NoOtherModelReview = true
-	for _, r := range s.Rounds {
-		if r.TaskID == s.Task.ID && r.Current && (r.Stream == "primary" || r.Stream == "separate") && r.OtherModel {
-			o.NoOtherModelReview = false
-		}
-	}
+	o.NoOtherModelReview = reviewrecord.NoOtherModelReview(s.Task.ID, s.Rounds)
 	if profilesKnown {
 		o.Gates[SeparateGate] = reviewGate(s, "separate", profiles)
 	} else {

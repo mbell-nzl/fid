@@ -5,6 +5,8 @@
   Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
   Lane        Assured · floor: secure/a.md and 2 others · raised from
               Routine
+  Approval    ○ missing
+              no other-model review
   Checks      ✓ always passed at 22:00 · required · counts on HEAD
               ○ go · not checked yet
               ⚠ Comparison unavailable: HEAD and origin/trunk have no

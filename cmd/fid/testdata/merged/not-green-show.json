@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [
@@ -161,6 +162,7 @@
       "merge_commit": "<commit-or-tree>",
       "ci": "not-green"
     },
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,
