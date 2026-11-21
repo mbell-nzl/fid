@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/mbell-nzl/fid/internal/gittest"
-	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/labels"
-	"github.com/mbell-nzl/fid/internal/links"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/labels"
+	"github.com/mbell-nzl/fid/internal/links"
 )
 
 // The same corpus reaches shared admission through import's private projection.

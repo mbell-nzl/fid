@@ -59,12 +59,13 @@ func TestImportRefusesForgedEventsLikeTheJournal(t *testing.T) {
 	}
 	retitle := func() journal.Event {
 		stamp := at.Format(time.RFC3339)
-		return journal.Event{EventSchema: 2, EventType: "issue.updated", EventID: "EVT-20261115-000009", CommandName: "issue.update", OccurredAt: at,
+		event := journal.Event{EventSchema: 2, EventType: "issue.updated", EventID: "EVT-20261115-000009", CommandName: "issue.update", OccurredAt: at,
 			ActorV2:   journal.EventActor{ActorType: "human", ActorID: "mark", Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"},
 			Aggregate: journal.Aggregate{Type: "issue", ID: "FID-epic", Sequence: 1}, Effects: []journal.Effect{
 				{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-epic"}, Values: map[string]any{"title": "Renamed", "updated_at": stamp}},
 				{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-epic"}, Values: map[string]any{"revision": 2}, Preconditions: map[string]any{"revision": 1}},
 				{Op: "activity", Table: "activity_log", PK: map[string]any{"id": "ACT-forged"}, Values: map[string]any{"journal_event_id": "EVT-20261115-000009", "ref_type": "issue", "ref_id": "FID-epic", "event": "updated", "details": nil, "actor": "human:mark", "occurred_at": stamp}}}}
+		return writerUpdateFixture(t, event, 1)
 	}
 	unbound := func(e journal.Event) journal.Event {
 		e.Effects = append(e.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "task.start:project", "idempotency_key": "forged"}, Values: map[string]any{

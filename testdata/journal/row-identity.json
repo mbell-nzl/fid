@@ -9289,6 +9289,187 @@
           }
         ]
       }
+    },
+    {
+      "name": "label values repeat its key",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {
+              "issue_id": "FID-a"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion writes scalar instead of revision",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "retry key has extra column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "label",
+          "id": "green",
+          "sequence": 1
+        },
+        "command": "label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "labels",
+            "pk": {
+              "name": "green"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "idempotency_results",
+            "pk": {
+              "operation_scope": "label.add:project-1",
+              "idempotency_key": "key-EVT-20261110-000008",
+              "created_at": "2026-11-10T10:00:00Z"
+            },
+            "values": {
+              "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "request_field_digests_json": "{}",
+              "result_entity_id": "green",
+              "result_event_id": "EVT-20261110-000008",
+              "aggregate_sequence": 1,
+              "result_json": "{\"replayed\":false}",
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ],
+        "idempotency": {
+          "key": "key-EVT-20261110-000008",
+          "scope": "label.add:project-1",
+          "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
     }
   ]
 }

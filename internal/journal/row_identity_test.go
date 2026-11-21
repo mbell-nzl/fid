@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -54,7 +53,7 @@ func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 							return
 						}
 						// Typed admission refusals survive the replay and commit wrappers.
-						var refusal interface{ RowAdmissionRefusal() }
+						var refusal *RowIdentityError
 						if !errors.As(err, &refusal) {
 							t.Fatalf("malformed Event = %v (%T), want typed row refusal", err, err)
 						}
@@ -112,36 +111,59 @@ func TestMalformedCancellationHoldEnd(t *testing.T) {
 	valid.Effects[3].Values["journal_event_id"] = valid.EventID
 	ended := Effect{Op: "update", Table: "holds", PK: map[string]any{"id": "HLD-a"}, Values: map[string]any{"ended_at": valid.OccurredAt.Format("2006-01-02T15:04:05Z07:00"), "end_reason": "task-cancelled"}}
 	valid.Effects = append(valid.Effects[:2:2], append([]Effect{ended}, valid.Effects[2:]...)...)
-	for _, mode := range admissionModes(valid) {
-		t.Run(mode, func(t *testing.T) {
-			w := newAdmissionWorkspace(t, prefix, mode)
-			malformed := valid
-			raw, err := MarshalCanonicalJSON(valid)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := malformed.UnmarshalJSON(raw); err != nil {
-				t.Fatal(err)
-			}
-			malformed.Effects[2].Values["end_reason"] = "task-completed"
-			reference := w
-			if mode == "replay" {
-				reference = newAdmissionWorkspace(t, prefix, "project")
-			}
-			before := stateProjection(t, reference.root)
-			err = w.admit(t, mode, malformed)
-			if err == nil || !strings.Contains(err.Error(), "invalid task hold end") {
-				t.Fatalf("malformed hold end = %v", err)
-			}
-			if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
-				t.Fatal("refusal changed projection")
-			}
-			if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
-				t.Fatal(err)
-			}
-			if err := w.admit(t, "commit", valid); err != nil {
-				t.Fatalf("valid cancellation after refusal: %v", err)
-			}
-		})
+	for _, variant := range []string{"task-completed", "two holds"} {
+		for _, mode := range admissionModes(valid) {
+			t.Run(variant+"/"+mode, func(t *testing.T) {
+				w := newAdmissionWorkspace(t, prefix, mode)
+				malformed := valid
+				raw, err := MarshalCanonicalJSON(valid)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := malformed.UnmarshalJSON(raw); err != nil {
+					t.Fatal(err)
+				}
+				if variant == "task-completed" {
+					malformed.Effects[2].Values["end_reason"] = "task-completed"
+				} else {
+					malformed.Effects = append(malformed.Effects[:3:3], append([]Effect{malformed.Effects[2]}, malformed.Effects[3:]...)...)
+				}
+				reference := w
+				if mode == "replay" && variant != "task-completed" {
+					reference = newAdmissionWorkspace(t, prefix, "project")
+				}
+				before := stateProjection(t, reference.root)
+				err = w.admit(t, mode, malformed)
+				var refused *RowIdentityError
+				if !errors.As(err, &refused) || refused.Table != "holds" {
+					t.Fatalf("malformed hold end = %v", err)
+				}
+				if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
+					t.Fatal("refusal changed projection")
+				}
+				stored, readErr := os.ReadFile(w.file)
+				if readErr != nil {
+					t.Fatal(readErr)
+				}
+				want := w.journalWith(t, malformed)
+				if mode == "commit" || mode == "dry-run" || mode == "project" {
+					want = w.prefix
+				}
+				if !bytes.Equal(stored, want) {
+					t.Fatal("refusal changed journal")
+				}
+				if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
+					t.Fatal(err)
+				}
+				if mode == "replay" && variant == "task-completed" {
+					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsDir(t)); err != nil {
+						t.Fatal(err)
+					}
+				}
+				if err := w.admit(t, "commit", valid); err != nil {
+					t.Fatalf("valid cancellation after refusal: %v", err)
+				}
+			})
+		}
 	}
 }

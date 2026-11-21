@@ -50,6 +50,9 @@ func validateEventShape(event Event, encodedLength int) error {
 	if !withinLineBudget(encodedLength) {
 		return fmt.Errorf("%s Event exceeds the journal's 1 MiB line budget", eventSizeLabel(event.EventType))
 	}
+	if err := ValidateEventUpdates(event); err != nil {
+		return err
+	}
 	if !event.IsV2() {
 		return validateLegacyEffects(event)
 	}

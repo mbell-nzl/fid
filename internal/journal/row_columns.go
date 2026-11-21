@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 )
@@ -12,8 +13,6 @@ type RowIdentityError struct{ EventID, Table, Reason string }
 func (err *RowIdentityError) Error() string {
 	return fmt.Sprintf("Event %q: malformed %s Effect: %s", err.EventID, err.Table, err.Reason)
 }
-
-func (*RowIdentityError) RowAdmissionRefusal() {}
 
 // Issue columns have the same domains throughout the retained profiles.
 // Optional columns may be absent on creation: SQLite supplies their defaults.
@@ -33,6 +32,9 @@ func rowFailure(event Event, table, reason string) error {
 
 func validateIssueColumns(event Event, effect Effect) error {
 	table, ok := issueRowTables[effect.Table]
+	if !ok {
+		table, ok = currentEventTables[effect.Table]
+	}
 	if !ok {
 		return nil
 	}
@@ -76,6 +78,27 @@ func validateIssueIdentity(event Event) error {
 			if _, sets := effect.Values[col]; sets {
 				return rowFailure(event, "issues", col+" is immutable")
 			}
+		}
+	}
+	return nil
+}
+
+// A transition's hold binding uses columns present in every hold profile,
+// including profile 20, before the later lifecycle columns existed.
+func validateIssueHoldBindings(tx *sql.Tx, event Event) error {
+	if !event.IsV2() || event.EventType != "issue.transitioned" {
+		return nil
+	}
+	for _, effect := range event.Effects {
+		if effect.Table != "holds" {
+			continue
+		}
+		var task string
+		if err := tx.QueryRow(`SELECT task_id FROM holds WHERE id=?`, effect.PK["id"]).Scan(&task); err != nil {
+			return fmt.Errorf("read transition hold: %w", err)
+		}
+		if task != event.Aggregate.ID {
+			return rowFailure(event, "holds", "transition changes another task's hold")
 		}
 	}
 	return nil

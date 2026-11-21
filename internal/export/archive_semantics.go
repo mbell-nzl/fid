@@ -312,6 +312,9 @@ func (validator *semanticValidator) validateEvent(event journal.Event) error {
 // validateEffects checks each Effect against the archive's own projection
 // profile. The family's Effect grammar is the journal's (ValidateEventGrammar).
 func (validator *semanticValidator) validateEffects(event journal.Event) error {
+	if err := journal.ValidateEventUpdates(event); err != nil {
+		return err
+	}
 	for index, effect := range event.Effects {
 		table, found := validator.tables[effect.Table]
 		if !found {

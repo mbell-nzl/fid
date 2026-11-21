@@ -1704,8 +1704,12 @@ and 2 are also in their tasks' rows in `RESET.md`.
        Link commands and admission share one relation-inverse registry.
        Import-only audit: duplicate JSON keys now fail in the shared Event
        decoder; shared Issue column/type/key checks complement the lean
-       family validators; the duplicate import update whitelist is removed,
-       since shared family validators already protect those mutable fields.
+       family validators; the import update allowlist moves into shared
+       admission, including historical profiles before the lifecycle guard
+       existed. Import calls that same rule before schema validation to keep
+       its existing refusal classification. Transition hold subjects and
+       cancellation end reasons are checked on the common hold columns,
+       including those historical profiles.
        Import keeps column/type validation against its declared historical
        schema (a different profile from the live database), canonical archive
        lines (an integrity/manifest contract), and existence of historical
@@ -3470,13 +3474,40 @@ such a task waits for Mark to accept it; until then the epic's wait for
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
-- From #97 (1.9b), five items folded into this PR (RESET 1.9c), resolved
-  2026-11-22: Issue workflow and parent are immutable in shared admission;
-  a transition ends a hold only as `task-cancelled`; Event-v1 cannot rename,
-  delete or recreate an Issue; subtask refusal names `fid issue transition`;
-  and finished tasks and closed epics cannot be cancelled (Mark's decision,
-  2026-11-22). Undoing merged work is a new task following the original PR's
-  `## Rollback` section.
+- From this PR (1.9b): a person can cancel a finished task or a closed
+  epic. `fid issue transition --to cancelled` allows `cancelled` from
+  `done`, and admission keeps that move because the command makes it.
+  Decide whether cancelling finished work should be refused.
+  Resolved in this PR (1.9c), 2026-11-22: The shared move table and the command refuse both moves, with the new-task/rollback explanation.
+
+- From this PR (1.9b): `issues.workflow_id` and `parent_id` can still
+  change through `issue.updated`. Neither moves a state, since admission
+  keys fixed moves on the immutable `kind`, but moving an open task out of
+  its epic would let the epic close. Belongs with 1.9c's immutable columns.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission makes both columns immutable, including on Event-v1.
+
+- From this PR (1.9b): the hold-lifecycle rule still lets
+  `issue.transitioned` end a hold as `task-completed`, though no command
+  can now complete a task through it; only `task-cancelled` is reachable.
+  Tidy in 1.9c.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission takes only task-cancelled from issue.transitioned.
+
+- From #97 (1.9b): Event-v1 history can still rename an Issue (set
+  `issues.id`) or delete one and insert another under its id, on replay.
+  Since #97's first fix round admission checks each state change against
+  the row it lands on, so neither can redirect a move, but the identity
+  change itself is admitted. 1.9c's "an Event can't rename its Issue"
+  should cover Event-v1 too, or record why it doesn't.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission refuses Issue renames and deletion/recreation on Event-v1 too.
+
+- From #97 (1.9b): a refused subtask move names the wrong owner. When a
+  family other than `issue.transitioned` moves a subtask (an
+  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
+  that creates and moves it), `StateMoveError` says "only a person's
+  cancellation makes that move". That is `issue.transitioned`'s owner for
+  a task or an epic; a subtask's moves are `fid issue transition`'s, by
+  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
+  Resolved in this PR (1.9c), 2026-11-22: OwnerCommand names fid issue transition for a subtask.
 
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
   on 2026-11-21; "Decided for 2.2b, 2026-11-21" records its exact list,

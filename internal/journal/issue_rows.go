@@ -31,13 +31,12 @@ func validateIssueRows(event Event) error {
 			return err
 		}
 	}
-	maxima := map[string]int{"issues": 1, "epic_metadata": 1, "acceptance_criteria": 1, "labels": 1, "activity_log": 1, "person_decisions": 1, "idempotency_results": 1, "holds": 1, "questions": 1}
+	maxima := map[string]int{"issues": 1, "epic_metadata": 1, "acceptance_criteria": 1, "labels": 1, "activity_log": 1, "holds": 1}
 	switch family {
 	case "issue.updated", "issue.transitioned":
-		maxima["issues"] = 2
+		delete(maxima, "issues")
 	case "link.added", "link.removed":
-		maxima["issues"] = 2
-		maxima["links"] = 2
+		delete(maxima, "issues")
 	case "issue.label.added", "issue.label.removed", "issue.label-added", "issue.label-removed":
 		maxima["issue_labels"] = 1
 	}
@@ -119,20 +118,18 @@ func validateLinkRows(event Event, counts map[string]int) error {
 	if inverse["from_type"] != declared["to_type"] || inverse["to_type"] != declared["from_type"] || inverse["from_id"] != to || inverse["to_id"] != from || inverse["relation"] != inverseRelation {
 		return rowFailure(event, "links", "second key must be the declared link's inverse")
 	}
-	ends := map[string]bool{from: false, to: false}
+	ends := map[string]bool{from: true, to: true}
+	if counts["issues"] != len(ends) {
+		return rowFailure(event, "issues", "each link endpoint needs one revision update")
+	}
 	for _, effect := range event.Effects {
 		if effect.Table != "issues" {
 			continue
 		}
 		id, _ := effect.PK["id"].(string)
-		changed, endpoint := ends[id]
-		if !endpoint || changed {
+		if !ends[id] {
 			return rowFailure(event, "issues", "only a link's two ends may change, once each")
 		}
-		ends[id] = true
-	}
-	if counts["issues"] != len(ends) {
-		return rowFailure(event, "issues", "each link endpoint needs one revision update")
 	}
 	return nil
 }

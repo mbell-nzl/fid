@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/mbell-nzl/fid/internal/config"
-	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/journal"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 // Both subjects reach done through their owning commands, with receipts.
@@ -130,6 +130,10 @@ func assertFinishedCancellationAdmission(t *testing.T, f *statusFixture, subject
 						t.Fatal(openErr)
 					}
 					_, err = journal.ReplayJournal(replay, dir, nil)
+					var state string
+					if scanErr := replay.QueryRow(`SELECT status FROM issues WHERE id=?`, subject).Scan(&state); scanErr != nil || state != "done" {
+						t.Fatalf("refused replay state=%q: %v", state, scanErr)
+					}
 					_ = replay.Close()
 				case "catch-up":
 					_, err = journal.ReplayJournal(conn, dir, &journal.ReplayOptions{StartFile: filepath.Base(file), StartOffset: int64(len(prefix))})
