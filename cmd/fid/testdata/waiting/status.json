@@ -60,7 +60,9 @@
                 "actor": "agent:claude-builder",
                 "model": "",
                 "question": "Should retries include authentication failures?"
-              }
+              },
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         },
@@ -97,7 +99,9 @@
                 "last_heartbeat_at": "2026-11-08T08:40:00Z",
                 "lapsed": false
               },
-              "kept": null
+              "kept": null,
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         }

@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [
       {
@@ -64,6 +65,7 @@
       "model": "",
       "question": "Should retries include authentication failures?"
     },
+    "no_other_model_review": null,
     "progress": null,
     "questions": [
       {

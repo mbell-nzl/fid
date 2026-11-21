@@ -342,7 +342,13 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 ```
 
 - **NEEDS YOU** lists what waits on a person, each item a summary and its
-  next step. Kinds include backup, waiting-for-you and worktree-missing (below).
+  next step. Kinds include backup, waiting-for-you, worktree-missing (below),
+  and `approval`: an in-review task whose latest hand-off is Assured and whose
+  approval is missing or stale. Its summary says `<task> approval missing`
+  or `<task> approval stale`, adding `, no other-model review` when applicable.
+  Its next step is `fid approve <task> --actor human:<name> --reason <text>`.
+  A current approval needs no item. Each IN PROGRESS task's JSON carries the
+  same `approval` and `no_other_model_review` fields as show (below).
 - **Epics and tasks** appear; subtasks never do. An epic whose own state is
   completed or cancelled is hidden. An epic is in progress when its own
   state's category is `started`, or any of its tasks is started or
@@ -620,6 +626,16 @@ every read, records no Event and makes no network calls. Text output is
     column, with its state;
   - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored;
   - `Lane`: on a task, `Routine`, `Standard`, `Assured`, or `not set`;
+  - `Approval`: after Lane, when the latest hand-off's lane is Assured,
+    including a lane raised by its floor. `○ missing` means no approval
+    exists. A current approval reads `✓ <decision> <actor> · <at>`; a stale
+    one reads `⚠ stale · <decision> <actor> · <at> · approved an earlier change`.
+    Current is green, stale yellow, missing muted when colour is enabled.
+    A second line says `no other-model review` when no current primary or
+    separate round came from another model family than every builder's.
+    Unknown agent builder models and unknown reviewer models cannot establish
+    other-model coverage. Every current round may establish it; stale rounds
+    cannot. The approve prompt and done use this same reader.
   - `Working`: on a held task, `here, since 09:02, until 10:02`, or
     `in <full path> by <actor>, since 08:40, until 09:40` elsewhere. An
     interrupted task reads `⚠ interrupted in <full path> by <actor>: work
@@ -628,8 +644,8 @@ every read, records no Event and makes no network calls. Text output is
     so it has no Working row.
 
   Labels are 10 columns wide after the two-space indent, so values begin
-  at column 14. Checks follows `Lane`; later tasks add reviews,
-  approval, and next as the last), a NEEDS YOU block
+  at column 14. Checks follows `Approval` (or `Lane` when approval does not
+  apply); later tasks add reviews and next as the last, a NEEDS YOU block
   under the heading, and an epic's plan and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
   mark, the ID, two spaces, the title cut with `…`, and the right-hand
@@ -666,6 +682,8 @@ The `issue.show` JSON result holds everything, with a null `event`:
  "kept": null,
  "checks": [],
  "checks_base": null,
+ "approval": null,
+ "no_other_model_review": null,
  "warnings": [],
  "scheduling": null,
  "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
@@ -676,6 +694,21 @@ The `issue.show` JSON result holds everything, with a null `event`:
                "status": "done", "status_category": "completed", "sequence": null,
                "priority": null, "blocked_by": []}]}
 ```
+
+Approval's JSON is null before a task's first hand-off and for non-Assured
+hand-offs. Otherwise it is `{"state":"missing"}`, or an object whose `state`
+is `current` or `stale`, with `decision_id`, `actor`, `at` (RFC3339), and
+`fingerprint` (the recorded fingerprint value). Freshness comes from
+`approvalrecord.Current` against the latest hand-off's fingerprint; an earlier
+approval of an identical change remains current. The state field also leaves
+room for a future `not-required` state for waivers, which is not implemented.
+`no_other_model_review` is a boolean for Assured hand-offs, null when not
+applicable or unknown. Both commands operate offline, without fetching.
+Unavailable current policy or comparison retains approval evidence from the
+recorded endpoints. If those endpoints cannot be fingerprinted locally, an
+`approval-unavailable` warning names the task and problem; unknown approval
+and disclosure fields are null. An absence of approvals or reviews remains
+known without those objects. Neither command writes an approval or any Event.
 
 - `issue` is exactly `issue get`'s. `state` is null except on an epic,
   where it is `in-progress` or `to-do` as in `status`, or `completed` or

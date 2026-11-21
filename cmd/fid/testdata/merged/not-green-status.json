@@ -59,7 +59,9 @@
           "merge": {
             "merge_commit": "<commit-or-tree>",
             "ci": "not-green"
-          }
+          },
+          "approval": null,
+          "no_other_model_review": null
         }
       ]
     },

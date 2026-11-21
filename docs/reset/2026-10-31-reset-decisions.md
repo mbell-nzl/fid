@@ -2796,6 +2796,53 @@ remain the follow-up builder's transactional choices.
   extra byte list. This is required to honor the conservative unsupported
   path rule on replay, rather than changing its result after serialization.
 
+**Decided for 2.3, 2026-11-21.**
+
+The orchestrator settled this design under Mark's delegation, for his review.
+Approval presentation uses the latest hand-off's recorded lane: Assured,
+including a lane raised by 2.2b, requires approval. Before the first hand-off
+there is no approval state. Other lanes have no approval presentation.
+
+- `approvalrecord.Current` remains the freshness rule: missing means no
+  approval exists; current means an immutable approval matches the latest
+  hand-off's fingerprint algorithm and value; stale means approvals exist
+  but none matches. Current and stale name the decision, actor and time.
+- Show places Approval immediately after Lane, with the display package's
+  existing marks and colours: muted `○ missing`, green `✓ <decision>
+  <actor> · <at>`, yellow `⚠ stale · <decision> <actor> · <at> · approved an
+  earlier change`. A second line discloses `no other-model review` when
+  applicable. The JSON fields are `approval` (null or an object with
+  `state`, plus `decision_id`, `actor`, `at`, `fingerprint` when present)
+  and nullable `no_other_model_review`. The open state string leaves room
+  for 2.2c's future `not-required`; no waiver behavior is built here.
+- Status adds an `approval` NEEDS YOU item for each in-review Assured task
+  with missing or stale approval. The summary names the state and appends
+  `, no other-model review` when applicable. Its next action is `fid approve
+  <task> --actor human:<name> --reason <text>`. IN PROGRESS JSON carries the
+  same approval and disclosure fields, including current approvals.
+- The approve prompt, done and both displays use one disclosure predicate
+  over `reviewrecord.CurrentViews`: no current primary or separate round
+  establishes another model family than the builders'. Unknown models are
+  conservative, using the existing `OtherModel` reader. All current rounds
+  may establish coverage, not just the last in a stream. The prompt's old
+  loop did not filter streams; done's stricter task/stream filter is now
+  shared. Admitted rounds already belong to these two streams, so this
+  does not change their existing result.
+- Both commands remain offline and record no Events. Policy or a current
+  comparison failure retains evidence read from recorded hand-off endpoints.
+  Unavailable fingerprint evidence warns with `approval-unavailable` and
+  leaves unknown fields null; no approvals and no reviews remain known
+  without computing a fingerprint.
+
+**Builder's implementation choices:** `internal/decisionview.View` owns the
+flat JSON shape and current/stale text for fingerprint-bound person
+decisions, ready for 2.2c to reuse. Its approval reader composes existing
+approval and review readers, without another freshness rule. Status reads
+the approval alongside its other task details in its existing transaction.
+Show uses a read transaction for the approval evidence. Times use the full
+recorded RFC3339 timestamp in text and JSON. There is no new dependency,
+migration, Event family, network call or write command.
+
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies

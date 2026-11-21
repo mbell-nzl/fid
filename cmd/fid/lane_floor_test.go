@@ -111,6 +111,9 @@ func TestLaneFloorChecksAndAtomicHandoff(t *testing.T) {
 			if result.Result.Issue.Lane != tc.want || result.Result.Floor == nil {
 				t.Fatalf("show=%s", shown.stdout)
 			}
+			if tc.want == "assured" && (!strings.Contains(shown.stdout, `"approval":{"state":"missing"}`) || !strings.Contains(shown.stdout, `"no_other_model_review":true`)) {
+				t.Fatalf("raised Assured lane needs approval: %s", shown.stdout)
+			}
 			if tc.want != tc.lane {
 				text := f.run("show", "FID-9f13aa")
 				if !strings.Contains(strings.Join(strings.Fields(text.stdout), " "), "raised from "+strings.ToUpper(tc.lane[:1])+tc.lane[1:]) || !strings.Contains(text.stdout, "floor") {

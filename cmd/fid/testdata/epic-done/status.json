@@ -49,7 +49,9 @@
               "priority": null,
               "blocked_by": [],
               "working": null,
-              "kept": null
+              "kept": null,
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         }
