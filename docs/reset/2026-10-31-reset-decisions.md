@@ -1670,6 +1670,14 @@ and 2 are also in their tasks' rows in `RESET.md`.
      Event-v1 history may still move, and rebuild the test fixtures that
      move tasks with plain transitions (`cmd/fid/review_state_fixture_test.go`
      and others).
+     - 2026-11-21, settled in 1.9b: Event-v1 history can't move a task or
+       an epic. It may still create one, in todo only, and create and move
+       subtasks, in one Event too. As on Event-v2, a subtask's move comes
+       only from the family that owns it, `issue.transitioned`. None of the
+       commands that own a fixed move ever wrote Event-v1, import already
+       refuses it, and no ledger holds any (Mark's live ledger holds only
+       Event-v2). On every path, whatever its schema, a task or an epic is
+       created only in todo.
    - **1.9c: row identity and cardinality for the Issue families.**
      Admission binds the `issues` row to the Event's Issue, by `id` alone,
      but not `acceptance_criteria.issue_id`, `issue_labels.issue_id`,
@@ -2990,6 +2998,32 @@ first, as before, and the orchestrator also files it as a task in fid's
 Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
+
+- From this PR (1.9b): a person can cancel a finished task or a closed
+  epic. `fid issue transition --to cancelled` allows `cancelled` from
+  `done`, and admission keeps that move because the command makes it.
+  Decide whether cancelling finished work should be refused.
+- From this PR (1.9b): `issues.workflow_id` and `parent_id` can still
+  change through `issue.updated`. Neither moves a state, since admission
+  keys fixed moves on the immutable `kind`, but moving an open task out of
+  its epic would let the epic close. Belongs with 1.9c's immutable columns.
+- From this PR (1.9b): the hold-lifecycle rule still lets
+  `issue.transitioned` end a hold as `task-completed`, though no command
+  can now complete a task through it; only `task-cancelled` is reachable.
+  Tidy in 1.9c.
+- From #97 (1.9b): Event-v1 history can still rename an Issue (set
+  `issues.id`) or delete one and insert another under its id, on replay.
+  Since #97's first fix round admission checks each state change against
+  the row it lands on, so neither can redirect a move, but the identity
+  change itself is admitted. 1.9c's "an Event can't rename its Issue"
+  should cover Event-v1 too, or record why it doesn't.
+- From #97 (1.9b): a refused subtask move names the wrong owner. When a
+  family other than `issue.transitioned` moves a subtask (an
+  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
+  that creates and moves it), `StateMoveError` says "only a person's
+  cancellation makes that move". That is `issue.transitioned`'s owner for
+  a task or an epic; a subtask's moves are `fid issue transition`'s, by
+  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps

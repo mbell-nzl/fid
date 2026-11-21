@@ -14,6 +14,11 @@ func applyEventEffects(tx *sql.Tx, input ProjectionInput, executor fiddb.Project
 		return err
 	}
 	for _, effect := range input.Event.Effects {
+		// An earlier Effect can change which row an id names, so a state
+		// change is checked again against the row it lands on.
+		if err := validateStateMove(tx, input.Event, effect); err != nil {
+			return err
+		}
 		if err := applyEffect(tx, input, effect, executor); err != nil {
 			return err
 		}
