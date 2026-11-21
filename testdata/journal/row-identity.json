@@ -1,0 +1,6700 @@
+{
+  "prefix": [
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000001",
+      "event_type": "project.initialized",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "fid-bootstrap",
+        "actor_type": "service",
+        "producer": "fid",
+        "provenance_ref": "fid:init"
+      },
+      "aggregate": {
+        "type": "project",
+        "id": "project-1",
+        "sequence": 1
+      },
+      "command": "project.init",
+      "effects": []
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000002",
+      "event_type": "issue.created",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "issue",
+        "id": "FID-a",
+        "sequence": 1
+      },
+      "command": "issue.create",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issues",
+          "pk": {
+            "id": "FID-a"
+          },
+          "values": {
+            "kind": "task",
+            "title": "FID-a",
+            "workflow_id": "task-default",
+            "status": "todo",
+            "created_at": "2026-11-10T10:00:00Z",
+            "updated_at": "2026-11-10T10:00:00Z",
+            "lane": "standard"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-2"
+          },
+          "values": {
+            "journal_event_id": "EVT-20261110-000002",
+            "ref_type": "issue",
+            "ref_id": "FID-a",
+            "event": "created",
+            "details": null,
+            "actor": "human:mark",
+            "occurred_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000003",
+      "event_type": "issue.created",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "issue",
+        "id": "FID-b",
+        "sequence": 1
+      },
+      "command": "issue.create",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issues",
+          "pk": {
+            "id": "FID-b"
+          },
+          "values": {
+            "kind": "task",
+            "title": "FID-b",
+            "workflow_id": "task-default",
+            "status": "todo",
+            "created_at": "2026-11-10T10:00:00Z",
+            "updated_at": "2026-11-10T10:00:00Z",
+            "lane": "standard"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-3"
+          },
+          "values": {
+            "journal_event_id": "EVT-20261110-000003",
+            "ref_type": "issue",
+            "ref_id": "FID-b",
+            "event": "created",
+            "details": null,
+            "actor": "human:mark",
+            "occurred_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000004",
+      "event_type": "issue.created",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "issue",
+        "id": "FID-e",
+        "sequence": 1
+      },
+      "command": "issue.create",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issues",
+          "pk": {
+            "id": "FID-e"
+          },
+          "values": {
+            "kind": "epic",
+            "title": "FID-e",
+            "workflow_id": "epic-default",
+            "status": "todo",
+            "created_at": "2026-11-10T10:00:00Z",
+            "updated_at": "2026-11-10T10:00:00Z"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-4"
+          },
+          "values": {
+            "journal_event_id": "EVT-20261110-000004",
+            "ref_type": "issue",
+            "ref_id": "FID-e",
+            "event": "created",
+            "details": null,
+            "actor": "human:mark",
+            "occurred_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000005",
+      "event_type": "issue.created",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "issue",
+        "id": "FID-s",
+        "sequence": 1
+      },
+      "command": "issue.create",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issues",
+          "pk": {
+            "id": "FID-s"
+          },
+          "values": {
+            "kind": "subtask",
+            "title": "FID-s",
+            "workflow_id": "subtask-default",
+            "status": "todo",
+            "created_at": "2026-11-10T10:00:00Z",
+            "updated_at": "2026-11-10T10:00:00Z",
+            "parent_id": "FID-a"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-5"
+          },
+          "values": {
+            "journal_event_id": "EVT-20261110-000005",
+            "ref_type": "issue",
+            "ref_id": "FID-s",
+            "event": "created",
+            "details": null,
+            "actor": "human:mark",
+            "occurred_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000006",
+      "event_type": "label.added",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "label",
+        "id": "red",
+        "sequence": 1
+      },
+      "command": "label.add",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "labels",
+          "pk": {
+            "name": "red"
+          },
+          "values": {}
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "operation_scope": "label.add:project-1",
+            "idempotency_key": "key-EVT-20261110-000006"
+          },
+          "values": {
+            "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "request_field_digests_json": "{}",
+            "result_entity_id": "red",
+            "result_event_id": "EVT-20261110-000006",
+            "aggregate_sequence": 1,
+            "result_json": "{\"replayed\":false}",
+            "created_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ],
+      "idempotency": {
+        "key": "key-EVT-20261110-000006",
+        "scope": "label.add:project-1",
+        "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "event_schema": 2,
+      "event_id": "EVT-20261110-000007",
+      "event_type": "label.added",
+      "occurred_at": "2026-11-10T10:00:00Z",
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution"
+      },
+      "aggregate": {
+        "type": "label",
+        "id": "blue",
+        "sequence": 1
+      },
+      "command": "label.add",
+      "effects": [
+        {
+          "op": "insert",
+          "table": "labels",
+          "pk": {
+            "name": "blue"
+          },
+          "values": {}
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "operation_scope": "label.add:project-1",
+            "idempotency_key": "key-EVT-20261110-000007"
+          },
+          "values": {
+            "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "request_field_digests_json": "{}",
+            "result_entity_id": "blue",
+            "result_event_id": "EVT-20261110-000007",
+            "aggregate_sequence": 1,
+            "result_json": "{\"replayed\":false}",
+            "created_at": "2026-11-10T10:00:00Z"
+          }
+        }
+      ],
+      "idempotency": {
+        "key": "key-EVT-20261110-000007",
+        "scope": "label.add:project-1",
+        "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "name": "update",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "creation",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "created labels",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "blue"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "epic with label",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-new-epic",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-new-epic"
+            },
+            "values": {
+              "kind": "epic",
+              "title": "FID-new-epic",
+              "workflow_id": "epic-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "epic_metadata",
+            "pk": {
+              "issue_id": "FID-new-epic"
+            },
+            "values": {
+              "scheduling": "parallel"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-new-epic",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-new-epic",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label definition",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "label",
+          "id": "green",
+          "sequence": 1
+        },
+        "command": "label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "labels",
+            "pk": {
+              "name": "green"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "idempotency_results",
+            "pk": {
+              "operation_scope": "label.add:project-1",
+              "idempotency_key": "key-EVT-20261110-000008"
+            },
+            "values": {
+              "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "request_field_digests_json": "{}",
+              "result_entity_id": "green",
+              "result_event_id": "EVT-20261110-000008",
+              "aggregate_sequence": 1,
+              "result_json": "{\"replayed\":false}",
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ],
+        "idempotency": {
+          "key": "key-EVT-20261110-000008",
+          "scope": "label.add:project-1",
+          "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "issue.label.removed",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "issue.label.removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 3
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "issue.label.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "issue",
+            "id": "FID-a",
+            "sequence": 2
+          },
+          "command": "issue.label.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "issue_labels",
+              "pk": {
+                "issue_id": "FID-a",
+                "label": "red"
+              },
+              "values": {}
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "issue-label-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "link.removed",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "link.removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 2
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            }
+          },
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "link.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "link",
+            "id": "FID-a:blocks:FID-b",
+            "sequence": 1
+          },
+          "command": "link.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-a",
+                "relation": "blocks",
+                "to_type": "issue",
+                "to_id": "FID-b"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-b",
+                "relation": "blocked_by",
+                "to_type": "issue",
+                "to_id": "FID-a"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-b"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "link-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "older spelling add",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "older spelling remove",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "issue.label-removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 3
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "issue.label.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "issue",
+            "id": "FID-a",
+            "sequence": 2
+          },
+          "command": "issue.label.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "issue_labels",
+              "pk": {
+                "issue_id": "FID-a",
+                "label": "red"
+              },
+              "values": {}
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "issue-label-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "malformed": [
+    {
+      "name": "immutable id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "id": "FID-z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "immutable kind",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "kind": "subtask"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "immutable workflow_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "workflow_id": "epic-default"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "immutable parent_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "parent_id": "FID-e"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "immutable created_at",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "created_at": "2026-11-09T00:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy immutable id",
+      "event": {
+        "event_schema": 1,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "role": "developer"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": {
+          "argv": [
+            "fid",
+            "issue",
+            "update"
+          ],
+          "cwd": ".",
+          "fid_version": "0.1.0"
+        },
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "id": "FID-z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy immutable workflow_id",
+      "event": {
+        "event_schema": 1,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "role": "developer"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": {
+          "argv": [
+            "fid",
+            "issue",
+            "update"
+          ],
+          "cwd": ".",
+          "fid_version": "0.1.0"
+        },
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "workflow_id": "epic-default"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy immutable parent_id",
+      "event": {
+        "event_schema": 1,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "role": "developer"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": {
+          "argv": [
+            "fid",
+            "issue",
+            "update"
+          ],
+          "cwd": ".",
+          "fid_version": "0.1.0"
+        },
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "parent_id": "FID-e"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy deletes and recreates Issue",
+      "event": {
+        "event_schema": 1,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "role": "developer"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": {
+          "argv": [
+            "fid",
+            "issue",
+            "update"
+          ],
+          "cwd": ".",
+          "fid_version": "0.1.0"
+        },
+        "effects": [
+          {
+            "op": "delete",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-b",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "no_such_column": "bad"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid text type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": 123,
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid integer type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "priority": 1.5
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-b",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion key contains another column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one",
+              "issue_id": "FID-b"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "two criteria",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-two"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 2,
+              "text": "Also works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "create label on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "blue"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "update label on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "add label on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label key contains extra column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red",
+              "rowid": 1
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label values change key",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {
+              "issue_id": "FID-b"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "two singular labels",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "blue"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate label operation",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-c",
+              "label": "blue"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "metadata on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-new-epic",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-new-epic"
+            },
+            "values": {
+              "kind": "epic",
+              "title": "FID-new-epic",
+              "workflow_id": "epic-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "epic_metadata",
+            "pk": {
+              "issue_id": "FID-e"
+            },
+            "values": {
+              "scheduling": "parallel"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-new-epic",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-new-epic",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "two metadata rows",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-new-epic",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-new-epic"
+            },
+            "values": {
+              "kind": "epic",
+              "title": "FID-new-epic",
+              "workflow_id": "epic-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "epic_metadata",
+            "pk": {
+              "issue_id": "FID-new-epic"
+            },
+            "values": {
+              "scheduling": "parallel"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "epic_metadata",
+            "pk": {
+              "issue_id": "FID-e"
+            },
+            "values": {
+              "scheduling": "parallel"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-new-epic",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-new-epic",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "task has epic metadata",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "epic_metadata",
+            "pk": {
+              "issue_id": "FID-c"
+            },
+            "values": {
+              "scheduling": "parallel"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "definition names another label",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "label",
+          "id": "green",
+          "sequence": 1
+        },
+        "command": "label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "labels",
+            "pk": {
+              "name": "yellow"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "idempotency_results",
+            "pk": {
+              "operation_scope": "label.add:project-1",
+              "idempotency_key": "key-EVT-20261110-000008"
+            },
+            "values": {
+              "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "request_field_digests_json": "{}",
+              "result_entity_id": "green",
+              "result_event_id": "EVT-20261110-000008",
+              "aggregate_sequence": 1,
+              "result_json": "{\"replayed\":false}",
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ],
+        "idempotency": {
+          "key": "key-EVT-20261110-000008",
+          "scope": "label.add:project-1",
+          "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "two label definitions",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "label",
+          "id": "green",
+          "sequence": 1
+        },
+        "command": "label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "labels",
+            "pk": {
+              "name": "green"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "labels",
+            "pk": {
+              "name": "yellow"
+            },
+            "values": {}
+          },
+          {
+            "op": "insert",
+            "table": "idempotency_results",
+            "pk": {
+              "operation_scope": "label.add:project-1",
+              "idempotency_key": "key-EVT-20261110-000008"
+            },
+            "values": {
+              "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "request_field_digests_json": "{}",
+              "result_entity_id": "green",
+              "result_event_id": "EVT-20261110-000008",
+              "aggregate_sequence": 1,
+              "result_json": "{\"replayed\":false}",
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ],
+        "idempotency": {
+          "key": "key-EVT-20261110-000008",
+          "scope": "label.add:project-1",
+          "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "created activity ref_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-b",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "created activity ref_type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "task",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "created activity journal_event_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000001",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "created extra activity",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.created",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-c",
+          "sequence": 1
+        },
+        "command": "issue.create",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issues",
+            "pk": {
+              "id": "FID-c"
+            },
+            "values": {
+              "kind": "task",
+              "title": "FID-c",
+              "workflow_id": "task-default",
+              "status": "todo",
+              "created_at": "2026-11-10T10:00:00Z",
+              "updated_at": "2026-11-10T10:00:00Z",
+              "lane": "standard"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-extra"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-c",
+              "event": "created",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "updated activity ref_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-b",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "updated activity ref_type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "task",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "updated activity journal_event_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000001",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "updated extra activity",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-extra"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion activity ref_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-b",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion activity ref_type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "task",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion activity journal_event_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000001",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "criterion extra activity",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-extra"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label activity ref_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-b",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label activity ref_type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "task",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label activity journal_event_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000001",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "label extra activity",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-a",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-extra"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link activity ref_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-b",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link activity ref_type",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "task",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link activity journal_event_id",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000001",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link extra activity",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-extra"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "activity key uses another column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "ref_id": "FID-a"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "three Issue updates",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Again"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "two updates of one scalar",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.updated",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.update",
+        "effects": [
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Changed",
+              "updated_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "values": {
+              "title": "Again"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "updated",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "revision changes another field",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.ac-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.ac.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "acceptance_criteria",
+            "pk": {
+              "id": "AC-one"
+            },
+            "values": {
+              "issue_id": "FID-a",
+              "ordinal": 1,
+              "text": "Works"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2,
+              "title": "Changed"
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "ac-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link aggregate differs",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-b:blocks:FID-a",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "inverse differs",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "relates_to",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link endpoint differs",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link key has extra column",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b",
+              "created_at": "2026-11-10T10:00:00Z"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link has one row",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link has three rows",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "relates_to",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link bumps another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-e"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link misses an endpoint revision",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link repeats an endpoint revision",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "link changes an endpoint title",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "link.added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 1
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "insert",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            },
+            "values": {
+              "created_at": "2026-11-10T10:00:00Z"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2,
+              "title": "Changed"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "remove label on another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "issue.label.removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 3
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "issue.label.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "issue",
+            "id": "FID-a",
+            "sequence": 2
+          },
+          "command": "issue.label.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "issue_labels",
+              "pk": {
+                "issue_id": "FID-a",
+                "label": "red"
+              },
+              "values": {}
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "issue-label-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "remove bumps another Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "link.removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 2
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            }
+          },
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "blocked_by",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-e"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "link.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "link",
+            "id": "FID-a:blocks:FID-b",
+            "sequence": 1
+          },
+          "command": "link.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-a",
+                "relation": "blocks",
+                "to_type": "issue",
+                "to_id": "FID-b"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-b",
+                "relation": "blocked_by",
+                "to_type": "issue",
+                "to_id": "FID-a"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-b"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "link-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "remove inverse differs",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "link.removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "link",
+          "id": "FID-a:blocks:FID-b",
+          "sequence": 2
+        },
+        "command": "link.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-a",
+              "relation": "blocks",
+              "to_type": "issue",
+              "to_id": "FID-b"
+            }
+          },
+          {
+            "op": "delete",
+            "table": "links",
+            "pk": {
+              "from_type": "issue",
+              "from_id": "FID-b",
+              "relation": "relates_to",
+              "to_type": "issue",
+              "to_id": "FID-a"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-b"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "link-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "link.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "link",
+            "id": "FID-a:blocks:FID-b",
+            "sequence": 1
+          },
+          "command": "link.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-a",
+                "relation": "blocks",
+                "to_type": "issue",
+                "to_id": "FID-b"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "insert",
+              "table": "links",
+              "pk": {
+                "from_type": "issue",
+                "from_id": "FID-b",
+                "relation": "blocked_by",
+                "to_type": "issue",
+                "to_id": "FID-a"
+              },
+              "values": {
+                "created_at": "2026-11-10T10:00:00Z"
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-b"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "link-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "older spelling cross Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000008",
+        "event_type": "issue.label-added",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 2
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "insert",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            },
+            "values": {}
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 1
+            },
+            "preconditions": {
+              "revision": 1
+            },
+            "values": {
+              "revision": 2
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-8"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000008",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "older spelling remove cross Issue",
+      "event": {
+        "event_schema": 2,
+        "event_id": "EVT-20261110-000009",
+        "event_type": "issue.label-removed",
+        "occurred_at": "2026-11-10T10:00:00Z",
+        "actor": {
+          "actor_id": "mark",
+          "actor_type": "human",
+          "producer": "fid-standalone",
+          "provenance_ref": "project-local-attribution"
+        },
+        "aggregate": {
+          "type": "issue",
+          "id": "FID-a",
+          "sequence": 3
+        },
+        "command": "issue.label.add",
+        "effects": [
+          {
+            "op": "delete",
+            "table": "issue_labels",
+            "pk": {
+              "issue_id": "FID-b",
+              "label": "red"
+            }
+          },
+          {
+            "op": "update",
+            "table": "issues",
+            "pk": {
+              "id": "FID-a"
+            },
+            "prior": {
+              "revision": 2
+            },
+            "preconditions": {
+              "revision": 2
+            },
+            "values": {
+              "revision": 3
+            }
+          },
+          {
+            "op": "activity",
+            "table": "activity_log",
+            "pk": {
+              "id": "ACT-9"
+            },
+            "values": {
+              "journal_event_id": "EVT-20261110-000009",
+              "ref_type": "issue",
+              "ref_id": "FID-a",
+              "event": "issue-label-added",
+              "details": null,
+              "actor": "human:mark",
+              "occurred_at": "2026-11-10T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "prefix": [
+        {
+          "event_schema": 2,
+          "event_id": "EVT-20261110-000008",
+          "event_type": "issue.label.added",
+          "occurred_at": "2026-11-10T10:00:00Z",
+          "actor": {
+            "actor_id": "mark",
+            "actor_type": "human",
+            "producer": "fid-standalone",
+            "provenance_ref": "project-local-attribution"
+          },
+          "aggregate": {
+            "type": "issue",
+            "id": "FID-a",
+            "sequence": 2
+          },
+          "command": "issue.label.add",
+          "effects": [
+            {
+              "op": "insert",
+              "table": "issue_labels",
+              "pk": {
+                "issue_id": "FID-a",
+                "label": "red"
+              },
+              "values": {}
+            },
+            {
+              "op": "update",
+              "table": "issues",
+              "pk": {
+                "id": "FID-a"
+              },
+              "prior": {
+                "revision": 1
+              },
+              "preconditions": {
+                "revision": 1
+              },
+              "values": {
+                "revision": 2
+              }
+            },
+            {
+              "op": "activity",
+              "table": "activity_log",
+              "pk": {
+                "id": "ACT-8"
+              },
+              "values": {
+                "journal_event_id": "EVT-20261110-000008",
+                "ref_type": "issue",
+                "ref_id": "FID-a",
+                "event": "issue-label-added",
+                "details": null,
+                "actor": "human:mark",
+                "occurred_at": "2026-11-10T10:00:00Z"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,8 @@ func TestFixedTransitionPointsAtTheOwningCommand(t *testing.T) {
 	states := []string{"todo", "in_progress", "in_review", "done", "cancelled", "unknown"}
 	want := func(kind, from, to string) string {
 		switch {
+		case kind != "subtask" && from == "done" && to == "cancelled":
+			return "finished-work-stays-done"
 		case kind == "subtask":
 			return ""
 		case to == "done":

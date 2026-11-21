@@ -18,7 +18,7 @@ func TestMoveOwnerNamesEachCommandsMoves(t *testing.T) {
 		{"epic", "in_progress", "done"}:      FamilyEpicDone,
 	}
 	for _, kind := range []string{"task", "epic"} {
-		for _, from := range []string{"todo", "in_progress", "in_review", "done"} {
+		for _, from := range []string{"todo", "in_progress", "in_review"} {
 			owned[[3]string{kind, from, "cancelled"}] = FamilyTransition
 		}
 	}
