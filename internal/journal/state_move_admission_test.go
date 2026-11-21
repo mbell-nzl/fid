@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -252,12 +253,21 @@ func assertStateMoveRefused(t *testing.T, forged Event, issue, from, to string) 
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
-			if mode == "commit" || mode == "dry-run" || mode == "project" {
-				if !reflect.DeepEqual(stored, w.prefix) {
-					t.Fatalf("%s refusal changed the journal", mode)
+			// A live path leaves the prefix; a replay path leaves the journal
+			// exactly as it was supplied, then drops the forged line before
+			// the follow-up write.
+			live := mode == "commit" || mode == "dry-run" || mode == "project"
+			want := w.journalWith(t, forged)
+			if live {
+				want = w.prefix
+			}
+			if !bytes.Equal(stored, want) {
+				t.Fatalf("%s refusal changed the journal", mode)
+			}
+			if !live {
+				if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
+					t.Fatal(err)
 				}
-			} else if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
-				t.Fatal(err)
 			}
 			if err := w.admit(t, "commit", stateLaneRaise()); err != nil {
 				t.Fatalf("valid write after %s refusal: %v", mode, err)
