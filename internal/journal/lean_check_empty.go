@@ -59,7 +59,7 @@ func validateEmptyCheck(tx *sql.Tx, event Event) error {
 		lane = floor.Raise(lane)
 	}
 	if lane != response.Lane {
-		return fmt.Errorf("empty check lane differs from its floor")
+		return fmt.Errorf("empty check requires a started task, lane and current hold")
 	}
 	if !effective.Lanes[lane].ChecksSet {
 		return fmt.Errorf("empty check requires configured lane checks")
