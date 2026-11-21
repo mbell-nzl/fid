@@ -95,6 +95,22 @@ func TestImportRefusesForgedStateMoves(t *testing.T) {
 			})
 		}
 	}
+	// A cancellation takes exactly one person's decision, not two.
+	for _, tc := range []struct{ issue, kind, from string }{{"FID-started", "task", "in_progress"}, {"FID-epic", "epic", "todo"}} {
+		t.Run("cancel with two decisions/"+tc.kind, func(t *testing.T) {
+			t.Parallel()
+			v := stateMoveArchiveFixture(t)
+			event := stateMoveCancel(tc.issue, tc.kind, tc.from)
+			second := event.Effects[2]
+			second.PK = map[string]any{"id": "PDN-d4e5f6"}
+			event.Effects = append(event.Effects[:3:3], second, event.Effects[3])
+			before := handoffProjectionSnapshot(t, v)
+			assertImportStateMoveRefused(t, applyLeanEmptyEvent(v, "import", event), tc.issue, tc.from, "cancelled")
+			if before != handoffProjectionSnapshot(t, v) {
+				t.Fatal("refused import changed the projection")
+			}
+		})
+	}
 	t.Run("task created done", func(t *testing.T) {
 		t.Parallel()
 		v := stateMoveArchiveFixture(t)

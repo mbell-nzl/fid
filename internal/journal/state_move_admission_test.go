@@ -51,9 +51,12 @@ func stateTransition(issue, to string, actor EventActor) Event {
 // stateCancel is a person's cancellation, with the decision fid issue
 // transition records.
 func stateCancel(issue, kind string) Event {
-	event := stateTransition(issue, "cancelled", statePerson)
-	return withEffect(event, Effect{Op: "insert", Table: "person_decisions", PK: map[string]any{"id": "PDN-a1b2c3"}, Values: map[string]any{
-		"kind": "cancel", "actor": "human:mark", "subject_type": kind, "subject_id": issue, "reason": "Not needed", "binding_id": issue, "decided_at": admissionStamp(60)}})
+	return withEffect(stateTransition(issue, "cancelled", statePerson), stateCancelDecision("PDN-a1b2c3", issue, kind))
+}
+
+func stateCancelDecision(id, issue, kind string) Effect {
+	return Effect{Op: "insert", Table: "person_decisions", PK: map[string]any{"id": id}, Values: map[string]any{
+		"kind": "cancel", "actor": "human:mark", "subject_type": kind, "subject_id": issue, "reason": "Not needed", "binding_id": issue, "decided_at": admissionStamp(60)}}
 }
 
 // stateUpdate is issue.updated as fid issue update writes it, with status
@@ -126,6 +129,11 @@ func TestForgedStateMovesRefusedOnEveryJournalPath(t *testing.T) {
 	}
 	cases["task cancelled by a person without the decision"] = probe{"FID-a", "todo", "cancelled", func() Event { return stateTransition("FID-a", "cancelled", statePerson) }}
 	cases["epic cancelled by a person without the decision"] = probe{"FID-e", "todo", "cancelled", func() Event { return stateTransition("FID-e", "cancelled", statePerson) }}
+	for issue, kind := range map[string]string{"FID-a": "task", "FID-e": "epic"} {
+		cases[kind+" cancelled by a person with two decisions"] = probe{issue, "todo", "cancelled", func() Event {
+			return withEffect(stateCancel(issue, kind), stateCancelDecision("PDN-d4e5f6", issue, kind))
+		}}
+	}
 	cases["legacy Event in the start family"] = probe{"FID-a", "todo", "in_progress", func() Event {
 		event := stateLegacy(stateTransition("FID-a", "in_progress", stateAgent))
 		event.EventType, event.CommandName = "task.started", "task.start"
