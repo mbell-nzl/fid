@@ -2697,6 +2697,103 @@ environment allowlist stays.
   fact; retry checks it again. Replay validates the recorded policy and
   digest without replacing them with the running version's rules.
 
+**Decided for 2.2b, 2026-11-21.**
+
+Mark chose fid's trust boundary at this task's start: the code that decides
+what an agent may do, or makes the receipts he relies on at approval and
+`done` (D5). The exact `[lanes.assured] paths` list is:
+
+```toml
+paths = [
+  "migrations/**", "internal/journal/**", "go.mod", "go.sum",
+  "internal/policy/**", "internal/pathglob/**",
+  "internal/fingerprint/**",
+  "internal/persondecision/**", "internal/approvalrecord/**", "internal/approvalwork/**", "cmd/fid/approve.go",
+  "internal/doneeval/**", "internal/donework/**", "internal/mergerecord/**", "internal/mergework/**",
+  "internal/github/**",
+  "internal/reviewrecord/**", "internal/reviewwork/**",
+  "internal/checkrun/**", "internal/checkrecord/**", "internal/checkread/**",
+  "internal/handoffrecord/**",
+  "internal/issuestate/**",
+]
+```
+
+Backup, export, issues, links, labels, next, holds, status, show, display and
+`internal/cli` stay Standard. Releases have no paths yet; 3.2 adds them.
+The built-in hard paths and check-defining paths still apply independently.
+
+The orchestrator settled the following design under Mark's delegation, for
+his review. The builder used the brief's explicit size split: this PR builds
+the floor; `fid waive` is proposed as 2.2c before 2.3. RESET's 2.2b done mark
+applies to the narrowed floor slice; the proposed 2.2c row keeps the remaining
+acceptance criteria open.
+
+- One `policy.ComputeFloor` computes the floor and hard floor and the paths
+  setting each. The input is the same committed HEAD versus merge-base
+  comparison used by checks, against local `origin/<default>`, never fetched.
+  Deleted paths and both names of renames count. Assured wins over Routine:
+  built-in hard paths, any check's `defined_by`, configured Assured paths,
+  and unsupported Git names are Assured; Routine paths are Routine;
+  everything else is Standard. No changed paths means no floor.
+- Only `.fid.toml` and `.github/workflows/**` set the unwaivable hard floor.
+  Configured Assured paths and check-defining paths can be waived by a person
+  once the follow-up exists. `check` selects the higher of the task's lane
+  and floor without editing the task. Explicit check names retain their
+  existing behavior and do not need a comparison.
+- Hand-off computes its floor from its recorded comparison, checks the higher
+  lane, and raises the task and records that lane atomically with its one
+  state move. It never lowers. The receipt keeps the floor, its setting
+  paths, the hard floor and hard paths, and the prior lane when raised.
+  `done` rechecks the frozen policy's floor and retains all existing gates.
+- Show computes current requirements using that same floor. JSON adds the
+  floor, and the hand-off retains its immutable explanation. The Lane row
+  keeps the recorded task lane and explains a hand-off raise using the
+  first setting path and a count of others. A policy/comparison failure
+  warns and retains the hand-off's explanation if known. No read writes.
+
+**Approved waiver design retained for proposed 2.2c (not built here):**
+`fid waive <task> --lane <routine|standard> --reason <text> --actor human:<id>
+--idempotency-key <key>` mirrors approve's interactive terminal requirement,
+confirmation, retries and text/JSON replies. It records a `person_decisions`
+entry of kind `waive`, requiring an in-review task and latest hand-off, a
+reason and a strictly lower lane, never below the hard floor (the refusal
+names its paths). Agent and service actors are refused. The confirmation
+shows the task, current lane, floor and setting paths, hard floor and new
+lane. Its binding contains algorithm, fingerprint, hand-off ID, base and
+head. Only the fingerprint and algorithm determine currency: an unchanged
+later hand-off preserves it; an edit makes it stale. The waiver changes
+neither task lane nor hand-off; it changes every lane-dependent done gate,
+including check requirements, review profiles, separate review, approval
+and rollback. Without a current waiver the recorded hand-off lane applies.
+The issue-update lowering refusal will name waive after hand-off. Show will
+list current/stale waivers in JSON and explain them in the Lane row; status
+will mark stale waivers. Shared person-decision currency code must also serve
+2.3's approval presentation. The new Event must join shared admission on
+live append, replay and import, with catalog, restore/V8, typed-refusal,
+terminal, staleness and golden coverage. Its Event name and refusal codes
+remain the follow-up builder's transactional choices.
+
+**Builder's implementation choices for the floor slice:**
+
+- Keep the existing `task.handed-off` family and `handoffs.record_json`
+  storage; no migration, new family, or refusal code is needed. The lane
+  raise is in the same `issues` update as `status`, compatible with #97's
+  one-state-move admission. The hand-off success response stays unchanged.
+- Built-in policy rules version 3 records the floor semantics change in the
+  effective digest. Earlier snapshots and receipts keep their historical
+  pre-floor semantics on replay and done. Version-3 admission verifies the
+  exact floor, prior lane, raised lane and atomic update without git.
+- A check whose floor raises its selected lane retains the comparison paths
+  in its start/retry receipt as base64 byte strings. Admission recomputes the
+  selection rather than demanding the old task lane's checks are configured.
+- JSON cannot retain invalid UTF-8 in string values. Such hand-offs retain
+  `changed_path_bytes` alongside the readable `changed_paths`; `Record.Paths`
+  supplies exact bytes to floor, conditional checks, reviews and done.
+  Display paths use Unicode replacement for invalid bytes. Admission checks
+  that the byte list agrees with the readable list. Other receipts need no
+  extra byte list. This is required to honor the conservative unsupported
+  path rule on replay, rather than changing its result after serialization.
+
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies
@@ -3265,12 +3362,6 @@ such a task waits for Mark to accept it; until then the epic's wait for
   `EVT-20261110-000004`, or the next ID of another date. None of them
   harms allocation, because each must still take its date's next sequence.
   Tighten to the writers' exact form only if something comes to rely on it.
-- From 1.8's policy PR: fid's `.fid.toml` makes `migrations/**`,
-  `internal/journal/**`, `go.mod` and `go.sum` Assured, as in the example
-  Mark approved on 2026-11-11. RESET.md's by-hand rule also makes the trust
-  boundary and releases Assured, and no path list names them yet. Lane
-  paths do nothing until 2.2b computes floors. Mark decides the list at
-  2.2b's start (D1: Mark owns lane policy) (planned: 2.2b).
 - From 1.8's policy PR: local `make test` runs `go test` without
   `-count=1`. `internal/export`'s tests build fid in a subprocess, which
   Go's test cache doesn't track, so under `fid check` a cached pass of
@@ -3283,8 +3374,19 @@ such a task waits for Mark to accept it; until then the epic's wait for
   lists every open task, with blocked tasks that others wait on above the
   ready ones. Fix them in later display work.
 
+- From this PR (2.2b): proposed 2.2c carries the approved fingerprint-bound
+  `fid waive` design, its done gates, journal admission, restore coverage,
+  and current/stale show/status display. The brief authorized this size
+  split. See "Decided for 2.2b, 2026-11-21"; the proposed RESET row and this
+  allocation are for Mark's review.
+
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
+
+- From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
+  on 2026-11-21; "Decided for 2.2b, 2026-11-21" records its exact list,
+  definition and exclusions. 2.2b computes the floor and `.fid.toml` now
+  lists those paths. Releases remain 3.2 work when their files exist.
 
 - Task 1.8 brings this later list into fid along with the remaining reset
   tasks (decided 2026-11-07). Done 2026-11-21; see the note at the top of
