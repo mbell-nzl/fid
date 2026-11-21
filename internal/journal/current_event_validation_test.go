@@ -167,7 +167,14 @@ func TestCurrentEventColumnDomainsMatchAcceptedDDL(t *testing.T) {
 	}
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "columns.sqlite"))
 	defer closeProjectDB(t, conn)
+	tables := map[string]currentTable{}
 	for table, definition := range currentEventTables {
+		tables[table] = definition
+	}
+	for table, definition := range issueRowTables {
+		tables[table] = definition
+	}
+	for table, definition := range tables {
 		t.Run(table, func(t *testing.T) {
 			rows, err := conn.Query(`PRAGMA table_info("` + table + `")`)
 			if err != nil {

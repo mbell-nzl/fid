@@ -1,0 +1,575 @@
+{
+  "First": "FID-596089",
+  "Second": "FID-4d5b87",
+  "Templates": {
+    "issue.ac-added": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "FID-596089",
+        "sequence": 2,
+        "type": "issue"
+      },
+      "causation_id": null,
+      "command": "issue.ac.add",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "insert",
+          "table": "acceptance_criteria",
+          "pk": {
+            "id": "AC-a4af85"
+          },
+          "values": {
+            "issue_id": "FID-596089",
+            "ordinal": 1,
+            "text": "Works"
+          }
+        },
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "revision": 2
+          },
+          "prior": {
+            "revision": 1
+          },
+          "preconditions": {
+            "revision": 1
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-9b0d28"
+          },
+          "values": {
+            "actor": "mark",
+            "details": {
+              "ac_id": "AC-a4af85",
+              "ordinal": 1
+            },
+            "event": "ac-added",
+            "journal_event_id": "EVT-20261121-000005",
+            "occurred_at": "2026-11-21T21:25:35Z",
+            "ref_id": "FID-596089",
+            "ref_type": "issue"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "idempotency_key": "ac",
+            "operation_scope": "issue.ac.add:project-267a529b7909e31faf047d58605abb28"
+          },
+          "values": {
+            "aggregate_sequence": 2,
+            "created_at": "2026-11-21T21:25:35.323779068Z",
+            "request_digest": "sha256:c74170c72159b680ae572f3789a233ed3229fb3471c3fa31e35a3077c083d7c1",
+            "request_field_digests_json": "{\"--actor\":\"sha256:7752668805be9268b46d5648b964f02d3429bffdd8cbb8d83d2cc4070624f022\",\"--ordinal\":\"sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b\",\"--text\":\"sha256:42763e2428ef82cb339d8b0d9592dc923115512eb70924adf5113f4157e2dee1\",\"issue-id\":\"sha256:7fe2ea14c490c65e426e84369b40fe275ff6f7a9dfa43dd18248bc11cb7a9454\"}",
+            "result_entity_id": "AC-a4af85",
+            "result_event_id": "EVT-20261121-000005",
+            "result_json": "{\"acceptance_criterion\":{\"id\":\"AC-a4af85\",\"issue_id\":\"FID-596089\",\"ordinal\":1,\"text\":\"Works\"},\"event_occurred_at\":\"2026-11-21T21:25:35.323779068Z\",\"idempotency_key\":\"ac\",\"issue_revision\":2,\"replayed\":false}"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000005",
+      "event_schema": 2,
+      "event_type": "issue.ac-added",
+      "idempotency": {
+        "key": "ac",
+        "request_digest": "sha256:c74170c72159b680ae572f3789a233ed3229fb3471c3fa31e35a3077c083d7c1",
+        "scope": "issue.ac.add:project-267a529b7909e31faf047d58605abb28"
+      },
+      "occurred_at": "2026-11-21T21:25:35.323779068Z",
+      "repository": null
+    },
+    "issue.created": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "FID-596089",
+        "sequence": 1,
+        "type": "issue"
+      },
+      "causation_id": null,
+      "command": "issue.create",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "created_at": "2026-11-21T21:25:35Z",
+            "kind": "task",
+            "owner_role": "developer",
+            "revision": 1,
+            "status": "todo",
+            "title": "First",
+            "updated_at": "2026-11-21T21:25:35Z",
+            "workflow_id": "task-default"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-8481aa"
+          },
+          "values": {
+            "actor": "mark",
+            "details": {
+              "kind": "task",
+              "parent_id": null,
+              "title": "First"
+            },
+            "event": "issue-created",
+            "journal_event_id": "EVT-20261121-000003",
+            "occurred_at": "2026-11-21T21:25:35Z",
+            "ref_id": "FID-596089",
+            "ref_type": "issue"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "idempotency_key": "First",
+            "operation_scope": "issue.create:project-267a529b7909e31faf047d58605abb28"
+          },
+          "values": {
+            "aggregate_sequence": 1,
+            "created_at": "2026-11-21T21:25:35.296779107Z",
+            "request_digest": "sha256:b162be9fec1c43c539600d457095635a2ae99f21d577c089303a404c68f56fc0",
+            "request_field_digests_json": "{\"--actor\":\"sha256:7752668805be9268b46d5648b964f02d3429bffdd8cbb8d83d2cc4070624f022\",\"--kind\":\"sha256:b9ce06a01002b74d199af6ebe3f5fb94ceba07ec633822e44fec47b29b9edb7d\",\"--title\":\"sha256:81c9759ddbb7582b13225e7227b41e9f274107222b0573dbaec0f8060138a877\"}",
+            "result_entity_id": "FID-596089",
+            "result_event_id": "EVT-20261121-000003",
+            "result_json": "{\"event_occurred_at\":\"2026-11-21T21:25:35.296779107Z\",\"idempotency_key\":\"First\",\"issue\":{\"id\":\"FID-596089\",\"kind\":\"task\",\"lane\":null,\"revision\":1,\"status\":\"todo\",\"title\":\"First\"},\"replayed\":false}"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000003",
+      "event_schema": 2,
+      "event_type": "issue.created",
+      "idempotency": {
+        "key": "First",
+        "request_digest": "sha256:b162be9fec1c43c539600d457095635a2ae99f21d577c089303a404c68f56fc0",
+        "scope": "issue.create:project-267a529b7909e31faf047d58605abb28"
+      },
+      "occurred_at": "2026-11-21T21:25:35.296779107Z",
+      "repository": null
+    },
+    "issue.label.added": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "FID-596089",
+        "sequence": 3,
+        "type": "issue"
+      },
+      "causation_id": null,
+      "command": "issue.label.add",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "insert",
+          "table": "issue_labels",
+          "pk": {
+            "issue_id": "FID-596089",
+            "label": "perf"
+          }
+        },
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "revision": 3
+          },
+          "prior": {
+            "revision": 2
+          },
+          "preconditions": {
+            "revision": 2
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-fa61a5"
+          },
+          "values": {
+            "actor": "mark",
+            "details": {
+              "direction": "added",
+              "label": "perf"
+            },
+            "event": "issue-label-added",
+            "journal_event_id": "EVT-20261121-000006",
+            "occurred_at": "2026-11-21T21:25:35Z",
+            "ref_id": "FID-596089",
+            "ref_type": "issue"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "idempotency_key": "add",
+            "operation_scope": "issue.label.add:project-267a529b7909e31faf047d58605abb28"
+          },
+          "values": {
+            "aggregate_sequence": 3,
+            "created_at": "2026-11-21T21:25:35.338533008Z",
+            "request_digest": "sha256:cab7ebab041131fed6e66e5591b1b8736efbd5e4880dc09d604c516447bc720f",
+            "request_field_digests_json": "{\"--actor\":\"sha256:7752668805be9268b46d5648b964f02d3429bffdd8cbb8d83d2cc4070624f022\",\"issue-id\":\"sha256:7fe2ea14c490c65e426e84369b40fe275ff6f7a9dfa43dd18248bc11cb7a9454\",\"label\":\"sha256:f60ee2607fe051161fea902c616510af5233a4eb6e6ab2952166c1f93f0995ee\"}",
+            "result_entity_id": "FID-596089:perf",
+            "result_event_id": "EVT-20261121-000006",
+            "result_json": "{\"event_occurred_at\":\"2026-11-21T21:25:35.338533008Z\",\"idempotency_key\":\"add\",\"issue_id\":\"FID-596089\",\"issue_revision\":3,\"label\":\"perf\",\"replayed\":false}"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000006",
+      "event_schema": 2,
+      "event_type": "issue.label.added",
+      "idempotency": {
+        "key": "add",
+        "request_digest": "sha256:cab7ebab041131fed6e66e5591b1b8736efbd5e4880dc09d604c516447bc720f",
+        "scope": "issue.label.add:project-267a529b7909e31faf047d58605abb28"
+      },
+      "occurred_at": "2026-11-21T21:25:35.338533008Z",
+      "repository": null
+    },
+    "issue.transitioned": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "FID-596089",
+        "sequence": 4,
+        "type": "issue"
+      },
+      "causation_id": null,
+      "command": "issue.transition",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "status": "cancelled",
+            "updated_at": "2026-11-21T21:25:35Z"
+          },
+          "prior": {
+            "status": "todo"
+          },
+          "preconditions": {
+            "status": "todo",
+            "workflow_id": "task-default"
+          }
+        },
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "revision": 4
+          },
+          "prior": {
+            "revision": 3
+          },
+          "preconditions": {
+            "revision": 3
+          }
+        },
+        {
+          "op": "insert",
+          "table": "person_decisions",
+          "pk": {
+            "id": "PDN-0a8338"
+          },
+          "values": {
+            "actor": "human:mark",
+            "binding_id": "FID-596089",
+            "decided_at": "2026-11-21T21:25:35Z",
+            "kind": "cancel",
+            "reason": "Out of scope",
+            "subject_id": "FID-596089",
+            "subject_type": "task"
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-0974b3"
+          },
+          "values": {
+            "actor": "mark",
+            "details": {
+              "from": "todo",
+              "to": "cancelled"
+            },
+            "event": "status-changed",
+            "journal_event_id": "EVT-20261121-000007",
+            "occurred_at": "2026-11-21T21:25:35Z",
+            "ref_id": "FID-596089",
+            "ref_type": "issue"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000007",
+      "event_schema": 2,
+      "event_type": "issue.transitioned",
+      "idempotency": null,
+      "occurred_at": "2026-11-21T21:25:35.357251142Z",
+      "repository": null
+    },
+    "label.added": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "perf",
+        "sequence": 1,
+        "type": "label"
+      },
+      "causation_id": null,
+      "command": "label.add",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "insert",
+          "table": "labels",
+          "pk": {
+            "name": "perf"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "idempotency_key": "label",
+            "operation_scope": "label.add:project-267a529b7909e31faf047d58605abb28"
+          },
+          "values": {
+            "aggregate_sequence": 1,
+            "created_at": "2026-11-21T21:25:35.286056084Z",
+            "request_digest": "sha256:94e42c8c348ee22c9081f380d3d2ba6b140f97ffdfde9f915e350f407deeb157",
+            "request_field_digests_json": "{\"--actor\":\"sha256:7752668805be9268b46d5648b964f02d3429bffdd8cbb8d83d2cc4070624f022\",\"name\":\"sha256:f60ee2607fe051161fea902c616510af5233a4eb6e6ab2952166c1f93f0995ee\"}",
+            "result_entity_id": "perf",
+            "result_event_id": "EVT-20261121-000002",
+            "result_json": "{\"event_occurred_at\":\"2026-11-21T21:25:35.286056084Z\",\"idempotency_key\":\"label\",\"label\":{\"colour\":null,\"description\":null,\"name\":\"perf\"},\"replayed\":false}"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000002",
+      "event_schema": 2,
+      "event_type": "label.added",
+      "idempotency": {
+        "key": "label",
+        "request_digest": "sha256:94e42c8c348ee22c9081f380d3d2ba6b140f97ffdfde9f915e350f407deeb157",
+        "scope": "label.add:project-267a529b7909e31faf047d58605abb28"
+      },
+      "occurred_at": "2026-11-21T21:25:35.286056084Z",
+      "repository": null
+    },
+    "link.added": {
+      "actor": {
+        "actor_id": "mark",
+        "actor_type": "human",
+        "producer": "fid-standalone",
+        "provenance_ref": "project-local-attribution",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "FID-596089:blocks:FID-4d5b87",
+        "sequence": 1,
+        "type": "link"
+      },
+      "causation_id": null,
+      "command": "link.add",
+      "correlation_id": null,
+      "effects": [
+        {
+          "op": "insert",
+          "table": "links",
+          "pk": {
+            "from_id": "FID-596089",
+            "from_type": "issue",
+            "relation": "blocks",
+            "to_id": "FID-4d5b87",
+            "to_type": "issue"
+          },
+          "values": {
+            "created_at": "2026-11-21T21:25:35Z"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "links",
+          "pk": {
+            "from_id": "FID-4d5b87",
+            "from_type": "issue",
+            "relation": "blocked_by",
+            "to_id": "FID-596089",
+            "to_type": "issue"
+          },
+          "values": {
+            "created_at": "2026-11-21T21:25:35Z"
+          }
+        },
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-4d5b87"
+          },
+          "values": {
+            "revision": 2
+          },
+          "prior": {
+            "revision": 1
+          },
+          "preconditions": {
+            "revision": 1
+          }
+        },
+        {
+          "op": "update",
+          "table": "issues",
+          "pk": {
+            "id": "FID-596089"
+          },
+          "values": {
+            "revision": 5
+          },
+          "prior": {
+            "revision": 4
+          },
+          "preconditions": {
+            "revision": 4
+          }
+        },
+        {
+          "op": "activity",
+          "table": "activity_log",
+          "pk": {
+            "id": "ACT-f16fee"
+          },
+          "values": {
+            "actor": "mark",
+            "details": {
+              "from_id": "FID-596089",
+              "from_type": "issue",
+              "inverse_from_id": "FID-4d5b87",
+              "inverse_from_type": "issue",
+              "inverse_relation": "blocked_by",
+              "inverse_to_id": "FID-596089",
+              "inverse_to_type": "issue",
+              "relation": "blocks",
+              "to_id": "FID-4d5b87",
+              "to_type": "issue"
+            },
+            "event": "link-added",
+            "journal_event_id": "EVT-20261121-000008",
+            "occurred_at": "2026-11-21T21:25:35Z",
+            "ref_id": "FID-596089",
+            "ref_type": "issue"
+          }
+        },
+        {
+          "op": "insert",
+          "table": "idempotency_results",
+          "pk": {
+            "idempotency_key": "link",
+            "operation_scope": "link.add:project-267a529b7909e31faf047d58605abb28"
+          },
+          "values": {
+            "aggregate_sequence": 1,
+            "created_at": "2026-11-21T21:25:35.373811143Z",
+            "request_digest": "sha256:5f245cee5fb5d2ee0880e82eee7ff85cdaf957e1477669d6715d3d090fd9dd6f",
+            "request_field_digests_json": "{\"--actor\":\"sha256:7752668805be9268b46d5648b964f02d3429bffdd8cbb8d83d2cc4070624f022\",\"--from-type\":\"sha256:f80768a970467c673a886f7ac8b8f76daebf2b800c8083d65699e9eccf45751c\",\"--to-type\":\"sha256:f80768a970467c673a886f7ac8b8f76daebf2b800c8083d65699e9eccf45751c\",\"from-id\":\"sha256:7fe2ea14c490c65e426e84369b40fe275ff6f7a9dfa43dd18248bc11cb7a9454\",\"relation\":\"sha256:86353e9c60d2e9784066a7b50ebb092c91065d24d5932b7164ebc9a6cfdf985b\",\"to-id\":\"sha256:b03f3a692cb434bd2674b93a9308e78e0ce3bf577fd4e08c3d00829649f9cd4e\"}",
+            "result_entity_id": "FID-596089:blocks:FID-4d5b87",
+            "result_event_id": "EVT-20261121-000008",
+            "result_json": "{\"event_occurred_at\":\"2026-11-21T21:25:35.373811143Z\",\"idempotency_key\":\"link\",\"inverse\":{\"from_id\":\"FID-4d5b87\",\"from_type\":\"issue\",\"relation\":\"blocked_by\",\"to_id\":\"FID-596089\",\"to_type\":\"issue\"},\"issue_revisions\":[{\"id\":\"FID-4d5b87\",\"revision\":2},{\"id\":\"FID-596089\",\"revision\":5}],\"link\":{\"from_id\":\"FID-596089\",\"from_type\":\"issue\",\"relation\":\"blocks\",\"to_id\":\"FID-4d5b87\",\"to_type\":\"issue\"},\"replayed\":false}"
+          }
+        }
+      ],
+      "event_id": "EVT-20261121-000008",
+      "event_schema": 2,
+      "event_type": "link.added",
+      "idempotency": {
+        "key": "link",
+        "request_digest": "sha256:5f245cee5fb5d2ee0880e82eee7ff85cdaf957e1477669d6715d3d090fd9dd6f",
+        "scope": "link.add:project-267a529b7909e31faf047d58605abb28"
+      },
+      "occurred_at": "2026-11-21T21:25:35.373811143Z",
+      "repository": null
+    },
+    "project.initialized": {
+      "actor": {
+        "actor_id": "fid-bootstrap",
+        "actor_type": "service",
+        "producer": "fid",
+        "provenance_ref": "fid:init",
+        "session_ref": null
+      },
+      "aggregate": {
+        "id": "project-267a529b7909e31faf047d58605abb28",
+        "sequence": 1,
+        "type": "project"
+      },
+      "causation_id": null,
+      "command": "project.init",
+      "correlation_id": null,
+      "effects": [],
+      "event_id": "EVT-20261121-000001",
+      "event_schema": 2,
+      "event_type": "project.initialized",
+      "idempotency": null,
+      "occurred_at": "2026-11-21T21:25:35.153596909Z",
+      "repository": null
+    }
+  }
+}

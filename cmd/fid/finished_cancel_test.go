@@ -38,8 +38,13 @@ func TestFinishedWorkCannotBeCancelled(t *testing.T) {
 			assertFinishedCancellationAdmission(t, f, subject, kind)
 			before := snapshotWorkspacePersistence(t, f.workspace)
 			got := f.run("--json", "issue", "transition", subject, "--to", "cancelled", "--actor", "human:mark", "--reason", "Undo merged work")
+			assertJSONFailureCode(t, got.stderr, "issue.transition", "transition-not-permitted")
+			err := func() error {
+				_, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), ID: subject, ToState: "cancelled", Actor: "human:mark", Reason: "Undo merged work"})
+				return err
+			}()
 			var refused *issues.CommandTransitionError
-			if !errors.As(got.err, &refused) || refused.Rule != "finished-work-stays-done" {
+			if !errors.As(err, &refused) || refused.Rule != "finished-work-stays-done" {
 				t.Fatalf("cancel done %s = %#v, want typed finished-work-stays-done", kind, got)
 			}
 			for _, text := range []string{"finished work stays done", "new task", "## Rollback"} {

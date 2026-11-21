@@ -1691,6 +1691,27 @@ and 2 are also in their tasks' rows in `RESET.md`.
      would refuse the rename), column names and types against the
      archive's schema, and duplicate JSON keys. Move each into the shared
      rules or record why it stays import-only.
+     - 2026-11-22, settled in this PR (RESET 1.9c): shared admission binds
+       Issue-family child rows and activity to the Event's own subject,
+       label definitions to its label, and both link rows and revision
+       updates to the declared link and its inverse. Each stage is bounded;
+       update columns and label operations cannot repeat. A creation starts
+       at revision one; an update has one scalar row and one revision row,
+       guarded by its exact prior plus one. Issue identity,
+       kind, workflow, parent and creation facts are immutable, for Event-v1
+       too; no Issue deletion/recreation is admitted. Epic creation's stages
+       follow its writer: Issue, optional metadata, labels, activity, retry.
+       Link commands and admission share one relation-inverse registry.
+       Import-only audit: duplicate JSON keys now fail in the shared Event
+       decoder; shared Issue column/type/key checks complement the lean
+       family validators; the duplicate import update whitelist is removed,
+       since shared family validators already protect those mutable fields.
+       Import keeps column/type validation against its declared historical
+       schema (a different profile from the live database), canonical archive
+       lines (an integrity/manifest contract), and existence of historical
+       `*_event_id` references (the projection has no Event index; standalone
+       projection admission has only an Event and a transaction). Own-Event
+       bindings, including activity's `journal_event_id`, are shared.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3146,31 +3167,13 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
-- From this PR (1.9b): a person can cancel a finished task or a closed
-  epic. `fid issue transition --to cancelled` allows `cancelled` from
-  `done`, and admission keeps that move because the command makes it.
-  Decide whether cancelling finished work should be refused.
-- From this PR (1.9b): `issues.workflow_id` and `parent_id` can still
-  change through `issue.updated`. Neither moves a state, since admission
-  keys fixed moves on the immutable `kind`, but moving an open task out of
-  its epic would let the epic close. Belongs with 1.9c's immutable columns.
-- From this PR (1.9b): the hold-lifecycle rule still lets
-  `issue.transitioned` end a hold as `task-completed`, though no command
-  can now complete a task through it; only `task-cancelled` is reachable.
-  Tidy in 1.9c.
-- From #97 (1.9b): Event-v1 history can still rename an Issue (set
-  `issues.id`) or delete one and insert another under its id, on replay.
-  Since #97's first fix round admission checks each state change against
-  the row it lands on, so neither can redirect a move, but the identity
-  change itself is admitted. 1.9c's "an Event can't rename its Issue"
-  should cover Event-v1 too, or record why it doesn't.
-- From #97 (1.9b): a refused subtask move names the wrong owner. When a
-  family other than `issue.transitioned` moves a subtask (an
-  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
-  that creates and moves it), `StateMoveError` says "only a person's
-  cancellation makes that move". That is `issue.transitioned`'s owner for
-  a task or an epic; a subtask's moves are `fid issue transition`'s, by
-  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
+
+- From this PR (1.9c): Event-v1 history still has its historical scalar and
+  revision grammar. Its Issue identities are immutable and its fixed-state
+  moves are refused, but it can set a revision without Event-v2's guarded
+  prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
+  its remaining grammar or harden those scalar updates before supporting
+  such history as operational data.
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
@@ -3466,6 +3469,14 @@ such a task waits for Mark to accept it; until then the epic's wait for
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
+
+- From #97 (1.9b), five items folded into this PR (RESET 1.9c), resolved
+  2026-11-22: Issue workflow and parent are immutable in shared admission;
+  a transition ends a hold only as `task-cancelled`; Event-v1 cannot rename,
+  delete or recreate an Issue; subtask refusal names `fid issue transition`;
+  and finished tasks and closed epics cannot be cancelled (Mark's decision,
+  2026-11-22). Undoing merged work is a new task following the original PR's
+  `## Rollback` section.
 
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
   on 2026-11-21; "Decided for 2.2b, 2026-11-21" records its exact list,

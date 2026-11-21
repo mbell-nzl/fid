@@ -198,7 +198,11 @@ func TestForgedStateMovesRefusedOnEveryJournalPath(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assertStateMoveRefused(t, tc.forge(), tc.issue, tc.from, tc.to)
+			if strings.HasPrefix(name, "legacy rename redirects") || strings.HasPrefix(name, "legacy re-creation redirects") {
+				assertStateWriteRefused(t, tc.forge(), "a typed Issue identity refusal", func(err error) bool { var row *RowIdentityError; return errors.As(err, &row) && row.Table == "issues" })
+			} else {
+				assertStateMoveRefused(t, tc.forge(), tc.issue, tc.from, tc.to)
+			}
 		})
 	}
 }
@@ -291,6 +295,9 @@ func assertStateMoveRefused(t *testing.T, forged Event, issue, from, to string) 
 	want := fmt.Sprintf("a StateMoveError for %s %s -> %s by %s", issue, from, to, forged.EventType)
 	assertStateWriteRefused(t, forged, want, func(err error) bool {
 		var refused *StateMoveError
+		if errors.As(err, &refused) && refused.Kind == "subtask" && refused.Owner == "issue.transitioned" && !strings.Contains(err.Error(), "only fid issue transition makes that move") {
+			t.Errorf("wrong subtask owner: %v", err)
+		}
 		return errors.As(err, &refused) && refused.IssueID == issue && refused.From == from && refused.To == to && refused.Family == forged.EventType
 	})
 }

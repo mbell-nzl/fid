@@ -224,8 +224,7 @@ func validateFamilyShape(event Event) error {
 //
 // It runs before the family validators, against the projection as the Event
 // finds it. An earlier Effect of the same Event can create the Issue a later
-// one moves, or change which row an id names (Event-v1 history may rename,
-// delete and insert Issues), so applyEventEffects checks each Effect again,
+// one moves, so applyEventEffects checks each Effect again,
 // against the row it lands on.
 //
 // Event-v1 history may still create Issues and move subtasks, but it can't
@@ -334,12 +333,14 @@ func (err *StateMoveError) Error() string {
 	}
 	why := "no command makes that move"
 	switch {
+	case issuestate.FinishedCancellation(err.Kind, err.From, err.To):
+		why = issuestate.FinishedWorkMessage
 	case err.Legacy:
 		why = "Event-v1 can't move a task or an epic"
 	case err.Undecided:
 		why = "it needs exactly one person's cancel decision"
 	case err.Owner != "":
-		why = "only " + issuestate.OwnerCommand(err.Owner) + " makes that move"
+		why = "only " + issuestate.OwnerCommand(err.Owner, err.Kind) + " makes that move"
 	}
 	return fmt.Sprintf("Event %q (%s) can't %s: %s", err.EventID, err.Family, move, why)
 }

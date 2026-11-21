@@ -220,7 +220,7 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 			if task != event.Aggregate.ID {
 				return fmt.Errorf("transition ends another task's hold")
 			}
-			if reason != "task-completed" && reason != "task-cancelled" {
+			if reason != "task-cancelled" {
 				return fmt.Errorf("invalid task hold end")
 			}
 		} else if reason != allowed[event.EventType] {

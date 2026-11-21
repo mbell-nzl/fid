@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -83,6 +84,12 @@ func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 						if len(probe.Prefix) > 0 {
 							valid.Effects[1].Values["revision"] = 3
 							valid.Effects[1].Preconditions["revision"] = 2
+							valid.Effects[1].Prior["revision"] = 2
+							for _, prior := range probe.Prefix {
+								if prior.Aggregate.Type == "issue" && prior.Aggregate.ID == "FID-a" {
+									valid.Aggregate.Sequence = prior.Aggregate.Sequence + 1
+								}
+							}
 						}
 						valid.Effects[2].Values["journal_event_id"] = valid.EventID
 						if err := w.admit(t, "commit", valid); err != nil {
@@ -92,5 +99,49 @@ func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestMalformedCancellationHoldEnd(t *testing.T) {
+	t.Parallel()
+	hold := admissionHoldTaken()
+	hold.EventID = "EVT-20261110-000006"
+	prefix := append(stateMovePrefix(), hold)
+	valid := stateCancel("FID-a", "task")
+	valid.EventID = "EVT-20261110-000007"
+	valid.Effects[3].Values["journal_event_id"] = valid.EventID
+	ended := Effect{Op: "update", Table: "holds", PK: map[string]any{"id": "HLD-a"}, Values: map[string]any{"ended_at": valid.OccurredAt.Format("2006-01-02T15:04:05Z07:00"), "end_reason": "task-cancelled"}}
+	valid.Effects = append(valid.Effects[:2:2], append([]Effect{ended}, valid.Effects[2:]...)...)
+	for _, mode := range admissionModes(valid) {
+		t.Run(mode, func(t *testing.T) {
+			w := newAdmissionWorkspace(t, prefix, mode)
+			malformed := valid
+			raw, err := MarshalCanonicalJSON(valid)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := malformed.UnmarshalJSON(raw); err != nil {
+				t.Fatal(err)
+			}
+			malformed.Effects[2].Values["end_reason"] = "task-completed"
+			reference := w
+			if mode == "replay" {
+				reference = newAdmissionWorkspace(t, prefix, "project")
+			}
+			before := stateProjection(t, reference.root)
+			err = w.admit(t, mode, malformed)
+			if err == nil || !strings.Contains(err.Error(), "invalid task hold end") {
+				t.Fatalf("malformed hold end = %v", err)
+			}
+			if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
+				t.Fatal("refusal changed projection")
+			}
+			if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := w.admit(t, "commit", valid); err != nil {
+				t.Fatalf("valid cancellation after refusal: %v", err)
+			}
+		})
 	}
 }

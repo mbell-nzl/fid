@@ -104,6 +104,9 @@ func (event Event) MarshalJSON() ([]byte, error) {
 }
 
 func (event *Event) UnmarshalJSON(data []byte) error {
+	if err := validateCurrentJSONText(string(data)); err != nil {
+		return fmt.Errorf("decode Event: %w", err)
+	}
 	var header struct {
 		EventSchema int    `json:"event_schema"`
 		EventType   string `json:"event_type"`

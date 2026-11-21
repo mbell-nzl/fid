@@ -58,7 +58,7 @@ func admissionPrefix() []Event {
 func admissionLaneRaise() Event {
 	event := admissionEvent("EVT-20261110-000004", "issue.updated", "issue", "FID-a", 2,
 		Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"lane": "assured", "updated_at": admissionStamp(1)}, Preconditions: map[string]any{"updated_at": admissionStamp(0)}},
-		Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"revision": 2}, Preconditions: map[string]any{"revision": 1}},
+		Effect{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"revision": 2}, Prior: map[string]any{"revision": 1}, Preconditions: map[string]any{"revision": 1}},
 		admissionActivity("EVT-20261110-000004", "ACT-update", "FID-a", "updated"))
 	event.ActorV2 = EventActor{ActorID: "builder", ActorType: "agent", Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}
 	event.CommandName = "issue.update"

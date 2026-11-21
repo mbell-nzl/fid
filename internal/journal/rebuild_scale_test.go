@@ -3,6 +3,8 @@ package journal
 import (
 	"bufio"
 	"database/sql"
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -83,7 +85,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 func TestScaleReplayFixtureUsesRoleFreeEventV2Facts(t *testing.T) {
 	t.Parallel()
 	count := 0
-	forEachScaleReplayEvent(100, func(event Event) {
+	forEachScaleReplayEvent(t, 100, func(event Event) {
 		count++
 		if !event.IsV2() {
 			t.Fatalf("scale Event %q schema = %d, want Event-v2", event.EventID, event.EventSchema)
@@ -128,7 +130,7 @@ func writeScaleReplayWorkspace(tb testing.TB, path string, targetEvents int) int
 	}
 	writer := bufio.NewWriter(file)
 	count := 0
-	forEachScaleReplayEvent(targetEvents, func(event Event) {
+	forEachScaleReplayEvent(tb, targetEvents, func(event Event) {
 		line, marshalErr := marshalReplayEvent(event)
 		if marshalErr != nil {
 			_ = file.Close()
@@ -150,7 +152,10 @@ func writeScaleReplayWorkspace(tb testing.TB, path string, targetEvents int) int
 	return count
 }
 
-func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
+func forEachScaleReplayEvent(tb testing.TB, targetEvents int, visit func(Event)) {
+	tb.Helper()
+	templates := scaleWriterTemplates(tb)
+	revisions := map[string]int{}
 	labels := []string{"perf", "scale", "benchmark"}
 	eventCount := 0
 	issueSequences := make(map[int]int)
@@ -170,7 +175,7 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 	nextSequence++
 
 	for _, label := range labels {
-		if !appendEvent(scaleLabelSeedEvent(nextSequence, label)) {
+		if !appendEvent(scaleTemplateEvent(tb, templates, revisions, nextSequence, "label.added", 0, 1, label)) {
 			return
 		}
 		nextSequence++
@@ -183,28 +188,28 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 		nextSequence++
 
 		if issueIndex%3 == 0 {
-			if !appendEvent(scaleAcceptanceCriterionEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
+			if !appendEvent(scaleTemplateEvent(tb, templates, revisions, nextSequence, "issue.ac-added", issueIndex, nextScaleIssueSequence(issueSequences, issueIndex), "")) {
 				return
 			}
 			nextSequence++
 		}
 
 		if issueIndex%4 == 0 {
-			if !appendEvent(scaleIssueLabelEvent(nextSequence, issueIndex, labels[issueIndex%len(labels)], nextScaleIssueSequence(issueSequences, issueIndex))) {
+			if !appendEvent(scaleTemplateEvent(tb, templates, revisions, nextSequence, "issue.label.added", issueIndex, nextScaleIssueSequence(issueSequences, issueIndex), labels[issueIndex%len(labels)])) {
 				return
 			}
 			nextSequence++
 		}
 
 		if issueIndex%5 == 0 {
-			if !appendEvent(scaleIssueCancelEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
+			if !appendEvent(scaleTemplateEvent(tb, templates, revisions, nextSequence, "issue.transitioned", issueIndex, nextScaleIssueSequence(issueSequences, issueIndex), "")) {
 				return
 			}
 			nextSequence++
 		}
 
 		if issueIndex > 1 && issueIndex%7 == 0 {
-			if !appendEvent(scaleIssueLinkEvent(nextSequence, issueIndex)) {
+			if !appendEvent(scaleTemplateEvent(tb, templates, revisions, nextSequence, "link.added", issueIndex, 1, "")) {
 				return
 			}
 			nextSequence++
@@ -219,23 +224,6 @@ func nextScaleIssueSequence(sequences map[int]int, issueIndex int) int {
 
 func scaleBootstrapEvent(sequence int) Event {
 	return scaleEvent(sequence, "project.initialized", Aggregate{ID: "project-scale", Type: "project", Sequence: 1}, []Effect{})
-}
-
-func scaleLabelSeedEvent(sequence int, label string) Event {
-	return scaleEvent(
-		sequence,
-		"label.added",
-		Aggregate{ID: "LABEL-" + label, Type: "label", Sequence: 1},
-		[]Effect{{
-			Op:    "insert",
-			Table: "labels",
-			PK:    map[string]any{"name": label},
-			Values: map[string]any{
-				"colour":      fmt.Sprintf("#%06d", sequence),
-				"description": "scale seed " + label,
-			},
-		}},
-	)
 }
 
 func scaleIssueCreatedEvent(sequence, issueIndex, aggregateSequence int) Event {
@@ -258,92 +246,6 @@ func scaleIssueCreatedEvent(sequence, issueIndex, aggregateSequence int) Event {
 				"priority":    issueIndex % 5,
 				"created_at":  occurredAt.Format(time.RFC3339),
 				"updated_at":  occurredAt.Format(time.RFC3339),
-			},
-		}},
-	)
-}
-
-func scaleAcceptanceCriterionEvent(sequence, issueIndex, aggregateSequence int) Event {
-	return scaleEvent(
-		sequence,
-		"issue.ac-added",
-		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
-		[]Effect{{
-			Op:    "insert",
-			Table: "acceptance_criteria",
-			PK:    map[string]any{"id": fmt.Sprintf("AC-scale-%05d", issueIndex)},
-			Values: map[string]any{
-				"issue_id": scaleIssueID(issueIndex),
-				"ordinal":  1,
-				"text":     fmt.Sprintf("Acceptance criterion for scale task %04d", issueIndex),
-			},
-		}},
-	)
-}
-
-func scaleIssueLabelEvent(sequence, issueIndex int, label string, aggregateSequence int) Event {
-	return scaleEvent(
-		sequence,
-		"issue.label-added",
-		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
-		[]Effect{{
-			Op:    "insert",
-			Table: "issue_labels",
-			PK: map[string]any{
-				"issue_id": scaleIssueID(issueIndex),
-				"label":    label,
-			},
-			Values: map[string]any{},
-		}},
-	)
-}
-
-// scaleIssueCancelEvent is a person's cancellation of a task: the one move
-// of a task that issue.transitioned may make (RESET 1.9b).
-func scaleIssueCancelEvent(sequence, issueIndex, aggregateSequence int) Event {
-	at := scaleEventTime(sequence).Format(time.RFC3339)
-	issueID := scaleIssueID(issueIndex)
-	event := scaleEvent(
-		sequence,
-		"issue.transitioned",
-		Aggregate{ID: issueID, Type: "issue", Sequence: aggregateSequence},
-		[]Effect{{
-			Op:            "update",
-			Table:         "issues",
-			PK:            map[string]any{"id": issueID},
-			Values:        map[string]any{"status": "cancelled", "updated_at": at},
-			Prior:         map[string]any{"status": "todo"},
-			Preconditions: map[string]any{"status": "todo", "workflow_id": "task-default"},
-		}, {
-			Op:     "insert",
-			Table:  "person_decisions",
-			PK:     map[string]any{"id": fmt.Sprintf("PDN-%06x", issueIndex)},
-			Values: map[string]any{"kind": "cancel", "actor": "human:benchmark", "subject_type": "task", "subject_id": issueID, "reason": "Out of scope", "binding_id": issueID, "decided_at": at},
-		}},
-	)
-	event.ActorV2.ActorID, event.ActorV2.ActorType = "benchmark", "human"
-	return event
-}
-
-func scaleIssueLinkEvent(sequence, issueIndex int) Event {
-	occurredAt := scaleEventTime(sequence)
-
-	return scaleEvent(
-		sequence,
-		"link.added",
-		Aggregate{ID: fmt.Sprintf("LINK-scale-%05d", issueIndex), Type: "link", Sequence: 1},
-		[]Effect{{
-			Op:    "insert",
-			Table: "links",
-			PK: map[string]any{
-				"from_type": "issue",
-				"from_id":   scaleIssueID(issueIndex),
-				"relation":  "blocks",
-				"to_type":   "issue",
-				"to_id":     scaleIssueID(issueIndex - 1),
-			},
-			Values: map[string]any{
-				"created_at": occurredAt.Format(time.RFC3339),
 			},
 		}},
 	)
@@ -446,4 +348,92 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 	}
 
 	return strings.Join(parts, "\n")
+}
+
+//go:embed testdata/row-writer-templates.json
+var scaleWriterJSON []byte
+
+type scaleTemplates struct {
+	First, Second string
+	Templates     map[string]Event
+}
+
+func scaleWriterTemplates(tb testing.TB) scaleTemplates {
+	tb.Helper()
+	var templates scaleTemplates
+	if err := json.Unmarshal(scaleWriterJSON, &templates); err != nil {
+		tb.Fatal(err)
+	}
+	return templates
+}
+
+// The templates were captured from issue/label/link commands in a guarded
+// temporary repository. Scale only changes identifiers, clocks and observed
+// revisions; the owning commands supply each Effect's shape and order.
+func scaleTemplateEvent(tb testing.TB, templates scaleTemplates, revisions map[string]int, sequence int, family string, issueIndex, aggregateSequence int, label string) Event {
+	tb.Helper()
+	raw, err := MarshalCanonicalJSON(templates.Templates[family])
+	if err != nil {
+		tb.Fatal(err)
+	}
+	text := strings.NewReplacer(templates.First, scaleIssueID(issueIndex), templates.Second, scaleIssueID(issueIndex-1)).Replace(string(raw))
+	if label != "" {
+		text = strings.ReplaceAll(text, "perf", label)
+	}
+	var e Event
+	if err := e.UnmarshalJSON([]byte(text)); err != nil {
+		tb.Fatal(err)
+	}
+	e.EventID = fmt.Sprintf("EVT-20260607-%06d", sequence)
+	e.OccurredAt = scaleEventTime(sequence)
+	e.Aggregate.Sequence = aggregateSequence
+	e.Idempotency = nil
+	at := e.OccurredAt.Format(time.RFC3339)
+	effects := make([]Effect, 0, len(e.Effects))
+	for _, fx := range e.Effects {
+		if fx.Table == "idempotency_results" {
+			continue
+		}
+		for _, column := range []string{"created_at", "updated_at", "occurred_at", "decided_at"} {
+			if _, has := fx.Values[column]; has {
+				fx.Values[column] = at
+			}
+		}
+		switch fx.Table {
+		case "issues":
+			if fx.Op == "update" {
+				if _, changes := fx.Values["revision"]; changes {
+					id := fx.PK["id"].(string)
+					prior := revisions[id]
+					if prior == 0 {
+						prior = 1
+					}
+					fx.Values["revision"] = prior + 1
+					fx.Prior["revision"] = prior
+					fx.Preconditions["revision"] = prior
+					revisions[id] = prior + 1
+				}
+			}
+		case "acceptance_criteria":
+			fx.PK["id"] = fmt.Sprintf("AC-scale-%05d", issueIndex)
+		case "person_decisions":
+			fx.PK["id"] = fmt.Sprintf("PDN-%06x", sequence)
+		case "activity_log":
+			fx.PK["id"] = fmt.Sprintf("ACT-scale-%06d", sequence)
+			fx.Values["journal_event_id"] = e.EventID
+			if details, ok := fx.Values["details"].(map[string]any); ok {
+				if _, has := details["ac_id"]; has {
+					details["ac_id"] = fmt.Sprintf("AC-scale-%05d", issueIndex)
+				}
+			}
+		}
+		effects = append(effects, fx)
+	}
+	e.Effects = effects
+	if family == "label.added" {
+		request := IdempotencyRequest{OperationScope: e.CommandName + ":project-scale", IdempotencyKey: fmt.Sprintf("scale-%06d", sequence), RequestDigest: "sha256:" + strings.Repeat("0", 64)}
+		e.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, Scope: request.OperationScope, RequestDigest: request.RequestDigest}
+		e.Effects = append(e.Effects, idempotencyResultEffect(request, e, e.Aggregate.ID, `{"replayed":false}`))
+	}
+	return e
 }
