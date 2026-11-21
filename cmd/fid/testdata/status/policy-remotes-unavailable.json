@@ -58,7 +58,9 @@
               "priority": null,
               "blocked_by": [],
               "working": null,
-              "kept": null
+              "kept": null,
+              "approval": null,
+              "no_other_model_review": null
             },
             {
               "id": "FID-3b9e01",
@@ -70,7 +72,9 @@
               "priority": null,
               "blocked_by": [],
               "working": null,
-              "kept": null
+              "kept": null,
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         }
@@ -86,7 +90,9 @@
           "priority": 1,
           "blocked_by": [],
           "working": null,
-          "kept": null
+          "kept": null,
+          "approval": null,
+          "no_other_model_review": null
         },
         {
           "id": "FID-d1d1d1",
@@ -98,7 +104,9 @@
           "priority": null,
           "blocked_by": [],
           "working": null,
-          "kept": null
+          "kept": null,
+          "approval": null,
+          "no_other_model_review": null
         }
       ]
     },
