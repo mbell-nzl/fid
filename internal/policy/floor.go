@@ -2,6 +2,7 @@ package policy
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mbell-nzl/fid/internal/pathglob"
 )
@@ -57,27 +58,39 @@ func ComputeFloor(effective Effective, paths []string) (Floor, error) {
 	}
 	for _, path := range canonicalSet(paths) {
 		lane := "standard"
-		isHard := matchesFloor(hard, path)
+		isHard := matchesHardFloor(effective.HardAssured, hard, path)
 		switch {
 		case isHard || !pathglob.ValidPath(path) || matchesFloor(assured, path):
 			lane = "assured"
 		case matchesFloor(routine, path):
 			lane = "routine"
 		}
+		readable := string([]rune(path))
 		if isHard {
 			value := "assured"
 			floor.HardFloor = &value
-			floor.HardPaths = append(floor.HardPaths, path)
+			floor.HardPaths = append(floor.HardPaths, readable)
 		}
 		if floor.Lane == nil || laneRank(lane) > laneRank(*floor.Lane) {
 			floor.Lane = &lane
 			floor.Paths = []string{}
 		}
 		if lane == *floor.Lane {
-			floor.Paths = append(floor.Paths, string([]rune(path)))
+			floor.Paths = append(floor.Paths, readable)
 		}
 	}
 	return floor, nil
+}
+
+func matchesHardFloor(patterns []string, globs []pathglob.Glob, path string) bool {
+	// The built-in workflow subtree covers raw Git names even outside the
+	// configurable glob grammar. Use the recorded list to retain its policy.
+	for _, pattern := range patterns {
+		if pattern == ".github/workflows/**" && strings.HasPrefix(path, ".github/workflows/") {
+			return true
+		}
+	}
+	return matchesFloor(globs, path)
 }
 
 func compileFloorGlobs(patterns []string) ([]pathglob.Glob, error) {
