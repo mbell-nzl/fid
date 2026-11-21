@@ -85,18 +85,8 @@ func assertUnavailableApprovalJSON(t *testing.T, command string, result map[stri
 				items = append(items, item)
 			}
 		}
-		if decision == nil {
-			if len(items) != 0 {
-				t.Errorf("unknown approval requested a decision: %v", items)
-			}
-		} else {
-			summary := "FID-9f13aa approval missing"
-			if flag == true {
-				summary += ", no other-model review"
-			}
-			if len(items) != 1 || items[0]["summary"] != summary || items[0]["next_action"] != "fid approve FID-9f13aa --actor human:<name> --reason <text>" {
-				t.Errorf("missing approval action lost: %v", items)
-			}
+		if len(items) != 0 {
+			t.Errorf("unfinished reviews requested approval: %v", items)
 		}
 	}
 	for key, want := range map[string]any{"approval": decision, "no_other_model_review": flag} {
@@ -126,10 +116,10 @@ func assertUnavailableApprovalText(t *testing.T, command, text string, missing, 
 		parts["Approval    ○ missing"] = missing
 		parts["no other-model review"] = disclosure
 	} else {
-		parts["FID-9f13aa approval missing"] = missing
-		parts["no other-model review"] = missing && disclosure
-		parts["fid approve FID-9f13aa --actor human:<name>"] = missing
-		parts["--reason <text>"] = missing
+		parts["FID-9f13aa approval missing"] = false
+		parts["no other-model review"] = false
+		parts["fid approve FID-9f13aa --actor human:<name>"] = false
+		parts["--reason <text>"] = false
 	}
 	for part, want := range parts {
 		if strings.Contains(text, part) != want {

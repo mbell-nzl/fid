@@ -1,0 +1,88 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "next.claim",
+  "result": {
+    "answer": null,
+    "epic": {
+      "id": "FID-e3a1c0",
+      "progress": {
+        "done": 0,
+        "total": 1
+      },
+      "title": "Planned epic"
+    },
+    "hold": {
+      "actor": "agent:reviewer",
+      "expires_at": "2026-11-08T10:00:00Z",
+      "id": "RCL-<new>",
+      "last_heartbeat_at": "2026-11-08T09:00:00Z",
+      "model": "claude/opus-5.5",
+      "replaces": null,
+      "since": "2026-11-08T09:00:00Z",
+      "task_id": "FID-9f13aa"
+    },
+    "kind": "review",
+    "queue": [
+      {
+        "id": "FID-9f13aa",
+        "title": "Harden login rate limiting",
+        "status": "in_review",
+        "status_category": "started",
+        "epic_id": "FID-e3a1c0",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": [],
+        "reason": null,
+        "after": null,
+        "working": {
+          "hold_id": "RCL-<new>",
+          "worktree": "<ROOT>",
+          "here": true,
+          "actor": "agent:reviewer",
+          "model": "claude/opus-5.5",
+          "since": "2026-11-08T09:00:00Z",
+          "expires_at": "2026-11-08T10:00:00Z",
+          "last_heartbeat_at": "2026-11-08T09:00:00Z",
+          "lapsed": false
+        },
+        "kept": {
+          "worktree": "<BUILDER>",
+          "here": false,
+          "mode": "review",
+          "reason": null,
+          "since": "2026-11-08T09:00:00Z",
+          "hold_id": "HLD-aaaaaa",
+          "actor": "agent:claude-builder",
+          "model": "codex/gpt-6.1-sol"
+        },
+        "epic_blocked_by": []
+      }
+    ],
+    "review": {
+      "handoff": {
+        "id": "HOF-<new>",
+        "pr": "https://github.com/mbell-nzl/fid/pull/63",
+        "head": "<commit-or-tree>",
+        "base": "<commit-or-tree>"
+      },
+      "stream": "primary",
+      "required_profiles": [
+        "code"
+      ]
+    },
+    "task": {
+      "id": "FID-9f13aa",
+      "title": "Harden login rate limiting",
+      "status": "in_review",
+      "status_category": "started",
+      "epic_id": "FID-e3a1c0",
+      "sequence": null,
+      "priority": null,
+      "blocked_by": []
+    },
+    "waiting": null,
+    "worktree": "<ROOT>"
+  }
+}

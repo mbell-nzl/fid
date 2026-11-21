@@ -44,7 +44,7 @@ func approvalDisplayFixture(t *testing.T) *statusFixture {
 	})
 }
 
-func assertApprovalDisplay(t *testing.T, f *statusFixture, state string, flag bool) {
+func assertApprovalDisplay(t *testing.T, f *statusFixture, state string, flag bool, ready ...bool) {
 	t.Helper()
 	before := startEventCount(t, f.workspace)
 	shown, _ := lifecycleResult(t, f.run("--json", "show", "FID-9f13aa"), "issue.show")
@@ -67,12 +67,12 @@ func assertApprovalDisplay(t *testing.T, f *statusFixture, state string, flag bo
 			continue
 		}
 		found = true
-		if !strings.Contains(item["summary"].(string), state) || strings.Contains(item["summary"].(string), "no other-model review") != flag || item["next_action"] != "fid approve FID-9f13aa --actor human:<name> --reason <text>" {
+		if !strings.Contains(item["summary"].(string), "approve, then merge PR #63") || strings.Contains(item["summary"].(string), "no other-model review") != flag || item["next_action"] != "fid approve FID-9f13aa --actor human:<name> --reason <text>" {
 			t.Fatalf("approval item=%v", item)
 		}
 	}
 	inReview := shown["issue"].(map[string]any)["status"] == "in_review"
-	if found != (state != "current" && inReview) {
+	if found != (state != "current" && inReview && len(ready) > 0 && ready[0]) {
 		t.Fatalf("NEEDS YOU approval found=%t for %s", found, state)
 	}
 	tasks := status["in_progress"].(map[string]any)["tasks"].([]any)
@@ -136,7 +136,7 @@ func TestApprovalModelDisclosureAgrees(t *testing.T) {
 				lifecycleResult(t, recordReview(t, f, in, stream, "human:courier"), "review.record")
 			}
 			want := strings.HasPrefix(model, "codex/")
-			assertApprovalDisplay(t, f, "missing", want)
+			assertApprovalDisplay(t, f, "missing", want, true)
 			prompt := approveForTest(f, "FID-9f13aa", "no\n", true)
 			if prompt.err != nil || strings.Contains(prompt.stderr, "no other-model review") != want {
 				t.Fatal(prompt)

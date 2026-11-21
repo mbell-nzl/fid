@@ -99,6 +99,11 @@ func (text textWriter) rows(result Result, served Entry) []string {
 func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
+	case result.Kind == KindReview:
+		review := result.Review
+		lines := text.prose(indent, "Review "+review.Stream+": "+strings.Join(review.RequiredProfiles, ", "))
+		lines = append(lines, text.prose(indent, "Hand-off "+review.Handoff.ID+" · head "+review.Handoff.Head+" · base "+review.Handoff.Base)...)
+		return append(lines, text.step(review.Handoff.PR)...)
 	case result.Kind == KindRework:
 		return append(text.prose(indent, "Rework here: fix the review findings, then check and hand off again."), text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Answer != nil:
@@ -123,6 +128,9 @@ func (text textWriter) message(result Result, explain bool) []string {
 // the order each kind first appears.
 func (text textWriter) nothing(result Result, explain bool) []string {
 	if waiting := result.Waiting; waiting != nil {
+		if waiting.Kind == "rework-cap" {
+			return append(text.item(display.RoleWarning, display.SymbolWarning, waiting.TaskID+" reached its rework cap; waiting for you"), text.step("fid status")...)
+		}
 		if waiting.Kind == "review" {
 			return append(text.item(display.RoleNormal, display.SymbolUnstarted, "Nothing here: "+waiting.TaskID+" is in review"), text.step("fid show "+waiting.TaskID)...)
 		}
@@ -171,10 +179,16 @@ func (text textWriter) nothing(result Result, explain bool) []string {
 // stoppedBy is what stops entry, as a kind to count: its reason, with the
 // worktree directory for work held elsewhere.
 func stoppedBy(entry Entry) string {
+	if entry.Reason != nil && *entry.Reason == ReasonBuiltByActor {
+		return ReasonBuiltByActor
+	}
+	if entry.Reason != nil && *entry.Reason == ReasonReworkCapReached {
+		return ReasonReworkCapReached
+	}
 	if entry.Kept != nil && entry.Kept.Mode == "rework" {
 		return "rework " + filepath.Base(entry.Kept.Worktree)
 	}
-	if entry.Kept != nil && entry.Kept.Mode == "review" {
+	if !entry.review && entry.Kept != nil && entry.Kept.Mode == "review" {
 		return "review"
 	}
 	reason := *entry.Reason
@@ -235,13 +249,16 @@ func (text textWriter) inOrder(result Result) []string {
 // it hands out, ready for any other that nothing stops, and otherwise what
 // stops it. A held task names the worktree's directory.
 func Verdict(entry Entry, served bool) (string, display.Role) {
+	if entry.Reason != nil && *entry.Reason == ReasonReworkCapReached {
+		return "rework cap reached", display.RoleWarning
+	}
 	if entry.Kept != nil && entry.Kept.Mode == "rework" {
 		if entry.Kept.Here {
 			return "rework here", display.RoleWarning
 		}
 		return "rework in " + filepath.Base(entry.Kept.Worktree), display.RoleWarning
 	}
-	if entry.Kept != nil && entry.Kept.Mode == "review" {
+	if !entry.review && entry.Kept != nil && entry.Kept.Mode == "review" {
 		return "in review", display.RoleMuted
 	}
 	switch {
@@ -251,6 +268,8 @@ func Verdict(entry Entry, served bool) (string, display.Role) {
 		return "ready", display.RoleMuted
 	}
 	switch *entry.Reason {
+	case ReasonBuiltByActor:
+		return "built by this actor", display.RoleWarning
 	case ReasonWaitingForYou:
 		return "waiting for you", display.RoleWarning
 	case ReasonHeldElsewhere:

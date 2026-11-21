@@ -600,6 +600,34 @@ Avoid: "claim" in human output (the leak test flags it), though the
 `--claim` flag and JSON codes keep the word. Avoid treating a lapse as proof
 that work stopped.
 
+**Review work**
+Definition: Kind `review` from `fid next`: the latest hand-off's due primary
+review, then the separate review for Assured work, with every required
+profile. It follows resume and rework and precedes unblocking and new work.
+Use when: selecting an independent review session. An actor that ever held
+the task to build it cannot take its review work.
+Avoid: treating a builder's kept worktree as an available reviewer worktree.
+
+**Review reservation**
+Definition: The task and due stream reserved by `next --claim` for one actor
+and reviewer worktree, returned as an `RCL-` session ID. Heartbeats and lapse
+work as for build holds; lapse frees review work, and recording a round ends
+its task/stream's reservation atomically. It is stored separately from build
+holds and never contributes to builder independence or model attribution.
+Use when: ensuring two worktrees never take the same review.
+Avoid: requiring a reservation to record a review produced elsewhere; calling
+it a "claim" in human output.
+
+**Rework cap**
+Definition: The number of changes rounds automatic rework may pass through,
+from `rework_cap` in the latest hand-off's frozen policy and lane (default 3).
+Both streams and every hand-off count. Rework is served at the cap; past it,
+next stops automatic rework and status asks for a person's takeover or
+cancellation. Zero stops the first rework. Extra-round decisions are later work.
+Use when: explaining `rework-cap-reached` or the `rework-cap` waiting item.
+Avoid: counting findings instead of rounds, or reading today's policy for an
+older hand-off.
+
 **Hand-off**
 Definition: The point where a builder passes a task to review (D7). Every
 check the lane requires needs a passing result on the head commit's tree,

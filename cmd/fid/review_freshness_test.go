@@ -87,13 +87,16 @@ func canonicalReviewFixtureAt(t *testing.T, lane string, linked bool) (*statusFi
 	return canonicalReviewFixtureWithClock(t, lane, linked, func() time.Time { return now })
 }
 
-func canonicalReviewFixtureWithClock(t *testing.T, lane string, linked bool, clock func() time.Time) (*statusFixture, string) {
+func canonicalReviewFixtureWithClock(t *testing.T, lane string, linked bool, clock func() time.Time, prepare ...func(*statusFixture)) (*statusFixture, string) {
 	t.Helper()
 	f := newLifecycleFixture(t)
 	if linked {
 		f.workspace = gittest.AddWorktree(t, f.workspace)
 	}
 	f.clock = clock
+	for _, setup := range prepare {
+		setup(f)
+	}
 	if lane == "routine" {
 		trustedShowPolicy(t, f, func(raw string) string {
 			return strings.Replace(raw, "[lanes.routine]", "[lanes.routine]\npaths=['**/*.md']", 1)

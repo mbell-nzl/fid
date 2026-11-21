@@ -73,7 +73,7 @@
     "needs_you": [
       {
         "kind": "approval",
-        "summary": "FID-9f13aa approval missing",
+        "summary": "FID-9f13aa: approve, then merge PR #63",
         "next_action": "fid approve FID-9f13aa --actor human:<name> --reason <text>",
         "subject": {
           "type": "task",

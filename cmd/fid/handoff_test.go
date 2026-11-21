@@ -82,9 +82,14 @@ func TestHandoffGoldenAndRetry(t *testing.T) {
 			other := gittest.AddWorktree(t, f.workspace)
 			f.seed([]readyCommandRow{statusTask("FID-abcdef", "Other work", "todo", nil, nil, nil)}, nil)
 			got, _ := decodeNext(t, executeCommandForTest(other, "--json", "next"), "next.get")
-			if got["kind"] != "new" {
+			if got["kind"] != "review" || got["task"].(map[string]any)["id"] != "FID-9f13aa" {
 				t.Fatalf("other worktree=%v", got)
 			}
+			skipped, _ := decodeNext(t, executeCommandForTest(other, "--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "claude/opus-5.5"), "next.claim")
+			if skipped["kind"] != "new" || skipped["task"].(map[string]any)["id"] != "FID-abcdef" {
+				t.Fatalf("builder should skip review for new work: %v", skipped)
+			}
+			lifecycleResult(t, executeCommandForTest(other, "--json", "park", "--hold", skipped["hold"].(map[string]any)["id"].(string), "--actor", "agent:claude-builder", "--interrupted", "--reason", "Leave new work for original worktree", "--idempotency-key", "release-other"), "hold.park")
 			lifecycleResult(t, f.run("--json", "issue", "transition", "FID-9f13aa", "--to", "cancelled", "--actor", "human:mark", "--reason", "No longer needed"), "issue.transition")
 			got, _ = decodeNext(t, f.run("--json", "next"), "next.get")
 			if got["kind"] != "new" {

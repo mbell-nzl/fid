@@ -299,6 +299,11 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql holds = %#v", holds)
 	}
 	state.reads["holds"] = holds.stdout
+	reviewClaims := executeCommandForTest(workspace, "sql", "SELECT * FROM review_claims ORDER BY id")
+	if reviewClaims.err != nil {
+		t.Fatal(reviewClaims)
+	}
+	state.reads["review reservations"] = reviewClaims.stdout
 	decisions := executeCommandForTest(workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
 	if decisions.err != nil || decisions.stderr != "" {
 		t.Fatalf("fid sql person decisions = %#v", decisions)
