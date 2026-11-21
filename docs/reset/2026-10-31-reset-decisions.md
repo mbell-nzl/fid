@@ -1724,9 +1724,39 @@ and 2 are also in their tasks' rows in `RESET.md`.
      that emits fid's input belongs to the kit's work (3.3).
    - fid runs from a binary pinned to a known `main` commit in
      `~/.local/bin/fid`, upgraded at each epic close or when a merged fix
-     is needed (D11). Backups go to the private `fid-ledgers` repository
+     is needed (D11). (Amended 2026-11-22, item 6: rebuilt from `main`
+     after merges.) Backups go to the private `fid-ledgers` repository
      over HTTPS, after `gh auth setup-git`, so the orchestrator and later
      the loop can back up too.
+
+## Decided 2026-11-22
+
+Mark made these decisions on 2026-11-22, after 1.9b (#97), 2.2b (#98) and
+2.3 (#99) merged.
+
+1. **2.2c joins the reset.** Mark accepted the proposed row: `fid waive`,
+   the fingerprint-bound waiver 2.2b's size split left over, runs after 2.3
+   and reuses its current/stale decision view.
+2. **2.3b: a done task's receipt in `fid show`.** After `fid done`, show
+   said only `done`, with the hand-off's PR number; nothing showed the
+   merge, the CI run, the review rounds or the approval the completion
+   record names. A new Standard row, 2.3b, shows them, in text and JSON,
+   offline. It runs after 2.1.
+3. **When status asks for approval** (2.1). Status asks for an Assured
+   task's approval only once the latest hand-off's primary and separate
+   reviews have approved it, as one NEEDS YOU item, "approve, then merge";
+   other lanes get one "merge" item. This replaces 2.3's approval item,
+   which appeared from the hand-off on, while reviews were still running.
+4. **Finished work stays finished** (1.9c). fid refuses cancelling a done
+   task or a closed epic. Undoing merged work is a new task, which follows
+   the original PR's `## Rollback` section.
+5. **2.1's design is delegated** to the orchestrator, as 2.2b's and 2.3's
+   were. Its choices are recorded with 2.1, for Mark's review.
+6. **fid's pinned binary follows `main`.** After a merge, while no task is
+   between hand-off and done, the orchestrator rebuilds `~/.local/bin/fid`
+   from `main`, after replaying a copy of the ledger with it. This replaces
+   "upgraded at each epic close or when a merged fix is needed" (Decided
+   2026-11-17, item 3).
 
 ## Products
 
@@ -3458,15 +3488,12 @@ such a task waits for Mark to accept it; until then the epic's wait for
   lists every open task, with blocked tasks that others wait on above the
   ready ones. Fix them in later display work.
 
-- From this PR (2.2b): proposed 2.2c carries the approved fingerprint-bound
-  `fid waive` design, its done gates, journal admission, restore coverage,
-  and current/stale show/status display, after 2.3, reusing 2.3's
-  current/stale presentation. The brief authorized this size split. See "Decided for 2.2b, 2026-11-21"; the proposed RESET row and this
-  allocation are for Mark's review.
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
+- From #98 (2.2b): proposed row 2.2c, `fid waive`, the remaining 2.2b
+  scope. Mark accepted it on 2026-11-22 ("Decided 2026-11-22", item 1).
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
   on 2026-11-21; "Decided for 2.2b, 2026-11-21" records its exact list,
   definition and exclusions. 2.2b computes the floor and `.fid.toml` now
