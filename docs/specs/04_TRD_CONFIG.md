@@ -156,7 +156,20 @@ export/import distinguish a missing key from an explicit empty list. Other
 paths are Standard; the highest floor among changed paths applies. `.fid.toml`
 and `.github/workflows/**` are always Assured, built into fid, and cannot
 be configured away or waived. Every `defined_by` path also needs Assured.
-2.2b computes the floor and adds waivers; 2.2a exposes these settings only.
+RESET 2.2b computes both the floor and the hard floor. A path matching an
+Assured rule takes precedence over Routine; an unsupported path is Assured.
+No changed paths means no floor, so the planned lane stands. Only the two
+built-in patterns set an unwaivable hard floor; `defined_by` and configured
+Assured paths are waivable in the proposed 2.2c follow-up.
+
+An unnamed `check` selects requirements at the higher of the task's lane and
+the floor. It never edits the task. Hand-off uses the same comparison and
+raises the task's lane when needed, in the same Issue update that moves it
+to review. Its immutable receipt keeps the floor, the paths setting it, the
+hard floor and its paths, and the previous lane when raised. Later policy
+changes do not change that receipt. `done` checks the frozen policy's floor
+and keeps its existing lane-dependent gates. Fingerprint-bound waivers and
+their effects on those gates remain proposed 2.2c work.
 
 Globs are anchored at the repo root and use `/` separators. `*` matches
 within a folder, `**` crosses folders, and `**/` can match zero folders:
@@ -184,7 +197,11 @@ the same requirement rule.
 
 Show keeps working when policy, lane checks or the comparison is unavailable,
 with warnings and nullable required/satisfied fields instead of a refusal.
-Its `checks_base` is null when no comparison is needed or the base is missing.
+JSON adds `floor: {lane, paths, hard_floor, hard_paths}` (null when unknown);
+no changed paths has null lanes and empty arrays. The latest hand-off also
+keeps its recorded floor and optional `raised_from`. Show retains that
+recorded explanation when current policy or comparison is unavailable.
+Its `checks_base` is null when no conditional check needs it or the base is missing.
 An unavailable base leaves unconditional lane checks required and conditional
 ones unknown. A missing current definition makes satisfaction unknown.
 

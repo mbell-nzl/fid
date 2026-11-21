@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/decisionview"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/status"
 )
@@ -20,16 +22,18 @@ type Options struct {
 	Now           time.Time
 }
 
-// Result is everything fid show shows. Later tasks add the lane, checks,
-// reviews, approval, what needs a person, and what's next.
+// Result is everything fid show shows. Later tasks add reviews, what needs a
+// person, and what's next.
 type Result struct {
 	issues.IssueView
 	Working    *holds.Working
 	Kept       *holds.Kept
 	Now        time.Time
 	Checks     []Check
+	Floor      *policy.Floor
 	ChecksBase *string
 	Warnings   []status.Warning
+	Approval   decisionview.Approval
 }
 
 // Build reads the issue whose ID is exactly options.ID.
@@ -40,6 +44,9 @@ func Build(options Options) (Result, error) {
 	}
 	result := Result{IssueView: view, Now: options.Now}
 	result.readChecks(options.WorkspaceRoot)
+	if err := result.readApproval(options.WorkspaceRoot); err != nil {
+		return Result{}, fmt.Errorf("read show approval: %w", err)
+	}
 	if hold := view.OpenHold; hold != nil && (hold.Kept || hold.Waiting() || !hold.Lapsed(options.Now) || view.Issue.StatusCategory == "started") {
 		result.Working = holds.Describe(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
 		if hold.Kept || hold.Waiting() || view.Issue.StatusCategory == "started" {
@@ -53,22 +60,25 @@ func Build(options Options) (Result, error) {
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
 	fields := map[string]any{
-		"handoff":     result.Handoff,
-		"questions":   result.Questions,
-		"checks":      result.Checks,
-		"checks_base": result.ChecksBase,
-		"warnings":    result.Warnings,
-		"issue":       result.Issue,
-		"state":       result.State,
-		"epic":        result.Epic,
-		"task":        result.Task,
-		"blocked_by":  result.BlockedBy,
-		"blocks":      result.Blocks,
-		"progress":    result.Progress,
-		"children":    result.Children,
-		"working":     result.Working,
-		"kept":        result.Kept,
-		"scheduling":  result.Scheduling,
+		"approval":              result.Approval.Decision,
+		"no_other_model_review": result.Approval.NoOtherModelReview,
+		"floor":                 result.Floor,
+		"handoff":               result.Handoff,
+		"questions":             result.Questions,
+		"checks":                result.Checks,
+		"checks_base":           result.ChecksBase,
+		"warnings":              result.Warnings,
+		"issue":                 result.Issue,
+		"state":                 result.State,
+		"epic":                  result.Epic,
+		"task":                  result.Task,
+		"blocked_by":            result.BlockedBy,
+		"blocks":                result.Blocks,
+		"progress":              result.Progress,
+		"children":              result.Children,
+		"working":               result.Working,
+		"kept":                  result.Kept,
+		"scheduling":            result.Scheduling,
 	}
 	if result.Merge != nil {
 		fields["merge"] = result.Merge

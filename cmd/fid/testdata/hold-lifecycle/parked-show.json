@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [
       {
@@ -27,6 +28,12 @@
         "done": 0,
         "total": 4
       }
+    },
+    "floor": {
+      "lane": null,
+      "paths": [],
+      "hard_floor": null,
+      "hard_paths": []
     },
     "handoff": null,
     "issue": {
@@ -57,6 +64,7 @@
       "actor": "agent:claude-builder",
       "model": ""
     },
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,

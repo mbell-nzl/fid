@@ -59,7 +59,12 @@ func evaluateLocal(o *Outcome, s Snapshot) {
 		return
 	}
 	p := *s.Policy
-	required, err := policy.Required(p, h.Lane, s.Task.ID, h.ChangedPaths)
+	floor, floorErr := policy.ComputeFloor(p, h.Paths())
+	if p.RulesVersion >= 3 && (floorErr != nil || floor.Raise(h.Lane) != h.Lane) {
+		o.set(PolicyGate, RefusedState, PolicyMismatch)
+		return
+	}
+	required, err := policy.Required(p, h.Lane, s.Task.ID, h.Paths())
 	switch {
 	case !p.Lanes[h.Lane].ChecksSet:
 		o.set(PolicyGate, Missing, ChecksNotConfigured)
@@ -132,12 +137,7 @@ func evaluateReviews(o *Outcome, s Snapshot) {
 }
 
 func evaluateAssured(o *Outcome, s Snapshot, profiles []string, profilesKnown bool) {
-	o.NoOtherModelReview = true
-	for _, r := range s.Rounds {
-		if r.TaskID == s.Task.ID && r.Current && (r.Stream == "primary" || r.Stream == "separate") && r.OtherModel {
-			o.NoOtherModelReview = false
-		}
-	}
+	o.NoOtherModelReview = reviewrecord.NoOtherModelReview(s.Task.ID, s.Rounds)
 	if profilesKnown {
 		o.Gates[SeparateGate] = reviewGate(s, "separate", profiles)
 	} else {

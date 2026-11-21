@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [],
@@ -33,6 +34,7 @@
       }
     ],
     "epic": null,
+    "floor": null,
     "handoff": null,
     "issue": {
       "lane": null,
@@ -53,6 +55,7 @@
       "acceptance_criteria": []
     },
     "kept": null,
+    "no_other_model_review": null,
     "progress": {
       "done": 0,
       "total": 2

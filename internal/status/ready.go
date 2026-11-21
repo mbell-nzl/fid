@@ -3,6 +3,7 @@ package status
 import (
 	"path/filepath"
 
+	"github.com/mbell-nzl/fid/internal/decisionview"
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -15,6 +16,7 @@ type workingTask struct {
 	Working *holds.Working           `json:"working"`
 	Kept    *holds.Kept              `json:"kept"`
 	Merge   *mergerecord.ReviewState `json:"merge,omitempty"`
+	decisionview.Approval
 }
 
 type section[T any] struct {

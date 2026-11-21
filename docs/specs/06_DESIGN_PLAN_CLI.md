@@ -342,7 +342,13 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 ```
 
 - **NEEDS YOU** lists what waits on a person, each item a summary and its
-  next step. Kinds include backup, waiting-for-you and worktree-missing (below).
+  next step. Kinds include backup, waiting-for-you, worktree-missing (below),
+  and `approval`: an in-review task whose latest hand-off is Assured and whose
+  approval is missing or stale. Its summary says `<task> approval missing`
+  or `<task> approval stale`, adding `, no other-model review` when applicable.
+  Its next step is `fid approve <task> --actor human:<name> --reason <text>`.
+  A current approval needs no item. Each IN PROGRESS task's JSON carries the
+  same `approval` and `no_other_model_review` fields as show (below).
 - **Epics and tasks** appear; subtasks never do. An epic whose own state is
   completed or cancelled is hidden. An epic is in progress when its own
   state's category is `started`, or any of its tasks is started or
@@ -620,6 +626,16 @@ every read, records no Event and makes no network calls. Text output is
     column, with its state;
   - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored;
   - `Lane`: on a task, `Routine`, `Standard`, `Assured`, or `not set`;
+  - `Approval`: after Lane, when the latest hand-off's lane is Assured,
+    including a lane raised by its floor. `○ missing` means no approval
+    exists. A current approval reads `✓ <decision> <actor> · <at>`; a stale
+    one reads `⚠ stale · <decision> <actor> · <at> · approved an earlier change`.
+    Current is green, stale yellow, missing muted when colour is enabled.
+    A second line says `no other-model review` when no current primary or
+    separate round came from another model family than every builder's.
+    Unknown agent builder models and unknown reviewer models cannot establish
+    other-model coverage. Every current round may establish it; stale rounds
+    cannot. The approve prompt and done use this same reader.
   - `Working`: on a held task, `here, since 09:02, until 10:02`, or
     `in <full path> by <actor>, since 08:40, until 09:40` elsewhere. An
     interrupted task reads `⚠ interrupted in <full path> by <actor>: work
@@ -628,8 +644,8 @@ every read, records no Event and makes no network calls. Text output is
     so it has no Working row.
 
   Labels are 10 columns wide after the two-space indent, so values begin
-  at column 14. Checks follows `Lane`; later tasks add reviews,
-  approval, and next as the last), a NEEDS YOU block
+  at column 14. Checks follows `Approval` (or `Lane` when approval does not
+  apply); later tasks add reviews and next as the last, a NEEDS YOU block
   under the heading, and an epic's plan and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
   mark, the ID, two spaces, the title cut with `…`, and the right-hand
@@ -649,7 +665,7 @@ every read, records no Event and makes no network calls. Text output is
   `status` does. A subtask has no children.
 - Sequence, revision, workflow ID and times appear only in the JSON's
   `issue`. Neither text nor JSON shows open concerns, triage status, the
-  owner role or actor (apart from the actor in Working), or links other than
+  owner role or actor (apart from actors in Working and Approval), or links other than
   `blocks` and `blocked_by`.
 - Text fid didn't write is escaped, fitted and wrapped as in `status`,
   and long text pages as `status`'s does.
@@ -666,6 +682,8 @@ The `issue.show` JSON result holds everything, with a null `event`:
  "kept": null,
  "checks": [],
  "checks_base": null,
+ "approval": null,
+ "no_other_model_review": null,
  "warnings": [],
  "scheduling": null,
  "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
@@ -676,6 +694,21 @@ The `issue.show` JSON result holds everything, with a null `event`:
                "status": "done", "status_category": "completed", "sequence": null,
                "priority": null, "blocked_by": []}]}
 ```
+
+Approval's JSON is null before a task's first hand-off and for non-Assured
+hand-offs. Otherwise it is `{"state":"missing"}`, or an object whose `state`
+is `current` or `stale`, with `decision_id`, `actor`, `at` (RFC3339), and
+`fingerprint` (the recorded fingerprint value). Freshness comes from
+`approvalrecord.Current` against the latest hand-off's fingerprint; an earlier
+approval of an identical change remains current. The state field also leaves
+room for a future `not-required` state for waivers, which is not implemented.
+`no_other_model_review` is a boolean for Assured hand-offs, null when not
+applicable or unknown. Both commands operate offline, without fetching.
+Unavailable current policy or comparison retains approval evidence from the
+recorded endpoints. If those endpoints cannot be fingerprinted locally, an
+`approval-unavailable` warning names the task and problem; unknown approval
+and disclosure fields are null. An absence of approvals or reviews remains
+known without those objects. Neither command writes an approval or any Event.
 
 - `issue` is exactly `issue get`'s. `state` is null except on an epic,
   where it is `in-progress` or `to-do` as in `status`, or `completed` or
@@ -939,7 +972,7 @@ push" · Standard`. A lane-only update reads `updated issue FID-c2d4e5 ·
 Assured`. Agents may set or raise a lane, never lower it (`authority-denied`).
 A person may lower a todo task's lane as a planning correction. Otherwise
 lowering is refused as `transition-not-permitted`, unsatisfied
-`lane-lowering-requires-waiver`, until `waive` in 2.2b.
+`lane-lowering-requires-waiver`; `waive` remains the proposed 2.2c follow-up.
 
 Start (`task.start`) validates the exact live hold under the write lock:
 existence, open/unexpired status, actor, and current worktree. It needs a
@@ -1173,7 +1206,7 @@ All four flags are required. The PR must be a GitHub pull request URL,
 `https://github.com/<owner>/<repo>/pull/<n>`. It is recorded locally, without
 contacting GitHub or running checks. 1.6 verifies it with `gh`.
 The exact hold must be live, owned by this actor and this worktree, and
-its task must be `in_progress`. The task's lane must have a `checks` key,
+its task must be `in_progress`. The higher of the task's lane and its computed floor must have a `checks` key,
 and `[review] test_adequacy` must be configured (an empty list is valid).
 The worktree must be clean, including untracked files and excluding ignored
 files. fid recomputes the committed comparison base with the local
@@ -1190,7 +1223,20 @@ One `task.handed-off` Event records the immutable hand-off receipt, moves
 the task to `in_review`, ends its builder's hold, and keeps the task for its
 worktree. The receipt records the PR, head commit, tree, base, lane,
 policy snapshot, required names, definition digests, counting result IDs
-and time. A same-key retry returns the original result and Event even
+and time. RESET 2.2b adds `floor: {lane, paths, hard_floor, hard_paths}`
+and optional `raised_from` to the receipt. Both floor lanes are nullable;
+arrays are empty when no changed paths set a floor. A higher floor raises
+the task's lane in the same state update; hand-off never lowers a lane.
+The public hand-off success response retains its existing fields.
+
+Show adds the current floor in `result.floor`, null when unavailable, and
+keeps the immutable floor on `result.handoff`. When hand-off raised the task,
+the Lane row explains it, for example `Assured · floor: internal/policy/a.go
+and 2 others · raised from Standard`. Read-only show warns when it cannot
+compute the current floor and retains the recorded explanation when known.
+Invalid UTF-8 Git names have a readable replacement in the floor's path
+strings and a lossless base64 `changed_path_bytes` list in the receipt;
+checks, reviews and done use those exact bytes. A same-key retry returns the original result and Event even
 after the hold ends; changed request fields cause `idempotency-conflict`.
 
 Text success (with no required checks, use `no checks required`):
@@ -1568,10 +1614,10 @@ The full Event must fit below the journal's existing 1 MiB line budget.
 A decision is current when its algorithm and fingerprint match the latest
 hand-off's change, even after a clean rebase with new endpoints; otherwise
 it is stale. `approvalrecord.Current` supplies the shared current/stale/missing
-reader for the done evaluator. Any matching immutable approval is evidence
+reader for done, status and show. Any matching immutable approval is evidence
 of the current change; a new decision after edits preserves the old one.
 The prompt always shows the full diffstat when a new decision is requested.
-Status/show presentation stays in task 2.3.
+Status and show present that state as described in section 3 (RESET 2.3).
 
 An optional retry key covers actor, task and reason in the project's
 `task.approve` scope. An identical retry returns the original decision,
@@ -1769,7 +1815,9 @@ detectable catch-up state and never a reason to append a duplicate Event.
 
 `fid check <name>... --hold <id> --actor <a> --idempotency-key <k>` executes
 trusted `[checks.<name>]` definitions at the worktree root, in name order,
-dropping duplicates. With no names it selects the lane's required checks,
+dropping duplicates. With no names it selects the required checks at the higher
+of the task's lane and the committed changed-path floor, without changing the
+task's lane,
 filtering `when_changed` against committed files since the freshly computed
 merge-base with local `origin/<default>`. Deletions and both rename paths
 count; absent or empty `when_changed` always requires the check. Unknown names
@@ -1784,9 +1832,14 @@ explicit empty set permits named checks. Unreadable policy gives
 `policy-unavailable`. A changed effective digest records a policy snapshot.
 Missing `[review] test_adequacy` does not stop check. An empty required set
 records a completed request with no starts or results; text says
-`✓ No checks required for Standard` (using the task's lane), JSON has
+`✓ No checks required for Standard` (using the lane selected for this check), JSON has
 `{task_id, checks: []}` and the completion Event, and the exit is 0. Retry
 returns that same recorded response even if policy or the comparison changes.
+When a floor raises the selected lane, the check start and stored retry
+response retain the comparison's `changed_path_bytes` as base64 bytes, so journal
+admission can recompute that selection even for unsupported Git names. The
+same rule admits a configured higher lane when the planned lane is not set
+up. Explicitly named checks keep the existing lane and need no comparison.
 The start is durable before spawning. The write lock is released while the
 child executes; process identity is recorded as soon as known. Every five
 minutes the command renews its exact hold, one Event each. A refused renewal

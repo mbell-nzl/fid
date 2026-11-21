@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/backup"
+	"github.com/mbell-nzl/fid/internal/decisionview"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
 )
 
 // NeedsYouBackup is the kind of item that says the backup needs a person.
-// Later tasks add kinds for approvals, epic plans, untriaged work and tasks
-// waiting for a person.
+// Later tasks add kinds for epic plans and untriaged work.
 const NeedsYouBackup = "backup"
 
 // CreateTaskCommand is the command the empty project's hint names.
@@ -41,6 +41,7 @@ type Result struct {
 	Next        *string
 	entries     map[string]next.Entry
 	merges      map[string]*mergerecord.ReviewState
+	approvals   map[string]decisionview.Approval
 	// Hint is set only when the project has no epics or tasks at all.
 	Hint *Hint
 }
@@ -70,7 +71,7 @@ func Build(options Options) (Result, error) {
 }
 
 func build(options Options, afterOverview func()) (Result, error) {
-	overview, planned, merges, err := readWork(options, afterOverview)
+	overview, planned, result, err := readWork(options, afterOverview)
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
@@ -78,8 +79,9 @@ func build(options Options, afterOverview func()) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
-	result := Result{GeneratedAt: options.Now, Backup: describeBackup(health, options.Now), NeedsYou: []NeedsYouItem{},
-		Warnings: readPolicyWarnings(options.WorkspaceRoot), InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}, merges: merges}
+	result.GeneratedAt, result.Backup = options.Now, describeBackup(health, options.Now)
+	result.Warnings = append(readPolicyWarnings(options.WorkspaceRoot), result.Warnings...)
+	result.InProgress, result.Ready, result.entries = overview.InProgress, overview.ToDo, map[string]next.Entry{}
 	for _, entry := range planned.Queue {
 		result.entries[entry.ID] = entry
 	}
@@ -95,7 +97,7 @@ func build(options Options, afterOverview func()) (Result, error) {
 	if overview.Empty {
 		result.Hint = &Hint{Summary: "No tasks yet", NextAction: CreateTaskCommand}
 	}
-	return result, nil
+	return *result, nil
 }
 
 // Fields is the result as the project.status JSON result.
@@ -106,7 +108,7 @@ func (result Result) Fields() map[string]any {
 		"needs_you":    result.NeedsYou,
 		"warnings":     result.Warnings,
 		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
-			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept, Merge: result.merges[task.ID]}
+			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept, Merge: result.merges[task.ID], Approval: result.approvals[task.ID]}
 		}),
 		"ready": result.readyFields(),
 		"hint":  result.Hint,

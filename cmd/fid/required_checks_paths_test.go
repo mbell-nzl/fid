@@ -27,6 +27,7 @@ func TestRequiredChecksConservativelyMatchUnsupportedGitPaths(t *testing.T) {
 			f := requiredCheckFixture(t, "['go', 'always', 'empty']")
 			path := filepath.Join(f.workspace, ".fid.toml")
 			raw := strings.Replace(string(mustReadCommandFile(t, path)), "checks = ['go', 'always', 'empty']", "checks = ['go', 'docs', 'always', 'empty']", 1)
+			raw = strings.Replace(raw, "[lanes.assured]\nchecks = []", "[lanes.assured]\nchecks = ['go', 'docs', 'always', 'empty']", 1)
 			raw += "\n[checks.docs]\nrun=['true']\ntimeout='1m'\nwhen_changed=['docs/**']\n"
 			writeBackupTestFile(t, path, raw)
 			runGitForTest(t, f.workspace, "add", ".fid.toml")

@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [
@@ -181,7 +182,19 @@
         "total": 1
       }
     },
+    "floor": {
+      "lane": null,
+      "paths": [],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": {
+      "floor": {
+        "lane": null,
+        "paths": [],
+        "hard_floor": null,
+        "hard_paths": []
+      },
       "id": "HOF-<new>",
       "pr": "https://github.com/mbell-nzl/fid/pull/63",
       "head": "<commit-or-tree>",
@@ -224,6 +237,7 @@
       "actor": "agent:claude-builder",
       "model": ""
     },
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,

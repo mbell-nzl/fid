@@ -607,6 +607,16 @@ and fid records the policy in force at that point.
 Use when: saying which results and which policy a review and `done` rely on.
 Avoid: the retired V1 `handoff` document (Retired Product Terms).
 
+**Lane floor**
+Definition: The highest lane required by the committed changed paths between
+HEAD and its merge-base with the local origin default branch. Assured rules
+win over Routine paths; unmatched paths are Standard; unsupported Git paths
+are Assured. No changed paths leaves the planned lane unchanged. Only
+`.fid.toml` and `.github/workflows/**` set unwaivable hard floors.
+Use when: explaining the checks selected before hand-off and a lane raised
+at hand-off. Fingerprint-bound waivers remain the proposed 2.2c follow-up.
+Avoid: treating a configured Assured path or a check's `defined_by` as hard.
+
 **Policy snapshot**
 Definition: fid's record of the policy it trusts: its source (`origin/<default
 branch>` at a commit, or the built-in defaults), the digest of the effective
@@ -625,6 +635,15 @@ list. fid refuses every kind from `agent:*` actors.
 Use when: recording or showing a person's call.
 Avoid: "Human Outcome", "Deviation" or "Attention Item", which it replaces,
 and confusing it with a Protected Decision, which is project prose.
+
+**No other-model review**
+Definition: An Assured hand-off has no current primary or separate review
+round whose known model family differs from every builder's. Unknown agent
+builder models and unknown reviewer models cannot establish that coverage.
+Use when: disclosing the same-model fallback in the approve prompt, show,
+status and done, so a person approves knowingly. Stale rounds do not count.
+Avoid: treating this flag as a missing separate session; Assured work still
+requires the separate review session under same-model fallback.
 
 **Check result**
 Definition: The outcome of one check, from one of two sources. A local result
@@ -645,4 +664,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-11-10 (lean core terms, ADR-0014)*
+*Last updated: 2026-11-22 (approval disclosure, RESET 2.3)*

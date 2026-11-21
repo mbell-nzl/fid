@@ -135,7 +135,10 @@ func validateHandoffEvidence(tx *sql.Tx, record handoffrecord.Record) error {
 	if !effective.TestAdequacySet {
 		return fmt.Errorf("hand-off requires configured test paths")
 	}
-	required, err := policy.Required(effective, record.Lane, record.TaskID, record.ChangedPaths)
+	if err := validateHandoffFloor(tx, effective, record); err != nil {
+		return err
+	}
+	required, err := policy.Required(effective, record.Lane, record.TaskID, record.Paths())
 	if err != nil {
 		return err
 	}
@@ -165,10 +168,13 @@ func validateHandoffChanges(tx *sql.Tx, event Event, record handoffrecord.Record
 	if err := tx.QueryRow(`SELECT kind,status,lane,revision FROM issues WHERE id=?`, record.TaskID).Scan(&kind, &state, &lane, &revision); err != nil {
 		return err
 	}
-	if kind != "task" || state != "in_progress" || !lane.Valid || lane.String != record.Lane {
+	if kind != "task" || state != "in_progress" || !lane.Valid {
 		return fmt.Errorf("hand-off requires its started task and lane")
 	}
 	want := Effect{Op: "update", Table: "issues", PK: map[string]any{"id": record.TaskID}, Values: map[string]any{"status": "in_review", "revision": revision + 1, "updated_at": record.At}, Preconditions: map[string]any{"status": "in_progress", "revision": revision}}
+	if record.RaisedFrom != nil {
+		want.Values["lane"] = record.Lane
+	}
 	if !currentValuesEqual(event.Effects[1], want) {
 		return fmt.Errorf("hand-off task change differs from receipt")
 	}
@@ -183,6 +189,40 @@ func validateHandoffChanges(tx *sql.Tx, event Event, record handoffrecord.Record
 	want = Effect{Op: "update", Table: "holds", PK: map[string]any{"id": record.HoldID}, Values: map[string]any{"ended_at": record.At, "end_reason": "review", "kept": true}, Preconditions: map[string]any{"ended_at": nil}}
 	if !currentValuesEqual(event.Effects[2], want) {
 		return fmt.Errorf("hand-off must end and keep its builder hold")
+	}
+	return nil
+}
+
+// Historical snapshots retain their pre-floor semantics. New receipts explain
+// the floor and any raise, validated without consulting git or current policy.
+func validateHandoffFloor(tx *sql.Tx, effective policy.Effective, record handoffrecord.Record) error {
+	if effective.RulesVersion < 3 && record.Floor == nil && record.RaisedFrom == nil {
+		var lane string
+		if err := tx.QueryRow(`SELECT lane FROM issues WHERE id=?`, record.TaskID).Scan(&lane); err != nil {
+			return err
+		}
+		if lane != record.Lane {
+			return fmt.Errorf("hand-off requires its started task and lane")
+		}
+		return nil
+	}
+	floor, err := policy.ComputeFloor(effective, record.Paths())
+	if err != nil {
+		return err
+	}
+	var lane string
+	if err := tx.QueryRow(`SELECT lane FROM issues WHERE id=?`, record.TaskID).Scan(&lane); err != nil {
+		return err
+	}
+	if record.Floor == nil || !currentValuesEqual(floor, *record.Floor) || record.Lane != floor.Raise(lane) {
+		return fmt.Errorf("hand-off lane or floor differs from policy and changed paths")
+	}
+	if record.Lane == lane {
+		if record.RaisedFrom != nil {
+			return fmt.Errorf("hand-off floor did not raise the lane")
+		}
+	} else if record.RaisedFrom == nil || *record.RaisedFrom != lane {
+		return fmt.Errorf("hand-off floor raise must name the previous lane")
 	}
 	return nil
 }

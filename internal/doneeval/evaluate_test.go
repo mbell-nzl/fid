@@ -20,6 +20,9 @@ func completeSnapshot(lane string, triggered bool) Snapshot {
 	tree, head, base, merge := strings.Repeat("a", 40), strings.Repeat("b", 40), strings.Repeat("c", 40), strings.Repeat("d", 40)
 	check := config.Check{Run: []string{"true"}, Timeout: time.Minute}
 	p := policy.Resolve(config.ProjectFile{Checks: map[string]config.Check{"test": check}, Lanes: map[string]config.Lane{lane: {Checks: []string{"test"}, ChecksSet: true}}, TestAdequacySet: true, TestAdequacy: []string{"**/*_test.go"}})
+	routine := p.Lanes["routine"]
+	routine.Paths = []string{"**/*.md", "**/*_test.go"}
+	p.Lanes["routine"] = routine
 	h := &handoffrecord.Record{View: handoffrecord.View{ID: "HOF-one", PR: "https://github.com/owner/repo/pull/1", Head: head, Base: base, RequiredChecks: []string{"test"}, ResultIDs: []string{"CHK-one"}}, TaskID: "FID-one", Tree: tree, Lane: lane, PolicySnapshot: 1, DefinitionDigests: map[string]string{"test": checkrecord.Digest(checkrecord.DefinitionFor(check))}, ChangedPaths: []string{"notes.md"}}
 	if triggered {
 		h.ChangedPaths = []string{"internal/x_test.go"}

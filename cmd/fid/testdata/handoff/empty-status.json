@@ -59,7 +59,9 @@
                 "hold_id": "HLD-aaaaaa",
                 "actor": "agent:claude-builder",
                 "model": ""
-              }
+              },
+              "approval": null,
+              "no_other_model_review": null
             }
           ]
         }

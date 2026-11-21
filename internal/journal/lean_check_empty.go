@@ -40,7 +40,7 @@ func validateEmptyCheck(tx *sql.Tx, event Event) error {
 	if err := tx.QueryRow(`SELECT status,lane FROM issues WHERE id=? AND kind='task'`, response.TaskID).Scan(&state, &lane); err != nil {
 		return err
 	}
-	if !current || state != "in_progress" || lane != response.Lane {
+	if !current || state != "in_progress" {
 		return fmt.Errorf("empty check requires a started task, lane and current hold")
 	}
 	var raw string
@@ -50,6 +50,16 @@ func validateEmptyCheck(tx *sql.Tx, event Event) error {
 	var effective policy.Effective
 	if err := json.Unmarshal([]byte(raw), &effective); err != nil {
 		return err
+	}
+	if response.ChangedPathBytes != nil {
+		floor, err := policy.ComputeFloor(effective, policy.PathsFromBytes(response.ChangedPathBytes))
+		if err != nil {
+			return err
+		}
+		lane = floor.Raise(lane)
+	}
+	if lane != response.Lane {
+		return fmt.Errorf("empty check requires a started task, lane and current hold")
 	}
 	if !effective.Lanes[lane].ChecksSet {
 		return fmt.Errorf("empty check requires configured lane checks")

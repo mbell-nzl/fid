@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [
@@ -100,7 +101,23 @@
     "checks_base": null,
     "children": [],
     "epic": null,
+    "floor": {
+      "lane": "routine",
+      "paths": [
+        "notes.md"
+      ],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": {
+      "floor": {
+        "lane": "routine",
+        "paths": [
+          "notes.md"
+        ],
+        "hard_floor": null,
+        "hard_paths": []
+      },
       "id": "HOF-<new>",
       "pr": "https://github.com/MBELL-NZL/FID/pull/63",
       "head": "<commit-or-tree>",
@@ -145,6 +162,7 @@
       "merge_commit": "<commit-or-tree>",
       "ci": "not-green"
     },
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,

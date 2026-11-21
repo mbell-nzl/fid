@@ -4,12 +4,19 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "approval": null,
     "blocked_by": [],
     "blocks": [],
     "checks": [],
     "checks_base": null,
     "children": [],
     "epic": null,
+    "floor": {
+      "lane": null,
+      "paths": [],
+      "hard_floor": null,
+      "hard_paths": []
+    },
     "handoff": null,
     "issue": {
       "lane": null,
@@ -53,6 +60,7 @@
       ]
     },
     "kept": null,
+    "no_other_model_review": null,
     "progress": null,
     "questions": [],
     "scheduling": null,

@@ -192,10 +192,10 @@ func TestFieldsHoldsEveryField(t *testing.T) {
 		keys = append(keys, key)
 	}
 	slices.Sort(keys)
-	if want := []string{"blocked_by", "blocks", "checks", "checks_base", "children", "epic", "handoff", "issue", "kept", "progress", "questions", "scheduling", "state", "task", "warnings", "working"}; !slices.Equal(keys, want) {
+	if want := []string{"approval", "blocked_by", "blocks", "checks", "checks_base", "children", "epic", "floor", "handoff", "issue", "kept", "no_other_model_review", "progress", "questions", "scheduling", "state", "task", "warnings", "working"}; !slices.Equal(keys, want) {
 		t.Fatalf("fields = %v, want %v", keys, want)
 	}
-	for _, name := range []string{"handoff", "checks_base", "epic", "progress", "scheduling", "state", "task", "working", "kept"} {
+	for _, name := range []string{"approval", "no_other_model_review", "floor", "handoff", "checks_base", "epic", "progress", "scheduling", "state", "task", "working", "kept"} {
 		if fields[name] != nil {
 			t.Fatalf("%s = %v, want null", name, fields[name])
 		}

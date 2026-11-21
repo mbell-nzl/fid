@@ -136,7 +136,8 @@ func (text textWriter) rows(result Result) []string {
 			lane = display.StateText(*issue.Lane)
 			lane = strings.ToUpper(lane[:1]) + lane[1:]
 		}
-		lines = append(lines, text.value("Lane", lane)...)
+		lines = append(lines, text.value("Lane", result.laneText(lane))...)
+		lines = append(lines, text.approval(result)...)
 	}
 	lines = append(lines, text.checks(result)...)
 	if handoff := result.Handoff; handoff != nil {

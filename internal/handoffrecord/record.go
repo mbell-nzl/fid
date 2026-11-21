@@ -8,6 +8,9 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
+
+	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 var prPattern = regexp.MustCompile(`^https://github\.com/[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$`)
@@ -18,13 +21,15 @@ func ValidPR(pr string) bool { return prPattern.MatchString(pr) }
 func PRNumber(pr string) string { return pr[strings.LastIndex(pr, "/")+1:] }
 
 type View struct {
-	ID             string   `json:"id"`
-	PR             string   `json:"pr"`
-	Head           string   `json:"head"`
-	Base           string   `json:"base"`
-	RequiredChecks []string `json:"required_checks"`
-	ResultIDs      []string `json:"result_ids"`
-	At             string   `json:"at"`
+	Floor          *policy.Floor `json:"floor,omitempty"`
+	RaisedFrom     *string       `json:"raised_from,omitempty"`
+	ID             string        `json:"id"`
+	PR             string        `json:"pr"`
+	Head           string        `json:"head"`
+	Base           string        `json:"base"`
+	RequiredChecks []string      `json:"required_checks"`
+	ResultIDs      []string      `json:"result_ids"`
+	At             string        `json:"at"`
 }
 
 type Record struct {
@@ -36,6 +41,7 @@ type Record struct {
 	Lane              string            `json:"lane"`
 	PolicySnapshot    int               `json:"policy_snapshot"`
 	DefinitionDigests map[string]string `json:"definition_digests"`
+	ChangedPathBytes  [][]byte          `json:"changed_path_bytes,omitempty"`
 	ChangedPaths      []string          `json:"changed_paths"`
 }
 
@@ -57,7 +63,37 @@ func (record Record) Validate() error {
 			return fmt.Errorf("invalid hand-off check binding")
 		}
 	}
+	if record.ChangedPathBytes != nil {
+		if len(record.ChangedPathBytes) != len(record.ChangedPaths) {
+			return fmt.Errorf("hand-off path bytes differ from paths")
+		}
+		for i, path := range record.ChangedPathBytes {
+			if string([]rune(string(path))) != string([]rune(record.ChangedPaths[i])) {
+				return fmt.Errorf("hand-off path bytes differ from paths")
+			}
+		}
+	}
 	return nil
+}
+
+// SetPaths preserves otherwise unrepresentable Git names alongside the readable
+// list. Ordinary receipts keep only the existing changed_paths strings.
+func (record *Record) SetPaths(paths []string) {
+	record.ChangedPaths = paths
+	record.ChangedPathBytes = nil
+	for _, path := range paths {
+		if !utf8.ValidString(path) {
+			record.ChangedPathBytes = policy.PathBytes(paths)
+			return
+		}
+	}
+}
+
+func (record Record) Paths() []string {
+	if record.ChangedPathBytes != nil {
+		return policy.PathsFromBytes(record.ChangedPathBytes)
+	}
+	return record.ChangedPaths
 }
 
 func (record Record) Fields() map[string]any {
