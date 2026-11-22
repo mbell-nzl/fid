@@ -22,15 +22,19 @@
       }
     },
     "floor": {
-      "lane": null,
-      "paths": [],
+      "lane": "standard",
+      "paths": [
+        "notes.md"
+      ],
       "hard_floor": null,
       "hard_paths": []
     },
     "handoff": {
       "floor": {
-        "lane": null,
-        "paths": [],
+        "lane": "standard",
+        "paths": [
+          "notes.md"
+        ],
         "hard_floor": null,
         "hard_paths": []
       },

@@ -19,10 +19,18 @@ type ReviewWork struct {
 
 // GatherReviews reads just the frozen hand-off policy and review/approval
 // evidence. A recorded fingerprint makes admission independent of local git.
-// Otherwise freshness is computed as Gather computes it, without network I/O.
+// Live reads also validate the comparison before the first required round,
+// without network I/O. Routine work without required reviews needs no diff.
 func GatherReviews(root string, conn reviewrecord.Queryer, task string, recorded *fingerprint.Result) (Snapshot, error) {
 	s, err := reviewBase(conn, task)
 	if err == nil && s.Handoff != nil {
+		if recorded == nil && DueReview(s) != nil {
+			fp, err := fingerprint.Compute(root, s.Handoff.Base, s.Handoff.Head)
+			if err != nil {
+				return s, err
+			}
+			recorded = &fp
+		}
 		err = gatherReviews(root, conn, &s, recorded)
 	}
 	return s, err

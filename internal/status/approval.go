@@ -43,6 +43,15 @@ func (result *Result) addReviewAction(root string, conn reviewrecord.Queryer, ta
 	if errors.As(err, &failure) {
 		if s.Handoff != nil && s.Handoff.Lane != "assured" {
 			result.Warnings = append(result.Warnings, NewWarning("review-unavailable", task+" review unavailable: "+err.Error(), "restore the hand-off's recorded base and head objects locally, then fid show "+task, map[string]any{"task_id": task, "problem": err.Error()}))
+		} else if s.Handoff != nil {
+			// readApproval already warns when existing evidence needs the
+			// fingerprint. The first required round needs that warning too.
+			for _, warning := range result.Warnings {
+				if warning.Kind == "approval-unavailable" && warning.details["task_id"] == task {
+					return nil
+				}
+			}
+			result.Warnings = append(result.Warnings, ApprovalUnavailableWarning(task, err))
 		}
 		return nil
 	}

@@ -51,12 +51,15 @@ func TestApprovalDisplayPreservesKnownEvidenceWithoutFingerprint(t *testing.T) {
 				if event != nil {
 					t.Errorf("%s appended an Event: %v", command, event)
 				}
-				assertUnavailableApprovalJSON(t, command, result, decision, flag, tc.review || tc.approval)
+				// Status validates required review work even before any round;
+				// show's known approval fields still need no comparison.
+				warning := tc.review || tc.approval || command == "status"
+				assertUnavailableApprovalJSON(t, command, result, decision, flag, warning)
 				got := f.run(args...)
 				if got.err != nil {
 					t.Fatal(got)
 				}
-				assertUnavailableApprovalText(t, command, got.stdout, !tc.approval, !tc.review, tc.review || tc.approval)
+				assertUnavailableApprovalText(t, command, got.stdout, !tc.approval, !tc.review, warning)
 			}
 			if startEventCount(t, f.workspace) != before {
 				t.Fatal("display appended an Event")
@@ -94,14 +97,18 @@ func assertUnavailableApprovalJSON(t *testing.T, command string, result map[stri
 			t.Errorf("%s %s=%v (present=%t), want %v", command, key, got, exists, want)
 		}
 	}
-	foundWarning := false
+	warningCount := 0
 	for _, raw := range result["warnings"].([]any) {
 		if raw.(map[string]any)["kind"] == "approval-unavailable" {
-			foundWarning = true
+			warningCount++
 		}
 	}
-	if foundWarning != warning {
-		t.Errorf("%s approval-unavailable=%t, want %t", command, foundWarning, warning)
+	wantWarnings := 0
+	if warning {
+		wantWarnings = 1
+	}
+	if warningCount != wantWarnings {
+		t.Errorf("%s approval-unavailable count=%d, want %d", command, warningCount, wantWarnings)
 	}
 }
 

@@ -36,6 +36,10 @@ func TestHandoffGoldenAndRetry(t *testing.T) {
 		t.Run(names, func(t *testing.T) {
 			t.Parallel()
 			f := requiredCheckFixture(t, names)
+			// Required review work needs a nonempty comparison to review.
+			writeBackupTestFile(t, filepath.Join(f.workspace, "notes.md"), "change ready for review\n")
+			runGitForTest(t, f.workspace, "add", ".")
+			runGitForTest(t, f.workspace, "commit", "-m", "Implement task")
 			requiredNames(t, checkRequired(t, f, "checks"))
 			// A commit with the same tree preserves the recorded checks.
 			runGitForTest(t, f.workspace, "commit", "--allow-empty", "-m", "Ready for review")
