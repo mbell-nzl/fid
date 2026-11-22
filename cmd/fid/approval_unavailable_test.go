@@ -51,12 +51,15 @@ func TestApprovalDisplayPreservesKnownEvidenceWithoutFingerprint(t *testing.T) {
 				if event != nil {
 					t.Errorf("%s appended an Event: %v", command, event)
 				}
-				assertUnavailableApprovalJSON(t, command, result, decision, flag, tc.review || tc.approval)
+				// Status validates required review work even before any round;
+				// show's known approval fields still need no comparison.
+				warning := tc.review || tc.approval || command == "status"
+				assertUnavailableApprovalJSON(t, command, result, decision, flag, warning)
 				got := f.run(args...)
 				if got.err != nil {
 					t.Fatal(got)
 				}
-				assertUnavailableApprovalText(t, command, got.stdout, !tc.approval, !tc.review, tc.review || tc.approval)
+				assertUnavailableApprovalText(t, command, got.stdout, !tc.approval, !tc.review, warning)
 			}
 			if startEventCount(t, f.workspace) != before {
 				t.Fatal("display appended an Event")
@@ -85,18 +88,8 @@ func assertUnavailableApprovalJSON(t *testing.T, command string, result map[stri
 				items = append(items, item)
 			}
 		}
-		if decision == nil {
-			if len(items) != 0 {
-				t.Errorf("unknown approval requested a decision: %v", items)
-			}
-		} else {
-			summary := "FID-9f13aa approval missing"
-			if flag == true {
-				summary += ", no other-model review"
-			}
-			if len(items) != 1 || items[0]["summary"] != summary || items[0]["next_action"] != "fid approve FID-9f13aa --actor human:<name> --reason <text>" {
-				t.Errorf("missing approval action lost: %v", items)
-			}
+		if len(items) != 0 {
+			t.Errorf("unfinished reviews requested approval: %v", items)
 		}
 	}
 	for key, want := range map[string]any{"approval": decision, "no_other_model_review": flag} {
@@ -104,14 +97,18 @@ func assertUnavailableApprovalJSON(t *testing.T, command string, result map[stri
 			t.Errorf("%s %s=%v (present=%t), want %v", command, key, got, exists, want)
 		}
 	}
-	foundWarning := false
+	warningCount := 0
 	for _, raw := range result["warnings"].([]any) {
 		if raw.(map[string]any)["kind"] == "approval-unavailable" {
-			foundWarning = true
+			warningCount++
 		}
 	}
-	if foundWarning != warning {
-		t.Errorf("%s approval-unavailable=%t, want %t", command, foundWarning, warning)
+	wantWarnings := 0
+	if warning {
+		wantWarnings = 1
+	}
+	if warningCount != wantWarnings {
+		t.Errorf("%s approval-unavailable count=%d, want %d", command, warningCount, wantWarnings)
 	}
 }
 
@@ -126,10 +123,10 @@ func assertUnavailableApprovalText(t *testing.T, command, text string, missing, 
 		parts["Approval    ○ missing"] = missing
 		parts["no other-model review"] = disclosure
 	} else {
-		parts["FID-9f13aa approval missing"] = missing
-		parts["no other-model review"] = missing && disclosure
-		parts["fid approve FID-9f13aa --actor human:<name>"] = missing
-		parts["--reason <text>"] = missing
+		parts["FID-9f13aa approval missing"] = false
+		parts["no other-model review"] = false
+		parts["fid approve FID-9f13aa --actor human:<name>"] = false
+		parts["--reason <text>"] = false
 	}
 	for part, want := range parts {
 		if strings.Contains(text, part) != want {

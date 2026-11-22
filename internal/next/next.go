@@ -14,6 +14,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -22,6 +23,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/policysnapshot"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/questions"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 type Options struct {
@@ -40,6 +42,7 @@ type Options struct {
 // Result is what fid next shows. Hold and Event are set only when --claim
 // takes or keeps a hold; the rest serves the text.
 type Result struct {
+	Review    *doneeval.ReviewWork
 	Questions []questions.Question
 	Waiting   *Waiting
 	Answer    *questions.Answer
@@ -157,13 +160,13 @@ func openProjection(root string) (*sql.DB, error) {
 
 // ReadFrom walks the existing planner using the caller's projection snapshot.
 // It neither refreshes the projection nor records anything.
-func ReadFrom(conn fiddb.Queryer, options Options) (Result, error) {
+func ReadFrom(conn reviewrecord.Queryer, options Options) (Result, error) {
 	result, _, err := assemble(conn, options, options.Clock())
 	return result, err
 }
 
 // assemble walks the order at now.
-func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order, error) {
+func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result, order, error) {
 	work, err := issues.ReadWork(conn)
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
@@ -172,7 +175,11 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
 	}
-	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now)
+	reviews, err := readReviews(conn, options, work, now)
+	if err != nil {
+		return Result{}, order{}, err
+	}
+	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now, reviews)
 	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
 		Served: planned.served}
 	for _, hold := range open {
@@ -183,6 +190,9 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task
+		if planned.kind == KindReview {
+			result.Review = reviews[task.ID].work
+		}
 		history, err := questions.Read(conn, task.ID)
 		if err != nil {
 			return Result{}, order{}, fmt.Errorf("read next: %w", err)
@@ -194,7 +204,11 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 			result.Epic = &epic
 		}
 	}
-	if planned.own != nil && planned.own.InReview() {
+	if planned.ownReview != nil && reviews[planned.ownReview.TaskID].work == nil {
+		result.Waiting = &Waiting{Kind: "review", TaskID: planned.ownReview.TaskID}
+	} else if planned.own != nil && reviews[planned.own.TaskID].capped {
+		result.Waiting = &Waiting{Kind: "rework-cap", TaskID: planned.own.TaskID}
+	} else if planned.own != nil && planned.own.InReview() {
 		result.Waiting = &Waiting{Kind: "review", TaskID: planned.own.TaskID}
 	} else if planned.own != nil && planned.own.Question != nil {
 		q := planned.own.Question
@@ -213,6 +227,9 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result, planned order) error {
 	if planned.kind == KindNone {
 		return nil
+	}
+	if planned.kind == KindReview {
+		return takeReview(lock, conn, options, result, planned.reviews[result.Task.ID])
 	}
 	if planned.kind == KindResume && planned.own.Live(result.Now) {
 		result.Hold = planned.own
@@ -283,5 +300,9 @@ func (result Result) Fields() map[string]any {
 	if result.Epic != nil {
 		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}
 	}
-	return map[string]any{"waiting": result.Waiting, "answer": result.Answer, "kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
+	fields := map[string]any{"waiting": result.Waiting, "answer": result.Answer, "kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
+	if result.Review != nil {
+		fields["review"] = result.Review
+	}
+	return fields
 }

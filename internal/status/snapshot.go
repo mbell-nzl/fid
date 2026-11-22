@@ -59,7 +59,12 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 			return issues.Overview{}, next.Result{}, nil, err
 		}
 		if task.Status == "in_review" {
-			result.addApproval(task.ID)
+			if err := result.addReviewAction(options.WorkspaceRoot, tx, task.ID); err != nil {
+				return issues.Overview{}, next.Result{}, nil, err
+			}
+		}
+		if err := result.addReworkLimit(tx, task.ID); err != nil {
+			return issues.Overview{}, next.Result{}, nil, err
 		}
 	}
 	return overview, planned, result, nil

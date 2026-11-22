@@ -342,13 +342,21 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 ```
 
 - **NEEDS YOU** lists what waits on a person, each item a summary and its
-  next step. Kinds include backup, waiting-for-you, worktree-missing (below),
-  and `approval`: an in-review task whose latest hand-off is Assured and whose
-  approval is missing or stale. Its summary says `<task> approval missing`
-  or `<task> approval stale`, adding `, no other-model review` when applicable.
-  Its next step is `fid approve <task> --actor human:<name> --reason <text>`.
-  A current approval needs no item. Each IN PROGRESS task's JSON carries the
-  same `approval` and `no_other_model_review` fields as show (below).
+  next step. Besides backup, waiting-for-you and worktree-missing, RESET 2.1
+  adds `rework-cap`, `approval` and `merge`. Approval and merge items appear
+  only after the latest hand-off's required primary and separate review gates
+  and task-wide majors gate are satisfied, using the same evaluator as done. As in V5, a person closing the last
+  major can satisfy these gates with a current `CHANGES` round; a later
+  `APPROVE` is not required in that case.
+  An Assured task with missing or stale approval says `<task>: approve, then
+  merge PR #<n>`, adding `, no other-model review` when applicable; its next
+  action is `fid approve <task> --actor human:<name> --reason <text>`.
+  With current approval, or in other lanes, one `merge` item says
+  `<task>: merge PR #<n>`, with the hand-off's PR URL as next action.
+  A recorded merge suppresses both items; the existing offline CI states
+  apply. Completed tasks have neither. Each IN PROGRESS task's JSON keeps
+  the same `approval` and `no_other_model_review` fields as show (below),
+  even while reviews are still running.
 - **Epics and tasks** appear; subtasks never do. An epic whose own state is
   completed or cancelled is hidden. An epic is in progress when its own
   state's category is `started`, or any of its tasks is started or
@@ -776,11 +784,16 @@ nothing stops:
    hand-off’s ended hold. It precedes unblocking and new work. The task is
    already `in_progress`; the builder fixes, checks and hands it off again
    without another `start`. Another worktree cannot take it while kept.
-3. **Unblocking work:** tasks that another open task waits on, by a
+3. **Review work:** the primary stream until its gate is satisfied, then
+   the separate stream for Assured work. Required profiles come from the
+   hand-off's frozen lane, paths and policy, as in done. Routine work without
+   required profiles creates no review work. A task returned for rework
+   creates none until the next hand-off.
+4. **Unblocking work:** tasks that another open task waits on, by a
    `blocks` or `blocked_by` link, directly or through its open epic: a task
    that blocks an epic counts only while the epic has open tasks. Until
    task 3.1, all work counts as approved.
-4. **The other unstarted tasks**, in `fid status`'s order: an in-progress
+5. **The other unstarted tasks**, in `fid status`'s order: an in-progress
    epic's, then a to-do epic's, then those with no open epic; within each,
    sequence, priority (lower first), creation and ID, a missing sequence or
    priority last.
@@ -797,7 +810,9 @@ passed over with a typed reason, the first that applies:
 
 | Reason | When |
 |---|---|
-| `held-elsewhere` | another worktree's live hold |
+| `held-elsewhere` | another worktree's live build hold or review reservation |
+| `built-by-actor` | the claiming actor ever held this task to build it, including ended holds |
+| `rework-cap-reached` | changes rounds exceed the latest hand-off policy's cap for its recorded lane |
 | `interrupted-elsewhere` | another worktree's lapsed or parked started work, or its kept rework |
 | `epic-closed` | the task's epic is completed or cancelled |
 | `epic-blocked` | the task's epic has a blocker that isn't completed or cancelled |
@@ -861,7 +876,7 @@ The JSON result, with exit 0 for every kind:
                      "epic_blocked_by": []}]}
 ```
 
-- `kind` is `new`, `resume`, `rework` or `none`; task 2.1 adds `review`.
+- `kind` is `new`, `resume`, `rework`, `review` or `none`.
   A loop reads `.result.kind`,
   `.result.task.id` and `.result.hold.id`, and on failure the exit code and
   `.error.retryable`.
@@ -929,6 +944,41 @@ included, and doesn't page:
   `+N`), `after <ID>`, `working in <dir>`, `interrupted in <dir>`, `epic
   blocked by <ID>` and `epic closed`, `<dir>` being the worktree's
   directory name.
+
+**Review reservations and the cap (RESET 2.1).** Review JSON adds
+`review: {handoff: {id, pr, head, base}, stream, required_profiles}`. Text
+names the stream, profiles, hand-off, head, base and PR URL. Without an actor,
+next shows the first due review; `--claim` skips a builder with
+`built-by-actor` and continues to eligible work. Independence uses build holds
+only, through their whole history; a review reservation never makes someone
+its builder.
+
+Taking a review writes one `review.claimed` Event. The `hold` result has the
+usual session fields with an `RCL-` ID. Review reservations live separately
+from build holds, so the builder's hand-off worktree stays kept. There is at
+most one open review reservation per task and per reviewer worktree. Repeating
+next there returns the same review and session without another Event, ahead
+of other reviews. Heartbeat takes its exact ID and actor, renews it for one
+hour, and refuses a foreign actor, worktree, ended or lapsed session. A lapsed
+review frees the stream; it does not keep interrupted build work. Recording
+a round ends that task/stream's reservation in the same Event. Recording
+without a reservation remains supported, including a courier recording an
+independent review. Append, replay, import and restore validate the same
+reservation rules.
+
+The rework cap counts all `CHANGES` rounds, in both streams and across every
+hand-off. It uses `rework_cap` from the latest hand-off's policy and lane,
+including a raised lane. Rework is served at the cap; past it, next skips the
+task as `rework-cap-reached`. Cap zero stops the first automatic rework.
+The builder worktree gets `none` with `waiting: {kind: "rework-cap", task_id}`;
+other worktrees continue. Status adds one `rework-cap` NEEDS YOU item:
+`<task> reached its rework cap (<count> rounds asked for changes; cap <cap>)`.
+Its next action offers `fid takeover <task> --actor human:<name> --reason
+<text>` or `fid issue transition <task> --to cancelled --actor human:<name>
+--reason <text>`. Allowing extra rounds is later work. All reads stay offline.
+If local objects cannot establish review freshness, next serves no review
+for that task and status shows `review-unavailable` (or the existing
+`approval-unavailable` for Assured work), preserving the board.
 
 Refusals; 1.4a adds the operations `next.get` and `next.claim` and no codes
 or reasons:
@@ -1013,7 +1063,8 @@ next: fid issue update FID-c2d4e5 --lane <routine|standard|assured> --actor <act
 ```
 
 Start from `in_review` is `transition-not-permitted`, unsatisfied
-`task-todo`: review-driven rework belongs to 2.1. Generic transitions refuse
+`task-todo`: a changes round returns rework through 1.6f, and 2.1 caps
+automatic rework. Generic transitions refuse
 task start (`use-start`), hand-off (`use-hand-off`), and moving a started
 task back to todo (`task-already-started`). Epics also refuse manual start.
 For example:
@@ -1383,7 +1434,8 @@ task or an unstarted or finished task. A `CHANGES` round on a task already
 including when the builder already has the new rework hold. `APPROVE`
 never moves state or changes a reservation. Person takeover, cancellation
 and missing-worktree NEEDS YOU work for rework as for other kept work.
-Posting, review selection, the rework cap and discovered work remain in 2.1.
+Review selection and the rework cap are built in 2.1. Posting and
+discovered work remain in proposed 2.1b.
 
 For example, this input adapts the actual 1.6b round-one jig-format review
 of conflicting merge retries (its second, minor finding is omitted here):
@@ -1495,8 +1547,8 @@ For example, a later independent session can submit:
 ```
 
 This passes only when that disposition leaves no major open. A builder’s
-answer never closes a major; answering and deferring findings arrive in
-2.1. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
+answer never closes a major; answering and deferring findings remain in
+proposed 2.1b. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
 remain immutable even when a person later closes the last major.
 `reviewrecord.OpenMajors` is the shared task-wide reader for the later done
 evaluator; it never filters findings by fingerprint or review stream.
@@ -2076,7 +2128,7 @@ Except for `review` (the lean record/list contract in RESET 1.6d) and
 `finding` (the person’s close command in RESET 1.6e), each is an unknown root command (`operation-unavailable`,
 exit 2), with the known path `fid` as its operation and sorted current
 alternatives. The retired review schema, Event and tables stay refused;
-review delivery arrives in 2.1. There is no `fid admin`. Issue Concern
+review delivery remains proposed 2.1b. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.

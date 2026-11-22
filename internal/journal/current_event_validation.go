@@ -112,6 +112,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	// The shape rules have checked the family, its actor, aggregate and
 	// Effect grammar. The family validators check the projection state.
+	if event.EventType == "review.claimed" || event.EventType == "review.heartbeat" {
+		return validateReviewClaim(tx, event)
+	}
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
 	}

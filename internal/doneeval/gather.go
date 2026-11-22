@@ -31,7 +31,30 @@ func Recorded(conn reviewrecord.Queryer, task string, target Target, remote GitH
 }
 
 func gather(root string, conn reviewrecord.Queryer, task string, target Target, remote GitHubFacts, fp *fingerprint.Result) (Snapshot, error) {
-	s := Snapshot{Target: target, GitHub: remote, Approval: approvalrecord.View{State: "missing"}}
+	s, err := reviewBase(conn, task)
+	s.Target, s.GitHub = target, remote
+	if err != nil || s.Handoff == nil {
+		return s, err
+	}
+	if err := gatherLocal(root, conn, &s, fp); err != nil {
+		return s, fmt.Errorf("gather done evidence: %w", err)
+	}
+	m, err := mergerecord.LatestMerge(conn, task)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return s, fmt.Errorf("gather done merge: %w", err)
+	}
+	if err == nil {
+		s.Merge = &m
+		s.CIResults, err = mergerecord.CIResults(conn, task, m.ID)
+		if err != nil {
+			return s, fmt.Errorf("gather done CI: %w", err)
+		}
+	}
+	return s, nil
+}
+
+func reviewBase(conn reviewrecord.Queryer, task string) (Snapshot, error) {
+	s := Snapshot{Approval: approvalrecord.View{State: "missing"}}
 	var lane sql.NullString
 	err := conn.QueryRow(`SELECT id,kind,status,lane,revision FROM issues WHERE id=?`, task).Scan(&s.Task.ID, &s.Task.Kind, &s.Task.State, &lane, &s.Task.Revision)
 	if err != nil {
@@ -61,20 +84,6 @@ func gather(root string, conn reviewrecord.Queryer, task string, target Target, 
 		}
 		s.Policy = &p
 	}
-	if err := gatherLocal(root, conn, &s, fp); err != nil {
-		return s, fmt.Errorf("gather done evidence: %w", err)
-	}
-	m, err := mergerecord.LatestMerge(conn, task)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return s, fmt.Errorf("gather done merge: %w", err)
-	}
-	if err == nil {
-		s.Merge = &m
-		s.CIResults, err = mergerecord.CIResults(conn, task, m.ID)
-		if err != nil {
-			return s, fmt.Errorf("gather done CI: %w", err)
-		}
-	}
 	return s, nil
 }
 
@@ -94,6 +103,11 @@ func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *
 		}
 		s.ArtifactsVerified = true
 	}
+	return gatherReviews(root, conn, s, recorded)
+}
+
+func gatherReviews(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *fingerprint.Result) error {
+	var err error
 	s.OpenMajors, err = reviewrecord.OpenMajors(conn, s.Task.ID)
 	if err != nil {
 		return err

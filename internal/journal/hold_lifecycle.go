@@ -46,6 +46,9 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 		switch effect.Op {
 		case "insert":
 			inserts++
+			if err := validateBuildReviewReservation(tx, effect, event.OccurredAt); err != nil {
+				return err
+			}
 			if model, exists := effect.Values["model"]; exists && model != "" {
 				if text, ok := model.(string); !ok || !modelid.Valid(text) {
 					return fmt.Errorf("invalid build model")
