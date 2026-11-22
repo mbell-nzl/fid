@@ -3172,7 +3172,7 @@ such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
 
-- From this PR (1.9c): Event-v1 history still has its historical scalar and
+- From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state
   moves are refused, but it can set a revision without Event-v2's guarded
   prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire

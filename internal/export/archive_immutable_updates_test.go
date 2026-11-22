@@ -61,7 +61,7 @@ func TestImmutableUpdatesAcrossOldProfilePaths(t *testing.T) {
 				}
 			}
 			var refused *journal.RowIdentityError
-			if !errors.As(err, &refused) || refused.Table != "holds" {
+			if !errors.As(err, &refused) || refused.Table != "holds" || refused.Reason != "task_id is immutable in this Event family" {
 				t.Fatalf("%s malformed hold update = %v, want shared typed refusal", mode, err)
 			}
 			if before != handoffProjectionSnapshot(t, v) {
@@ -134,7 +134,7 @@ func TestTransitionHoldSubjectAcrossOldProfilePaths(t *testing.T) {
 				}
 			}
 			var refused *journal.RowIdentityError
-			if !errors.As(err, &refused) || refused.Table != "holds" {
+			if !errors.As(err, &refused) || refused.Table != "holds" || refused.Reason != "transition changes another task's hold" {
 				t.Fatalf("%s changed another task's hold: %v", mode, err)
 			}
 			if before != handoffProjectionSnapshot(t, v) {

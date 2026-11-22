@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/journal/testdata/rowcorpus"
 	"github.com/mbell-nzl/fid/internal/labels"
 	"github.com/mbell-nzl/fid/internal/links"
 )
@@ -19,14 +19,15 @@ import (
 // The same corpus reaches shared admission through import's private projection.
 func TestImportRowIdentity(t *testing.T) {
 	t.Parallel()
-	raw, err := os.ReadFile("../../testdata/journal/row-identity.json")
+	raw, err := rowcorpus.JSON()
 	if err != nil {
 		t.Fatal(err)
 	}
 	type probe struct {
-		Name   string
-		Prefix []journal.Event
-		Event  journal.Event
+		Name                        string
+		Prefix                      []journal.Event
+		Event                       journal.Event
+		Table, Reason, ImportReason string
 	}
 	var corpus struct {
 		Prefix              []journal.Event
@@ -71,6 +72,14 @@ func TestImportRowIdentity(t *testing.T) {
 				var semantic *semanticValidationError
 				if !errors.As(err, &semantic) {
 					t.Fatalf("malformed import = %v, want typed semantic failure", err)
+				}
+				var row *journal.RowIdentityError
+				if p.ImportReason != "" {
+					if !strings.Contains(err.Error(), p.ImportReason) {
+						t.Errorf("refusal = %v, want table %q and reason %q", err, p.Table, p.ImportReason)
+					}
+				} else if !errors.As(err, &row) || row.Table != p.Table || row.Reason != p.Reason {
+					t.Errorf("refusal = %v, want (%q, %q)", err, p.Table, p.Reason)
 				}
 				if before != handoffProjectionSnapshot(t, v) {
 					t.Fatal("refusal changed projection")

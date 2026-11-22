@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -61,6 +62,9 @@ func scanCurrentJSONValue(decoder *json.Decoder) error {
 			if !ok {
 				return fmt.Errorf("object key is not text")
 			}
+			// encoding/json matches struct fields without regard to case.
+			// Refuse the same ambiguity before either spelling can win.
+			key = strings.ToLower(key)
 			if keys[key] {
 				return fmt.Errorf("duplicate key %q", key)
 			}

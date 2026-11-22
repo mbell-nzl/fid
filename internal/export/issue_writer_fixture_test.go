@@ -1,31 +1,17 @@
 package export
 
 import (
-	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 // These fixtures are private in-memory projections without repositories for
-// commands to open. Their revision row comes from the captured command corpus;
+// commands to open. Their revision row explicitly models the guarded bump;
 // scalar changes keep the fixture's original arguments and guards.
 func writerUpdateFixture(t *testing.T, event journal.Event, observed int) journal.Event {
 	t.Helper()
-	raw, err := os.ReadFile("../journal/testdata/row-writer-templates.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct{ Templates map[string]journal.Event }
-	if err := json.Unmarshal(raw, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	revision := corpus.Templates["issue.ac-added"].Effects[1]
-	revision.PK = map[string]any{"id": event.Aggregate.ID}
-	revision.Values = map[string]any{"revision": observed + 1}
-	revision.Prior = map[string]any{"revision": observed}
-	revision.Preconditions = map[string]any{"revision": observed}
+	revision := journal.Effect{Op: "update", Table: "issues", PK: map[string]any{"id": event.Aggregate.ID}, Values: map[string]any{"revision": observed + 1}, Prior: map[string]any{"revision": observed}, Preconditions: map[string]any{"revision": observed}}
 	effects := make([]journal.Effect, 0, len(event.Effects)+1)
 	inserted := false
 	for _, effect := range event.Effects {

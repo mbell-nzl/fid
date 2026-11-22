@@ -7,17 +7,21 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/journal/testdata/rowcorpus"
 )
 
 type rowProbe struct {
 	Name   string  `json:"name"`
 	Prefix []Event `json:"prefix"`
 	Event  Event   `json:"event"`
+	Table  string
+	Reason string
 }
 
 func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
-	raw, err := os.ReadFile("../../testdata/journal/row-identity.json")
+	raw, err := rowcorpus.JSON()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +60,9 @@ func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 						var refusal *RowIdentityError
 						if !errors.As(err, &refusal) {
 							t.Fatalf("malformed Event = %v (%T), want typed row refusal", err, err)
+						}
+						if refusal.Table != probe.Table || refusal.Reason != probe.Reason {
+							t.Errorf("refusal = (%q, %q), want (%q, %q)", refusal.Table, refusal.Reason, probe.Table, probe.Reason)
 						}
 						if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
 							t.Fatal("refusal changed projection")
@@ -135,7 +142,11 @@ func TestMalformedCancellationHoldEnd(t *testing.T) {
 				before := stateProjection(t, reference.root)
 				err = w.admit(t, mode, malformed)
 				var refused *RowIdentityError
-				if !errors.As(err, &refused) || refused.Table != "holds" {
+				reason := "invalid task hold end"
+				if variant == "two holds" {
+					reason = "stage may write at most 1 rows"
+				}
+				if !errors.As(err, &refused) || refused.Table != "holds" || refused.Reason != reason {
 					t.Fatalf("malformed hold end = %v", err)
 				}
 				if !reflect.DeepEqual(before, stateProjection(t, w.root)) {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -17,14 +18,20 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, malformed := range map[string][]byte{
-		"header":     bytes.Replace(raw, []byte(`"event_schema":2`), []byte(`"event_schema":1,"event_schema":2`), 1),
-		"nested key": bytes.Replace(raw, []byte(`"id":"FID-a"`), []byte(`"id":"FID-b","id":"FID-a"`), 1),
+		"header":               bytes.Replace(raw, []byte(`"event_schema":2`), []byte(`"event_schema":1,"event_schema":2`), 1),
+		"nested key":           bytes.Replace(raw, []byte(`"id":"FID-a"`), []byte(`"id":"FID-b","id":"FID-a"`), 1),
+		"case variant family":  bytes.Replace(raw, []byte(`"event_type":"issue.updated"`), []byte(`"event_type":"label.added","EVENT_TYPE":"issue.updated"`), 1),
+		"case variant command": bytes.Replace(raw, []byte(`"command":"issue.update"`), []byte(`"command":"x.y","Command":"issue.update"`), 1),
+		"case variant nested":  bytes.Replace(raw, []byte(`"id":"FID-a"`), []byte(`"id":"FID-b","ID":"FID-a"`), 1),
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+			if bytes.Equal(raw, malformed) {
+				t.Fatal("probe did not change the Event JSON")
+			}
 			var decoded Event
-			if err := json.Unmarshal(malformed, &decoded); err == nil {
-				t.Error("malformed duplicate keys decoded")
+			if err := json.Unmarshal(malformed, &decoded); err == nil || !strings.Contains(err.Error(), "duplicate key") {
+				t.Errorf("decode = %v, want duplicate-key refusal", err)
 			}
 			for _, mode := range []string{"replay", "catch-up", "freshen", "rebuild"} {
 				t.Run(mode, func(t *testing.T) {
@@ -35,7 +42,7 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 						t.Fatal(err)
 					}
 					var corrupt *CorruptJournalError
-					if err := w.replayStored(t, mode); !errors.As(err, &corrupt) {
+					if err := w.replayStored(t, mode); !errors.As(err, &corrupt) || !strings.Contains(err.Error(), "duplicate key") {
 						t.Fatalf("duplicate keys = %v, want CorruptJournalError", err)
 					}
 					if mode != "replay" {
