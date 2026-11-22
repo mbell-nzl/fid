@@ -1766,6 +1766,23 @@ and 2 are also in their tasks' rows in `RESET.md`.
        to keep the full matrix within the unchanged test timeout. Historical
        profile probes and actual criterion-writer round trips retain the
        canonical migration directory; no cases or assertions were removed.
+     - 2026-11-22, #101 round 6: admission and import's JSON-text schema check
+       now reach one journal validator. After its destination-aware key scan,
+       that validator calls `encoding/json.Unmarshal` into `any` for syntax,
+       the standard nesting-depth limit and the finite decoded-number domain;
+       the separate per-number check and import's duplicate-key scanner are
+       removed. The matrix and real criterion-writer archive journey include
+       10,001-level nesting in every tested map. Each generated import case
+       retains refusal, unchanged-target and valid recovery-import assertions;
+       its identical accepted-ledger write/export/validate/restore journey runs
+       once overall. Four import workers avoid mass parallel restore fixtures;
+       journal matrix paths reuse connections within each bounded prefix where
+       the database file stays in place. Replay, freshness and rebuild paths
+       reopen the live database path. The existing timeout
+       and checks are unchanged. The creator-index regression merged from 2.1b
+       explicitly admitted legacy identity edits only until 1.9c; it now pins
+       their typed refusal, unchanged creator/index rows and journal bytes,
+       and a successful follow-up write under 1.9c's approved identity rule.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3382,6 +3399,14 @@ such a task waits for Mark to accept it; until then the epic's wait for
   rows is outside this fix. Decide whether those readers should use the same
   defensive scan as the create/update/start/hand-off readers. This is a code
   inspection observation, not an observed writer/admission bypass.
+
+- From #101 (1.9c): profile the journal test suite before more matrix growth.
+  Round 6 consolidated the accepted-ledger round trip, bounded import workers
+  and reused connections where the database file stays in place, keeping every
+  refusal, unchanged-target check and recovery import. Its final `make test`
+  passed with journal at 529.577s and export at 193.163s. Journal still misses
+  the requested under-300s aim and has about 70s before Go's unchanged 600s
+  default. Further headroom needs profiling; no timeout was raised.
 
 - From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state

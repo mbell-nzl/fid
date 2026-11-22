@@ -32,11 +32,14 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 		return issue.ID
 	})
 	for _, placement := range []string{"values", "prior", "preconditions"} {
-		for _, variant := range []string{"valid", "exact", "overflow"} {
+		for _, variant := range []string{"valid", "exact", "overflow", "depth"} {
 			malformed := variant != "valid"
 			reason := "duplicate key"
-			if variant == "overflow" {
+			switch variant {
+			case "overflow":
 				reason = "cannot unmarshal number"
+			case "depth":
+				reason = "exceeded max depth"
 			}
 			name := placement + "/valid"
 			if malformed {
@@ -76,6 +79,8 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 					raw = strings.Replace(raw, `"replayed":false`, `"replayed":true,"replayed":false`, 1)
 				case "overflow":
 					raw = strings.Replace(raw, `"replayed":false`, `"replayed":false,"overflow":1e999`, 1)
+				case "depth":
+					raw = strings.Replace(raw, `"replayed":false`, `"replayed":false,"deep":`+strings.Repeat("[", 10_001)+"0"+strings.Repeat("]", 10_001), 1)
 				}
 				switch placement {
 				case "values":

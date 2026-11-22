@@ -12,7 +12,10 @@ import (
 	"unicode/utf8"
 )
 
-func validateCurrentJSONText(raw string) error {
+// ValidateJSONText checks untyped JSON text using the same validator as Event
+// admission. Archive schema checks use it without a struct destination; typed
+// record readers additionally refuse aliases of their struct fields.
+func ValidateJSONText(raw string) error {
 	return validateTypedJSONText(raw, nil)
 }
 
@@ -41,11 +44,15 @@ func validateTypedJSONText(raw string, target reflect.Type) error {
 		}
 		return err
 	}
-	return nil
+	// Token scans keys without encoding/json's complete value constraints.
+	// Unmarshal owns syntax, nesting depth and the finite decoded-number domain
+	// for both admission and import, including unused Effect maps.
+	var decoded any
+	return json.Unmarshal([]byte(raw), &decoded)
 }
 
 func decodeCurrentJSON(raw string) (any, error) {
-	if err := validateCurrentJSONText(raw); err != nil {
+	if err := ValidateJSONText(raw); err != nil {
 		return nil, err
 	}
 	decoder := json.NewDecoder(bytes.NewBufferString(raw))
@@ -76,14 +83,6 @@ func scanCurrentJSONValue(decoder *json.Decoder, target reflect.Type) error {
 	}
 	delimiter, ok := token.(json.Delim)
 	if !ok {
-		// Keep Token's original integer precision, but admit the same finite
-		// number domain as the archive's encoding/json value check.
-		if number, numeric := token.(json.Number); numeric {
-			var finite float64
-			if err := json.Unmarshal([]byte(number), &finite); err != nil {
-				return err
-			}
-		}
 		return nil
 	}
 	switch delimiter {

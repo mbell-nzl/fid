@@ -38,48 +38,63 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 		probes[i].MigrationsDir = migrations
 	}
 	t.Run("paths", func(t *testing.T) { journal.CheckEmbeddedJSONMatrixPathsForTest(t, probes) })
-	for _, probe := range probes {
-		t.Run(probe.Name, func(t *testing.T) {
+	// Four import workers avoid thousands of parallel SQLite restore fixtures
+	// competing with the journal paths and the rest of the package's tests.
+	const importWorkers = 4
+	for worker := range importWorkers {
+		t.Run(fmt.Sprintf("imports-%d", worker), func(t *testing.T) {
 			t.Parallel()
-			t.Run("import", func(t *testing.T) {
-				event := probe.Event
-				event.EventID = "EVT-20261110-000001"
-				malformed := appendJSONTestArchive(t, original, event)
-				target := gittest.NewWorkspace(t)
-				before := jsonTestTree(t, target)
-				_, err := export.Import(export.ImportOptions{ArchivePath: malformed, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "malformed"})
-				var refusal *export.InvalidArchiveError
-				if !errors.As(err, &refusal) {
-					t.Fatalf("import = %v, want archive refusal", err)
-				}
-				if len(refusal.Checks) != 1 || !bytes.Contains([]byte(refusal.Checks[0].Detail), []byte(probe.Reason)) {
-					t.Fatalf("import checks = %#v, want %s refusal", refusal.Checks, probe.Reason)
-				}
+			for i := worker; i < len(probes); i += importWorkers {
+				probe := probes[i]
+				t.Run(probe.Name, func(t *testing.T) {
+					event := probe.Event
+					event.EventID = "EVT-20261110-000001"
+					malformed := appendJSONTestArchive(t, original, event)
+					target := gittest.NewWorkspace(t)
+					before := jsonTestTree(t, target)
+					_, err := export.Import(export.ImportOptions{ArchivePath: malformed, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "malformed"})
+					var refusal *export.InvalidArchiveError
+					if !errors.As(err, &refusal) {
+						t.Fatalf("import = %v, want archive refusal", err)
+					}
+					if len(refusal.Checks) != 1 || !bytes.Contains([]byte(refusal.Checks[0].Detail), []byte(probe.Reason)) {
+						t.Fatalf("import checks = %#v, want %s refusal", refusal.Checks, probe.Reason)
+					}
 
-				if !bytes.Equal(before, jsonTestTree(t, target)) {
-					t.Fatal("refusal changed import target")
-				}
-				if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "valid"}); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: migrations, Kind: "task", Title: "After refusal", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
-					t.Fatalf("valid follow-up: %v", err)
-				}
-				accepted := filepath.Join(t.TempDir(), "accepted.zip")
-				if _, err := export.Create(export.CreateOptions{WorkspaceRoot: target, ArchivePath: accepted}); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := export.Validate(export.ValidateOptions{ArchivePath: accepted, MigrationsDir: migrations}); err != nil {
-					t.Fatal(err)
-				}
-				restored := gittest.NewWorkspace(t)
-				if _, err := export.Import(export.ImportOptions{ArchivePath: accepted, RepositoryRoot: restored, MigrationsDir: migrations, IdempotencyKey: "round-trip"}); err != nil {
-					t.Fatal(err)
-				}
-
-			})
+					if !bytes.Equal(before, jsonTestTree(t, target)) {
+						t.Fatal("refusal changed import target")
+					}
+					if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "valid"}); err != nil {
+						t.Fatal(err)
+					}
+				})
+			}
 		})
 	}
+	// Every malformed case retains its refusal, unchanged-target assertion and
+	// successful recovery import. The accepted archive is identical for every
+	// case, so exercise its write/export/validate/restore journey once overall.
+	t.Run("accepted", func(t *testing.T) {
+		t.Parallel()
+		target := gittest.NewWorkspace(t)
+		if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "valid"}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: migrations, Kind: "task", Title: "After restore", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+			t.Fatalf("valid follow-up: %v", err)
+		}
+		accepted := filepath.Join(t.TempDir(), "accepted.zip")
+		if _, err := export.Create(export.CreateOptions{WorkspaceRoot: target, ArchivePath: accepted}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := export.Validate(export.ValidateOptions{ArchivePath: accepted, MigrationsDir: migrations}); err != nil {
+			t.Fatal(err)
+		}
+		restored := gittest.NewWorkspace(t)
+		if _, err := export.Import(export.ImportOptions{ArchivePath: accepted, RepositoryRoot: restored, MigrationsDir: migrations, IdempotencyKey: "round-trip"}); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 func readJSONTestArchive(t *testing.T, path string) map[string][]byte {

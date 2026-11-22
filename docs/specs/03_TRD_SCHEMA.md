@@ -1055,8 +1055,10 @@ the same distinction between their struct fields and map entries. Every
 non-null `*_json` column is scanned in `pk`, `values`, `prior` and
 `preconditions`, including unused insert maps, before family admission or
 producer-side prior capture, and when decoding stored Events. The complete
-Event scan precedes canonicalization. Its JSON value domain matches archive validation
-(including refusal of decoded non-finite numbers). Unknown nested response
+Event scan precedes canonicalization. Admission and import's JSON-text schema
+check reach the same validator, which calls `encoding/json.Unmarshal` after
+the key scan for syntax, nesting depth and the decoded-number domain (including
+refusal of non-finite numbers). Unknown nested response
 members retain their untyped map semantics. Import also checks its historical
 schema profile, canonical archive lines and existence
 of historical Event references, which have no index in the live projection.

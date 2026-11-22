@@ -65,7 +65,11 @@ func EmbeddedJSONMatrixForTest(t *testing.T) []EmbeddedJSONProbeForTest {
 					// These two destinations are JSON maps/slices of scalars. The other
 					// retained JSON columns have struct readers (binding_json is typed
 					// for approvals; other person decisions don't consume a binding).
-					variants := map[string]string{"exact": `{"probe":1,"probe":2}`, "overflow": `{"probe":1e999}`}
+					variants := map[string]string{
+						"exact":    `{"probe":1,"probe":2}`,
+						"overflow": `{"probe":1e999}`,
+						"depth":    `{"deep":` + strings.Repeat("[", 10_001) + "0" + strings.Repeat("]", 10_001) + "}",
+					}
 					if column != "names_json" && column != "request_field_digests_json" && (table != "person_decisions" || family == "task.approved") {
 						variants["fold"] = `{"probe":1,"PROBE":2}`
 					}
@@ -94,8 +98,11 @@ func EmbeddedJSONMatrixForTest(t *testing.T) []EmbeddedJSONProbeForTest {
 							maps := map[string]*map[string]any{"pk": &row.PK, "values": &row.Values, "prior": &row.Prior, "preconditions": &row.Preconditions}
 							*maps[placement] = map[string]any{column: variants[variant]}
 							reason := "duplicate key"
-							if variant == "overflow" {
+							switch variant {
+							case "overflow":
 								reason = "cannot unmarshal number"
+							case "depth":
+								reason = "exceeded max depth"
 							}
 							probes = append(probes, EmbeddedJSONProbeForTest{Name: family + "/" + operation + "/" + column + "/" + placement + "/" + variant, Placement: placement, Column: column, Reason: reason, Event: e})
 						}
@@ -134,6 +141,9 @@ func checkEmbeddedJSONModesForTest(t *testing.T, probes []EmbeddedJSONProbeForTe
 				t.Run(probe.Name, func(t *testing.T) {
 					n := count % 16
 					if n == 0 {
+						if w.conn != nil {
+							closeProjectDB(t, w.conn)
+						}
 						migrations := probe.MigrationsDir
 						if migrations == "" {
 							migrations = testProjectMigrationsDir(modeTest)

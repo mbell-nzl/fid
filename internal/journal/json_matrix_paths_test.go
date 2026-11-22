@@ -16,6 +16,7 @@ import (
 type jsonAdmissionWorkspace struct {
 	admissionWorkspace
 	migrations string
+	conn       *sql.DB
 }
 
 func newJSONAdmissionWorkspace(t *testing.T, mode, migrations string) jsonAdmissionWorkspace {
@@ -28,15 +29,24 @@ func newJSONAdmissionWorkspace(t *testing.T, mode, migrations string) jsonAdmiss
 	if err := fiddb.MigrateUp(path, migrations); err != nil {
 		t.Fatal(err)
 	}
-	w := jsonAdmissionWorkspace{admissionWorkspace: admissionWorkspace{root: root, journal: dir, file: file}, migrations: migrations}
-	conn := w.open(t)
-	defer closeProjectDB(t, conn)
+	conn, err := fiddb.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeProjectDB(t, conn) })
+	w := jsonAdmissionWorkspace{admissionWorkspace: admissionWorkspace{root: root, journal: dir, file: file}, migrations: migrations, conn: conn}
 	if mode != "replay" {
 		if _, err := ReplayJournal(conn, dir, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
-	var err error
+	if mode == "replay" || mode == "freshen" || mode == "rebuild" {
+		// Rebuild and freshness recovery can replace the database file. Always
+		// inspect the live path on those modes, including full replay's recovery
+		// from its initially empty projection.
+		closeProjectDB(t, conn)
+		w.conn = nil
+	}
 	w.prefix, err = os.ReadFile(file)
 	if err != nil {
 		t.Fatal(err)
@@ -44,19 +54,22 @@ func newJSONAdmissionWorkspace(t *testing.T, mode, migrations string) jsonAdmiss
 	return w
 }
 
-func (w jsonAdmissionWorkspace) open(t *testing.T) *sql.DB {
+func (w jsonAdmissionWorkspace) open(t *testing.T) (*sql.DB, func()) {
 	t.Helper()
+	if w.conn != nil {
+		return w.conn, func() {}
+	}
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return conn
+	return conn, func() { closeProjectDB(t, conn) }
 }
 
 func (w jsonAdmissionWorkspace) snapshot(t *testing.T) map[string][]string {
 	t.Helper()
-	conn := w.open(t)
-	defer closeProjectDB(t, conn)
+	conn, closeConn := w.open(t)
+	defer closeConn()
 	return currentProjectionSnapshot(t, conn)
 }
 
@@ -68,8 +81,8 @@ func (w jsonAdmissionWorkspace) admit(t *testing.T, mode string, event Event) er
 		}
 		return w.replay(t, mode)
 	}
-	conn := w.open(t)
-	defer closeProjectDB(t, conn)
+	conn, closeConn := w.open(t)
+	defer closeConn()
 	switch mode {
 	case "commit":
 		return WithLedgerLock(config.LedgerDir(w.root), LockOwner{Command: "test"}, func(lock *WriteLock) error { _, err := CommitEvent(lock, conn, event); return err })
@@ -94,8 +107,8 @@ func (w jsonAdmissionWorkspace) replay(t *testing.T, mode string) error {
 		_, err := RebuildWorkspace(w.root, w.migrations)
 		return err
 	}
-	conn := w.open(t)
-	defer closeProjectDB(t, conn)
+	conn, closeConn := w.open(t)
+	defer closeConn()
 	var options *ReplayOptions
 	if mode == "catch-up" {
 		options = &ReplayOptions{StartFile: filepath.Base(w.file), StartOffset: int64(len(w.prefix))}
