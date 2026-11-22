@@ -5,7 +5,7 @@
     it
       → fid accept FID-9f13aa --actor human:<name> or fid issue \
           transition FID-9f13aa --to cancelled --actor human:<name> \
-          --reason <text>
+          --reason <text> --idempotency-key <key>
   ✗ No backup for 4 days: none since the ledger began 2026-11-04 18:00
       → fid backup
 

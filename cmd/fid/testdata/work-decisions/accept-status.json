@@ -101,7 +101,7 @@
       {
         "kind": "accept",
         "summary": "FID-9f13aa, created by agent:orchestrator, waits for you to accept it",
-        "next_action": "fid accept FID-9f13aa --actor human:<name> or fid issue transition FID-9f13aa --to cancelled --actor human:<name> --reason <text>",
+        "next_action": "fid accept FID-9f13aa --actor human:<name> or fid issue transition FID-9f13aa --to cancelled --actor human:<name> --reason <text> --idempotency-key <key>",
         "subject": {
           "type": "issue",
           "id": "FID-9f13aa"

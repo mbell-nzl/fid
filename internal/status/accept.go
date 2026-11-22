@@ -18,7 +18,7 @@ func (result *Result) addUnaccepted(conn workrecord.Queryer) error {
 	}
 	sort.Strings(ids)
 	for _, id := range ids {
-		action := fmt.Sprintf("fid accept %s --actor human:<name> or fid issue transition %s --to cancelled --actor human:<name> --reason <text>", id, id)
+		action := fmt.Sprintf("fid accept %s --actor human:<name> or fid issue transition %s --to cancelled --actor human:<name> --reason <text> --idempotency-key <key>", id, id)
 		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "accept", Summary: fmt.Sprintf("%s, created by %s, waits for you to accept it", id, tasks[id]), NextAction: &action, Subject: &Subject{Type: "issue", ID: id}})
 	}
 	return nil

@@ -1270,9 +1270,11 @@ still occupies its worktree while waiting. Unaccepted tasks do not take the
 next sequential slot; dependency links still apply. Status adds one NEEDS YOU
 item per open unaccepted task/subtask, kind `accept`, subject `{type: "issue",
 id}`, summary `<id>, created by agent:<name>, waits for you to accept it`, next
-action `fid accept <id> --actor human:<name>` or cancellation. Acceptance or
-cancellation clears the item. The approved-epic discovered-blocker exception
-is deferred to 3.1's epic approval.
+action `fid accept <id> --actor human:<name>` or `fid issue transition <id>
+--to cancelled --actor human:<name> --reason <text> --idempotency-key <key>`.
+The cancellation suggestion includes the retry key required for subtasks and
+accepted by tasks. Acceptance or cancellation clears the item. The
+approved-epic discovered-blocker exception is deferred to 3.1's epic approval.
 
 Acceptance records one immutable person decision of kind `accept` per issue,
 bound to that task/subtask. Its optional reason defaults to `Accepted for
