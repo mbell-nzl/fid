@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -62,13 +63,13 @@ func scanCurrentJSONValue(decoder *json.Decoder) error {
 			if !ok {
 				return fmt.Errorf("object key is not text")
 			}
-			// encoding/json matches struct fields without regard to case.
-			// Refuse the same ambiguity before either spelling can win.
-			key = strings.ToLower(key)
-			if keys[key] {
+			// Match encoding/json's Unicode simple folding, including aliases
+			// such as long s. Lowercasing misses some aliases and invents others.
+			folded := foldJSONKey(key)
+			if keys[folded] {
 				return fmt.Errorf("duplicate key %q", key)
 			}
-			keys[key] = true
+			keys[folded] = true
 			if err := scanCurrentJSONValue(decoder); err != nil {
 				return err
 			}
@@ -86,4 +87,14 @@ func scanCurrentJSONValue(decoder *json.Decoder) error {
 	default:
 		return fmt.Errorf("unexpected JSON delimiter %q", delimiter)
 	}
+}
+
+func foldJSONKey(key string) string {
+	return strings.Map(func(r rune) rune {
+		folded := r
+		for next := unicode.SimpleFold(r); next != r; next = unicode.SimpleFold(next) {
+			folded = min(folded, next)
+		}
+		return folded
+	}, key)
 }

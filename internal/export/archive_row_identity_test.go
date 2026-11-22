@@ -183,6 +183,7 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 		{"label definition", "label.added", func(e *journal.Event) { e.Effects[0].PK["name"] = "green" }},
 		{"link arguments", "link.added", func(e *journal.Event) { e.Aggregate.ID = "unrelated" }},
 		{"activity subject", "issue.ac-added", func(e *journal.Event) { e.Effects[2].Values["ref_id"] = second }},
+		{"case variant structured map", "issue.ac-added", func(e *journal.Event) { e.Effects[2].Values["details"] = map[string]any{"A": 2, "a": 1} }},
 		{"repeated stage", "issue.ac-added", func(e *journal.Event) {
 			extra := e.Effects[0]
 			extra.PK = map[string]any{"id": "AC-extra"}
@@ -210,6 +211,9 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 			var refused *InvalidArchiveError
 			if !errors.As(err, &refused) {
 				t.Fatalf("import = %v, want typed refusal", err)
+			}
+			if tc.name == "case variant structured map" && (len(refused.Checks) != 1 || !strings.Contains(refused.Checks[0].Detail, "duplicate key")) {
+				t.Errorf("import checks = %#v, want duplicate-key refusal", refused.Checks)
 			}
 			if before != workspaceTreeDigest(t, target) {
 				t.Fatal("refused import changed target")

@@ -1716,6 +1716,14 @@ and 2 are also in their tasks' rows in `RESET.md`.
        `*_event_id` references (the projection has no Event index; standalone
        projection admission has only an Event and a transaction). Own-Event
        bindings, including activity's `journal_event_id`, are shared.
+     - 2026-11-22, #101 round 2: duplicate object keys use Unicode simple
+       folding, exactly as `encoding/json` matches field names. Lowercasing
+       misses long-s aliases and wrongly aliases dotted I; an ASCII-only
+       fence would also refuse otherwise valid structured details. The same
+       recursive check covers the complete serialized Event in shared
+       admission before live commit or dry run, as well as decoding stored
+       Events for replay and import. Structured maps cannot write an Event
+       that its replay decoder would refuse.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the

@@ -34,6 +34,11 @@ func ValidateEventShape(event Event) error {
 	if err != nil {
 		return err
 	}
+	// Check the complete serialized Event, including structured Effect values,
+	// before a live append can store JSON that the replay decoder would refuse.
+	if err := validateCurrentJSONText(string(encoded)); err != nil {
+		return fmt.Errorf("project event %q: %w", event.EventID, err)
+	}
 	return validateEventShape(event, len(encoded))
 }
 
