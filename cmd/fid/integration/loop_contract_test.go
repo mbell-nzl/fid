@@ -71,7 +71,7 @@ func loopField(t *testing.T, value any, path []string) any {
 	return loopField(t, item, path[1:])
 }
 
-var loopVolatile = regexp.MustCompile(`^(?:(?:FID|HLD|RCL|HOF|CHK|RND|FND|QST|PDN|CMP)-[0-9a-f]{6}(?:-[0-9]+)?|[0-9a-f]{40}|\d{4}-\d\d-\d\dT.*Z)$`)
+var loopVolatile = regexp.MustCompile(`^(?:(?:FID|HLD|RCL|HOF|CHK|RND|FND|QST|PDN|CMP)-[0-9a-f]{6}(?:-[0-9]+)?|[0-9a-f]{40}|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)$`)
 
 func loopStable(value any) any {
 	switch v := value.(type) {
@@ -105,6 +105,9 @@ func (c *loopContract) observe(name string, envelope map[string]any, exit int) {
 	c.t.Helper()
 	if envelope["contract_version"] != c.decl.Version {
 		c.t.Fatalf("contract version = %v, want %s", envelope["contract_version"], c.decl.Version)
+	}
+	if envelope["ok"] == true && (exit != 0 || envelope["error"] != nil) || envelope["ok"] == false && (exit == 0 || envelope["result"] != nil) {
+		c.t.Fatalf("exit/envelope disagree: exit=%d, envelope=%v", exit, envelope)
 	}
 	got := map[string]any{"exit": exit, "contract_version": envelope["contract_version"], "ok": envelope["ok"], "operation": envelope["operation"]}
 	if envelope["ok"] == true {

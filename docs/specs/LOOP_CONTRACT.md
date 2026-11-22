@@ -81,7 +81,9 @@ For `review`, the additional `review` object contains
 `handoff: {id, pr, head, base}`, `stream` (`primary` or `separate`) and
 `required_profiles` (an array containing `code`, `test-adequacy`, or both,
 as the frozen hand-off requires). The task is still `task.id`. Review work
-uses the same `hold.id` and heartbeat interface. Record all required
+uses the same `hold.id` and heartbeat interface. Review reservations lapse
+freely and end when their round is recorded; `park` applies to build holds.
+Record all required
 profiles from one session. The builder cannot review its own work.
 
 `--epic <epic>` covers **every kind**, including review, resume and rework.
@@ -101,7 +103,7 @@ is restored. Unscoped selection is unchanged.
 - `heartbeat`: `task_id`, `hold_id`, `last_heartbeat_at`, `expires_at`
   (UTC RFC3339 strings) and `heartbeat_interval_seconds` (300). Renew
   build and review sessions at that interval.
-- `park`: `task_id`, `hold_id`, `mode` (`interrupted` or `waiting`),
+- `park` (build holds): `task_id`, `hold_id`, `mode` (`interrupted` or `waiting`),
   `kept_for_worktree` (boolean). The interrupted form includes `reason`;
   the waiting form includes `question_id`, `question`. Parking ends the
   session. Started work remains kept for this worktree.

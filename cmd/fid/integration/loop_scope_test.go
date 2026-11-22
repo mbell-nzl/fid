@@ -120,6 +120,9 @@ func TestLoopEpicScope(t *testing.T) {
 	// Scope includes reviews: an empty epic never takes either due review.
 	reviewer := loopWorker{t, binary, gittest.AddWorktree(t, root), "agent:reviewer"}
 	reviewer.wantNext(empty, true, "none", "")
+	if out, stderr, err := closureRunCommand(reviewer.root, binary, "next", "--epic", empty, "--explain"); err != nil || stderr != "" || !strings.Contains(out, "3 outside scope") {
+		t.Fatalf("outside scope summary: %v %q %q", err, out, stderr)
+	}
 	review := reviewer.wantNext(side, true, "review", sideTask)
 	c.observe("next-epic-review", review, 0)
 	loopQueueReason(t, review, mainTask, "outside-scope")

@@ -3273,6 +3273,15 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
+- From this PR (2.4): an extra integration-tagged lint run
+  (`golangci-lint run --build-tags integration ./cmd/fid/integration/...`)
+  found nine issues, all in files unchanged by 2.4: an unchecked
+  `conn.Close` in `projection_helpers_test.go`, import ordering in
+  `rework_test.go`, and seven unused helpers (`p21Missing`, `p23Number`,
+  `p23NumberValue`, `p23Clone`, `p22Git`, `p22GitOutput`,
+  `closureCompleteIssue`). Tidy these in test maintenance and consider
+  checking integration-tagged code in lint; the normal make lint command
+  does not select the integration build tag.
 - From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
   from fid's canonical record, builder answers and deferral of minor/nit
   findings into discovered work, person acceptance of agent-created work
