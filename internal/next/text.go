@@ -179,6 +179,9 @@ func (text textWriter) nothing(result Result, explain bool) []string {
 // stoppedBy is what stops entry, as a kind to count: its reason, with the
 // worktree directory for work held elsewhere.
 func stoppedBy(entry Entry) string {
+	if entry.Reason != nil && *entry.Reason == ReasonOutsideScope {
+		return ReasonOutsideScope
+	}
 	if entry.Reason != nil && *entry.Reason == ReasonBuiltByActor {
 		return ReasonBuiltByActor
 	}
@@ -204,6 +207,8 @@ func stoppedBy(entry Entry) string {
 func countText(kind string, count int) string {
 	reason, directory, _ := strings.Cut(kind, " ")
 	switch reason {
+	case ReasonOutsideScope:
+		return plural(count, "outside scope", "outside scope")
 	case "rework":
 		return fmt.Sprintf("%d for rework in %s", count, directory)
 	case "review":
@@ -249,6 +254,9 @@ func (text textWriter) inOrder(result Result) []string {
 // it hands out, ready for any other that nothing stops, and otherwise what
 // stops it. A held task names the worktree's directory.
 func Verdict(entry Entry, served bool) (string, display.Role) {
+	if entry.Reason != nil && *entry.Reason == ReasonOutsideScope {
+		return "outside scope", display.RoleMuted
+	}
 	if entry.Reason != nil && *entry.Reason == ReasonReworkCapReached {
 		return "rework cap reached", display.RoleWarning
 	}
