@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 var orderNow = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
@@ -176,5 +178,44 @@ func TestPlanShowsEachHoldAsWorking(t *testing.T) {
 	want := Working{HoldID: "HLD-1", Worktree: "/w/wt2", Here: false, Actor: "agent:builder", Since: "2026-11-10T08:58:29Z", ExpiresAt: "2026-11-10T09:58:29Z", LastHeartbeatAt: "2026-11-10T08:58:29Z", Lapsed: false}
 	if got := planned.queue[0].Working; got == nil || *got != want {
 		t.Fatalf("working = %s, want %+v", fmt.Sprint(got), want)
+	}
+}
+
+func TestUnacceptedWorkNeverServed(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{"ordinary", "sequential", "held here", "review", "review held here", "capped"} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			unaccepted := task("T1", "E1", "unstarted", false)
+			unaccepted.UnacceptedBy = "agent:orchestrator"
+			work := issues.Work{Epics: map[string]issues.WorkEpic{"E1": epic("E1", "unstarted", name == "sequential")}, Tasks: []issues.WorkTask{unaccepted, task("T2", "E1", "unstarted", false)}}
+			var open []holds.Hold
+			if name == "held here" {
+				open = []holds.Hold{hold("H1", "T1", here, time.Minute)}
+			}
+			reviews := map[string]reviewCandidate{}
+			if name == "review" || name == "review held here" {
+				reviews["T1"] = reviewCandidate{work: &doneeval.ReviewWork{}}
+			}
+			if name == "capped" {
+				reviews["T1"] = reviewCandidate{capped: true}
+			}
+			if name == "review held here" {
+				candidate := reviews["T1"]
+				candidate.claim = &reviewrecord.Claim{ID: "RCL-one", TaskID: "T1", WorktreeID: here}
+				reviews["T1"] = candidate
+			}
+			got := plan(work, open, here, orderNow, reviews)
+			if got.queue[0].Reason == nil || *got.queue[0].Reason != ReasonNotAccepted {
+				t.Fatal(describe(got))
+			}
+			if name == "held here" || name == "review held here" {
+				if got.kind != KindNone || got.served != -1 {
+					t.Fatal(describe(got))
+				}
+			} else if got.served < 0 || got.queue[got.served].ID != "T2" {
+				t.Fatal(describe(got))
+			}
+		})
 	}
 }

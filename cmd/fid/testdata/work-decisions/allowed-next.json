@@ -1,0 +1,64 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "next.get",
+  "result": {
+    "answer": null,
+    "epic": {
+      "id": "FID-e3a1c0",
+      "progress": {
+        "done": 0,
+        "total": 1
+      },
+      "title": "Planned epic"
+    },
+    "hold": null,
+    "kind": "rework",
+    "queue": [
+      {
+        "id": "FID-9f13aa",
+        "title": "Harden login rate limiting",
+        "status": "in_progress",
+        "status_category": "started",
+        "epic_id": "FID-e3a1c0",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": [],
+        "reason": null,
+        "after": null,
+        "working": null,
+        "kept": {
+          "worktree": "<ROOT>",
+          "here": true,
+          "mode": "rework",
+          "reason": null,
+          "since": "2026-11-08T09:00:00Z",
+          "hold_id": "HLD-aaaaaa",
+          "actor": "agent:claude-builder",
+          "model": "codex/gpt-6.1-sol"
+        },
+        "epic_blocked_by": []
+      }
+    ],
+    "rework_allowance": {
+      "decision_id": "PDN-<new>",
+      "rounds": 2,
+      "reason": "Cover both edge cases",
+      "actor": "human:mark",
+      "at": "2026-11-08T09:00:00Z"
+    },
+    "task": {
+      "id": "FID-9f13aa",
+      "title": "Harden login rate limiting",
+      "status": "in_progress",
+      "status_category": "started",
+      "epic_id": "FID-e3a1c0",
+      "sequence": null,
+      "priority": null,
+      "blocked_by": []
+    },
+    "waiting": null,
+    "worktree": "<ROOT>"
+  }
+}

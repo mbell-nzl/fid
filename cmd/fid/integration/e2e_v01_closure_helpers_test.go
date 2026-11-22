@@ -246,11 +246,9 @@ func closureCreateIssue(t *testing.T, binary, workspace, kind, title string, sch
 		args = append(args, "--sequence", fmt.Sprintf("%d", *sequence))
 	}
 	args = append(args, extras...)
-	actor := "developer"
-	if kind == "epic" {
-		actor = "tl"
-	}
-	args = append(args, "--actor", "agent:"+actor)
+	// This journey plans accepted work and deliberately migrates down/up;
+	// it needs no new acceptance decision in its historical fixture.
+	args = append(args, "--actor", "human:mark")
 	stdout, stderr := closureRunFID(t, binary, workspace, args...)
 	if stderr != "" {
 		t.Fatalf("issue create stderr = %q, want empty", stderr)

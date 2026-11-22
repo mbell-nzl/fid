@@ -20,6 +20,7 @@ import (
 type Options struct {
 	WorkspaceRoot, MigrationsDir, HoldID, TaskID, Actor, Reason, IdempotencyKey string
 	PR, Question, Answer, Model, FindingID                                      string
+	Rounds                                                                      int64
 	Clock                                                                       func() time.Time
 }
 
@@ -45,7 +46,7 @@ type writeContext struct {
 
 func write(options Options, operation string, build func(writeContext) (journal.Event, map[string]any, error)) (Result, error) {
 	set := policy.WorkSet
-	if operation == "task.takeover" || operation == "task.answer" || operation == "finding.close" {
+	if operation == "task.takeover" || operation == "task.answer" || operation == "finding.close" || operation == "task.accept" || operation == "task.rework-allow" {
 		set = policy.PersonDecisions
 	}
 	if !policy.Allows(options.Actor, set) {

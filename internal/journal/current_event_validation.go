@@ -101,6 +101,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		}
 		return nil
 	}
+	if event.EventType == "work.accepted" || event.EventType == "rework.allowed" {
+		return validateWorkDecision(event, tx)
+	}
 	// The shape rules have checked the family, its actor, aggregate and
 	// Effect grammar. The family validators check the projection state.
 	if event.EventType == "review.claimed" || event.EventType == "review.heartbeat" {

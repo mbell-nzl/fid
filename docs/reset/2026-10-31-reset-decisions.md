@@ -2894,6 +2894,62 @@ RESET.md records the split and each row's done-when.
 - No dependency added. Internal names, the separate table and the reuse of
   hold JSON/heartbeat are transactional choices made by the builder.
 
+**Decided for 2.1b, 2026-11-22.**
+
+Built from the orchestrator's design, settled under Mark's delegation for his
+review. Lane: Assured. The brief's size rule is used after whole design item
+2: acceptance and allowances are this PR; proposed 2.1c carries answers,
+deferrals and posting. The RESET row describes that completed slice and marks
+it done; the proposed row and Later list preserve all remaining scope.
+
+- A task or subtask created by an `agent:*` actor waits for acceptance,
+  regardless of creation date or existing holds. `fid accept <issue>... --actor
+  human:<name> [--reason <text>]` writes one `accept` person decision per ID.
+  A missing reason records "Accepted for work". Repeating acceptance returns
+  the existing decision. Multiple IDs run in argument order, one Event each;
+  if a later ID refuses, earlier accepted IDs remain accepted. There is no
+  retry key: accepting an already accepted issue appends nothing. Human-created
+  work needs no acceptance command. Services cannot make either decision.
+- `next` skips unaccepted tasks as `not-accepted`, including an existing build
+  or review reservation; an occupied worktree stays occupied. Unaccepted
+  entries do not reserve the next slot in a sequential epic, but ordinary
+  dependency links still block. Status lists every open unaccepted task or
+  subtask under NEEDS YOU, kind `accept`, with its creator and acceptance or
+  cancellation command. Completed/cancelled work has no item. Epic approval
+  and D6's exception for discovered blockers in approved epics wait for 3.1.
+- `fid rework allow <task> --rounds <n> --actor human:<name> --reason <text>`
+  writes a `rework-allowance` decision for an open task. Rounds is a positive
+  signed 64-bit integer; every allowance adds to the latest hand-off's frozen
+  lane cap. The number of `CHANGES` rounds never resets. Allowances bind to
+  the task, with no fingerprint. The latest allowance's attribution, rounds
+  and reason accompany served work as `rework_allowance` in next's JSON;
+  rework text shows its guidance. Status offers the allowance command first
+  in a `rework-cap` item's next action. Existing builder reservations control
+  which worktree gets rework again. Each invocation deliberately adds another
+  allowance; there is no retry key. The displayed effective cap saturates at
+  MaxInt64 to avoid overflow; no representable round count exceeds that cap.
+- Implementation choices: migration 0037 extends `person_decisions`; an
+  allowance's `binding_json` is exactly `{rounds: n}`. Two immutable families,
+  `work.accepted` and `rework.allowed`, admit exactly one complete decision
+  with the Event's person, subject, command and time, on append, replay and
+  import. They admit neither unrelated Effects nor a retry result.
+- `issue_creators` is a derived index of the actor in the canonical Event-v2
+  `issue.created`, maintained within its projection transaction. No Event
+  may write the index through Effects. Its foreign key follows Issue ID
+  changes and deletion with update/delete cascades, preserving both valid
+  legacy identity edits and the existing typed state-guard refusals. Cache schema 19 forces the normal
+  rebuild of old projections, backfilling every existing typed creation
+  actor. Event-v1 has no typed actor and makes no agent-creation assertion.
+  Read-only fixtures with no creation Event likewise have no such assertion.
+  `internal/workrecord` shares the offline readers; `internal/holdwork` owns
+  decisions and `internal/journal` owns admission. No dependency is added.
+- The admission tests preserve the existing prefix contract: a full replay
+  can project valid Events before a later state-dependent refusal; the
+  rejected Event changes no row or checkpoint. A shape refusal occurs in
+  the pre-scan. Live refusals leave journal bytes and projection unchanged,
+  and the next valid write succeeds. Export/import and rebuild preserve both
+  decisions and the absence of acceptance for pending discoveries.
+
 **Decided for 2.3, 2026-11-21.**
 
 The orchestrator settled this design under Mark's delegation, for his review.
@@ -3236,13 +3292,22 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
-- From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
-  from fid's canonical record, builder answers and deferral of minor/nit
-  findings into discovered work, person acceptance of agent-created work
-  (skipped by next until accepted, with a NEEDS YOU item), and a person's
-  decision allowing more rework rounds for one task past its cap, refused
-  from agents (Mark, 2026-11-22; until then the cap offers takeover and
-  cancellation).
+- From this PR (2.1b): proposed RESET 2.1c, the remaining review-delivery
+  scope after the brief's size split: builder/person answers to open findings
+  without closing them; atomic minor/nit deferral into a discovered task, link,
+  acceptance criterion and closing disposition; canonical PR comments for
+  rounds, answers and deferrals, recorded URLs, retry protection, pending-post
+  warnings and `fid review post`. Its atomic deferral Event must also derive
+  the new task’s creator from that Event’s actor, keeping agent deferrals
+  unaccepted. Keep the original design and Assured lane.
+- From this PR (2.1b): D6's exception serving discovered work that blocks a
+  task in an approved epic needs 3.1's epic approval; add it there. Until then,
+  every agent-created task and subtask requires a person's acceptance.
+- From this PR (2.1b): builder-chosen rework after an approving round (for
+  example voluntarily fixing a minor) still needs a product decision. The
+  current commands support rework following `CHANGES`; do not invent a
+  state transition for approved work in 2.1c.
+
 - From this PR (2.1): investigate takeover of an in-review task. A temporary
   test overlay running public commands confirmed that takeover releases the
   hand-off's kept reservation without returning the task to `in_progress`,
@@ -3566,6 +3631,8 @@ such a task waits for Mark to accept it; until then the epic's wait for
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
+- From #100 (2.1): proposed row 2.1b, review delivery. Mark accepted it on
+  2026-11-22, with his extra-rework-rounds decision folded in.
 - From #98 (2.2b): proposed row 2.2c, `fid waive`, the remaining 2.2b
   scope. Mark accepted it on 2026-11-22 ("Decided 2026-11-22", item 1).
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list

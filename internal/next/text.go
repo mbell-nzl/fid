@@ -105,7 +105,11 @@ func (text textWriter) message(result Result, explain bool) []string {
 		lines = append(lines, text.prose(indent, "Hand-off "+review.Handoff.ID+" · head "+review.Handoff.Head+" · base "+review.Handoff.Base)...)
 		return append(lines, text.step(review.Handoff.PR)...)
 	case result.Kind == KindRework:
-		return append(text.prose(indent, "Rework here: fix the review findings, then check and hand off again."), text.step("fid show "+id)...)
+		lines := text.prose(indent, "Rework here: fix the review findings, then check and hand off again.")
+		if result.ReworkAllowance != nil {
+			lines = append(lines, text.prose(indent, "Guidance: "+result.ReworkAllowance.Reason)...)
+		}
+		return append(lines, text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Answer != nil:
 		return append(text.prose(indent, "Answer: "+result.Answer.Text), text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Interrupted != nil:
@@ -208,6 +212,8 @@ func countText(kind string, count int) string {
 		return fmt.Sprintf("%d for rework in %s", count, directory)
 	case "review":
 		return plural(count, "in review", "in review")
+	case ReasonNotAccepted:
+		return plural(count, "waiting for acceptance", "waiting for acceptance")
 	case ReasonWaitingForYou:
 		return plural(count, "waiting for you", "waiting for you")
 	case ReasonHeldElsewhere:
@@ -268,6 +274,8 @@ func Verdict(entry Entry, served bool) (string, display.Role) {
 		return "ready", display.RoleMuted
 	}
 	switch *entry.Reason {
+	case ReasonNotAccepted:
+		return "not accepted", display.RoleWarning
 	case ReasonBuiltByActor:
 		return "built by this actor", display.RoleWarning
 	case ReasonWaitingForYou:

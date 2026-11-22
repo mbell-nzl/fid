@@ -58,6 +58,7 @@ func TestLeanTaskJourneyFromNextThroughHandoff(t *testing.T) {
 	}
 	created := call("issue", "create", "--kind", "task", "--title", "Complete lean task", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 	task := p21PathString(t, created, "result", "issue", "id")
+	call("accept", task, "--actor", "human:mark")
 	taken := call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	hold := p21PathString(t, taken, "result", "hold", "id")
 	call("start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")
@@ -114,7 +115,7 @@ func assertLeanHandoffJournal(t *testing.T, root string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	allowed := map[string]bool{"project.initialized": true, "issue.created": true, "policy.snapshotted": true, "hold.taken": true, "task.started": true, "hold.heartbeat": true, "hold.parked": true, "hold.waiting": true, "task.answered": true, "check.started": true, "check.process-started": true, "check.result-recorded": true, "task.handed-off": true}
+	allowed := map[string]bool{"work.accepted": true, "project.initialized": true, "issue.created": true, "policy.snapshotted": true, "hold.taken": true, "task.started": true, "hold.heartbeat": true, "hold.parked": true, "hold.waiting": true, "task.answered": true, "check.started": true, "check.process-started": true, "check.result-recorded": true, "task.handed-off": true}
 	if len(files) == 0 {
 		t.Fatal("no journal files")
 	}
@@ -143,6 +144,7 @@ func handoffCodePair(code string) func(*testing.T) {
 		root, binary := handoffJourneyRepoWithArtifacts(t, code != "test-paths-not-configured", code == "kept-artifact-unavailable")
 		created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--title", "Hand-off refusal", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 		task := p21PathString(t, created, "result", "issue", "id")
+		p21Run(t, binary, root, "--json", "accept", task, "--actor", "human:mark")
 		taken := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 		hold := p21PathString(t, taken, "result", "hold", "id")
 		p21Run(t, binary, root, "--json", "start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")
