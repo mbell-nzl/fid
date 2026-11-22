@@ -1,0 +1,13 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "hold.heartbeat",
+  "result": {
+    "expires_at": "\u003ctime\u003e",
+    "heartbeat_interval_seconds": 300,
+    "hold_id": "\u003cHLD\u003e",
+    "last_heartbeat_at": "\u003ctime\u003e",
+    "task_id": "\u003cFID\u003e"
+  }
+}

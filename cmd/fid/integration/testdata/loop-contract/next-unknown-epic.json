@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "issue-not-found",
+  "error.retryable": false,
+  "exit": 3,
+  "ok": false,
+  "operation": "next.get"
+}

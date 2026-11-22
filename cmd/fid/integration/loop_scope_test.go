@@ -22,7 +22,7 @@ func (w loopWorker) call(args ...string) map[string]any {
 	return p21Run(w.t, w.binary, w.root, append([]string{"--json"}, args...)...)
 }
 
-func (w loopWorker) create(kind, title, epic string) string {
+func (w loopWorker) create(kind, title, epic string, flags ...string) string {
 	w.t.Helper()
 	args := []string{"issue", "create", "--kind", kind, "--title", title, "--actor", "human:planner", "--idempotency-key", title}
 	if kind == "epic" {
@@ -33,7 +33,7 @@ func (w loopWorker) create(kind, title, epic string) string {
 	if epic != "" {
 		args = append(args, "--epic", epic)
 	}
-	return p21PathString(w.t, w.call(args...), "result", "issue", "id")
+	return p21PathString(w.t, w.call(append(args, flags...)...), "result", "issue", "id")
 }
 
 func (w loopWorker) next(scope string, claim bool) map[string]any {
@@ -96,6 +96,7 @@ func (w loopWorker) build(scope, task, key string) map[string]any {
 
 func TestLoopEpicScope(t *testing.T) {
 	t.Parallel()
+	c := &loopContract{t: t, decl: readLoopDeclaration(t)}
 	root, binary := handoffJourneyRepo(t, true)
 	w := loopWorker{t, binary, root, "agent:side"}
 	main, side, empty := w.create("epic", "Main", ""), w.create("epic", "Side", ""), w.create("epic", "Empty", "")
@@ -105,11 +106,13 @@ func TestLoopEpicScope(t *testing.T) {
 	orphan := w.create("task", "No epic", "")
 	w.wantNext("", false, "new", mainTask)
 	got := w.wantNext(side, false, "new", sideTask)
+	c.observe("next-epic", got, 0)
 	loopQueueReason(t, got, mainTask, "outside-scope")
 	loopQueueReason(t, got, orphan, "outside-scope")
-	w.wantNext(empty, true, "none", "")
+	c.observe("next-epic-none", w.wantNext(empty, true, "none", ""), 0)
 	other := loopWorker{t, binary, gittest.AddWorktree(t, root), "agent:main"}
-	w.wantNext(side, true, "new", sideTask)
+	c.observe("next-claim-epic", w.wantNext(side, true, "new", sideTask), 0)
+	w.wantNext(main, true, "none", "")
 	other.wantNext("", true, "new", mainTask)
 	w.build(side, sideTask, "side")
 	other.build("", mainTask, "main")
@@ -118,12 +121,48 @@ func TestLoopEpicScope(t *testing.T) {
 	reviewer := loopWorker{t, binary, gittest.AddWorktree(t, root), "agent:reviewer"}
 	reviewer.wantNext(empty, true, "none", "")
 	review := reviewer.wantNext(side, true, "review", sideTask)
+	c.observe("next-epic-review", review, 0)
 	loopQueueReason(t, review, mainTask, "outside-scope")
 	// Changing scope never mixes another task into an occupied worktree.
 	reviewer.wantNext(main, true, "none", "")
 	w.wantNext(main, true, "none", "")
 	if out, stderr, err := closureRunCommand(root, binary, "next", "--epic", empty, "--explain"); err != nil || stderr != "" || !strings.Contains(out, "outside scope") {
 		t.Fatalf("scope explanation: %v %q %q", err, out, stderr)
+	}
+}
+
+func TestLoopScopeKeepsOrderingAndBlockers(t *testing.T) {
+	t.Parallel()
+	for _, scheduling := range []string{"prioritised", "sequential"} {
+		t.Run(scheduling, func(t *testing.T) {
+			t.Parallel()
+			root, binary := handoffJourneyRepo(t, true)
+			w := loopWorker{t, binary, root, "agent:builder"}
+			e := w.call("issue", "create", "--kind", "epic", "--title", "Ordered epic", "--scheduling", scheduling, "--actor", "human:planner", "--idempotency-key", "epic")
+			scope := p21PathString(t, e, "result", "issue", "id")
+			order := "--priority"
+			if scheduling == "sequential" {
+				order = "--sequence"
+			}
+			first := w.create("task", "Ordered first", scope, order, "1")
+			second := w.create("task", "Ordered second", scope, order, "2")
+			blocker := w.create("task", "External blocker", "")
+			w.call("link", "add", blocker, "blocks", first, "--from-type", "issue", "--to-type", "issue", "--actor", "human:planner", "--idempotency-key", "block")
+			kind, served := "new", second
+			if scheduling == "sequential" {
+				kind, served = "none", ""
+			}
+			got := w.wantNext(scope, false, kind, served)
+			loopQueueReason(t, got, blocker, "outside-scope")
+			w.call("link", "remove", blocker, "blocks", first, "--from-type", "issue", "--to-type", "issue", "--actor", "human:planner", "--idempotency-key", "unblock")
+			w.wantNext(scope, true, "new", first)
+			other := loopWorker{t, binary, gittest.AddWorktree(t, root), "agent:second"}
+			if scheduling == "sequential" {
+				other.wantNext(scope, true, "none", "")
+			} else {
+				other.wantNext(scope, true, "new", second)
+			}
+		})
 	}
 }
 

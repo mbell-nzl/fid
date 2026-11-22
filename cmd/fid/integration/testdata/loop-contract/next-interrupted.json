@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "next.get",
+  "result": {
+    "answer.decision_id": null,
+    "answer.question": null,
+    "answer.question_id": null,
+    "answer.text": null,
+    "hold.id": null,
+    "kind": "resume",
+    "review?.handoff.base": null,
+    "review?.handoff.head": null,
+    "review?.handoff.id": null,
+    "review?.handoff.pr": null,
+    "review?.required_profiles": null,
+    "review?.stream": null,
+    "task.id": "\u003cFID\u003e",
+    "waiting.kind": null
+  }
+}

@@ -2894,6 +2894,43 @@ RESET.md records the split and each row's done-when.
 - No dependency added. Internal names, the separate table and the reuse of
   hold JSON/heartbeat are transactional choices made by the builder.
 
+**Decided for 2.4, 2026-11-22.**
+
+The orchestrator settled this design under Mark's delegation, for his review.
+
+- `docs/specs/LOOP_CONTRACT.md` first declares the existing `fid-cli.v1`:
+  envelope, command exits, selected task and session, all five next kinds,
+  three waiting kinds, the person's answer, review hand-off/PR/stream and
+  required profiles, session commands, reviews and done statuses. The version
+  stays `fid-cli.v1`. Changing or removing a declared field, kind or exit
+  requires a version bump; an additional optional field does not.
+- Contract goldens select only declared fields and exits. The specification
+  includes their machine-readable paths, with optional fields and array
+  elements explicit. Public-command journeys compare the produced next and
+  waiting kinds to the declared sets. They cover interruption and answers,
+  review races, rework with a new hand-off and approval, the cap boundary,
+  both review profiles and streams, and done's batch statuses.
+- `next --epic <epic>` scopes every kind, including reviews, to that epic.
+  Tasks outside it, including tasks without an epic, get `outside-scope`,
+  ahead of other informational reasons. Within it the normal ordering,
+  dependencies, sequence, holds and cap remain. With no available scoped
+  work the result is `none`; unscoped workers retain their order. Unknown
+  IDs use `issue-not-found` (3); a non-epic uses `unsupported-kind` (2).
+- Implementation choice: scope is checked inside the planner's projection
+  read (under the write lock for a claim), before any policy snapshot or
+  session is written. The full queue is retained. An occupied build or
+  reviewer worktree whose task is outside a newly requested scope returns
+  `none`, preserving the existing reservation and the one-task-per-worktree
+  rule. The CLI only passes the option and shapes typed domain errors.
+- Implementation choices: fixture epics have explicit priorities, and
+  sequential tasks have sequences at creation. Goldens mask only shaped IDs,
+  commits and times; journeys assert task identity, distinct hand-offs and
+  exclusive sessions. All fixtures use temporary repositories and explicit
+  git test identities. No dependency, migration or journal change is needed.
+- V9's `check:loop-selftest` verifier lands with 2.5's actual loop and stub
+  agents. 2.4 supplies its declared version and kind sets. Its done-when is
+  amended from "V4, V9" to "V4; the contract V9 checks" for Mark's review.
+
 **Decided for 2.3, 2026-11-21.**
 
 The orchestrator settled this design under Mark's delegation, for his review.

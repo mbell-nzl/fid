@@ -588,6 +588,20 @@ an assertion about the file's bytes.
 
 Added 10 November 2026 with ADR-0014.
 
+**Loop contract**
+Definition: fid's declared and versioned interface for the kit's loop: the
+JSON fields, work kinds, waiting kinds and process exits the loop may read.
+Use when: distinguishing the stable loop interface from other command output.
+Avoid: treating undeclared JSON fields or human text as loop guarantees.
+
+**Epic scope**
+Definition: A worker's selection boundary, set with `next --epic`: only that
+epic's tasks can be served, for every kind of work, including review. The
+usual scheduling and exclusivity rules continue inside the boundary.
+Use when: running a worker on a side epic while another works the main line.
+Avoid: treating scope as ownership, a dependency bypass or permission to
+abandon occupied work in a worktree.
+
 **Hold**
 Definition: A task handed out by `fid next --claim` to one actor in one
 worktree, with its own ID. Heartbeats renew it; it lapses after about an

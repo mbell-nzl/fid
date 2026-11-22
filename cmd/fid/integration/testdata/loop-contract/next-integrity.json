@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "journal-replay-stopped",
+  "error.retryable": false,
+  "exit": 6,
+  "ok": false,
+  "operation": "next.get"
+}
