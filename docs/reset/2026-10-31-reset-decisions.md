@@ -3236,13 +3236,6 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
-- From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
-  from fid's canonical record, builder answers and deferral of minor/nit
-  findings into discovered work, person acceptance of agent-created work
-  (skipped by next until accepted, with a NEEDS YOU item), and a person's
-  decision allowing more rework rounds for one task past its cap, refused
-  from agents (Mark, 2026-11-22; until then the cap offers takeover and
-  cancellation).
 - From this PR (2.1): investigate takeover of an in-review task. A temporary
   test overlay running public commands confirmed that takeover releases the
   hand-off's kept reservation without returning the task to `in_progress`,
@@ -3566,6 +3559,8 @@ such a task waits for Mark to accept it; until then the epic's wait for
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
+- From #100 (2.1): proposed row 2.1b, review delivery. Mark accepted it on
+  2026-11-22, with his extra-rework-rounds decision folded in.
 - From #98 (2.2b): proposed row 2.2c, `fid waive`, the remaining 2.2b
   scope. Mark accepted it on 2026-11-22 ("Decided 2026-11-22", item 1).
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
