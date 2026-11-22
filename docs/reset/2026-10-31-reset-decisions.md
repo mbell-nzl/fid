@@ -2900,7 +2900,12 @@ atlas is out of scope for now.
 
 **D10 Approvals go stale** (amended). Reviews and approvals bind to the
 change's fingerprint (`git patch-id` of the branch diff); checks bind to the
-tree, and CI re-runs them on the final commit. A clean rebase keeps an
+tree, and CI re-runs them on the final commit. (Amended 2026-11-22, Mark: since `fid check`
+runs the lane's checks itself and binds each pass to the tree, a reviewer of
+that tree relies on those recorded passes and doesn't rerun the full suites;
+it tests adequacy instead, by reading the change, running focused tests and
+probing with mutations. The passes stand until the tree changes. The kit's
+reviewer (3.3) carries the rule.) A clean rebase keeps an
 approval valid; any edit to the change voids it (a rebase that alters lines
 next to a hunk may too, which means re-approving). Re-approval shows the full
 diffstat; Assured tasks are small. Epic approval binds to the validation list
