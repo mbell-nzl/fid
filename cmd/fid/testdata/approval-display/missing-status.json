@@ -72,15 +72,6 @@
     },
     "needs_you": [
       {
-        "kind": "approval",
-        "summary": "FID-9f13aa approval missing, no other-model review",
-        "next_action": "fid approve FID-9f13aa --actor human:<name> --reason <text>",
-        "subject": {
-          "type": "task",
-          "id": "FID-9f13aa"
-        }
-      },
-      {
         "kind": "backup",
         "summary": "No backup for 4 days: none since the ledger began 2026-11-04 18:00; no backup target is set",
         "next_action": "add [backup] target to <CONFIG>/fid/config.toml, then fid backup",

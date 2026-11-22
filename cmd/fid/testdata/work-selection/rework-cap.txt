@@ -1,0 +1,8 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ⚠ FID-9f13aa reached its rework cap; waiting for you
+      → fid status
+
+  IN ORDER
+  ● FID-9f13aa  Harden login rate limiting          rework cap reached
+╰──────────────────────────────────────────────────────────────────────╯

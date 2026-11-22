@@ -1724,9 +1724,39 @@ and 2 are also in their tasks' rows in `RESET.md`.
      that emits fid's input belongs to the kit's work (3.3).
    - fid runs from a binary pinned to a known `main` commit in
      `~/.local/bin/fid`, upgraded at each epic close or when a merged fix
-     is needed (D11). Backups go to the private `fid-ledgers` repository
+     is needed (D11). (Amended 2026-11-22, item 6: rebuilt from `main`
+     after merges.) Backups go to the private `fid-ledgers` repository
      over HTTPS, after `gh auth setup-git`, so the orchestrator and later
      the loop can back up too.
+
+## Decided 2026-11-22
+
+Mark made these decisions on 2026-11-22, after 1.9b (#97), 2.2b (#98) and
+2.3 (#99) merged.
+
+1. **2.2c joins the reset.** Mark accepted the proposed row: `fid waive`,
+   the fingerprint-bound waiver 2.2b's size split left over, runs after 2.3
+   and reuses its current/stale decision view.
+2. **2.3b: a done task's receipt in `fid show`.** After `fid done`, show
+   said only `done`, with the hand-off's PR number; nothing showed the
+   merge, the CI run, the review rounds or the approval the completion
+   record names. A new Standard row, 2.3b, shows them, in text and JSON,
+   offline. It runs after 2.1.
+3. **When status asks for approval** (2.1). Status asks for an Assured
+   task's approval only once the latest hand-off's primary and separate
+   reviews have approved it, as one NEEDS YOU item, "approve, then merge";
+   other lanes get one "merge" item. This replaces 2.3's approval item,
+   which appeared from the hand-off on, while reviews were still running.
+4. **Finished work stays finished** (1.9c). fid refuses cancelling a done
+   task or a closed epic. Undoing merged work is a new task, which follows
+   the original PR's `## Rollback` section.
+5. **2.1's design is delegated** to the orchestrator, as 2.2b's and 2.3's
+   were. Its choices are recorded with 2.1, for Mark's review.
+6. **fid's pinned binary follows `main`.** After a merge, while no task is
+   between hand-off and done, the orchestrator rebuilds `~/.local/bin/fid`
+   from `main`, after replaying a copy of the ledger with it. This replaces
+   "upgraded at each epic close or when a merged fix is needed" (Decided
+   2026-11-17, item 3).
 
 ## Products
 
@@ -2804,6 +2834,66 @@ remain the follow-up builder's transactional choices.
   extra byte list. This is required to honor the conservative unsupported
   path rule on replay, rather than changing its result after serialization.
 
+**Decided for 2.1, 2026-11-22.**
+
+The orchestrator settled this design under Mark's delegation, for his review.
+2.1 builds work selection; proposed 2.1b carries review delivery, answering
+and deferring findings, and acceptance of agent-created discovered work.
+RESET.md records the split and each row's done-when.
+
+- `next` serves resume, rework, review, unblocking work, then new work.
+  Its due-review reader shares done's primary and separate gate evaluation,
+  required profiles and fingerprint freshness. Primary comes first; Assured
+  adds separate once primary passes. Routine without a required profile
+  needs no review. Rework needs another hand-off before review selection.
+- Selection without an actor shows the first due review. Taking work skips
+  actors found in any build hold, including ended ones (`built-by-actor`),
+  and continues to eligible work. Review JSON carries the task, epic, latest
+  hand-off's ID/PR/head/base, stream and required profiles; text names them.
+- Implementation choice: a separate `review_claims` table (migration 0036),
+  with `review.claimed` and `review.heartbeat` Events. It keeps builder
+  reservations and builder/model attribution unchanged. It admits one open
+  reservation per task and per reviewer worktree, under the journal lock.
+  Review sessions return the usual hold JSON with an `RCL-` ID, renew for an
+  hour with the existing heartbeat command, and lapse freely. The same
+  worktree's live review precedes other reviews. A live reservation also
+  prevents build work in that reviewer worktree, including when local
+  comparison objects become unavailable. Builder kept-worktree information
+  remains visible for missing-worktree NEEDS YOU items. A round ends its task/stream
+  reservation atomically, regardless of who couriers it. Recording a review
+  without a reservation remains supported. Admission validates frozen review
+  gates using the recorded fingerprint, without requiring git objects on
+  replay, import or restore; live selection computes it locally.
+- All `CHANGES` rounds count, across both streams and every hand-off. The
+  cap comes from the latest hand-off's frozen policy and recorded lane,
+  including a raised lane. Rework is served at the cap and stopped past it;
+  zero stops the first rework. The builder gets `none` and `waiting.kind`
+  `rework-cap`, and explain says `rework-cap-reached`; other worktrees
+  continue. Status names the count and cap and offers takeover or
+  cancellation. A person's decision allowing more rounds for one task (one
+  of the person's decisions the work model lists) is 2.1b's (Mark,
+  2026-11-22).
+- Mark's 2026-11-22 approval timing replaces 2.3's item from hand-off on.
+  Only satisfied primary/separate review gates and the task-wide majors gate
+  produce a NEEDS YOU action. Assured with missing/stale approval gets one
+  `approval` item, "approve, then merge PR #n", and the shared no-other-model
+  disclosure. Current approval or another lane gets one `merge` item and the
+  PR URL. A recorded merge suppresses both; existing offline CI states show.
+  Done clears them. Show's Approval row and status's per-task approval fields
+  remain unchanged.
+- Deviation required to preserve V5 unchanged: its person-closure journey
+  completes with a current `CHANGES` round after a person closes the last
+  major, without a later `APPROVE`. Selection and status retain that existing
+  done-gate semantics, rather than adding a stricter verdict rule. Thus a
+  person's closure can also make the approval/merge item appear. This is the
+  closest implementation of the brief's shared-reader rule and V5 guarantee;
+  its literal "only once reviews have approved" wording has this exception.
+- Reads remain offline. An unavailable fingerprint never schedules review or
+  merge; status preserves its board and warns (`review-unavailable` for
+  other lanes, the existing `approval-unavailable` for Assured).
+- No dependency added. Internal names, the separate table and the reuse of
+  hold JSON/heartbeat are transactional choices made by the builder.
+
 **Decided for 2.3, 2026-11-21.**
 
 The orchestrator settled this design under Mark's delegation, for his review.
@@ -3146,6 +3236,20 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
+- From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
+  from fid's canonical record, builder answers and deferral of minor/nit
+  findings into discovered work, person acceptance of agent-created work
+  (skipped by next until accepted, with a NEEDS YOU item), and a person's
+  decision allowing more rework rounds for one task past its cap, refused
+  from agents (Mark, 2026-11-22; until then the cap offers takeover and
+  cancellation).
+- From this PR (2.1): investigate takeover of an in-review task. A temporary
+  test overlay running public commands confirmed that takeover releases the
+  hand-off's kept reservation without returning the task to `in_progress`,
+  then a changes round and another hand-off both refuse. Code inspection
+  also found done requires that released reservation. Settle the intended
+  takeover behavior; existing takeover/state rules are outside 2.1's scope.
+
 - From this PR (1.9b): a person can cancel a finished task or a closed
   epic. `fid issue transition --to cancelled` allows `cancelled` from
   `done`, and admission keeps that move because the command makes it.
@@ -3458,15 +3562,12 @@ such a task waits for Mark to accept it; until then the epic's wait for
   lists every open task, with blocked tasks that others wait on above the
   ready ones. Fix them in later display work.
 
-- From this PR (2.2b): proposed 2.2c carries the approved fingerprint-bound
-  `fid waive` design, its done gates, journal admission, restore coverage,
-  and current/stale show/status display, after 2.3, reusing 2.3's
-  current/stale presentation. The brief authorized this size split. See "Decided for 2.2b, 2026-11-21"; the proposed RESET row and this
-  allocation are for Mark's review.
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
 
+- From #98 (2.2b): proposed row 2.2c, `fid waive`, the remaining 2.2b
+  scope. Mark accepted it on 2026-11-22 ("Decided 2026-11-22", item 1).
 - From 1.8's policy PR: Mark chose fid's Assured trust-boundary path list
   on 2026-11-21; "Decided for 2.2b, 2026-11-21" records its exact list,
   definition and exclusions. 2.2b computes the floor and `.fid.toml` now

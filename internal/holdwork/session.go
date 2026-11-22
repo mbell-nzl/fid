@@ -3,6 +3,7 @@ package holdwork
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/holds"
@@ -42,6 +43,9 @@ func Current(conn *sql.DB, options Options, now time.Time) (holds.Hold, error) {
 
 func Heartbeat(options Options) (Result, error) {
 	return write(options, "hold.heartbeat", func(ctx writeContext) (journal.Event, map[string]any, error) {
+		if strings.HasPrefix(options.HoldID, "RCL-") {
+			return ctx.reviewHeartbeat()
+		}
 		hold, err := ctx.current()
 		if err != nil {
 			return journal.Event{}, nil, err

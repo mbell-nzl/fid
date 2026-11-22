@@ -40,7 +40,7 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 		return err
 	}
 	for _, e := range event.Effects {
-		if e.Table == "issues" || e.Table == "holds" {
+		if e.Table == "issues" || e.Table == "holds" || e.Table == "review_claims" {
 			continue // Exact state and reservation effects are checked below.
 		}
 		if err := validateCurrentEffect(event, e); err != nil {
@@ -59,6 +59,11 @@ func validateReviewRound(tx *sql.Tx, event Event) error {
 	if err != nil {
 		return err
 	}
+	ends, err := ReviewClaimEndEffects(tx, r.TaskID, r.Stream, r.At)
+	if err != nil {
+		return err
+	}
+	rework = append(rework, ends...)
 	if insert.PK["id"] != r.ID || insert.Values["task_id"] != r.TaskID || insert.Values["handoff_id"] != r.HandoffID || event.Aggregate.ID != r.ID || r.RecordedBy != event.ActorV2.ActorType+":"+event.ActorV2.ActorID || r.At != event.OccurredAt.UTC().Format(time.RFC3339) || len(event.Effects) != len(r.Findings)+closingCount(r)+len(rework)+2 {
 		return fmt.Errorf("review round differs from Event")
 	}

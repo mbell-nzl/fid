@@ -299,6 +299,11 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql holds = %#v", holds)
 	}
 	state.reads["holds"] = holds.stdout
+	reviewClaims := executeCommandForTest(workspace, "sql", "SELECT * FROM review_claims ORDER BY id")
+	if reviewClaims.err != nil {
+		t.Fatal(reviewClaims)
+	}
+	state.reads["review reservations"] = reviewClaims.stdout
 	decisions := executeCommandForTest(workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
 	if decisions.err != nil || decisions.stderr != "" {
 		t.Fatalf("fid sql person decisions = %#v", decisions)
@@ -444,6 +449,18 @@ func TestV8BackupWipeRestoreYieldsIdenticalState(t *testing.T) {
 			// Another project's backup shares the target, and is its tip.
 			other, otherID := fixture.project()
 			theirs, _ := decodeBackupSuccess(t, fixture.backup(other, "--json"))
+			if test.name == "new machine" {
+				// This case deliberately restores without source Git objects.
+				// Compare reads under that same availability before and after;
+				// the in-place case retains its available comparisons throughout.
+				objects := strings.TrimSpace(identityGit(t, original, "rev-parse", "--path-format=absolute", "--git-path", "objects"))
+				if err := os.RemoveAll(objects); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.MkdirAll(objects, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
 			before := captureV8State(t, original, ids)
 			archiveBefore, exported := exportForTest(t, original)
 

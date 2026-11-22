@@ -1,0 +1,11 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ● FID-9f13aa  Harden login rate limiting                   in review
+
+  Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
+
+  Review separate: code
+  Hand-off HOF-<new> · head <commit-or-tree>
+  · base <commit-or-tree>
+      → https://github.com/mbell-nzl/fid/pull/63
+╰──────────────────────────────────────────────────────────────────────╯

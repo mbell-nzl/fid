@@ -1,7 +1,7 @@
 ╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
 
   NEEDS YOU
-  ✗ FID-9f13aa approval missing
+  ✗ FID-9f13aa: approve, then merge PR #63
       → fid approve FID-9f13aa --actor human:<name> --reason <text>
   ✗ No backup for 4 days: none since the ledger began
     2026-11-04 18:00; no backup target is set

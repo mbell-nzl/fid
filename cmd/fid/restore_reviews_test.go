@@ -16,6 +16,8 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	t.Helper()
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-before-edit"))
 	var ids []string
+	reviewer := gittest.AddWorktree(t, root)
+	claimV8Review(t, reviewer, task)
 	for i, stream := range []string{"primary", "separate"} {
 		in := reviewInput()
 		in["stream"] = stream
@@ -44,12 +46,22 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	}
 	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "close", ids[1], "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "v8-close"), "finding.close")
 	recordV8Rework(t, root, task, ids[2])
+	claimV8Review(t, reviewer, task)
 	in := reviewInput()
 	in["stream"] = "separate"
 	in["reviewer"].(map[string]any)["session_id"] = "v8-fixed-separate"
 	f := &statusFixture{t: t, workspace: root, clock: time.Now}
 	lifecycleResult(t, recordReviewTask(t, f, in, "v8-fixed-separate", "human:courier", task), "review.record")
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-after-edit"))
+}
+
+func claimV8Review(t *testing.T, root, task string) {
+	t.Helper()
+	got, _ := lifecycleResult(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:v8-reviewer", "--model", "claude/opus-5.5"), "next.claim")
+	if got["kind"] != "review" || got["task"].(map[string]any)["id"] != task {
+		t.Fatalf("V8 review reservation=%v", got)
+	}
+	lifecycleResult(t, executeCommandForTest(root, "--json", "heartbeat", "--hold", got["hold"].(map[string]any)["id"].(string), "--actor", "agent:v8-reviewer"), "hold.heartbeat")
 }
 
 func recordV8Rework(t *testing.T, root, task, finding string) {
@@ -93,6 +105,10 @@ func assertV8Reviews(t *testing.T, workspace string) {
 	}
 	defer func() { _ = conn.Close() }()
 	var rounds, findings, models, manual, closures int
+	var claims int
+	if err := conn.QueryRow(`SELECT count(*) FROM review_claims WHERE ended_at IS NOT NULL`).Scan(&claims); err != nil || claims != 2 {
+		t.Fatalf("V8 review reservations=%d/%v", claims, err)
+	}
 	for _, q := range []struct {
 		sql string
 		to  *int

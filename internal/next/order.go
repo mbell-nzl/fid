@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 // What fid next hands out: a new task, the task this worktree already
@@ -13,6 +14,7 @@ const (
 	KindNew    = "new"
 	KindResume = "resume"
 	KindRework = "rework"
+	KindReview = "review"
 	KindNone   = "none"
 )
 
@@ -28,12 +30,15 @@ const (
 )
 
 const ReasonWaitingForYou = "waiting-for-you"
+const ReasonBuiltByActor = "built-by-actor"
+const ReasonReworkCapReached = "rework-cap-reached"
 
 // Entry is a task in the order, in fid status's task shape. Reason is why
 // fid next passes over it, nil when nothing does; After names the task it
 // waits for in its epic's sequence; Working is the open hold on it;
 // EpicBlockedBy lists its epic's open blockers.
 type Entry struct {
+	review bool
 	issues.OverviewTask
 	Reason        *string     `json:"reason"`
 	After         *string     `json:"after"`
@@ -55,19 +60,26 @@ type order struct {
 	// own is the worktree's open hold, if it has one.
 	own *holds.Hold
 	// held is each task's open hold.
-	held map[string]holds.Hold
+	held      map[string]holds.Hold
+	reviews   map[string]reviewCandidate
+	ownReview *reviewrecord.Claim
 }
 
-// plan walks the order for the worktree worktreeID at now, and serves the
-// first task nothing stops:
-//  1. this worktree's own hold, while it is live or its task has started
-//     (a lapsed hold on a started task means the task was interrupted);
-//  2. tasks that other open work waits on;
-//  3. the other unstarted tasks, in fid status's order.
-//
-// The queue holds every unstarted task and every task with an open hold.
-func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time) order {
+// plan serves this worktree's build resume or rework, then its live review,
+// then due reviews, unblocking work and other new work. Kept builder work
+// waiting for a person or review occupies its worktree. Review reservations
+// occupy a reviewer worktree while live, even if comparison objects are lost.
+// The queue retains every unstarted task and every task with an open hold.
+func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time, reviewPlans ...map[string]reviewCandidate) order {
 	planned := order{queue: []Entry{}, served: -1, held: map[string]holds.Hold{}}
+	if len(reviewPlans) > 0 {
+		planned.reviews = reviewPlans[0]
+	}
+	for _, candidate := range planned.reviews {
+		if candidate.claim != nil && candidate.claim.WorktreeID == worktreeID {
+			planned.ownReview = candidate.claim
+		}
+	}
 	for _, hold := range open {
 		planned.held[hold.TaskID] = hold
 		if hold.WorktreeID == worktreeID {
@@ -77,22 +89,28 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 	}
 	resume := ""
 	waiting := []issues.WorkTask{}
+	unblocking := []issues.WorkTask{}
 	rest := []issues.WorkTask{}
+	reviews := []issues.WorkTask{}
 	for _, task := range work.Tasks {
 		_, held := planned.held[task.ID]
 		switch {
 		case planned.own != nil && task.ID == planned.own.TaskID && (planned.own.Live(now) || planned.own.Kept || planned.own.Waiting() || task.StatusCategory == "started"):
 			resume = task.ID
 			waiting = append([]issues.WorkTask{task}, waiting...)
+		case planned.reviews[task.ID].claim != nil && planned.reviews[task.ID].claim.WorktreeID == worktreeID:
+			waiting = append([]issues.WorkTask{task}, waiting...)
+		case planned.reviews[task.ID].work != nil:
+			reviews = append(reviews, task)
 		case task.StatusCategory != "unstarted" && !held:
 		case task.Unblocks:
-			waiting = append(waiting, task)
+			unblocking = append(unblocking, task)
 		default:
 			rest = append(rest, task)
 		}
 	}
 	after := sequenceWaits(work, planned.held, now)
-	for _, task := range append(waiting, rest...) {
+	for _, task := range append(append(append(waiting, reviews...), unblocking...), rest...) {
 		entry := Entry{OverviewTask: task.OverviewTask, EpicBlockedBy: append([]string{}, work.Epics[epicOf(task.OverviewTask)].BlockedBy...)}
 		if hold, held := planned.held[task.ID]; held {
 			entry.Working = working(hold, worktreeID, now)
@@ -100,7 +118,17 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 				entry.Kept = holds.DescribeKept(hold, worktreeID, now)
 			}
 		}
-		if task.ID != resume || (planned.own != nil && planned.own.Waiting()) {
+		if candidate := planned.reviews[task.ID]; candidate.work != nil && task.ID != resume {
+			entry.review, entry.Working = true, nil
+			if candidate.claim != nil {
+				entry.Working = working(*claimHold(*candidate.claim), worktreeID, now)
+			}
+			if candidate.claim != nil && candidate.claim.WorktreeID != worktreeID {
+				entry.Reason = pointer(ReasonHeldElsewhere)
+			} else if candidate.built {
+				entry.Reason = pointer(ReasonBuiltByActor)
+			}
+		} else if task.ID != resume || (planned.own != nil && planned.own.Waiting()) {
 			if hold, ok := planned.held[task.ID]; ok && hold.InReview() {
 				entry.Reason = pointer(ReasonHeldElsewhere)
 			} else if ok && hold.Waiting() {
@@ -109,12 +137,19 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 				entry.Reason, entry.After = skip(work, task, entry.Working, entry.Kept, after)
 			}
 		}
+		if planned.reviews[task.ID].capped {
+			entry.Reason = pointer(ReasonReworkCapReached)
+		}
 		if planned.served < 0 && entry.Reason == nil {
 			planned.served = len(planned.queue)
 		}
 		planned.queue = append(planned.queue, entry)
 	}
-	if planned.own != nil && (planned.own.Waiting() || planned.own.InReview()) {
+	if planned.ownReview != nil && planned.reviews[planned.ownReview.TaskID].work == nil {
+		planned.kind, planned.served = KindNone, -1
+		return planned
+	}
+	if planned.own != nil && (planned.own.Waiting() || planned.own.InReview() || planned.reviews[planned.own.TaskID].capped) {
 		planned.kind, planned.served = KindNone, -1
 		return planned
 	}
@@ -123,6 +158,8 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		planned.kind = KindRework
 	case resume != "":
 		planned.kind = KindResume
+	case planned.served >= 0 && planned.reviews[planned.queue[planned.served].ID].work != nil:
+		planned.kind = KindReview
 	case planned.served >= 0:
 		planned.kind = KindNew
 	default:

@@ -25,6 +25,7 @@
     "projection_meta",
     "questions",
     "referenced_artifacts",
+    "review_claims",
     "review_rounds",
     "round_findings",
     "schema_migrations",
