@@ -20,7 +20,7 @@ func ValidateHandoffResult(raw string) error {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`
 	}
-	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+	if err := unmarshalCurrentJSON(raw, &stored); err != nil {
 		return fmt.Errorf("decode hand-off response: %w", err)
 	}
 	fields := stored.Fields

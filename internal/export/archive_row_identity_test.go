@@ -183,6 +183,12 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 		{"label definition", "label.added", func(e *journal.Event) { e.Effects[0].PK["name"] = "green" }},
 		{"link arguments", "link.added", func(e *journal.Event) { e.Aggregate.ID = "unrelated" }},
 		{"activity subject", "issue.ac-added", func(e *journal.Event) { e.Effects[2].Values["ref_id"] = second }},
+		{"retry result duplicate key", "issue.ac-added", func(e *journal.Event) {
+			e.Effects[len(e.Effects)-1].Values["result_json"] = `{"replayed":true,"replayed":false}`
+		}},
+		{"retry result nested duplicate key", "issue.ac-added", func(e *journal.Event) {
+			e.Effects[len(e.Effects)-1].Values["result_json"] = `{"replayed":false,"criterion":{"text":"overwritten","text":"original"}}`
+		}},
 		{"case variant structured map", "issue.ac-added", func(e *journal.Event) { e.Effects[2].Values["details"] = map[string]any{"A": 2, "a": 1} }},
 		{"repeated stage", "issue.ac-added", func(e *journal.Event) {
 			extra := e.Effects[0]
@@ -224,6 +230,9 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 			var refused *InvalidArchiveError
 			if !errors.As(err, &refused) {
 				t.Fatalf("import = %v, want typed refusal", err)
+			}
+			if strings.HasPrefix(tc.name, "retry result") && (len(refused.Checks) != 1 || !strings.Contains(refused.Checks[0].Detail, "duplicate key")) {
+				t.Errorf("import checks = %#v, want duplicate-key refusal", refused.Checks)
 			}
 			if before != workspaceTreeDigest(t, target) {
 				t.Fatal("refused import changed target")

@@ -57,6 +57,15 @@ func decodeCurrentJSON(raw string) (any, error) {
 	return value, nil
 }
 
+// Stored retry readers allow unknown fields, but use the same key rules as
+// other embedded JSON: struct aliases are refused and map keys match exactly.
+func unmarshalCurrentJSON(raw string, target any) error {
+	if err := validateTypedJSONText(raw, reflect.TypeOf(target)); err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(raw), target)
+}
+
 func scanCurrentJSONValue(decoder *json.Decoder, target reflect.Type) error {
 	for target != nil && target.Kind() == reflect.Pointer {
 		target = target.Elem()

@@ -94,20 +94,28 @@ func TestStructuredEventDuplicateJSONKeys(t *testing.T) {
 	// must be refused before append as well as through every replay path.
 	// Distinct fold-equivalent map keys are positive controls in
 	// TestStructuredEventCaseSensitiveMapKeys.
-	for name, raw := range map[string]string{
-		"ASCII map":       `{"a":2,"a":1}`,
-		"nested in array": `{"nested":[{"a":2,"a":1}]}`,
-		"long s":          `{"ſ":2,"ſ":1}`,
-		"Kelvin sign":     `{"K":2,"K":1}`,
-		"Greek sigma":     `{"σ":2,"σ":1}`,
+	for name, tc := range map[string]struct{ column, raw, family string }{
+		"ASCII map":                     {"request_field_digests_json", `{"a":2,"a":1}`, ""},
+		"nested in array":               {"request_field_digests_json", `{"nested":[{"a":2,"a":1}]}`, ""},
+		"long s":                        {"request_field_digests_json", `{"ſ":2,"ſ":1}`, ""},
+		"Kelvin sign":                   {"request_field_digests_json", `{"K":2,"K":1}`, ""},
+		"Greek sigma":                   {"request_field_digests_json", `{"σ":2,"σ":1}`, ""},
+		"retry result":                  {"result_json", `{"replayed":true,"replayed":false}`, ""},
+		"nested retry result":           {"result_json", `{"replayed":false,"changes":[{"field":"lane","from":"standard","to":"standard","to":"assured"}]}`, ""},
+		"criterion retry result":        {"result_json", `{"replayed":true,"replayed":false}`, "issue.ac-added"},
+		"criterion nested retry result": {"result_json", `{"replayed":false,"criterion":{"text":"overwritten","text":"original"}}`, "issue.ac-added"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			e := admissionLaneRaise()
-			request := IdempotencyRequest{OperationScope: "issue.update:project-1", IdempotencyKey: "duplicate", RequestDigest: "sha256:" + strings.Repeat("b", 64)}
+			if tc.family == "issue.ac-added" {
+				e.EventType, e.CommandName = tc.family, "issue.ac.add"
+				e.Effects[0] = Effect{Op: "insert", Table: "acceptance_criteria", PK: map[string]any{"id": "AC-one"}, Values: map[string]any{"issue_id": e.Aggregate.ID, "ordinal": 1, "text": "Works"}}
+			}
+			request := IdempotencyRequest{OperationScope: e.CommandName + ":project-1", IdempotencyKey: "duplicate", RequestDigest: "sha256:" + strings.Repeat("b", 64)}
 			e.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, Scope: request.OperationScope, RequestDigest: request.RequestDigest}
 			result := idempotencyResultEffect(request, e, e.Aggregate.ID, `{"replayed":false}`)
-			result.Values["request_field_digests_json"] = raw
+			result.Values[tc.column] = tc.raw
 			e.Effects = append(e.Effects, result)
 			for _, mode := range admissionModes(e) {
 				t.Run(mode, func(t *testing.T) {

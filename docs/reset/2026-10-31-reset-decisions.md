@@ -1732,6 +1732,14 @@ and 2 are also in their tasks' rows in `RESET.md`.
        structured activity details with `A` and `a` are distinct entries.
        One typed scan checks the serialized Event before admission and when
        decoding stored Events, so admission and replay keep the same rule.
+     - 2026-11-22, #101 round 4: shared retry admission also scans the embedded
+       `result_json` text before decoding it, including Issue-family retries.
+       Exact duplicate keys, at any depth, are refused on every journal path
+       and import. The create, update, start and hand-off stored-result readers
+       use the same typed scan before decoding: struct aliases are refused,
+       map keys match exactly, and unknown response fields remain allowed.
+       This resolves the round-3 Later item about retry `result_json`; it is
+       no longer an import-only check or deferred work.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3289,16 +3297,6 @@ such a task waits for Mark to accept it; until then the epic's wait for
   prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
   its remaining grammar or harden those scalar updates before supporting
   such history as operational data.
-
-- From #101 (1.9c): audit strict duplicate-key checks in Issue-family retry
-  `result_json` strings. A 2026-11-22 round-3 overlay admitted an
-  `issue.updated` retry containing `{"replayed":true,"replayed":false,"changes":[]}`
-  through commit, dry run, projection, replay, catch-up, freshen and rebuild,
-  both on c66a0584 and with the round-3 fix. `validateIdempotencyBinding` and
-  `ValidateIssueUpdateResult` decode this string directly; the serialized
-  Event scan sees a string, and Issue row validation does not run the lean
-  table's generic JSON-column check. Extend the strict embedded-record audit
-  to these readers. No admission/replay divergence was observed in the probe.
 
 - From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
   from fid's canonical record, builder answers and deferral of minor/nit
