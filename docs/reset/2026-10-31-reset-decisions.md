@@ -1724,6 +1724,14 @@ and 2 are also in their tasks' rows in `RESET.md`.
        admission before live commit or dry run, as well as decoding stored
        Events for replay and import. Structured maps cannot write an Event
        that its replay decoder would refuse.
+     - 2026-11-22, #101 round 3: limit Unicode simple folding to objects
+       decoded into structs (Event wire fields and typed embedded records).
+       Map keys match exactly, as `encoding/json` and case-sensitive readers
+       do; exact duplicates are still refused in every object. In particular,
+       check names `build` and `Build`, their hand-off definition digests and
+       structured activity details with `A` and `a` are distinct entries.
+       One typed scan checks the serialized Event before admission and when
+       decoding stored Events, so admission and replay keep the same rule.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3191,6 +3199,16 @@ such a task waits for Mark to accept it; until then the epic's wait for
   prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
   its remaining grammar or harden those scalar updates before supporting
   such history as operational data.
+
+- From #101 (1.9c): audit strict duplicate-key checks in Issue-family retry
+  `result_json` strings. A 2026-11-22 round-3 overlay admitted an
+  `issue.updated` retry containing `{"replayed":true,"replayed":false,"changes":[]}`
+  through commit, dry run, projection, replay, catch-up, freshen and rebuild,
+  both on c66a0584 and with the round-3 fix. `validateIdempotencyBinding` and
+  `ValidateIssueUpdateResult` decode this string directly; the serialized
+  Event scan sees a string, and Issue row validation does not run the lean
+  table's generic JSON-column check. Extend the strict embedded-record audit
+  to these readers. No admission/replay divergence was observed in the probe.
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps

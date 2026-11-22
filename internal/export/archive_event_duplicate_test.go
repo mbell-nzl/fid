@@ -29,6 +29,7 @@ func TestImportMalformedEventDuplicateJSONKeys(t *testing.T) {
 		{"unicode effects", `"effects":[`, `"effects":[],"effectſ":[`},
 		{"unicode Effect", `"values":{`, `"values":{},"valueſ":{`},
 		{"unicode aggregate", `"sequence":1`, `"sequence":0,"ſequence":1`},
+		{"exact map duplicate", `"pk":{"id":`, `"pk":{"id":"overwritten","id":`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()

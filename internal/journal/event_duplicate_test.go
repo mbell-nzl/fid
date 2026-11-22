@@ -17,6 +17,18 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	legacy := e
+	legacy.EventSchema = EventSchemaV1
+	legacy.Actor = Actor{Role: "developer"}
+	legacy.Command = Command{Argv: []string{"fid"}, CWD: ".", FIDVersion: "test"}
+	legacyRaw, err := MarshalCanonicalJSON(legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacyMalformed := bytes.Replace(legacyRaw, []byte(`"cwd":"."`), []byte(`"cwd":"/","CWD":"."`), 1)
+	if bytes.Equal(legacyRaw, legacyMalformed) {
+		t.Fatal("probe did not change the Event-v1 command")
+	}
 	for name, malformed := range map[string][]byte{
 		"header":               bytes.Replace(raw, []byte(`"event_schema":2`), []byte(`"event_schema":1,"event_schema":2`), 1),
 		"nested key":           bytes.Replace(raw, []byte(`"id":"FID-a"`), []byte(`"id":"FID-b","id":"FID-a"`), 1),
@@ -28,6 +40,9 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 		"unicode Effect":       bytes.Replace(raw, []byte(`"values":{`), []byte(`"values":{},"valueſ":{`), 1),
 		"unicode aggregate":    bytes.Replace(raw, []byte(`"sequence":2`), []byte(`"sequence":1,"ſequence":2`), 1),
 		"escaped unicode":      bytes.Replace(raw, []byte(`"event_schema":2`), []byte(`"event_schema":1,"event_\u017fchema":2`), 1),
+		"exact map duplicate":  bytes.Replace(raw, []byte(`"details":null`), []byte(`"details":{"a":1,"a":2}`), 1),
+		"nested map duplicate": bytes.Replace(raw, []byte(`"details":null`), []byte(`"details":[{"a":1,"a":2}]`), 1),
+		"Event-v1 command":     legacyMalformed,
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
@@ -75,17 +90,25 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 
 func TestStructuredEventDuplicateJSONKeys(t *testing.T) {
 	t.Parallel()
-	for name, details := range map[string]any{
-		"case variant map": map[string]any{"A": 2, "a": 1},
-		"nested in array":  []any{map[string]any{"A": 2, "a": 1}},
-		"long s":           map[string]any{"s": 2, "ſ": 1},
-		"Kelvin sign":      map[string]any{"K": 2, "K": 1},
-		"Greek sigma":      map[string]any{"σ": 2, "ς": 1},
+	// A Go map cannot hold an exact duplicate. Embedded JSON text can, and
+	// must be refused before append as well as through every replay path.
+	// Distinct fold-equivalent map keys are positive controls in
+	// TestStructuredEventCaseSensitiveMapKeys.
+	for name, raw := range map[string]string{
+		"ASCII map":       `{"a":2,"a":1}`,
+		"nested in array": `{"nested":[{"a":2,"a":1}]}`,
+		"long s":          `{"ſ":2,"ſ":1}`,
+		"Kelvin sign":     `{"K":2,"K":1}`,
+		"Greek sigma":     `{"σ":2,"σ":1}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			e := admissionLaneRaise()
-			e.Effects[2].Values["details"] = details
+			request := IdempotencyRequest{OperationScope: "issue.update:project-1", IdempotencyKey: "duplicate", RequestDigest: "sha256:" + strings.Repeat("b", 64)}
+			e.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, Scope: request.OperationScope, RequestDigest: request.RequestDigest}
+			result := idempotencyResultEffect(request, e, e.Aggregate.ID, `{"replayed":false}`)
+			result.Values["request_field_digests_json"] = raw
+			e.Effects = append(e.Effects, result)
 			for _, mode := range admissionModes(e) {
 				t.Run(mode, func(t *testing.T) {
 					w := newAdmissionWorkspace(t, admissionPrefix(), mode)

@@ -208,12 +208,22 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
 			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "malformed"})
+			if tc.name == "case variant structured map" {
+				if err != nil {
+					t.Fatalf("distinct map keys refused: %v", err)
+				}
+				if _, err := journal.RebuildWorkspace(target, testMigrationsDir(t)); err != nil {
+					t.Fatalf("rebuild admitted map: %v", err)
+				}
+				title := "After distinct map"
+				if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ID: first, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+					t.Fatalf("later valid write: %v", err)
+				}
+				return
+			}
 			var refused *InvalidArchiveError
 			if !errors.As(err, &refused) {
 				t.Fatalf("import = %v, want typed refusal", err)
-			}
-			if tc.name == "case variant structured map" && (len(refused.Checks) != 1 || !strings.Contains(refused.Checks[0].Detail, "duplicate key")) {
-				t.Errorf("import checks = %#v, want duplicate-key refusal", refused.Checks)
 			}
 			if before != workspaceTreeDigest(t, target) {
 				t.Fatal("refused import changed target")

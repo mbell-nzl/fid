@@ -1047,9 +1047,11 @@ operation and an updated column occur at most once per Event.
 
 Issue identity, kind, workflow, parent and creation facts are immutable,
 including in Event-v1 history; Issue deletion and recreation are refused.
-Duplicate object keys, including aliases under `encoding/json`'s Unicode
-simple folding, are refused throughout the serialized Event before shared
-admission and decoding, including in structured Effect values. Import also
+Duplicate object keys are refused throughout the serialized Event before
+shared admission and decoding. Objects decoded into structs also refuse
+aliases under `encoding/json`'s Unicode simple folding; map keys match
+exactly, including in structured Effect values. Typed embedded records use
+the same distinction between their struct fields and map entries. Import also
 checks its historical schema profile, canonical archive lines and existence
 of historical Event references, which have no index in the live projection.
 A finished task or a closed epic cannot be cancelled: undoing merged work is
