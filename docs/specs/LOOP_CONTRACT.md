@@ -7,6 +7,10 @@ Other output remains available to people and tools, but a loop must not
 rely on it. JSON examples and the fuller command interface live in
 [the CLI spec](06_DESIGN_PLAN_CLI.md).
 
+This initial declaration now includes RESET 2.1b's acceptance and rework
+allowances. No loop consumes the contract yet, so the version remains
+`fid-cli.v1` while this first declaration is completed.
+
 A loop checks `contract_version` at startup and refuses an unsupported
 version. It stops loudly on an unknown `next.kind` or `waiting.kind`, malformed
 JSON, missing required fields or empty output. Empty output never means no
@@ -70,12 +74,36 @@ worktree's hold atomically. Both have exactly these kinds:
 or review hold ID, supplied to subsequent commands. `hold` is null without
 `--claim` and for `none`. IDs must be passed back unchanged.
 
+Agent-created tasks need a person's acceptance, including tasks created
+before RESET 2.1b. Human-created tasks are accepted immediately. Unaccepted
+tasks are skipped. If the worktree's own task is unaccepted, its existing
+build hold or review reservation still occupies the worktree: both forms of
+`next` succeed (exit 0) with `kind: none`, `task: null` and `hold: null`, even
+when other accepted work is available. Acceptance alone leaves `waiting`
+null; another declared wait can still apply. The reservation remains for
+when a person accepts the task. A loop follows `none` here as it does for
+other unservable work.
+
 `waiting` is null or an object whose `kind` is one of `waiting-for-you`,
 `review`, `rework-cap`. It explains why a worktree remains occupied even
 when `kind` is `none`. An answer is null or
 `{question_id, question, text, decision_id}`; pass the person's question
 and answer text to the resumed agent. It remains on subsequent selections
 until a newer question replaces it.
+
+When a served task has any rework allowance, both forms of `next` include
+the optional object `rework_allowance: {decision_id, rounds, reason, actor,
+at}`. It is absent when no task is served or the task has no allowance.
+`decision_id` is the opaque person-decision ID, `rounds` a positive signed
+64-bit integer, `reason` the person's guidance, `actor` the `human:<name>`
+string and `at` a UTC RFC3339 string. The loop passes this guidance and its
+attribution to the selected agent, including on `rework` and later `resume`.
+The latest decision in journal order supplies all five fields; `rounds` is
+that decision's increment, not the total allowance or effective cap. Every
+allowance increases the frozen hand-off cap without resetting the changes
+count; a loop continues to let `next` decide whether rework can proceed in
+the reserved builder worktree. RESET 2.1b adds no next kind, waiting kind or
+process exit to this contract.
 
 For `review`, the additional `review` object contains
 `handoff: {id, pr, head, base}`, `stream` (`primary` or `separate`) and
@@ -144,8 +172,8 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
   "next_kinds": ["new", "resume", "rework", "review", "none"],
   "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
   "fields": {
-    "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
-    "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
+    "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
+    "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
     "task.start": ["task_id", "hold_id", "status"],
     "hold.heartbeat": ["task_id", "hold_id", "last_heartbeat_at", "expires_at", "heartbeat_interval_seconds"],
     "hold.park": ["task_id", "hold_id", "mode", "kept_for_worktree", "reason?", "question_id?", "question?"],

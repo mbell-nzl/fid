@@ -99,6 +99,7 @@ func TestLoopContractScenarios(t *testing.T) {
 	c.observe("review-approve", loopRound(reviewer, task, "APPROVE", "approve", []string{"code"}, finding), 0)
 	loopDoneContract(t, c, w, task, hold, h2)
 	loopCapContract(t, c)
+	loopUnacceptedContract(t, c)
 	c.sets()
 }
 
@@ -249,4 +250,5 @@ func loopCapContract(t *testing.T, c *loopContract) {
 	unrelated := w.create("task", "Other work", "")
 	w.wantNext("", true, "none", "")
 	reviewer.wantNext("", true, "new", unrelated)
+	loopAllowanceContract(t, c, w, task)
 }

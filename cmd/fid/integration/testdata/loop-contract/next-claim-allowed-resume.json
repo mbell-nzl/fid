@@ -1,0 +1,27 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "next.claim",
+  "result": {
+    "answer.decision_id": null,
+    "answer.question": null,
+    "answer.question_id": null,
+    "answer.text": null,
+    "hold.id": "\u003cHLD\u003e",
+    "kind": "resume",
+    "review?.handoff.base": null,
+    "review?.handoff.head": null,
+    "review?.handoff.id": null,
+    "review?.handoff.pr": null,
+    "review?.required_profiles": null,
+    "review?.stream": null,
+    "rework_allowance?.actor": "human:mark",
+    "rework_allowance?.at": "\u003ctime\u003e",
+    "rework_allowance?.decision_id": "\u003cPDN\u003e",
+    "rework_allowance?.reason": "Cover both retry edges",
+    "rework_allowance?.rounds": 2,
+    "task.id": "\u003cFID\u003e",
+    "waiting.kind": null
+  }
+}

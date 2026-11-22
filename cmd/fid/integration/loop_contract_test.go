@@ -162,4 +162,18 @@ func TestLoopContractDeclaration(t *testing.T) {
 	if d.Version != "fid-cli.v1" || len(d.Fields) != 10 {
 		t.Fatalf("incomplete declaration: %+v", d)
 	}
+	for _, operation := range []string{"next.get", "next.claim"} {
+		var allowance []string
+		for _, path := range d.Fields[operation] {
+			if strings.HasPrefix(path, "rework_allowance") {
+				allowance = append(allowance, path)
+			}
+		}
+		want := []string{"rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at"}
+		slices.Sort(allowance)
+		slices.Sort(want)
+		if !slices.Equal(allowance, want) {
+			t.Errorf("%s allowance fields = %v, want %v", operation, allowance, want)
+		}
+	}
 }

@@ -2904,6 +2904,9 @@ The orchestrator settled this design under Mark's delegation, for his review.
   required profiles, session commands, reviews and done statuses. The version
   stays `fid-cli.v1`. Changing or removing a declared field, kind or exit
   requires a version bump; an additional optional field does not.
+- The initial contract now covers 2.1b: next's latest rework allowance and
+  guidance, and successful `none` while an unaccepted task occupies its
+  worktree; no loop consumes the declaration yet, so it stays `fid-cli.v1`.
 - Contract goldens select only declared fields and exits. The specification
   includes their machine-readable paths, with optional fields and array
   elements explicit. Public-command journeys compare the produced next and

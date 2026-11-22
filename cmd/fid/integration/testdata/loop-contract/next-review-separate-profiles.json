@@ -19,6 +19,11 @@
       "test-adequacy"
     ],
     "review?.stream": "separate",
+    "rework_allowance?.actor": null,
+    "rework_allowance?.at": null,
+    "rework_allowance?.decision_id": null,
+    "rework_allowance?.reason": null,
+    "rework_allowance?.rounds": null,
     "task.id": "\u003cFID\u003e",
     "waiting.kind": null
   }
