@@ -95,6 +95,10 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "task.answer"
 	case "fid takeover":
 		return "task.takeover"
+	case "fid accept":
+		return "task.accept"
+	case "fid rework allow":
+		return "task.rework-allow"
 	case "fid next":
 		return "next.get"
 	}
@@ -118,7 +122,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 40 || len(groups) != 13 {
+	if len(leaves) != 42 || len(groups) != 14 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -149,6 +153,9 @@ func grammarClassRows(t *testing.T) []grammarRow {
 		if cmd.CommandPath() == "fid check" {
 			continue
 		}
+		if cmd.CommandPath() == "fid accept" {
+			message = "accept requires at least one issue"
+		}
 		argument := "arguments"
 		positionalAllowed := allowed
 		if cmd.CommandPath() == "fid done" {
@@ -162,6 +169,10 @@ func grammarClassRows(t *testing.T) []grammarRow {
 				extra = append(extra, "ID-1")
 			}
 			extra = append(extra, "extra")
+			if cmd.CommandPath() == "fid accept" {
+				rows = append(rows, grammarRow{name: cmd.CommandPath() + " several positional", operation: grammarOperation(cmd), code: "invalid-argument", message: "--actor is required", argument: "--actor", allowed: []string{"--actor"}, args: extra})
+				continue
+			}
 			rows = append(rows, grammarRow{name: cmd.CommandPath() + " extra positional", operation: grammarOperation(cmd), code: "invalid-argument", message: fmt.Sprintf("accepts %d arg(s), received %d", len(use), len(use)+1), argument: "arguments", value: "extra", allowed: allowed, args: extra})
 		}
 		required := []string{}
@@ -472,7 +483,7 @@ func grammarDomainRows(t *testing.T) []grammarRow {
 			case "bool":
 				_, err := strconv.ParseBool("maybe")
 				appendRow("malformed "+flag.Name, "=maybe", fmt.Sprintf("invalid argument %q for %q flag: %v", "maybe", "--"+flag.Name, err), "maybe")
-			case "int":
+			case "int", "int64":
 				_, err := strconv.ParseInt("bogus", 0, 64)
 				appendRow("malformed "+flag.Name, "=bogus", fmt.Sprintf("invalid argument %q for %q flag: %v", "bogus", "--"+flag.Name, err), "bogus")
 				raw := "0"
@@ -500,8 +511,8 @@ func grammarDomainRows(t *testing.T) []grammarRow {
 			}
 		})
 	}
-	if typed != 12 {
-		t.Fatalf("R18 corpus = %d want 12", typed)
+	if typed != 13 {
+		t.Fatalf("R18 corpus = %d want 13", typed)
 	}
 	return rows
 }

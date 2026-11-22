@@ -811,6 +811,7 @@ passed over with a typed reason, the first that applies:
 | Reason | When |
 |---|---|
 | `outside-scope` | `--epic` names a different epic, or the task has no epic; takes precedence over other reasons |
+| `not-accepted` | an agent created this task and no person has accepted it |
 | `held-elsewhere` | another worktree's live build hold or review reservation |
 | `built-by-actor` | the claiming actor ever held this task to build it, including ended holds |
 | `rework-cap-reached` | changes rounds exceed the latest hand-off policy's cap for its recorded lane |
@@ -984,9 +985,11 @@ task as `rework-cap-reached`. Cap zero stops the first automatic rework.
 The builder worktree gets `none` with `waiting: {kind: "rework-cap", task_id}`;
 other worktrees continue. Status adds one `rework-cap` NEEDS YOU item:
 `<task> reached its rework cap (<count> rounds asked for changes; cap <cap>)`.
-Its next action offers `fid takeover <task> --actor human:<name> --reason
-<text>` or `fid issue transition <task> --to cancelled --actor human:<name>
---reason <text>`. Allowing extra rounds is later work. All reads stay offline.
+Its first next action is `fid rework allow <task> --rounds <n> --actor
+human:<name> --reason <text>`, followed by takeover or cancellation. Every
+person's allowance adds to the frozen lane cap without resetting the count;
+the accepted-work and allowance contract below gives the decision and next's
+guidance fields. All reads stay offline.
 If local objects cannot establish review freshness, next serves no review
 for that task and status shows `review-unavailable` (or the existing
 `approval-unavailable` for Assured work), preserving the board.
@@ -1257,6 +1260,64 @@ A check that cannot finish (permissions or git errors) adds warning kind
 These warnings follow policy warnings. Waiting and missing worktree items
 precede backup NEEDS YOU items, in hold/planner order respectively. Status
 reads the question, work and hold state from its one projection snapshot.
+
+**Accepted work and rework allowances (RESET 2.1b).**
+
+```bash
+fid accept <issue>... --actor human:<name> [--reason <text>]
+fid rework allow <task> --rounds <n> --actor human:<name> --reason <text>
+```
+
+Both accept `--project` and `--json`; operations are `task.accept` and
+`task.rework-allow`. Agent and service actors get `authority-denied`. A missing
+actor/rounds/reason flag where required, invalid rounds or a closed/unknown
+subject gets `invalid-argument`. No new failure code is introduced.
+
+An open agent-created task or subtask is unaccepted until a person accepts it.
+There is no date exception, including tasks created before this upgrade.
+Human-created work is accepted immediately. `next` skips unaccepted tasks with
+`not-accepted`; text says `not accepted`. An existing build or review session
+still occupies its worktree while waiting. Unaccepted tasks do not take the
+next sequential slot; dependency links still apply. Status adds one NEEDS YOU
+item per open unaccepted task/subtask, kind `accept`, subject `{type: "issue",
+id}`, summary `<id>, created by agent:<name>, waits for you to accept it`, next
+action `fid accept <id> --actor human:<name>` or `fid issue transition <id>
+--to cancelled --actor human:<name> --reason <text> --idempotency-key <key>`.
+The cancellation suggestion includes the retry key required for subtasks and
+accepted by tasks. Acceptance or cancellation clears the item. The
+approved-epic discovered-blocker exception is deferred to 3.1's epic approval.
+
+Acceptance records one immutable person decision of kind `accept` per issue,
+bound to that task/subtask. Its optional reason defaults to `Accepted for
+work`. Repeating acceptance returns its existing decision without writing.
+Several IDs run in argument order in separate Events; a later refusal does
+not undo earlier acceptances. JSON is `{decisions: [{issue_id, accepted: true,
+decision_id, reason?}, ...]}` with no single top-level Event. Text is
+`✓ Accepted <issue> · decision <decision>`. Neither command takes a retry key.
+
+An allowance applies to an open task, with positive signed 64-bit `rounds`.
+Each invocation creates a new `rework-allowance` person decision, bound to the
+task, and adds its rounds to the latest hand-off's frozen lane cap. All
+`CHANGES` rounds across streams and hand-offs still count. The effective cap
+saturates at MaxInt64, which no representable count exceeds. At or below the
+new cap, rework is served again in the reserved builder worktree; other
+worktrees cannot take it. The `rework-cap` item clears when no longer capped.
+Its first next action offers the allowance command, then takeover/cancellation.
+JSON success is `{task_id, decision_id, rounds, reason}` and its Event. Text is
+`✓ Allowed <n> more rework rounds for <task> · <reason>`.
+
+For served work, `next` includes `rework_allowance: {decision_id, rounds,
+reason, actor, at}` when any allowance exists, including on resume. The latest
+decision in journal order supplies guidance; its rounds is that decision's
+increment, not the effective cap. Rework text adds `Guidance: <reason>`.
+Acceptance and allowance reads remain offline. Live append, replay, import
+and rebuild share the same admission rules for `work.accepted` and
+`rework.allowed`: exactly one complete, immutable person decision matching
+the Event's actor, command, subject and time.
+
+Finding answers, atomic deferral into discovered work and canonical PR-comment
+posting remain proposed RESET 2.1c, the size split of 2.1b. Until that lands,
+`review record` persists rounds only and `review list` stays offline.
 
 **Hand-off and the worktree during review (RESET 1.5a7; Mark, 14 November 2026).**
 
@@ -1555,7 +1616,7 @@ For example, a later independent session can submit:
 
 This passes only when that disposition leaves no major open. A builder’s
 answer never closes a major; answering and deferring findings remain in
-proposed 2.1b. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
+proposed 2.1c. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
 remain immutable even when a person later closes the last major.
 `reviewrecord.OpenMajors` is the shared task-wide reader for the later done
 evaluator; it never filters findings by fingerprint or review stream.
@@ -2135,7 +2196,7 @@ Except for `review` (the lean record/list contract in RESET 1.6d) and
 `finding` (the person’s close command in RESET 1.6e), each is an unknown root command (`operation-unavailable`,
 exit 2), with the known path `fid` as its operation and sorted current
 alternatives. The retired review schema, Event and tables stay refused;
-review delivery remains proposed 2.1b. There is no `fid admin`. Issue Concern
+review delivery remains proposed 2.1c. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.
@@ -2245,4 +2306,4 @@ works outside a project and refuses combinations in this order: `--json`,
 arguments. Unknown or duplicate input fields and missing, null or wrongly
 typed `artifact_id` give `invalid-argument` with the exact field path.
 
-*Last updated: 2026-11-15 (RESET 1.6e: immutable finding closures)*
+*Last updated: 2026-11-22 (RESET 2.1b: accepted work and rework allowances)*

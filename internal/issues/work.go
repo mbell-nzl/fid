@@ -5,6 +5,7 @@ import (
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issuestate"
+	"github.com/mbell-nzl/fid/internal/workrecord"
 )
 
 // Work is what fid next orders: every epic, and the open tasks in fid
@@ -36,6 +37,8 @@ type WorkEpic struct {
 type WorkTask struct {
 	OverviewTask
 	Unblocks bool
+	// UnacceptedBy names the agent creator while this work awaits a person.
+	UnacceptedBy string
 }
 
 // ReadWork reads the epics and open tasks from the projection on conn.
@@ -78,13 +81,17 @@ func ReadWork(conn fiddb.Queryer) (Work, error) {
 			begun[epic.ID] = begun[epic.ID] || task.StatusCategory == "started" || task.StatusCategory == "completed"
 		}
 	}
+	unaccepted, err := workrecord.Unaccepted(conn)
+	if err != nil {
+		return Work{}, err
+	}
 	listed := map[string][]WorkTask{}
 	rest := []WorkTask{}
 	for _, task := range tasks {
 		if !isOpen(task.StatusCategory) {
 			continue
 		}
-		listedTask := WorkTask{OverviewTask: task, Unblocks: waitedOn[task.ID]}
+		listedTask := WorkTask{OverviewTask: task, Unblocks: waitedOn[task.ID], UnacceptedBy: unaccepted[task.ID]}
 		if epic, found := work.Epics[epicOf(task)]; found && isOpen(epic.StatusCategory) {
 			listed[epic.ID] = append(listed[epic.ID], listedTask)
 			continue

@@ -127,6 +127,14 @@ func installLeafGrammar(cmd *cobra.Command) {
 	}
 	count := len(strings.Fields(cmd.Use)) - 1
 	validator := canonicalExactArgs(operation, count)
+	if rootCommandKey(cmd) == "accept" {
+		validator = func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return positionalFailure(cmd, operation, 1, args, "accept requires at least one issue")
+			}
+			return nil
+		}
+	}
 	if rootCommandKey(cmd) == "done" {
 		validator = doneArgs
 	}
@@ -172,6 +180,10 @@ func leafOperation(cmd *cobra.Command) string {
 		return "hold.heartbeat"
 	case "park":
 		return "hold.park"
+	case "rework allow":
+		return "task.rework-allow"
+	case "accept":
+		return "task.accept"
 	case "answer":
 		return "task.answer"
 	case "takeover":
