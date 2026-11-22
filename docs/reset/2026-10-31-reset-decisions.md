@@ -2870,7 +2870,9 @@ RESET.md records the split and each row's done-when.
   zero stops the first rework. The builder gets `none` and `waiting.kind`
   `rework-cap`, and explain says `rework-cap-reached`; other worktrees
   continue. Status names the count and cap and offers takeover or
-  cancellation. Allowing extra rounds remains later work.
+  cancellation. A person's decision allowing more rounds for one task (one
+  of the person's decisions the work model lists) is 2.1b's (Mark,
+  2026-11-22).
 - Mark's 2026-11-22 approval timing replaces 2.3's item from hand-off on.
   Only satisfied primary/separate review gates and the task-wide majors gate
   produce a NEEDS YOU action. Assured with missing/stale approval gets one
@@ -3236,12 +3238,11 @@ such a task waits for Mark to accept it; until then the epic's wait for
 
 - From this PR (2.1): proposed 2.1b carries posting review rounds to the PR
   from fid's canonical record, builder answers and deferral of minor/nit
-  findings into discovered work, and person acceptance of agent-created work
-  (skipped by next until accepted, with a NEEDS YOU item).
-- From this PR (2.1): a person's decision to allow extra rework rounds is
-  still unimplemented. The cap currently offers the existing takeover and
-  cancellation commands; design an explicit task-bound extra-round decision
-  when it is needed.
+  findings into discovered work, person acceptance of agent-created work
+  (skipped by next until accepted, with a NEEDS YOU item), and a person's
+  decision allowing more rework rounds for one task past its cap, refused
+  from agents (Mark, 2026-11-22; until then the cap offers takeover and
+  cancellation).
 - From this PR (2.1): investigate takeover of an in-review task. A temporary
   test overlay running public commands confirmed that takeover releases the
   hand-off's kept reservation without returning the task to `in_progress`,
