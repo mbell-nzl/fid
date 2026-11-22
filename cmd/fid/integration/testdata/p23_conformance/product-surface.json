@@ -15,6 +15,7 @@
     "handoffs",
     "holds",
     "idempotency_results",
+    "issue_creators",
     "issue_labels",
     "issues",
     "labels",
@@ -36,6 +37,7 @@
     "workflows"
   ],
   "commands": [
+    "accept",
     "activity",
     "activity list",
     "answer",
@@ -90,6 +92,8 @@
     "review",
     "review list",
     "review record",
+    "rework",
+    "rework allow",
     "show",
     "sql",
     "start",

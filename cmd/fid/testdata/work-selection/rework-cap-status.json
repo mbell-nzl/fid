@@ -78,7 +78,7 @@
       {
         "kind": "rework-cap",
         "summary": "FID-9f13aa reached its rework cap (4 rounds asked for changes; cap 3)",
-        "next_action": "fid takeover FID-9f13aa --actor human:<name> --reason <text> or fid issue transition FID-9f13aa --to cancelled --actor human:<name> --reason <text>",
+        "next_action": "fid rework allow FID-9f13aa --rounds <n> --actor human:<name> --reason <text> or fid takeover FID-9f13aa --actor human:<name> --reason <text> or fid issue transition FID-9f13aa --to cancelled --actor human:<name> --reason <text>",
         "subject": {
           "type": "task",
           "id": "FID-9f13aa"

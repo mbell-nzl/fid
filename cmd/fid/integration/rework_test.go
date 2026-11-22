@@ -29,6 +29,7 @@ func TestPublicReviewReworkJourney(t *testing.T) {
 	}
 	created := call("issue", "create", "--kind", "task", "--title", "Review and fix", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 	task := p21PathString(t, created, "result", "issue", "id")
+	call("accept", task, "--actor", "human:mark")
 	taken := call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	original := p21PathString(t, taken, "result", "hold", "id")
 	call("start", "--hold", original, "--actor", "agent:builder", "--idempotency-key", "start")
