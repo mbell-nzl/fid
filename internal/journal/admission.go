@@ -2,6 +2,7 @@ package journal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -30,14 +31,18 @@ func ValidateEventShape(event Event) error {
 	if event.EventSchema != EventSchemaV1 && event.EventSchema != EventSchemaV2 {
 		return fmt.Errorf("project event %q: unsupported Event schema %d", event.EventID, event.EventSchema)
 	}
+	serialized, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("marshal Event: %w", err)
+	}
+	// Scan before canonicalization can collapse duplicate keys in a RawMessage
+	// or custom JSON marshaler supplied in a structured Effect value.
+	if err := validateEventJSONText(string(serialized), event.EventSchema); err != nil {
+		return fmt.Errorf("project event %q: %w", event.EventID, err)
+	}
 	encoded, err := MarshalCanonicalJSON(event)
 	if err != nil {
 		return err
-	}
-	// Check the complete serialized Event, including structured Effect values,
-	// before a live append can store JSON that the replay decoder would refuse.
-	if err := validateEventJSONText(string(encoded), event.EventSchema); err != nil {
-		return fmt.Errorf("project event %q: %w", event.EventID, err)
 	}
 	return validateEventShape(event, len(encoded))
 }
@@ -54,6 +59,9 @@ func validateEventShape(event Event, encodedLength int) error {
 	}
 	if !withinLineBudget(encodedLength) {
 		return fmt.Errorf("%s Event exceeds the journal's 1 MiB line budget", eventSizeLabel(event.EventType))
+	}
+	if err := validateEmbeddedJSON(event); err != nil {
+		return err
 	}
 	if err := ValidateEventUpdates(event); err != nil {
 		return err

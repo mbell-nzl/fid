@@ -1740,6 +1740,32 @@ and 2 are also in their tasks' rows in `RESET.md`.
        map keys match exactly, and unknown response fields remain allowed.
        This resolves the round-3 Later item about retry `result_json`; it is
        no longer an import-only check or deferred work.
+     - 2026-11-22, #101 round 5 (separate review): a shared schema-convention
+       scan checks every non-null `*_json` value in every Effect's `pk`,
+       `values`, `prior` and `preconditions`, for every family and operation,
+       including unused insert maps and Event-v1. It runs before family
+       validation and before producer-side prior capture. Stored Event
+       decoding runs the same scan before archive schema checks; the complete
+       serialized Event is scanned before canonicalization can collapse raw
+       duplicate keys. Exact duplicates are refused throughout each JSON document; Unicode simple-fold
+       aliases are also refused where the column's reader decodes a struct.
+       Typed destinations follow the actual record types and each retry
+       family's shape; unknown nested response members and map entries stay
+       case-sensitive. The scan also shares import's JSON number domain,
+       refusing non-finite decoded numbers such as `1e999`. No Effect
+       embedded-JSON syntax/key check remains import-only. Physical column
+       availability still depends on the archive's historical profile;
+       manifest JSON remains an archive-container contract. Insert
+       prior/precondition maps are scanned rather than categorically banned;
+       existing family rules still decide whether those maps are supported.
+       A matrix derived from SQLite and the retained family catalog checks
+       every JSON column/operation/map on all journal paths and public import;
+       real criterion-writer Events pin the reported backup/restore failure.
+       Matrix setup captures the current schema and seeds from the real
+       migrations, verifies complete SQL/seed parity, and reuses that fixture
+       to keep the full matrix within the unchanged test timeout. Historical
+       profile probes and actual criterion-writer round trips retain the
+       canonical migration directory; no cases or assertions were removed.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3290,6 +3316,16 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
+
+- From #101 (1.9c): some older direct retry readers (criterion, transition,
+  labels, links, Artifact verification, and hold operations other than
+  start/hand-off) still decode
+  an already-current projection with plain `encoding/json`. Shared admission
+  now validates their source Events, including every embedded-JSON map;
+  separate detection of duplicate keys in manually corrupted projection
+  rows is outside this fix. Decide whether those readers should use the same
+  defensive scan as the create/update/start/hand-off readers. This is a code
+  inspection observation, not an observed writer/admission bypass.
 
 - From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state

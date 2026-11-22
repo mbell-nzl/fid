@@ -2,6 +2,7 @@ package export
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -144,7 +145,12 @@ func TestStartReplayRejectsMalformedRetryResultWithoutMutation(t *testing.T) {
 				delete(result, "result_json")
 			}
 			err := journal.ProjectEvent(validator.conn, journal.ProjectionInput{Event: event, EventHash: "sha256:malformed-result", File: "journal", Line: 2, Offset: 2})
-			if err == nil || !strings.Contains(err.Error(), "invalid original idempotency result") {
+			if row.name == "number" {
+				var refusal *journal.RowIdentityError
+				if !errors.As(err, &refusal) || refusal.EventID != event.EventID || refusal.Table != "idempotency_results" || refusal.Reason != "values.result_json requires JSON text" {
+					t.Fatalf("replay malformed retry result = %v, want shared JSON-text refusal", err)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), "invalid original idempotency result") {
 				t.Fatalf("replay malformed retry result = %v", err)
 			}
 			var task, epic string

@@ -114,14 +114,14 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 	if err := validateEventJSONText(string(data), header.EventSchema); err != nil {
 		return fmt.Errorf("decode Event: %w", err)
 	}
+	var decoded Event
 	switch header.EventSchema {
 	case EventSchemaV1:
 		var wire eventV1Wire
 		if err := json.Unmarshal(data, &wire); err != nil {
 			return err
 		}
-		*event = Event{wire.EventID, wire.EventSchema, wire.EventType, wire.OccurredAt, wire.Actor, wire.Command, wire.Effects, EventActor{}, Aggregate{}, nil, "", nil, nil, nil}
-		return nil
+		decoded = Event{wire.EventID, wire.EventSchema, wire.EventType, wire.OccurredAt, wire.Actor, wire.Command, wire.Effects, EventActor{}, Aggregate{}, nil, "", nil, nil, nil}
 	case EventSchemaV2:
 		decoder := json.NewDecoder(bytes.NewReader(data))
 		// CI identities live in numeric Effect columns as well as the typed
@@ -134,15 +134,18 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		if err := decoder.Decode(&wire); err != nil {
 			return err
 		}
-		decoded := Event{wire.EventID, wire.EventSchema, wire.EventType, wire.OccurredAt, Actor{}, Command{}, wire.Effects, wire.Actor, wire.Aggregate, wire.CausationID, wire.Command, wire.CorrelationID, wire.Idempotency, wire.Repository}
+		decoded = Event{wire.EventID, wire.EventSchema, wire.EventType, wire.OccurredAt, Actor{}, Command{}, wire.Effects, wire.Actor, wire.Aggregate, wire.CausationID, wire.Command, wire.CorrelationID, wire.Idempotency, wire.Repository}
 		if err := validateV2Event(decoded); err != nil {
 			return err
 		}
-		*event = decoded
-		return nil
 	default:
 		return fmt.Errorf("unsupported event schema %d", header.EventSchema)
 	}
+	if err := validateEmbeddedJSON(decoded); err != nil {
+		return fmt.Errorf("decode Event: %w", err)
+	}
+	*event = decoded
+	return nil
 }
 
 type eventV1Wire struct {

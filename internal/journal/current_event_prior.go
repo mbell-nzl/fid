@@ -10,6 +10,9 @@ import (
 // Capture only producer-side missing prior values under the existing write
 // lock. ProjectEvent never manufactures a prior for received journal data.
 func captureCurrentEventPrior(conn *sql.DB, event *Event) error {
+	if err := validateEmbeddedJSON(*event); err != nil {
+		return err
+	}
 	if !event.IsV2() || event.EventType != "artifact.availability-observed" {
 		return nil
 	}

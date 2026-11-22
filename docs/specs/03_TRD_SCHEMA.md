@@ -1051,8 +1051,14 @@ Duplicate object keys are refused throughout the serialized Event before
 shared admission and decoding. Objects decoded into structs also refuse
 aliases under `encoding/json`'s Unicode simple folding; map keys match
 exactly, including in structured Effect values. Typed embedded records use
-the same distinction between their struct fields and map entries. Import also
-checks its historical schema profile, canonical archive lines and existence
+the same distinction between their struct fields and map entries. Every
+non-null `*_json` column is scanned in `pk`, `values`, `prior` and
+`preconditions`, including unused insert maps, before family admission or
+producer-side prior capture, and when decoding stored Events. The complete
+Event scan precedes canonicalization. Its JSON value domain matches archive validation
+(including refusal of decoded non-finite numbers). Unknown nested response
+members retain their untyped map semantics. Import also checks its historical
+schema profile, canonical archive lines and existence
 of historical Event references, which have no index in the live projection.
 A finished task or a closed epic cannot be cancelled: undoing merged work is
 a new task following the original PR's `## Rollback` section (Mark,
