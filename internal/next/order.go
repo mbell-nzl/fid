@@ -29,6 +29,8 @@ const (
 	ReasonBlocked              = "blocked"
 )
 
+const ReasonNotAccepted = "not-accepted"
+
 const ReasonWaitingForYou = "waiting-for-you"
 const ReasonBuiltByActor = "built-by-actor"
 const ReasonReworkCapReached = "rework-cap-reached"
@@ -140,10 +142,20 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time,
 		if planned.reviews[task.ID].capped {
 			entry.Reason = pointer(ReasonReworkCapReached)
 		}
+		if task.UnacceptedBy != "" {
+			entry.Reason = pointer(ReasonNotAccepted)
+		}
 		if planned.served < 0 && entry.Reason == nil {
 			planned.served = len(planned.queue)
 		}
 		planned.queue = append(planned.queue, entry)
+	}
+	for _, task := range work.Tasks {
+		owned := planned.own != nil && task.ID == planned.own.TaskID || planned.ownReview != nil && task.ID == planned.ownReview.TaskID
+		if owned && task.UnacceptedBy != "" {
+			planned.kind, planned.served = KindNone, -1
+			return planned
+		}
 	}
 	if planned.ownReview != nil && planned.reviews[planned.ownReview.TaskID].work == nil {
 		planned.kind, planned.served = KindNone, -1
@@ -208,7 +220,7 @@ func sequenceWaits(work issues.Work, held map[string]holds.Hold, now time.Time) 
 	inEpic := map[string][]issues.WorkTask{}
 	for _, task := range work.Tasks {
 		byID[task.ID] = task
-		if epic := epicOf(task.OverviewTask); work.Epics[epic].Sequential {
+		if epic := epicOf(task.OverviewTask); work.Epics[epic].Sequential && task.UnacceptedBy == "" {
 			inEpic[epic] = append(inEpic[epic], task)
 		}
 	}

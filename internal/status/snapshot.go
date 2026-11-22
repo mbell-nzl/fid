@@ -43,6 +43,9 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 		return issues.Overview{}, next.Result{}, nil, err
 	}
 	result := &Result{NeedsYou: []NeedsYouItem{}, Warnings: []Warning{}, merges: map[string]*mergerecord.ReviewState{}, approvals: map[string]decisionview.Approval{}}
+	if err := result.addUnaccepted(tx); err != nil {
+		return issues.Overview{}, next.Result{}, nil, err
+	}
 	tasks := append([]issues.OverviewTask{}, overview.InProgress.Tasks...)
 	for _, epic := range overview.InProgress.Epics {
 		tasks = append(tasks, epic.Tasks...)

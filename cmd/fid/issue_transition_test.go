@@ -417,6 +417,16 @@ func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
 
 			afterCounts := commandProjectionTableCounts(t, workspace)
 			for table, before := range beforeCounts {
+				if table == "issue_creators" && tt.name == "create" {
+					if afterCounts[table] != before+1 {
+						t.Fatalf("create must derive exactly one creator: before %d after %d", before, afterCounts[table])
+					}
+					creator := executeCommandForTest(workspace, "sql", fmt.Sprintf("SELECT actor FROM issue_creators WHERE issue_id='%s'", issueID))
+					if creator.err != nil || !strings.Contains(creator.stdout, "agent:developer") {
+						t.Fatalf("creation actor differs from canonical Event: %#v", creator)
+					}
+					continue
+				}
 				if table == "issues" || table == "activity_log" || table == "idempotency_results" || table == "issue_revisions" || table == "journal_events" {
 					continue
 				}

@@ -77,6 +77,7 @@ var declaredStringDomains = map[string]map[string]flagDomain{
 }
 
 var declaredIntegerDomains = map[string]map[string]flagDomain{
+	"rework allow": {"rounds": integerDomain("RESET 2.1b rework allowance", 1, 9223372036854775807)},
 	"issue create": {
 		"priority": integerDomain("P21 §4.1; P20 §3.2.1", 0, 5),
 		"sequence": integerDomain("P21 §4.1; P20 §3.2.1", 1, 2147483647),

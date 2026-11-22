@@ -38,6 +38,7 @@ func newDoneJourney(t *testing.T, lane string) *doneJourney {
 	closureRun(t, root, "git", "update-ref", "refs/remotes/origin/trunk", "HEAD")
 	created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--title", "Finish the task", "--lane", lane, "--actor", "agent:builder", "--idempotency-key", "create")
 	task := p21PathString(t, created, "result", "issue", "id")
+	p21Run(t, binary, root, "--json", "accept", task, "--actor", "human:mark")
 	took := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	hold := p21PathString(t, took, "result", "hold", "id")
 	p21Run(t, binary, root, "--json", "start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")

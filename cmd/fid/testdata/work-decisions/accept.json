@@ -1,0 +1,16 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "task.accept",
+  "result": {
+    "decisions": [
+      {
+        "accepted": true,
+        "decision_id": "PDN-<new>",
+        "issue_id": "FID-9f13aa",
+        "reason": "Approved discovered work"
+      }
+    ]
+  }
+}

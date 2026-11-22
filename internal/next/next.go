@@ -24,6 +24,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/questions"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/workrecord"
 )
 
 type Options struct {
@@ -42,17 +43,18 @@ type Options struct {
 // Result is what fid next shows. Hold and Event are set only when --claim
 // takes or keeps a hold; the rest serves the text.
 type Result struct {
-	Review    *doneeval.ReviewWork
-	Questions []questions.Question
-	Waiting   *Waiting
-	Answer    *questions.Answer
-	Kind      string
-	Worktree  string
-	Hold      *holds.Hold
-	Task      *issues.OverviewTask
-	Queue     []Entry
-	Event     *Event
-	Now       time.Time
+	Review          *doneeval.ReviewWork
+	Questions       []questions.Question
+	Waiting         *Waiting
+	Answer          *questions.Answer
+	ReworkAllowance *workrecord.Allowance
+	Kind            string
+	Worktree        string
+	Hold            *holds.Hold
+	Task            *issues.OverviewTask
+	Queue           []Entry
+	Event           *Event
+	Now             time.Time
 	// Served indexes the task handed out in Queue, or is -1.
 	Served int
 	// Claimed says the result is fid next --claim's.
@@ -197,6 +199,10 @@ func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result
 		if err != nil {
 			return Result{}, order{}, fmt.Errorf("read next: %w", err)
 		}
+		_, result.ReworkAllowance, err = workrecord.Allowances(conn, task.ID, 0)
+		if err != nil {
+			return Result{}, order{}, err
+		}
 		if len(history) > 0 {
 			result.Answer = history[len(history)-1].Answer
 		}
@@ -301,6 +307,9 @@ func (result Result) Fields() map[string]any {
 		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}
 	}
 	fields := map[string]any{"waiting": result.Waiting, "answer": result.Answer, "kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
+	if result.ReworkAllowance != nil {
+		fields["rework_allowance"] = result.ReworkAllowance
+	}
 	if result.Review != nil {
 		fields["review"] = result.Review
 	}

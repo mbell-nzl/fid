@@ -29,7 +29,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 
 	taskResult, taskEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Exercise retained journey", "--epic", epicID,
-		"--sequence", "1", "--priority", "1", "--actor", "agent:developer", "--idempotency-key", "p20-issue-create-task",
+		"--sequence", "1", "--priority", "1", "--actor", "human:mark", "--idempotency-key", "p20-issue-create-task",
 	)
 	p20AssertIdempotencyKey(t, taskResult, "p20-issue-create-task")
 	p20RememberEvent(t, eventIDs, taskEvent)
@@ -37,7 +37,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 
 	followUpResult, followUpEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Follow-up retained journey", "--epic", epicID,
-		"--sequence", "2", "--priority", "2", "--actor", "agent:developer", "--idempotency-key", "p20-issue-create-follow-up",
+		"--sequence", "2", "--priority", "2", "--actor", "human:mark", "--idempotency-key", "p20-issue-create-follow-up",
 	)
 	p20AssertIdempotencyKey(t, followUpResult, "p20-issue-create-follow-up")
 	p20RememberEvent(t, eventIDs, followUpEvent)

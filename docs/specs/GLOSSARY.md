@@ -664,6 +664,35 @@ Use when: recording or showing a person's call.
 Avoid: "Human Outcome", "Deviation" or "Attention Item", which it replaces,
 and confusing it with a Protected Decision, which is project prose.
 
+**Accepted work**
+Definition: A task or subtask a person created, or agent-created work a person
+accepted with `fid accept`. Agent-created open work has no date exception;
+`next` skips it as `not-accepted` and status requests acceptance under NEEDS YOU.
+Use when: distinguishing proposed discoveries from work a worker may take.
+Avoid: calling acceptance an approval of the code, or making it a task state.
+
+**Rework allowance**
+Definition: A person's task-bound decision adding a positive number of rounds
+to the frozen lane cap, without resetting the changes-requested count. Every
+allowance counts; the latest reason travels to the builder as guidance.
+Use when: a person explicitly permits more automatic rework for one task.
+Avoid: treating an allowance as fingerprint-bound or as a cap reset.
+
+**Finding answer and deferral**
+Definition: The proposed 2.1c builder/person response to an open finding. An
+answer records reasoning and closes nothing. Deferral of a minor or nit
+atomically files discovered work and closes the finding by naming that task;
+a major cannot be deferred. Agent-created deferred work requires acceptance.
+Use when: describing the remaining review-delivery design, pending 2.1c.
+Avoid: presenting these as commands implemented by 2.1b.
+
+**Posted review**
+Definition: The proposed 2.1c PR comment rendered from fid's canonical record,
+with its comment URL recorded in the journal. Failed posting remains pending;
+offline reads and task completion do not require successful delivery.
+Use when: describing review delivery still to be built in 2.1c.
+Avoid: a separately authored comment that can disagree with the ledger.
+
 **No other-model review**
 Definition: An Assured hand-off has no current primary or separate review
 round whose known model family differs from every builder's. Unknown agent
@@ -692,4 +721,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-11-22 (approval disclosure, RESET 2.3)*
+*Last updated: 2026-11-22 (accepted work and allowances, RESET 2.1b)*
