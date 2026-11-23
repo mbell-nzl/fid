@@ -25,7 +25,11 @@ type Completion struct {
 	CIResults []mergerecord.CIResult `json:"ci_results"`
 	Rounds    []reviewrecord.Round   `json:"rounds"`
 	Approval  *approvalrecord.Record `json:"approval"`
+	Waiver    *decisionview.Waiver   `json:"waiver,omitempty"`
 	Missing   []string               `json:"missing"`
+
+	requiredChecks []string
+	resultIDs      map[string]string
 }
 
 func (result Result) doneTask() bool {
@@ -63,6 +67,9 @@ func (result *Result) readCompletion(root string) error {
 	}
 	c.Handoff, err = completionRow[handoffrecord.Record](tx, c, "hand-off", `SELECT record_json FROM handoffs WHERE id=?`, c.HandoffID)
 	if err != nil {
+		return err
+	}
+	if err := result.readCompletionWaiver(tx); err != nil {
 		return err
 	}
 	c.Merge, err = completionRow[mergerecord.Merge](tx, c, "merge", `SELECT record_json FROM merge_observations WHERE id=?`, c.MergeID)
@@ -144,6 +151,9 @@ func (c *Completion) readReviews(conn reviewrecord.Queryer) error {
 }
 
 func (c *Completion) assured() bool {
+	if c.Waiver != nil {
+		return false
+	}
 	return c.Handoff != nil && c.Handoff.Lane == "assured" || c.Record != nil && (c.ApprovalID != "" || c.NoOtherModelReview)
 }
 
@@ -152,13 +162,9 @@ func (result *Result) completedChecks() {
 	if c == nil || c.Handoff == nil {
 		return
 	}
-	h := c.Handoff
-	for i, name := range h.RequiredChecks {
+	for _, name := range c.requiredChecks {
 		entry := Check{Name: name, Required: boolPointer(true), Satisfied: boolPointer(false)}
-		id := ""
-		if i < len(h.ResultIDs) {
-			id = h.ResultIDs[i]
-		}
+		id := c.resultIDs[name]
 		for _, r := range result.IssueView.Checks {
 			if r.Start.ID == id {
 				entry.Start, entry.Process, entry.Result = &r.Start, r.Process, r.Result
