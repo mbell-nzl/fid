@@ -12,7 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
-func completedShowFixture(t *testing.T, lane, model string) (*statusFixture, string, map[string]any) {
+func completedShowFixture(t *testing.T, lane, model string) (*statusFixture, string, map[string]any, map[string]any) {
 	t.Helper()
 	f, task, hold := doneBuildFixture(t, lane, false)
 	lifecycleResult(t, f.run(append([]string{"--json"}, doneHandoffArgs(hold)...)...), "task.handoff")
@@ -26,11 +26,12 @@ func completedShowFixture(t *testing.T, lane, model string) (*statusFixture, str
 		in["reviewer"].(map[string]any)["session_id"] = stream
 		lifecycleResult(t, recordReviewTask(t, f, in, stream, "human:courier", task), "review.record")
 	}
+	var approval map[string]any
 	if lane == "assured" {
-		approveSuccess(t, approveForTest(f, task, task+"\n", true))
+		approval = approveSuccess(t, approveForTest(f, task, task+"\n", true))["decision"].(map[string]any)
 	}
 	fields, _ := lifecycleResult(t, runDone(t, f, doneRunner(t, doneFacts(t, f, task), nil), "--json", "done", task, "--actor", "agent:finisher"), "task.done")
-	return f, task, fields["completion"].(map[string]any)
+	return f, task, fields["completion"].(map[string]any), approval
 }
 
 func TestShowCompletionReceipt(t *testing.T) {
@@ -45,7 +46,7 @@ func TestShowCompletionReceipt(t *testing.T) {
 	} {
 		t.Run(tc.lane+tc.model, func(t *testing.T) {
 			t.Parallel()
-			f, task, completion := completedShowFixture(t, tc.lane, tc.model)
+			f, task, completion, approval := completedShowFixture(t, tc.lane, tc.model)
 			// Move HEAD and make current policy/comparison unavailable. Finished work
 			// must still describe its historical passes and approval, offline.
 			writeBackupTestFile(t, filepath.Join(f.workspace, "later.txt"), "Later work\n")
@@ -89,6 +90,28 @@ func TestShowCompletionReceipt(t *testing.T) {
 			if (receipt["approval"] != nil) != (tc.lane == "assured") || receipt["no_other_model_review"] != tc.flag {
 				t.Fatalf("approval/flag: %v", receipt)
 			}
+			// Pin the top-level historical view to the decision returned by approve,
+			// even when its git objects and today's comparison are unavailable.
+			var wantApproval, wantDisclosure any
+			if tc.lane == "assured" {
+				if approval["decision_id"] != completion["approval_id"] {
+					t.Fatalf("completion names approval %v, want %v", completion["approval_id"], approval["decision_id"])
+				}
+				wantApproval = map[string]any{
+					"state":       "current",
+					"decision_id": approval["decision_id"],
+					"actor":       approval["actor"],
+					"at":          approval["at"],
+					"fingerprint": approval["binding"].(map[string]any)["fingerprint"],
+				}
+				wantDisclosure = tc.flag
+			}
+			if got, ok := shown["approval"]; !ok || !reflect.DeepEqual(got, wantApproval) {
+				t.Fatalf("historical top-level approval=%v (present=%t), want %v", got, ok, wantApproval)
+			}
+			if got, ok := shown["no_other_model_review"]; !ok || got != wantDisclosure {
+				t.Fatalf("historical top-level disclosure=%v (present=%t), want %v", got, ok, wantDisclosure)
+			}
 			checks := shown["checks"].([]any)
 			if len(checks) != 1 || checks[0].(map[string]any)["satisfied"] != true || checks[0].(map[string]any)["start"].(map[string]any)["id"] != handoff["result_ids"].([]any)[0] {
 				t.Fatalf("not the completed checks: %v", checks)
@@ -121,7 +144,7 @@ func TestShowCompletionMissingRecords(t *testing.T) {
 	for _, missing := range []string{"completion", "hand-off", "merge", "CI result", "review round", "approval", "check result"} {
 		t.Run(missing, func(t *testing.T) {
 			t.Parallel()
-			f, task, _ := completedShowFixture(t, "assured", "codex/gpt-6.1-sol")
+			f, task, _, _ := completedShowFixture(t, "assured", "codex/gpt-6.1-sol")
 			conn, err := reviewwork.OpenProjection(f.workspace)
 			if err != nil {
 				t.Fatal(err)
@@ -176,7 +199,7 @@ func TestShowCompletionNullOutsideDoneTasks(t *testing.T) {
 
 func TestShowCompletionSelectsNamedEvidence(t *testing.T) {
 	t.Parallel()
-	f, task, completion := completedShowFixture(t, "assured", "claude/opus-5.5")
+	f, task, completion, _ := completedShowFixture(t, "assured", "claude/opus-5.5")
 	before, _ := lifecycleResult(t, f.run("--json", "show", task), "issue.show")
 	conn, err := reviewwork.OpenProjection(f.workspace)
 	if err != nil {
@@ -215,7 +238,7 @@ func TestShowCompletionSelectsNamedEvidence(t *testing.T) {
 
 func TestShowCompletionLegacyFacts(t *testing.T) {
 	t.Parallel()
-	f, task, _ := completedShowFixture(t, "assured", "codex/gpt-6.1-sol")
+	f, task, _, _ := completedShowFixture(t, "assured", "codex/gpt-6.1-sol")
 	for _, query := range []string{
 		`UPDATE completions SET record_json=json_set(record_json,'$.fingerprint',json('{}'),'$.rollback_present',json('false'))`,
 		`UPDATE ci_results SET record_json=json_set(record_json,'$.url','')`,
