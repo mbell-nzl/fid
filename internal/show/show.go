@@ -80,6 +80,9 @@ func (result Result) Fields() map[string]any {
 		"kept":                  result.Kept,
 		"scheduling":            result.Scheduling,
 	}
+	if result.Approval.Waivers != nil {
+		fields["waivers"] = result.Approval.Waivers
+	}
 	if result.Merge != nil {
 		fields["merge"] = result.Merge
 	}

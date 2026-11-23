@@ -56,6 +56,7 @@ paths = [
   "internal/policy/**", "internal/pathglob/**",
   "internal/fingerprint/**",
   "internal/persondecision/**", "internal/approvalrecord/**", "internal/approvalwork/**", "cmd/fid/approve.go",
+  "internal/waiverrecord/**", "internal/waiverwork/**", "cmd/fid/waive.go",
   "internal/doneeval/**", "internal/donework/**", "internal/mergerecord/**", "internal/mergework/**",
   "internal/github/**",
   "internal/reviewrecord/**", "internal/reviewwork/**",

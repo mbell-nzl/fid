@@ -2950,7 +2950,7 @@ acceptance criteria open.
   first setting path and a count of others. A policy/comparison failure
   warns and retains the hand-off's explanation if known. No read writes.
 
-**Approved waiver design retained for proposed 2.2c (not built here):**
+**Approved waiver design (built by 2.2c, 2026-11-23):**
 `fid waive <task> --lane <routine|standard> --reason <text> --actor human:<id>
 --idempotency-key <key>` mirrors approve's interactive terminal requirement,
 confirmation, retries and text/JSON replies. It records a `person_decisions`
@@ -2994,6 +2994,47 @@ remain the follow-up builder's transactional choices.
   that the byte list agrees with the readable list. Other receipts need no
   extra byte list. This is required to honor the conservative unsupported
   path rule on replay, rather than changing its result after serialization.
+
+**Decided for 2.2c, 2026-11-23.**
+
+Built the approved waiver design above, in the Assured lane. A person in an
+interactive terminal confirms the task, hand-off lane, computed floor and
+setting paths, hard floor and paths, and target lane. A `waive` decision
+binds the target lane to the latest hand-off's algorithm, fingerprint, ID,
+base and head. Only algorithm and fingerprint decide currency. The latest
+matching waiver sets every lane-dependent done gate, including checks,
+review profiles, separate review, approval and rollback; it never edits the
+task lane or hand-off. An edit restores the hand-off lane's gates. Built-in
+hard floors cannot be waived. Show and status reuse `internal/decisionview`;
+show explains the waiver in Lane, approval becomes `not-required`, and
+status marks stale waivers. Both expose full waiver decisions with `current`.
+
+Implementation choices:
+
+- Event `task.waived`, command `task.waive`, aggregate `decision` sequence 1.
+  `person_decisions.binding_json` holds `lane` alongside the five fingerprint
+  fields; `binding_id` is the fingerprint. Migration 0038 extends the existing
+  decision constraints; cache version 20 triggers the normal rebuild. These
+  numbers follow main's 0037/19 and need renumbering if 2.1c or 2.1d merges
+  first. No dependency is added.
+- Refusal codes `waiver-not-in-review`, `waiver-handoff-required`,
+  `waiver-not-lower`, `waiver-hard-floor` use precondition, non-retryable,
+  with a `paths` array. Actor, terminal, reason, retry and cancellation
+  behavior mirrors approve, including optional retry keys.
+- `internal/waiverrecord` owns offline admission and currency;
+  `internal/waiverwork` owns the locked transaction. The latest hand-off reader
+  moved into `internal/handoffrecord`, with the existing review reader
+  delegating to it, so review admission can use waived profiles without a
+  package cycle. Historical profiles with no waivers need no new columns.
+- Matching decisions are considered newest first, preserving a waiver when
+  a previously waived change returns. New waiver packages and the command
+  join fid's configured Assured trust-boundary paths under the existing rule.
+- Shared admission enforces immutable decisions and typed binding/retry JSON
+  on append, replay and import. Export/import retain current waivers; V8
+  retains a waiver made stale by rework while keeping its existing Assured
+  completion evidence. Display remains read-only.
+
+Left for later: none discovered outside this task.
 
 **Decided for 2.1, 2026-11-22.**
 

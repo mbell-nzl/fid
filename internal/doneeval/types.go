@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 type Status string
@@ -138,6 +139,7 @@ type Snapshot struct {
 	ArtifactProblems  []checkread.ArtifactProblem
 	Rounds            []reviewrecord.RoundView // journal order, freshness/other-model from shared reader
 	OpenMajors        []reviewrecord.Finding   // task-wide, including stale rounds
+	Waiver            waiverrecord.View
 	Approval          approvalrecord.View
 	Merge             *mergerecord.Merge
 	CIResults         []mergerecord.CIResult

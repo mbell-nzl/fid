@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "task.done" || operation == "task.approve" || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "task.done" || (operation == "task.approve" || operation == "task.waive") || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -129,6 +129,7 @@ var p24PositionalNames = map[string][]string{"check.execute": {"names"},
 	"review.record": {"task"},
 	"task.done":     {"task"},
 	"task.approve":  {"task"},
+	"task.waive":    {"task"},
 	"finding.close": {"finding"},
 	"task.answer":   {"task", "text"},
 	"task.takeover": {"task"},
@@ -362,7 +363,7 @@ func p24ReverseJSON(request map[string]any) []byte {
 
 func p24RunCaptured(t *testing.T, workspace, binary, operation string, args ...string) (string, string, error) {
 	t.Helper()
-	if operation == "task.approve" {
+	if operation == "task.approve" || operation == "task.waive" {
 		return approvalCorpusCommand(t, workspace, binary, args...)
 	}
 	return closureRunCommand(workspace, binary, args...)

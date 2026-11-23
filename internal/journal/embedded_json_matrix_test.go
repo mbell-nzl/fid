@@ -65,13 +65,13 @@ func EmbeddedJSONMatrixForTest(t *testing.T) []EmbeddedJSONProbeForTest {
 				for _, column := range columns {
 					// These two destinations are JSON maps/slices of scalars. The other
 					// retained JSON columns have struct readers (binding_json is typed
-					// for approvals; other person decisions don't consume a binding).
+					// for fingerprint decisions; other person decisions keep their own shapes).
 					variants := map[string]string{
 						"exact":    `{"probe":1,"probe":2}`,
 						"overflow": `{"probe":1e999}`,
 						"depth":    `{"deep":` + strings.Repeat("[", 10_001) + "0" + strings.Repeat("]", 10_001) + "}",
 					}
-					if column != "names_json" && column != "request_field_digests_json" && (table != "person_decisions" || family == "task.approved") {
+					if column != "names_json" && column != "request_field_digests_json" && (table != "person_decisions" || family == "task.approved" || family == "task.waived") {
 						variants["fold"] = `{"probe":1,"PROBE":2}`
 					}
 					for _, placement := range []string{"pk", "values", "prior", "preconditions"} {

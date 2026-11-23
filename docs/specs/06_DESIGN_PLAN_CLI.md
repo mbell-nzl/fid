@@ -708,8 +708,13 @@ hand-offs. Otherwise it is `{"state":"missing"}`, or an object whose `state`
 is `current` or `stale`, with `decision_id`, `actor`, `at` (RFC3339), and
 `fingerprint` (the recorded fingerprint value). Freshness comes from
 `approvalrecord.Current` against the latest hand-off's fingerprint; an earlier
-approval of an identical change remains current. The state field also leaves
-room for a future `not-required` state for waivers, which is not implemented.
+approval of an identical change remains current. The state is also
+`not-required` when a current waiver lowers the gates. Show's Lane row names
+the waived lane and uses the shared current/stale decision presentation.
+When waivers exist, show and status's in-progress task JSON include `waivers`,
+an array of full decisions with `current` booleans. Status appends
+`stale waiver` to a task's verdict when no waiver matches the latest hand-off.
+An effective non-Assured lane does not request approval or separate review.
 `no_other_model_review` is a boolean for Assured hand-offs, null when not
 applicable or unknown. Both commands operate offline, without fetching.
 Unavailable current policy or comparison retains approval evidence from the
@@ -1040,7 +1045,7 @@ push" · Standard`. A lane-only update reads `updated issue FID-c2d4e5 ·
 Assured`. Agents may set or raise a lane, never lower it (`authority-denied`).
 A person may lower a todo task's lane as a planning correction. Otherwise
 lowering is refused as `transition-not-permitted`, unsatisfied
-`lane-lowering-requires-waiver`; `waive` remains the proposed 2.2c follow-up.
+`lane-lowering-requires-waiver` and names `fid waive` after hand-off.
 
 Start (`task.start`) validates the exact live hold under the write lock:
 existence, open/unexpired status, actor, and current worktree. It needs a
@@ -1687,6 +1692,45 @@ retained with that failure contract. The message names the missing Artifact.
 Availability updates never rewrite immutable check results or emit kernel
 readiness records.
 
+
+### `fid waive`
+
+```text
+fid waive <task> --lane <routine|standard> --reason <text> --actor human:<id> [--idempotency-key <key>] [--json]
+```
+
+The operation is `task.waive`; it accepts `--project`. As with approve, both
+standard input and standard error must be terminals, including on retries;
+stdout may be redirected for JSON. Agent and service actors receive
+`authority-denied`. A reason is required. The task must be in review with a
+latest hand-off. The target lane must be strictly below that hand-off's lane
+and never below its hard floor. `waiver-not-in-review`,
+`waiver-handoff-required`, `waiver-not-lower` and `waiver-hard-floor` are
+non-retryable precondition refusals with a `paths` array (the hard-floor paths
+when applicable, otherwise empty). Other input and terminal refusals use
+`invalid-argument`, as approve does.
+
+The confirmation on stderr shows the task, hand-off lane, floor and setting
+paths, hard floor and setting paths, and new lane. Only typing the exact task
+ID followed by Enter confirms. EOF or another answer cancels successfully
+without writing a decision or retry result. The immutable `task.waived` Event
+records a `person_decisions` entry of kind `waive`. Its `binding_json` contains
+`lane`, `algorithm`, `fingerprint`, `handoff_id`, `base` and `head`;
+`binding_id` is the fingerprint. Admission verifies state, reason, person,
+lower lane, hard floor, latest hand-off endpoints and decision attribution
+on live append, replay and import, with no git or terminal needed on replay.
+
+The latest decision matching the latest hand-off's algorithm and fingerprint
+sets done's effective lane. Unchanged re-hand-offs retain it; an edit makes it
+stale. It changes required checks and review profiles and the Assured gates
+(separate review, approval, rollback). Other gates, including open majors,
+merge and CI, still apply. Neither task lane nor hand-off changes. Review
+scheduling and admission use the same waived profiles. The JSON success
+contains `decision` and `occurred_at`, with the usual Event metadata. Text
+says `✓ Waived <task> · decision <decision>`. An identical retry returns the
+original response and Event without prompting or needing git objects; a
+changed task, actor, reason or target lane conflicts in the project-scoped
+`task.waive` idempotency scope.
 
 ### Approval (RESET 1.6g)
 

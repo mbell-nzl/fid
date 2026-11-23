@@ -62,7 +62,7 @@ func (result *Result) addReviewAction(root string, conn reviewrecord.Queryer, ta
 		return nil
 	}
 	kind, summary, action := "merge", task+": merge PR #"+handoffrecord.PRNumber(s.Handoff.PR), s.Handoff.PR
-	if s.Handoff.Lane == "assured" && s.Approval.State != "current" {
+	if s.EffectiveLane() == "assured" && s.Approval.State != "current" {
 		kind, summary = "approval", task+": approve, then merge PR #"+handoffrecord.PRNumber(s.Handoff.PR)
 		if reviewrecord.NoOtherModelReview(task, s.Rounds) {
 			summary += ", no other-model review"

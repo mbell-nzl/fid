@@ -25,13 +25,18 @@ import (
 // response only after its prompt has reached the terminal. stdout stays a pipe.
 func approvePublicForTest(t *testing.T, root, task, answer string, inputTTY, errorTTY, jsonMode bool, extra ...string) commandExecutionResult {
 	t.Helper()
+	return personPublicForTest(t, root, task, answer, inputTTY, errorTTY, jsonMode, "approve", extra...)
+}
+
+func personPublicForTest(t *testing.T, root, task, answer string, inputTTY, errorTTY, jsonMode bool, action string, extra ...string) commandExecutionResult {
+	t.Helper()
 	binary, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 	defer cancel()
-	args := []string{"approve", task, "--actor", "human:mark", "--reason", "Reviewed the full change"}
+	args := []string{action, task, "--actor", "human:mark", "--reason", "Reviewed the full change"}
 	if jsonMode {
 		args = append([]string{"--json"}, args...)
 	}
@@ -62,7 +67,7 @@ func approvePublicForTest(t *testing.T, root, task, answer string, inputTTY, err
 			n, err := leader.Read(chunk)
 			if n > 0 {
 				read.Write(chunk[:n])
-				if !sent && strings.Contains(read.String(), "Type "+task+" to approve: ") {
+				if !sent && strings.Contains(read.String(), "Type "+task+" to "+action+": ") {
 					sent = true
 					_, _ = io.WriteString(leader, answer)
 				}

@@ -14,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 // JSON text is an Event boundary, independent of the family or SQL operation.
@@ -67,6 +68,9 @@ var embeddedJSONTypes = map[string]reflect.Type{
 }
 
 func embeddedJSONType(event Event, table, column string) reflect.Type {
+	if table == "person_decisions" && column == "binding_json" && event.EventType == "task.waived" {
+		return reflect.TypeFor[waiverrecord.Binding]()
+	}
 	if table == "person_decisions" && column == "binding_json" && event.EventType == "task.approved" {
 		return reflect.TypeFor[approvalrecord.Binding]()
 	}
@@ -76,6 +80,8 @@ func embeddedJSONType(event Event, table, column string) reflect.Type {
 	switch event.EventType {
 	case "task.finished":
 		return reflect.TypeFor[completionrecord.Result]()
+	case "task.waived":
+		return reflect.TypeFor[waiverrecord.Result]()
 	case "task.approved":
 		return reflect.TypeFor[approvalrecord.Result]()
 	case "epic.closed":

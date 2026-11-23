@@ -110,8 +110,11 @@ func validateApproval(tx *sql.Tx, event Event) error {
 func validateApprovalDecisionEffect(tx *sql.Tx, event Event, e Effect) error {
 	for _, row := range []map[string]any{e.PK, e.Values, e.Preconditions, e.Prior} {
 		for column, value := range row {
-			if strings.EqualFold(column, "binding_json") && value != nil && (!event.IsV2() || (event.EventType != "task.approved" && event.EventType != "rework.allowed") || e.Op != "insert") {
+			if strings.EqualFold(column, "binding_json") && value != nil && (!event.IsV2() || (event.EventType != "task.approved" && event.EventType != "rework.allowed" && event.EventType != "task.waived") || e.Op != "insert") {
 				return fmt.Errorf("approval bindings require their Event-v2 family")
+			}
+			if strings.EqualFold(column, "kind") && value == "waive" && (!event.IsV2() || event.EventType != "task.waived") {
+				return fmt.Errorf("waiver decisions require their Event-v2 family")
 			}
 			if strings.EqualFold(column, "kind") && value == "approve" && (!event.IsV2() || event.EventType != "task.approved") {
 				return fmt.Errorf("approval decisions require their Event-v2 family")
@@ -123,7 +126,7 @@ func validateApprovalDecisionEffect(tx *sql.Tx, event Event, e Effect) error {
 		if err != nil {
 			return err
 		}
-		if found && values["kind"] == "approve" {
+		if found && (values["kind"] == "approve" || values["kind"] == "waive") {
 			return fmt.Errorf("approval decisions are immutable")
 		}
 	}

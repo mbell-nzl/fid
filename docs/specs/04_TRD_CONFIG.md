@@ -160,7 +160,7 @@ RESET 2.2b computes both the floor and the hard floor. A path matching an
 Assured rule takes precedence over Routine; an unsupported path is Assured.
 No changed paths means no floor, so the planned lane stands. Only the two
 built-in patterns set an unwaivable hard floor; `defined_by` and configured
-Assured paths are waivable in the proposed 2.2c follow-up.
+Assured paths can be waived by a person with `fid waive`.
 
 An unnamed `check` selects requirements at the higher of the task's lane and
 the floor. It never edits the task. Hand-off uses the same comparison and
@@ -168,8 +168,12 @@ raises the task's lane when needed, in the same Issue update that moves it
 to review. Its immutable receipt keeps the floor, the paths setting it, the
 hard floor and its paths, and the previous lane when raised. Later policy
 changes do not change that receipt. `done` checks the frozen policy's floor
-and keeps its existing lane-dependent gates. Fingerprint-bound waivers and
-their effects on those gates remain proposed 2.2c work.
+and applies a current fingerprint-bound waiver to every lane-dependent gate:
+checks, review profiles, separate review, approval and rollback. A waiver
+never edits the task lane or hand-off. Its latest matching algorithm and
+fingerprint determine currency; unchanged later hand-offs retain it and an
+edited change makes it stale. Without a current waiver the hand-off lane
+applies. The hard floor remains enforced against the frozen policy.
 
 Globs are anchored at the repo root and use `/` separators. `*` matches
 within a folder, `**` crosses folders, and `**/` can match zero folders:

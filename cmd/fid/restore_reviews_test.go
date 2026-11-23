@@ -15,6 +15,7 @@ import (
 func recordV8Reviews(t *testing.T, root, task string) {
 	t.Helper()
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-before-edit"))
+	waiveSuccess(t, waiveForTest(&statusFixture{t: t, workspace: root, clock: time.Now}, task, task+"\n", true, "--lane", "standard", "--idempotency-key", "v8-waiver-before-edit"))
 	var ids []string
 	reviewer := gittest.AddWorktree(t, root)
 	claimV8Review(t, reviewer, task)

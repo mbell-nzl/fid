@@ -656,8 +656,19 @@ win over Routine paths; unmatched paths are Standard; unsupported Git paths
 are Assured. No changed paths leaves the planned lane unchanged. Only
 `.fid.toml` and `.github/workflows/**` set unwaivable hard floors.
 Use when: explaining the checks selected before hand-off and a lane raised
-at hand-off. Fingerprint-bound waivers remain the proposed 2.2c follow-up.
+at hand-off. A person's fingerprint-bound waiver lowers the effective lane
+for done's gates, never below the hard floor; an edited change makes it stale.
 Avoid: treating a configured Assured path or a check's `defined_by` as hard.
+
+**Lane waiver**
+Definition: An immutable person's decision of kind `waive`, made with
+`fid waive` for an in-review task's latest hand-off. Its binding records the
+new lane, fingerprint algorithm and value, hand-off ID, base and head. Only
+the algorithm and fingerprint determine whether it is current. The latest
+current waiver sets done's effective lane; it never changes recorded lanes.
+Use when: a person deliberately lowers the gates for a particular change.
+Avoid: treating it as permission to waive `.fid.toml` or CI workflow floors,
+or as a permanent lowering of a task's lane.
 
 **Policy snapshot**
 Definition: fid's record of the policy it trusts: its source (`origin/<default

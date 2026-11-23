@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "waiver-not-lower",
+    "details": {
+      "paths": []
+    },
+    "message": "waiver lane must be strictly below the hand-off lane",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.waive"
+}

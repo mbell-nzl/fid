@@ -118,6 +118,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		expectations = append(expectations, failureCodeExpectation{code, CategoryPrecondition, retryable, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("gate"), stringDetail("reason"), stringsDetail("record_ids")}})
 	}
 	expectations = append(expectations, failureCodeExpectation{"github-unavailable", CategoryPrecondition, true, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("reason"), {name: "merged", kind: detailBooleanKind}}})
+	for _, code := range []Code{"waiver-not-in-review", "waiver-handoff-required", "waiver-not-lower", "waiver-hard-floor"} {
+		expectations = append(expectations, failureCodeExpectation{code, CategoryPrecondition, false, nil, []detailExpectation{stringsDetail("paths")}})
+	}
 	registered := RegisteredCodes()
 	if len(registered) != len(expectations) {
 		t.Fatalf("RegisteredCodes() length = %d, want %d", len(registered), len(expectations))
