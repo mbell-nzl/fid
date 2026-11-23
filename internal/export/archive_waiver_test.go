@@ -15,7 +15,7 @@ import (
 func waiverArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, h := handoffArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 38); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 39); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -23,7 +23,7 @@ func waiverArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.profile = 38
+	v.profile = 39
 	acceptMergeArchiveEvent(t, v, h)
 	at := time.Date(2026, 11, 10, 9, 7, 0, 0, time.UTC)
 	binding := waiverrecord.Binding{Lane: "routine", Algorithm: fingerprint.Algorithm, Fingerprint: strings.Repeat("f", 64), HandoffID: "HOF-100001", Base: strings.Repeat("b", 40), Head: strings.Repeat("a", 40)}

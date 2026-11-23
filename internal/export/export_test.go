@@ -76,24 +76,24 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	}
 }
 
-func TestSchema38ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
+func TestSchema39ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	addLeanArtifactExportFacts(t, source)
-	archivePath := filepath.Join(t.TempDir(), "schema38.zip")
+	archivePath := filepath.Join(t.TempDir(), "schema39.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archivePath}); err != nil {
 		t.Fatal(err)
 	}
-	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(38) {
-		t.Fatalf("manifest projection_schema = %v, want 38", got)
+	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(39) {
+		t.Fatalf("manifest projection_schema = %v, want 39", got)
 	}
 	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
-		t.Fatalf("validate schema-38 archive: %#v", err)
+		t.Fatalf("validate schema-39 archive: %#v", err)
 	}
-	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema38"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema39"}); err != nil {
 		t.Fatal(err)
 	}
 	entries := archiveContents(t, archivePath)

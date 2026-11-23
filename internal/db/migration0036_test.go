@@ -7,8 +7,8 @@ import (
 
 func TestReviewClaimsMigrationAndVersions(t *testing.T) {
 	t.Parallel()
-	if ActiveMigrationVersion != 38 || ProjectionSchemaVersion != 20 {
-		t.Fatalf("work decisions require migration 38 / cache 20; got %d / %d", ActiveMigrationVersion, ProjectionSchemaVersion)
+	if ActiveMigrationVersion != 39 || ProjectionSchemaVersion != 21 {
+		t.Fatalf("waivers and default conflicts require migration 39 / cache 21; got %d / %d", ActiveMigrationVersion, ProjectionSchemaVersion)
 	}
 	m, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
 	defer closeMigrator(t, m, conn)

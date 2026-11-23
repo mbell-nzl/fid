@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/defaultconflict"
 	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/holds"
@@ -17,10 +18,12 @@ import (
 )
 
 type reviewCandidate struct {
-	work   *doneeval.ReviewWork
-	claim  *reviewrecord.Claim
-	built  bool
-	capped bool
+	conflict    *defaultconflict.Record
+	unavailable string
+	work        *doneeval.ReviewWork
+	claim       *reviewrecord.Claim
+	built       bool
+	capped      bool
 }
 
 func readReviews(conn reviewrecord.Queryer, options Options, work issues.Work, now time.Time) (map[string]reviewCandidate, error) {
@@ -54,14 +57,35 @@ func readReviews(conn reviewrecord.Queryer, options Options, work issues.Work, n
 			// Keep an existing reviewer's worktree occupied even when its
 			// comparison objects are unavailable. Never start another task.
 			if _, ok := err.(*fingerprint.Failure); ok {
+				candidate.unavailable = err.Error()
 				reviews[task.ID] = candidate
 				continue
 			}
 			return nil, err
 		}
 		candidate.work = doneeval.DueReview(s)
-		if candidate.work == nil && candidate.claim == nil {
-			continue
+		awaiting, err := doneeval.AwaitingMerge(conn, s)
+		if err != nil {
+			return nil, err
+		}
+		if awaiting {
+			evidence, err := defaultconflict.Inspect(options.WorkspaceRoot, s.Handoff.ID, s.Handoff.Head)
+			if err != nil {
+				candidate.unavailable = err.Error()
+			}
+			if evidence != nil {
+				fp := s.Fingerprint
+				// Routine work may require no reviews, so the shared reader has no
+				// binding yet. A conflict still needs a complete historical receipt.
+				if fp.Algorithm == "" {
+					fp, err = fingerprint.Compute(options.WorkspaceRoot, s.Handoff.Base, s.Handoff.Head)
+				}
+				if err != nil {
+					candidate.unavailable = err.Error()
+				} else {
+					candidate.conflict = &defaultconflict.Record{Evidence: *evidence, Binding: fp}
+				}
+			}
 		}
 		if options.Actor != "" {
 			candidate.built, err = reviewrecord.BuiltBy(conn, task.ID, options.Actor)

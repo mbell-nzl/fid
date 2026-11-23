@@ -1877,6 +1877,10 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
    that head.
 4. **Two Later items.** Moving a task to another epic, and accepting every
    waiting task in one command (Later list, "From Mark (2026-11-23)").
+5. **fid's own rework cap is 5.** `.fid.toml` sets `rework_cap = 5` in
+   every lane: a builder gets rework for up to five rounds that asked for
+   changes before the task waits for a person (`fid rework allow`). fid's
+   built-in default stays 3. The policy change is its own Assured PR.
 
 **Decided for 1.9d, 2026-11-23.**
 
@@ -2950,7 +2954,7 @@ acceptance criteria open.
   first setting path and a count of others. A policy/comparison failure
   warns and retains the hand-off's explanation if known. No read writes.
 
-**Approved waiver design (built by 2.2c, 2026-11-23):**
+**Approved waiver design (built by 2.2c, 2026-11-24):**
 `fid waive <task> --lane <routine|standard> --reason <text> --actor human:<id>
 --idempotency-key <key>` mirrors approve's interactive terminal requirement,
 confirmation, retries and text/JSON replies. It records a `person_decisions`
@@ -2995,7 +2999,7 @@ remain the follow-up builder's transactional choices.
   extra byte list. This is required to honor the conservative unsupported
   path rule on replay, rather than changing its result after serialization.
 
-**Decided for 2.2c, 2026-11-23.**
+**Decided for 2.2c, 2026-11-24.**
 
 Built the approved waiver design above, in the Assured lane. A person in an
 interactive terminal confirms the task, hand-off lane, computed floor and
@@ -3013,10 +3017,10 @@ Implementation choices:
 
 - Event `task.waived`, command `task.waive`, aggregate `decision` sequence 1.
   `person_decisions.binding_json` holds `lane` alongside the five fingerprint
-  fields; `binding_id` is the fingerprint. Migration 0038 extends the existing
-  decision constraints; cache version 20 triggers the normal rebuild. These
-  numbers follow main's 0037/19 and need renumbering if 2.1c or 2.1d merges
-  first. No dependency is added.
+  fields; `binding_id` is the fingerprint. Migration 0039 extends the existing
+  decision constraints; cache version 21 triggers the normal rebuild. These
+  follow 2.1d's migration 0038 and cache version 20 in the stacked branch.
+  No dependency is added.
 - Refusal codes `waiver-not-in-review`, `waiver-handoff-required`,
   `waiver-not-lower`, `waiver-hard-floor` use precondition, non-retryable,
   with a `paths` array. Actor, terminal, reason, retry and cancellation
@@ -3033,6 +3037,12 @@ Implementation choices:
   on append, replay and import. Export/import retain current waivers; V8
   retains a waiver made stale by rework while keeping its existing Assured
   completion evidence. Display remains read-only.
+
+- Integration with 2.1d (2026-11-24) retains both Event families throughout
+  shared admission, embedded JSON, archive schema catalogs and V8. Default
+  conflicts retain schema 38; waivers first appear in schema 39. Status checks
+  merge conflicts before selecting the effective lane's approval action.
+  Both tasks' done marks and decision blocks remain.
 
 Left for later: none discovered outside this task.
 
@@ -3191,6 +3201,70 @@ it done; the proposed row and Later list preserve all remaining scope.
   the pre-scan. Live refusals leave journal bytes and projection unchanged,
   and the next valid write succeeds. Export/import and rebuild preserve both
   decisions and the absence of acceptance for pending discoveries.
+
+**Decided for 2.1d, 2026-11-23.**
+
+Built under Mark's delegation, for his review. Lane: Assured.
+
+- Deviation to keep the existing human-output check: status JSON gives the
+  exact `fid next --claim` action; human status says to take the task in its
+  builder's worktree with `fid next`. The check forbids the literal flag in
+  ordinary human output. No check is changed.
+- Eligibility is the shared `doneeval.ReviewsDone` predicate used by status's
+  approve/merge action, with no recorded merge, including 2.1's existing V5 person-closure exception
+  for a `CHANGES` round. A still-due primary or separate review never takes
+  this path. An Assured person's approval need not have happened yet.
+- `git merge-tree --write-tree --name-only -z --no-messages` tests the latest
+  hand-off head against the local `origin/HEAD` target, resolved by the same
+  helper as policy. Exit 1 with conflicting paths proves a conflict; exit 0
+  serves nothing. An unknown ref, missing commit or other git failure serves
+  nothing and `next --explain` describes unavailable local evidence. Lazy
+  fetching is disabled; fid never fetches. No checkout, index or ref changes.
+- Only the kept hand-off worktree gets kind `rework`. Optional `rework`
+  evidence names `default-conflict`, default ref/commit, hand-off, head and
+  conflicting paths; non-UTF-8 names retain their bytes alongside readable
+  paths. A conflict replaces the status approve/merge action with a
+  `default-conflict` item describing the builder's update. Clean approved
+  work remains reserved for review, including work with an open minor.
+- Migration 0038 adds immutable `default_conflicts` receipts, keyed by a
+  `DFC-<six-hex>` ID with task, kept hold and typed evidence JSON. The receipt
+  also retains the observed fingerprint for admission without git objects.
+  Routine work with no required reviews computes that binding when a
+  conflict is found, without creating a review round.
+  `task.default-conflict` is an Event-v2 work-actor family for `next.claim`,
+  with a `default-conflict` aggregate. Exactly three ordered Effects insert
+  the receipt, move its task `in_review` to `in_progress` with its next
+  revision, and set that hold's `rework_at`, atomically. The normal linked
+  `hold.taken` follows under the same write lock. If the process stops
+  between those Events, the reservation and cause remain available.
+  Existing allowance guidance and the task inspection action remain visible
+  for both causes of rework.
+- Shared admission binds the latest hand-off/head, task, kept hold, review
+  currency, command, actor type, aggregate and exact Effects. It checks the
+  recorded evidence shape on live append, replay and import, without
+  rerunning git. Other families cannot move the state or set `rework_at`.
+  A refused Event changes no journal bytes or projected rows; a subsequent
+  valid write works. Both catalogs include the family; archive schema is 38.
+  Cache version 20 forces existing projections to rebuild with migration
+  0038 before the first read or claim; a focused upgrade regression covers
+  an old schema-37 projection with a matching journal.
+- This return creates no round and charges no cap allowance. Only `CHANGES`
+  rounds count. The builder merges, checks and hands off again. Existing
+  fingerprint readers retain rounds and approval when unchanged and mark
+  both stale when changed; public-command tests cover both outcomes.
+- `fid-cli.v1` stays current; the `rework` fields are optional additions to
+  the loop contract and its selected-field goldens. The public integration
+  journey approves two tasks, merges the first into the local default,
+  returns the conflicting second to its builder, resolves, checks, hands
+  off, reviews and finishes it. Import into a repo without comparison
+  objects and V8's backup/wipe/restore retain the receipt.
+- Transactional choices: a shared origin resolver; one receipt table rather
+  than overloading review rounds; restoring the cause across an interrupted
+  claim; exact new-task state in the claim response. Import comparisons use
+  checkpoint Event identity/hash and schema/status, since archive chunk
+  filenames and byte offsets are local storage details. No dependency added.
+
+**Left for later:** none discovered within this task.
 
 **Decided for 2.3, 2026-11-21.**
 

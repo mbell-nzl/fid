@@ -63,7 +63,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
 				for column := range values {
 					if strings.EqualFold(column, "rework_at") && !validReworkColumn(event, effect, values[column]) {
-						return fmt.Errorf("rework reservation requires a review round")
+						return fmt.Errorf("rework reservation requires a review round or default conflict")
 					}
 					if strings.EqualFold(column, "model") && (!event.IsV2() || effect.Op != "insert" || (event.EventType != "hold.taken" && event.EventType != "task.taken-over")) {
 						return fmt.Errorf("build models require a validated Event-v2 hold insert")
@@ -109,6 +109,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("artifact availability requires Event-v2")
 		}
 		return nil
+	}
+	if event.EventType == "task.default-conflict" {
+		return validateDefaultConflict(tx, event)
 	}
 	if event.EventType == "work.accepted" || event.EventType == "rework.allowed" {
 		return validateWorkDecision(event, tx)

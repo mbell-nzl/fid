@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/decisionview"
+	"github.com/mbell-nzl/fid/internal/defaultconflict"
 	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
@@ -62,6 +63,12 @@ func (result *Result) addReviewAction(root string, conn reviewrecord.Queryer, ta
 		return nil
 	}
 	kind, summary, action := "merge", task+": merge PR #"+handoffrecord.PRNumber(s.Handoff.PR), s.Handoff.PR
+	if conflict, err := defaultconflict.Inspect(root, s.Handoff.ID, s.Handoff.Head); err == nil && conflict != nil {
+		summary = task + ": PR no longer merges into " + conflict.DefaultRef + "; its builder's worktree takes it back"
+		action = "fid next --claim in the builder's worktree"
+		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "default-conflict", Summary: summary, NextAction: &action, Subject: &Subject{Type: "task", ID: task}})
+		return nil
+	}
 	if s.EffectiveLane() == "assured" && s.Approval.State != "current" {
 		kind, summary = "approval", task+": approve, then merge PR #"+handoffrecord.PRNumber(s.Handoff.PR)
 		if reviewrecord.NoOtherModelReview(task, s.Rounds) {

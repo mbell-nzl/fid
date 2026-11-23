@@ -2,7 +2,7 @@ package issuestate
 
 // The fixed states of tasks and epics (ADR-0014; decisions record, 11
 // November 2026, item 3). fid's commands move them, and each move belongs to
-// one command's Event family. fid issue transition points at the owning
+// an owning command's Event family. fid issue transition points at the owning
 // command, and journal admission takes a move only from its owner's Event,
 // on live append, replay and import. Subtasks keep plain transitions.
 
@@ -21,7 +21,8 @@ const (
 
 type fixedMove struct{ kind, from, to string }
 
-// fixedMoves names the owner of every move of a task's or an epic's state.
+// fixedMoves names the original owner of each fixed state move. OwnsMove
+// also admits the default-conflict update as a second cause of rework.
 // From "" is creation. No command makes a move missing here.
 var fixedMoves = map[fixedMove]string{
 	{"task", "", "todo"}:                 FamilyCreate,
@@ -87,3 +88,9 @@ func FinishedCancellation(kind, from, to string) bool {
 }
 
 const FinishedWorkMessage = "finished work stays done; undoing merged work is a new task that follows the original PR's ## Rollback section"
+
+// OwnsMove includes the two admitted causes returning a task for rework.
+func OwnsMove(family, kind, from, to string) bool {
+	owner, ok := MoveOwner(kind, from, to)
+	return ok && (owner == family || owner == FamilyRework && family == "task.default-conflict")
+}

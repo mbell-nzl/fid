@@ -1065,3 +1065,16 @@ of historical Event references, which have no index in the live projection.
 A finished task or a closed epic cannot be cancelled: undoing merged work is
 a new task following the original PR's `## Rollback` section (Mark,
 2026-11-22).
+
+### Reset 2.1d - approved default conflicts
+
+Migration `0038_default_conflicts` adds immutable `default_conflicts`:
+`id` (PK, `DFC-<six-hex>`), `task_id` (Issue FK), `hold_id` (hold FK),
+`record_json` (typed conflict evidence plus observed fingerprint). A
+`task.default-conflict` Event-v2 inserts exactly one receipt, updates that
+same task from `in_review` to `in_progress`, and sets its own kept
+hand-off hold's `rework_at` atomically. Shared admission validates the
+latest hand-off/head, completed review gates, exact state/reservation
+Effects and evidence shape without local git. No review round is created.
+The following `hold.taken` preserves the existing linked-rework semantics.
+The down migration drops the receipt table; journal history is unchanged.
