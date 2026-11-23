@@ -321,7 +321,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"completions", "finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
+	for _, table := range []string{"default_conflicts", "completions", "finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -567,7 +567,7 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["questions"], `"resolution":"finished-before-answer"`) != 1 || strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 8 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 3 || strings.Count(before.reads["person decisions"], `"reason":"Test cancellation"`) != 1 || strings.Count(before.reads["person decisions"], `"reason":"Finished without delivery"`) != 2 || strings.Count(before.reads["person decisions"], `"kind":"close-epic"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 4 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 9 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 3 || strings.Count(before.reads["person decisions"], `"reason":"Test cancellation"`) != 1 || strings.Count(before.reads["person decisions"], `"reason":"Finished without delivery"`) != 2 || strings.Count(before.reads["person decisions"], `"kind":"close-epic"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 5 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {

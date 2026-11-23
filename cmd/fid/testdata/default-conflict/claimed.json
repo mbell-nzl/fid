@@ -1,0 +1,80 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<commit>-000005",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "next.claim",
+  "result": {
+    "answer": null,
+    "epic": {
+      "id": "FID-e3a1c0",
+      "progress": {
+        "done": 0,
+        "total": 1
+      },
+      "title": "Planned epic"
+    },
+    "hold": {
+      "actor": "agent:builder",
+      "expires_at": "2026-11-08T10:00:00Z",
+      "id": "HLD-<new>",
+      "last_heartbeat_at": "2026-11-08T09:00:00Z",
+      "model": "codex/gpt-6.1-sol",
+      "replaces": "HLD-aaaaaa",
+      "since": "2026-11-08T09:00:00Z",
+      "task_id": "FID-9f13aa"
+    },
+    "kind": "rework",
+    "queue": [
+      {
+        "id": "FID-9f13aa",
+        "title": "Harden login rate limiting",
+        "status": "in_progress",
+        "status_category": "started",
+        "epic_id": "FID-e3a1c0",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": [],
+        "reason": null,
+        "after": null,
+        "working": {
+          "hold_id": "HLD-<new>",
+          "worktree": "<ROOT>",
+          "here": true,
+          "actor": "agent:builder",
+          "model": "codex/gpt-6.1-sol",
+          "since": "2026-11-08T09:00:00Z",
+          "expires_at": "2026-11-08T10:00:00Z",
+          "last_heartbeat_at": "2026-11-08T09:00:00Z",
+          "lapsed": false
+        },
+        "kept": null,
+        "epic_blocked_by": []
+      }
+    ],
+    "rework": {
+      "cause": "default-conflict",
+      "default_ref": "origin/trunk",
+      "default_commit": "<commit-or-tree>",
+      "handoff_id": "HOF-<new>",
+      "head": "<commit-or-tree>",
+      "conflicting_paths": [
+        "notes.md"
+      ]
+    },
+    "task": {
+      "id": "FID-9f13aa",
+      "title": "Harden login rate limiting",
+      "status": "in_progress",
+      "status_category": "started",
+      "epic_id": "FID-e3a1c0",
+      "sequence": null,
+      "priority": null,
+      "blocked_by": []
+    },
+    "waiting": null,
+    "worktree": "<ROOT>"
+  }
+}

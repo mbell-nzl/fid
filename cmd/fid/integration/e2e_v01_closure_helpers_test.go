@@ -531,6 +531,7 @@ var closureProjectedTableQueries = []struct {
 	{name: "check_results", query: "SELECT * FROM check_results ORDER BY check_id"},
 	{name: "check_files", query: "SELECT * FROM check_files ORDER BY check_id,path"},
 	{name: "referenced_artifacts", query: "SELECT * FROM referenced_artifacts ORDER BY id"},
+	{name: "default_conflicts", query: "SELECT * FROM default_conflicts ORDER BY id"},
 	{name: "handoffs", query: "SELECT * FROM handoffs ORDER BY id"},
 	{name: "idempotency_results", query: "SELECT * FROM idempotency_results ORDER BY operation_scope,idempotency_key"},
 }

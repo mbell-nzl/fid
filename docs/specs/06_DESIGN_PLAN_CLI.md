@@ -353,6 +353,11 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   action is `fid approve <task> --actor human:<name> --reason <text>`.
   With current approval, or in other lanes, one `merge` item says
   `<task>: merge PR #<n>`, with the hand-off's PR URL as next action.
+  If that hand-off no longer merges into the local default branch, a
+  `default-conflict` item replaces this action: `<task>: PR no longer merges
+  into origin/<default>; its builder's worktree takes it back`. JSON names
+  `fid next --claim` there; human text says to take it with `fid next`.
+  This is local evidence only: fid never fetches.
   A recorded merge suppresses both items; the existing offline CI states
   apply. Completed tasks have neither. Each IN PROGRESS task's JSON keeps
   the same `approval` and `no_other_model_review` fields as show (below),
@@ -797,6 +802,22 @@ nothing stops:
    epic's, then a to-do epic's, then those with no open epic; within each,
    sequence, priority (lower first), creation and ID, a missing sequence or
    priority last.
+
+An approved task also returns to its kept builder worktree as `rework` when
+its latest hand-off head conflicts with local `origin/<default>`. Eligibility
+is the same satisfied review/majors gates as status's approve/merge action,
+including the existing V5 person-closure exception. A clean merge is never
+served. An unavailable ref or commit is not a conflict: `--explain` describes
+why the local comparison is unavailable. Other worktrees cannot take it.
+Optional `rework` JSON names `{cause: "default-conflict", default_ref,
+default_commit, handoff_id, head, conflicting_paths}`; non-UTF-8 paths also
+include base64 `conflicting_path_bytes`. `rework_unavailable`, when present,
+explains missing local evidence. The `fid-cli.v1` contract is unchanged.
+The builder merges the default branch, checks and hands off again. This
+return adds no review round or cap charge. Earlier rounds and approval stay
+current exactly while the new hand-off's fingerprint matches. A clean
+approved task cannot be taken back to fix an open minor; it needs an answer
+or deferral (2.1c).
 
 The order holds every unstarted task and every task with an open hold or kept work; a
 started task with neither a hold nor kept work is never handed out. A sequential epic serves one
@@ -1557,6 +1578,17 @@ before consulting current hand-offs or git; changed input, task or recorder
 gets `idempotency-conflict` (exit 4) naming the differing public fields.
 Corrupt stored responses are refused and never rendered as a review.
 Text success is `✓ Recorded review RND-a1b2c3 · primary · CHANGES`.
+
+`task.default-conflict` is the distinct Event-v2 family returning approved
+work after a local merge conflict. Its work actor runs `next.claim`, with a
+`default-conflict` aggregate and sequence 1, no retry result or repository
+payload. Three ordered Effects insert an immutable `default_conflicts`
+receipt, move the task to `in_progress` at its next revision, and set its
+kept hand-off hold's `rework_at`. Evidence names the default ref/commit,
+latest hand-off/head, conflicting paths and the observed fingerprint.
+Admission verifies shape and ownership on append, replay and import; only
+the live planner tests git. The linked `hold.taken` then uses normal rework.
+An interruption between the Events preserves both the reservation and cause.
 
 `review list` returns `{task_id, rounds: [...]}` in journal order and no
 Event. Each round contains its complete recorded fields, plus derived
