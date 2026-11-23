@@ -15,6 +15,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
@@ -53,6 +54,7 @@ func TestCompletionGoldens(t *testing.T) {
 			for _, ext := range []string{"txt", "json"} {
 				got := writeText(t, r, display.Renderer{})
 				assertRowsFitTheBox(t, got)
+				leaktest.AssertNoKernelWords(t, got)
 				if ext == "json" {
 					raw, err := json.MarshalIndent(r.Fields()["completion"], "", "  ")
 					if err != nil {

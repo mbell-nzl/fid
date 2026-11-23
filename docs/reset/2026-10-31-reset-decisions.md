@@ -3204,10 +3204,18 @@ migration, Event family, network call or write command.
 The orchestrator settled the completion-receipt design under Mark's delegation,
 for his review. The builder implemented it in `internal/show`, lane Standard.
 
+**Departure from the example, preserving the row's guarantee:** the existing
+V2 vocabulary guard rejects both `run` and `runs` in human output, including
+GitHub's `/actions/runs/` URL path. The first full test run caught that in
+`TestMergedOfflineReadsGolden`. Under the brief's closest-design delegation,
+text uses `CI ✓ success · #<id> on <commit>` and retains the CI URL in JSON
+only. This keeps result, identity and commit visible offline without changing
+or weakening the guard. The new text goldens use the same guard.
+
 - Done tasks get a Completed block after the header rows, before criteria and
   children. It names the completion's time, actor and ID; merged PR number,
-  commit and time; every counted CI run's conclusion, ID, commit and recorded
-  URL; the completed hand-off's ID and head; fingerprint; counted rounds'
+  commit and time; every counted CI run's conclusion, ID and commit; the
+  completed hand-off's ID and head; fingerprint; counted rounds'
   IDs, streams, verdicts, reviewer actors and models; and the Assured approval,
   recorded other-model disclosure and Rollback presence.
 - Checks use the exact required names and result IDs in that hand-off,
@@ -3216,9 +3224,9 @@ for his review. The builder implemented it in `internal/show`, lane Standard.
   Unfinished work retains those comparisons. Text uses the existing wrapping,
   escaping and local clock, with eight-character SHAs and fingerprints.
 - JSON's `completion` embeds the immutable completion fields and expands
-  `handoff`, `merge`, `ci_results`, `rounds`, `approval` and `missing`.
-  Timestamps and SHAs remain full. It is null outside done tasks, including
-  epics, subtasks and cancellation. No declared loop-contract field changes.
+  `handoff`, `merge_observation`, `ci_results`, `rounds`, `approval` and `missing`.
+  Timestamps, SHAs and recorded CI URLs remain full. It is null outside done
+  tasks, including epics, subtasks and cancellation. No declared loop-contract field changes.
 - Missing evidence rows remain explicit while other facts render. A missing
   completion row produces an object with empty expansions and a missing-record
   explanation. Missing fingerprints and reviewer models are explained too.
@@ -3228,7 +3236,9 @@ for his review. The builder implemented it in `internal/show`, lane Standard.
 completion. Existing exported readers load completion, rounds and approvals;
 small typed JSON queries read the exact hand-off, merge and CI IDs, because
 those packages expose latest/by-task readers rather than exact-ID readers.
-Only IDs named by completion are expanded, in recorded order; later records
+The JSON key `merge_observation` distinguishes the immutable observation
+from the existing `merge` pending-review state. Only IDs named by completion
+are expanded, in recorded order; later records
 cannot replace them. Top-level hand-off, floor and approval fields also use
 that historical evidence; the approval is historically current, and the
 recorded disclosure is reused. Done-task text moves Hand-off and Approval

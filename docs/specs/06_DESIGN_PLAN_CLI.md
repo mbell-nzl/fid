@@ -726,14 +726,17 @@ completion record and only the evidence IDs that record names:
 
 - Completion time, ID and `fid done` actor.
 - PR number, merge commit and merge time.
-- Each counted CI result's conclusion, run ID and commit, with its URL on
-  a following line when recorded. Multiple counted runs remain separate.
+- Each counted CI result's conclusion, run ID as `#<id>` and commit.
+  Multiple counted runs remain separate. Full CI URLs remain in JSON; text
+  omits them because the V2 vocabulary guard rejects `runs` in GitHub
+  Actions URL paths, along with the standalone noun `run`.
 - Completed hand-off ID and head, and the completion's fingerprint.
 - Each counted round's ID, stream, verdict, reviewer actor and model.
 - Assured approval's decision ID, person and time; the recorded
   `no other-model review` disclosure when true; `Rollback present` or
   `Rollback absent` as recorded.
 
+Text reads `CI ✓ success · #101 on <commit>` for a successful CI result.
 Text shortens commit SHAs and the fingerprint to eight characters. Times
 use the existing local clock format, adding the date when not today. Values
 wrap beneath the label and external text is escaped as in other show rows.
@@ -752,7 +755,7 @@ contains the completion record's typed fields (`id`, `task_id`, `handoff_id`,
 `no_other_model_review`, `actor`, `at`), plus these expansions:
 
 - `handoff`: the named hand-off record, or null.
-- `merge`: the named merge observation, or null, with `number`,
+- `merge_observation`: the named merge observation, or null, with `number`,
   `merge_commit` and `merged_at` among its fields.
 - `ci_results`: counted CI result records, including `id`, `run_id`,
   `head_sha`, `conclusion` and `url`.

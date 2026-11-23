@@ -40,7 +40,7 @@
     "definition_digests": null,
     "changed_paths": null
   },
-  "merge": {
+  "merge_observation": {
     "id": "MRG-aaaaaa",
     "task_id": "FID-aaaaaa",
     "handoff_id": "HOF-477dfd",

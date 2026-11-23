@@ -28,10 +28,7 @@ func (text textWriter) completion(result Result) []string {
 		if ci.Conclusion == "success" {
 			mark = "✓"
 		}
-		add(fmt.Sprintf("CI %s %s · run %d on %s", mark, ci.Conclusion, ci.RunID, short(ci.HeadSHA)))
-		if ci.URL != "" {
-			add(ci.URL)
-		}
+		add(fmt.Sprintf("CI %s %s · #%d on %s", mark, ci.Conclusion, ci.RunID, short(ci.HeadSHA)))
 	}
 	if h := c.Handoff; h != nil {
 		message := "Hand-off " + h.ID + " at " + short(h.Head)

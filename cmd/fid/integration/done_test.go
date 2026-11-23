@@ -163,7 +163,7 @@ func TestDoneBuiltBinaryStandardAndAssuredJourney(t *testing.T) {
 				t.Fatalf("show=%v %s", err, stderr)
 			}
 			shown := p23Envelope(t, shownJSON)
-			if p21PathString(t, shown, "result", "completion", "id") != p21PathString(t, r, "result", "completion", "id") || p21PathString(t, shown, "result", "completion", "merge", "merge_commit") != strings.Repeat("a", 40) {
+			if p21PathString(t, shown, "result", "completion", "id") != p21PathString(t, r, "result", "completion", "id") || p21PathString(t, shown, "result", "completion", "merge_observation", "merge_commit") != strings.Repeat("a", 40) {
 				t.Fatalf("show receipt=%v", shown)
 			}
 			checks := p21Path(t, shown, "result", "checks").([]any)

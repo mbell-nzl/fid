@@ -69,13 +69,13 @@ func TestShowCompletionReceipt(t *testing.T) {
 					t.Fatalf("receipt %s=%v, want %v", key, receipt[key], want)
 				}
 			}
-			merge := receipt["merge"].(map[string]any)
+			merge := receipt["merge_observation"].(map[string]any)
 			handoff := receipt["handoff"].(map[string]any)
 			if merge["number"] != float64(63) || merge["merge_commit"] != strings.Repeat("a", 40) || handoff["id"] != completion["handoff_id"] {
 				t.Fatalf("wrong completed change: %v", receipt)
 			}
 			ci := receipt["ci_results"].([]any)
-			if len(ci) != 1 || ci[0].(map[string]any)["conclusion"] != "success" || ci[0].(map[string]any)["head_sha"] != merge["merge_commit"] {
+			if len(ci) != 1 || ci[0].(map[string]any)["conclusion"] != "success" || ci[0].(map[string]any)["head_sha"] != merge["merge_commit"] || ci[0].(map[string]any)["url"] != "https://github.com/mbell-nzl/fid/actions/runs/101" {
 				t.Fatalf("wrong CI: %v", ci)
 			}
 			rounds := receipt["rounds"].([]any)
@@ -258,7 +258,7 @@ func TestShowCompletionAllCountedCIRuns(t *testing.T) {
 	}
 	out := f.run("show", task)
 	text := strings.Join(strings.Fields(out.stdout), " ")
-	if out.err != nil || !strings.Contains(text, "run 101") || !strings.Contains(text, "run 202") || strings.Contains(text, "run 203") {
+	if out.err != nil || !strings.Contains(text, "#101") || !strings.Contains(text, "#202") || strings.Contains(text, "#203") {
 		t.Fatal(out)
 	}
 }

@@ -21,7 +21,7 @@ import (
 type Completion struct {
 	*completionrecord.Record
 	Handoff   *handoffrecord.Record  `json:"handoff"`
-	Merge     *mergerecord.Merge     `json:"merge"`
+	Merge     *mergerecord.Merge     `json:"merge_observation"`
 	CIResults []mergerecord.CIResult `json:"ci_results"`
 	Rounds    []reviewrecord.Round   `json:"rounds"`
 	Approval  *approvalrecord.Record `json:"approval"`
