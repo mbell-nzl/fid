@@ -29,11 +29,25 @@ func ReadWaivers(root string, conn reviewrecord.Queryer, h handoffrecord.Record)
 	if err != nil {
 		return nil, err
 	}
+	return waiverViews(records, fp), nil
+}
+
+// ReadRecordedWaivers presents currency against an immutable completion's
+// fingerprint, without needing its git objects or today's comparison.
+func ReadRecordedWaivers(conn reviewrecord.Queryer, task string, fp fingerprint.Result) ([]Waiver, error) {
+	records, err := waiverrecord.Read(conn, task)
+	if err != nil || len(records) == 0 {
+		return nil, err
+	}
+	return waiverViews(records, fp), nil
+}
+
+func waiverViews(records []waiverrecord.Record, fp fingerprint.Result) []Waiver {
 	result := make([]Waiver, 0, len(records))
 	for _, r := range records {
 		result = append(result, Waiver{Record: r, Current: r.Matches(fp)})
 	}
-	return result, nil
+	return result
 }
 
 // LatestWaiver prefers the most recent current decision, as done does.

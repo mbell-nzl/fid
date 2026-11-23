@@ -3052,6 +3052,11 @@ Implementation choices:
   merge conflicts before selecting the effective lane's approval action.
   Both tasks' done marks and decision blocks remain.
 
+- A waived done task's receipt resolves the latest matching waiver from its
+  recorded fingerprint and selects checks from the hand-off's frozen policy;
+  Lane, Completed, approval and rollback show the waived requirements offline,
+  even without git objects, while the task and hand-off retain their lanes.
+
 Left for later: none discovered outside this task.
 
 **Decided for 2.1, 2026-11-22.**

@@ -55,4 +55,3 @@ CREATE TABLE finding_closures (
 
 INSERT INTO finding_closures SELECT * FROM finding_closures_saved;
 DROP TABLE finding_closures_saved;
-

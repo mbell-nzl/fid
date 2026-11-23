@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/decisionview"
 	"github.com/mbell-nzl/fid/internal/display"
 )
 
@@ -39,6 +40,9 @@ func (text textWriter) completion(result Result) []string {
 	} else if c.Record != nil && c.Fingerprint.Fingerprint != "" {
 		add("fingerprint " + short(c.Fingerprint.Fingerprint))
 	}
+	if w := c.Waiver; w != nil {
+		add("Waiver to " + w.Binding.Lane + " · " + w.View().Text("waived an earlier change"))
+	}
 	for _, round := range c.Rounds {
 		model := round.Reviewer.Model
 		if model == "" {
@@ -52,6 +56,8 @@ func (text textWriter) completion(result Result) []string {
 	}
 	if a := c.Approval; a != nil {
 		add("Approval ✓ " + a.ID + " " + a.Actor + " · " + display.Clock(a.At, result.Now))
+	} else if c.Waiver != nil {
+		add("Approval " + (decisionview.View{State: "not-required"}).Text(""))
 	}
 	if c.Record != nil && c.NoOtherModelReview {
 		add("no other-model review")
