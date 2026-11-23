@@ -1850,6 +1850,34 @@ Mark made these decisions on 2026-11-22, after 1.9b (#97), 2.2b (#98) and
    "upgraded at each epic close or when a merged fix is needed" (Decided
    2026-11-17, item 3).
 
+## Decided 2026-11-23
+
+Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
+
+1. **1.9d: journal test time, before 2.1c.** 1.9c's generated
+   malformed-JSON matrix sends 1,220 probes through seven journal paths.
+   `internal/journal` took 530 s of Go's 600 s default in `make test`, and
+   GitHub CI timed it out at 20 minutes on #103's head. The full matrix
+   moves to the shared validators, with one probe per map and variant
+   through each path and import. No timeout or check definition changes.
+2. **2.1c joins the reset, before 2.5.** Mark accepted the proposed row
+   (answers and deferrals; fid posts each round to the PR from its own
+   record). 2.5's loop then needs no posting code of its own.
+3. **2.1d: updating an approved task whose PR stopped merging,** before
+   2.5. Until now only a round asking for changes gave a builder its
+   worktree back, so a PR that stopped merging after approval needed a
+   review round to find the conflict (#101 and #103). When the latest
+   hand-off's head no longer merges cleanly into the local
+   `origin/<default>`, which fid tests with git and never fetches, the
+   builder's worktree gets the task back as rework without a round. It
+   merges the default branch, runs `fid check` and hands off again. Rounds
+   and the approval stay current only while the fingerprint is unchanged.
+   A builder can't otherwise take an approved task back to fix an open
+   minor: it answers or defers it (2.1c), so an approval keeps meaning
+   that head.
+4. **Two Later items.** Moving a task to another epic, and accepting every
+   waiting task in one command (Later list, "From Mark (2026-11-23)").
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -3407,6 +3435,8 @@ such a task waits for Mark to accept it; until then the epic's wait for
   passed with journal at 529.577s and export at 193.163s. Journal still misses
   the requested under-300s aim and has about 70s before Go's unchanged 600s
   default. Further headroom needs profiling; no timeout was raised.
+  Became RESET 1.9d (Mark, 2026-11-23), after GitHub CI timed the package
+  out at 20 minutes on #103's head.
 
 - From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state
@@ -3414,6 +3444,16 @@ such a task waits for Mark to accept it; until then the epic's wait for
   prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
   its remaining grammar or harden those scalar updates before supporting
   such history as operational data.
+- From Mark (2026-11-23): move a task to another epic. Since 1.9c an
+  Issue's parent can't change on the general update path, so moving a
+  Later item into phase 2 (1.9d) meant filing it again and cancelling the
+  old one. A dedicated command and Event, admitted on every journal path:
+  the target is an open epic, done or cancelled tasks don't move, epic
+  sequences and blocks links stay valid, actor and reason recorded.
+- From Mark (2026-11-23): accept every waiting task in one command (for
+  example `fid accept --all`, or by epic), listing what it accepts and
+  recording one decision each; agents stay refused. `fid accept` takes
+  explicit IDs only.
 - From this PR (2.1b): proposed RESET 2.1c, the remaining review-delivery
   scope after the brief's size split: builder/person answers to open findings
   without closing them; atomic minor/nit deferral into a discovered task, link,
