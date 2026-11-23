@@ -1877,6 +1877,10 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
    that head.
 4. **Two Later items.** Moving a task to another epic, and accepting every
    waiting task in one command (Later list, "From Mark (2026-11-23)").
+5. **fid's own rework cap is 5.** `.fid.toml` sets `rework_cap = 5` in
+   every lane: a builder gets rework for up to five rounds that asked for
+   changes before the task waits for a person (`fid rework allow`). fid's
+   built-in default stays 3. The policy change is its own Assured PR.
 
 ## Products
 
