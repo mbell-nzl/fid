@@ -3,6 +3,7 @@ package reviewpost
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,6 +19,8 @@ type Result struct {
 	Posted  []string `json:"posted"`
 	Pending []string `json:"pending"`
 }
+
+var errReceiptCommit = errors.New("commit review post receipt")
 
 // Round also retries answers and deferrals to that round's findings. Posting
 // failures leave the canonical records intact and their derived queue pending.
@@ -56,8 +59,14 @@ func Round(ctx context.Context, root, migrations, round string, run github.Runne
 			return err
 		}
 		_ = rows.Close()
-		for _, id := range ids {
+		for i, id := range ids {
 			if err := post(ctx, lock, conn, id, run); err != nil {
+				if errors.Is(err, errReceiptCommit) {
+					// A receipt may already be appended but not projected. Leave
+					// the checkpoint behind it so the next invocation catches up.
+					result.Pending = append(result.Pending, ids[i:]...)
+					break
+				}
 				result.Pending = append(result.Pending, id)
 			} else {
 				result.Posted = append(result.Posted, id)
@@ -95,7 +104,10 @@ func post(ctx context.Context, lock *journal.WriteLock, conn *sql.DB, id string,
 	now := time.Now().UTC().Truncate(time.Second)
 	e := journal.Event{EventSchema: 2, EventType: "review.posted", CommandName: "review.post", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "fid-review-post", ActorType: "service", Producer: "fid", ProvenanceRef: "fid:review-post"}, Aggregate: journal.Aggregate{ID: id, Type: "review-post", Sequence: 1}, Effects: []journal.Effect{{Op: "insert", Table: "review_posts", PK: map[string]any{"id": id}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": url, "render_version": reviewcomment.RenderVersion, "digest": reviewcomment.Digest(s.Body), "posted_at": now.Format(time.RFC3339)}}}}
 	_, err = journal.CommitEvent(lock, conn, e)
-	return err
+	if err != nil {
+		return fmt.Errorf("%w: %w", errReceiptCommit, err)
+	}
+	return nil
 }
 
 func Pending(conn reviewrecord.Queryer) (map[string][]string, error) {

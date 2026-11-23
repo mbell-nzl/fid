@@ -3209,6 +3209,9 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   A matching marker with edited body refuses rather than posting a second
   comment. The API listing, output and request duration are bounded. The body
   travels in a private temporary file, removed after use; no shell evaluates it.
+  A receipt commit failure stops the batch and leaves remaining records pending;
+  the next retry catches up the projection before any later receipt can advance
+  its checkpoint past an appended but unprojected receipt.
 - Pending delivery is derived from canonical records without receipts. Offline
   status warns once per affected round, with pending IDs and `fid review post`;
   it adds no NEEDS YOU item. `status`, `show`, `next` and review list stay offline,

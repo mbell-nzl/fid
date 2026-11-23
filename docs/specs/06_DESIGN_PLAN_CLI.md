@@ -1717,6 +1717,9 @@ pending: [ids]}` without a single Event in the response (each successful post
 has its own receipt Event). Text prints each posted or pending ID. An unknown
 round is `invalid-argument`, with argument `round` and allowed input
 `a recorded review round`; transport failures return pending IDs.
+If committing a receipt fails, delivery stops with that record and the remaining
+records pending. The next retry refreshes the projection before posting further
+receipts, recovering a receipt appended before its projection failed.
 
 Failed delivery never rolls back a canonical recording or blocks `done`.
 Status derives `review-post-pending` warnings, naming each round, its pending
