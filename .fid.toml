@@ -36,12 +36,16 @@ when_changed = ["cmd/**", "internal/**", "migrations/**", "go.mod", "go.sum"]
 # A change's lane floor is the highest lane any committed changed path needs.
 # A path in no list is Standard. .fid.toml and .github/workflows/** are
 # always Assured; that's built into fid and can't be waived.
+# rework_cap: rounds that asked for changes before the builder waits for a
+# person (`fid rework allow`). fid's default is 3; Mark set 5 (2026-11-23).
 [lanes.routine]
 paths = ["docs/**", "**/*.md"]
 checks = ["fmt", "lint", "test", "build"]
+rework_cap = 5
 
 [lanes.standard]
 checks = ["fmt", "lint", "test", "build", "integration"]
+rework_cap = 5
 
 # No token_budget until 2.6 has usage data to set it from (ADR-0014).
 [lanes.assured]
@@ -60,6 +64,7 @@ paths = [
   "internal/issuestate/**",
 ]
 checks = ["fmt", "lint", "test", "build", "integration"]
+rework_cap = 5
 
 # Changes to these paths need a test-adequacy review in every lane.
 [review]
