@@ -649,6 +649,17 @@ and fid records the policy in force at that point.
 Use when: saying which results and which policy a review and `done` rely on.
 Avoid: the retired V1 `handoff` document (Retired Product Terms).
 
+**Completion receipt**
+Definition: The immutable evidence `fid done` accepted when finishing a task:
+its hand-off and checked head, merge and CI results, counted review rounds,
+approval, fingerprint, Rollback observation, other-model disclosure, actor
+and time. `fid show` expands the named records offline in its Completed block
+and JSON `completion` object; missing historical records are explicit.
+Use when: explaining what a done task completed with, independently of the
+current HEAD or policy.
+Avoid: treating it as a fresh check or a new approval, or applying it to an
+epic's person-recorded close.
+
 **Lane floor**
 Definition: The highest lane required by the committed changed paths between
 HEAD and its merge-base with the local origin default branch. Assured rules
@@ -749,4 +760,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-11-22 (accepted work and allowances, RESET 2.1b)*
+*Last updated: 2026-11-23 (completion receipt, RESET 2.3b)*

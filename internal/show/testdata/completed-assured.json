@@ -1,0 +1,142 @@
+{
+  "id": "CMP-f1ab58",
+  "task_id": "FID-aaaaaa",
+  "handoff_id": "HOF-477dfd",
+  "merge_id": "MRG-aaaaaa",
+  "observed_ci_result_ids": [
+    "CIR-aaaaaa"
+  ],
+  "ci_result_ids": [
+    "CIR-aaaaaa"
+  ],
+  "round_ids": [
+    "RND-517555",
+    "RND-8e5e05"
+  ],
+  "approval_id": "PDN-c10c3e",
+  "fingerprint": {
+    "algorithm": "patch-id-verbatim-per-file-v1",
+    "fingerprint": "2222222222222222222222222222222222222222222222222222222222222222",
+    "base": "0000000000000000000000000000000000000000",
+    "head": "1111111111111111111111111111111111111111"
+  },
+  "rollback_present": true,
+  "no_other_model_review": false,
+  "actor": "agent:orchestrator",
+  "at": "2026-11-23T02:47:00Z",
+  "handoff": {
+    "id": "HOF-477dfd",
+    "pr": "https://github.com/owner/repo/pull/101",
+    "head": "1111111111111111111111111111111111111111",
+    "base": "0000000000000000000000000000000000000000",
+    "required_checks": [],
+    "result_ids": [],
+    "at": "2026-11-23T02:47:00Z",
+    "task_id": "FID-aaaaaa",
+    "hold_id": "",
+    "actor": "",
+    "tree": "",
+    "lane": "assured",
+    "policy_snapshot": 0,
+    "definition_digests": null,
+    "changed_paths": null
+  },
+  "merge_observation": {
+    "id": "MRG-aaaaaa",
+    "task_id": "FID-aaaaaa",
+    "handoff_id": "HOF-477dfd",
+    "pr": "https://github.com/owner/repo/pull/101",
+    "number": 101,
+    "repository": "owner/repo",
+    "base_branch": "main",
+    "merge_commit": "3333333333333333333333333333333333333333",
+    "head_sha": "1111111111111111111111111111111111111111",
+    "head_tree": "",
+    "merged_at": "2026-11-23T02:46:00Z",
+    "observed_at": ""
+  },
+  "ci_results": [
+    {
+      "id": "CIR-aaaaaa",
+      "task_id": "",
+      "merge_id": "",
+      "repository": "",
+      "run_id": 45102091114,
+      "attempt": 0,
+      "workflow_id": 0,
+      "name": "",
+      "path": "",
+      "event": "",
+      "head_sha": "3333333333333333333333333333333333333333",
+      "status": "",
+      "conclusion": "success",
+      "url": "https://github.com/owner/repo/actions/runs/45102091114",
+      "observed_at": ""
+    }
+  ],
+  "rounds": [
+    {
+      "id": "RND-517555",
+      "task_id": "",
+      "handoff_id": "",
+      "reviewer": {
+        "actor": "agent:claude-reviewer",
+        "model": "anthropic/claude-opus-5-5",
+        "session_id": ""
+      },
+      "stream": "primary",
+      "profiles": null,
+      "verdict": "APPROVE",
+      "purpose": "",
+      "findings": null,
+      "verification": "",
+      "binding": {
+        "algorithm": "",
+        "fingerprint": "",
+        "base": "",
+        "head": ""
+      },
+      "recorded_by": "",
+      "at": ""
+    },
+    {
+      "id": "RND-8e5e05",
+      "task_id": "",
+      "handoff_id": "",
+      "reviewer": {
+        "actor": "agent:sol-reviewer",
+        "model": "openai/gpt-6.1-sol",
+        "session_id": ""
+      },
+      "stream": "separate",
+      "profiles": null,
+      "verdict": "APPROVE",
+      "purpose": "",
+      "findings": null,
+      "verification": "",
+      "binding": {
+        "algorithm": "",
+        "fingerprint": "",
+        "base": "",
+        "head": ""
+      },
+      "recorded_by": "",
+      "at": ""
+    }
+  ],
+  "approval": {
+    "decision_id": "PDN-c10c3e",
+    "task_id": "",
+    "actor": "human:mark",
+    "reason": "",
+    "at": "2026-11-23T02:44:00Z",
+    "binding": {
+      "algorithm": "",
+      "fingerprint": "",
+      "handoff_id": "",
+      "base": "",
+      "head": ""
+    }
+  },
+  "missing": []
+}

@@ -36,6 +36,9 @@ func WriteText(w io.Writer, result Result, renderer display.Renderer) error {
 	if rows := text.rows(result); len(rows) > 0 {
 		blocks = append(blocks, rows)
 	}
+	if result.Completion != nil {
+		blocks = append(blocks, text.completion(result))
+	}
 	if len(result.Issue.AcceptanceCriteria) > 0 {
 		blocks = append(blocks, text.criteria(result.Issue.AcceptanceCriteria))
 	}
@@ -137,10 +140,12 @@ func (text textWriter) rows(result Result) []string {
 			lane = strings.ToUpper(lane[:1]) + lane[1:]
 		}
 		lines = append(lines, text.value("Lane", result.laneText(lane))...)
-		lines = append(lines, text.approval(result)...)
+		if !result.doneTask() {
+			lines = append(lines, text.approval(result)...)
+		}
 	}
 	lines = append(lines, text.checks(result)...)
-	if handoff := result.Handoff; handoff != nil {
+	if handoff := result.Handoff; handoff != nil && !result.doneTask() {
 		checks := "no checks required"
 		if len(handoff.RequiredChecks) > 0 {
 			checks = strings.Join(handoff.RequiredChecks, ", ") + " passed"

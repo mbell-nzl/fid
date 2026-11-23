@@ -639,8 +639,8 @@ every read, records no Event and makes no network calls. Text output is
     column, with its state;
   - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored;
   - `Lane`: on a task, `Routine`, `Standard`, `Assured`, or `not set`;
-  - `Approval`: after Lane, when the latest hand-off's lane is Assured,
-    including a lane raised by its floor. `○ missing` means no approval
+  - `Approval`: after Lane, on unfinished tasks when the latest hand-off's
+    lane is Assured, including a lane raised by its floor. `○ missing` means no approval
     exists. A current approval reads `✓ <decision> <actor> · <at>`; a stale
     one reads `⚠ stale · <decision> <actor> · <at> · approved an earlier change`.
     Current is green, stale yellow, missing muted when colour is enabled.
@@ -658,8 +658,9 @@ every read, records no Event and makes no network calls. Text output is
 
   Labels are 10 columns wide after the two-space indent, so values begin
   at column 14. Checks follows `Approval` (or `Lane` when approval does not
-  apply); later tasks add reviews and next as the last, a NEEDS YOU block
-  under the heading, and an epic's plan and validations.
+  apply). Done tasks use their completion receipt below; later tasks add
+  next as the last, a NEEDS YOU block under the heading, and an epic's plan
+  and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
   mark, the ID, two spaces, the title cut with `…`, and the right-hand
   text flush to column 70, or on a line of its own beneath when it would
@@ -678,8 +679,8 @@ every read, records no Event and makes no network calls. Text output is
   `status` does. A subtask has no children.
 - Sequence, revision, workflow ID and times appear only in the JSON's
   `issue`. Neither text nor JSON shows open concerns, triage status, the
-  owner role or actor (apart from actors in Working and Approval), or links other than
-  `blocks` and `blocked_by`.
+  owner role or actor (apart from actors in Working, Approval and Completed),
+  or links other than `blocks` and `blocked_by`.
 - Text fid didn't write is escaped, fitted and wrapped as in `status`,
   and long text pages as `status`'s does.
 
@@ -695,6 +696,7 @@ The `issue.show` JSON result holds everything, with a null `event`:
  "kept": null,
  "checks": [],
  "checks_base": null,
+ "completion": null,
  "approval": null,
  "no_other_model_review": null,
  "warnings": [],
@@ -708,7 +710,7 @@ The `issue.show` JSON result holds everything, with a null `event`:
                "priority": null, "blocked_by": []}]}
 ```
 
-Approval's JSON is null before a task's first hand-off and for non-Assured
+For unfinished tasks, approval's JSON is null before the first hand-off and for non-Assured
 hand-offs. Otherwise it is `{"state":"missing"}`, or an object whose `state`
 is `current` or `stale`, with `decision_id`, `actor`, `at` (RFC3339), and
 `fingerprint` (the recorded fingerprint value). Freshness comes from
@@ -722,6 +724,65 @@ recorded endpoints. If those endpoints cannot be fingerprinted locally, an
 `approval-unavailable` warning names the task and problem; unknown approval
 and disclosure fields are null. An absence of approvals or reviews remains
 known without those objects. Neither command writes an approval or any Event.
+
+For a **done task**, a `Completed` block follows the header rows and precedes
+acceptance criteria and children (RESET 2.3b). It expands the immutable
+completion record and only the evidence IDs that record names:
+
+- Completion time, ID and `fid done` actor.
+- PR number, merge commit and merge time.
+- Each counted CI result's conclusion, run ID as `#<id>` and commit.
+  Multiple counted runs remain separate. Full CI URLs remain in JSON; text
+  omits them because the V2 vocabulary guard rejects `runs` in GitHub
+  Actions URL paths, along with the standalone noun `run`.
+- Completed hand-off ID and head, and the completion's fingerprint.
+- Each counted round's ID, stream, verdict, reviewer actor and model.
+- Assured approval's decision ID, person and time; the recorded
+  `no other-model review` disclosure when true; `Rollback present` or
+  `Rollback absent` as recorded.
+
+Text reads `CI ✓ success · #101 on <commit>` for a successful CI result.
+Text shortens commit SHAs and the fingerprint to eight characters. Times
+use the existing local clock format, adding the date when not today. Values
+wrap beneath the label and external text is escaped as in other show rows.
+The ordinary Hand-off and Approval rows are replaced by this block.
+
+A done task's Checks rows list the required checks and exact result IDs
+recorded by its completed hand-off. They show the pass time and `counts at
+<head>` with the completed head, rather than comparing to today's HEAD,
+policy or lane floor. Subsequent checks cannot replace these results.
+Unfinished tasks retain their current check and approval comparisons.
+
+JSON always includes `completion`: null except for done tasks. Its object
+contains the completion record's typed fields (`id`, `task_id`, `handoff_id`,
+`merge_id`, `observed_ci_result_ids`, `ci_result_ids`, `round_ids`,
+`approval_id`, `fingerprint` with algorithm/value/base/head, `rollback_present`,
+`no_other_model_review`, `actor`, `at`), plus these expansions:
+
+- `handoff`: the named hand-off record, or null.
+- `merge_observation`: the named merge observation, or null, with `number`,
+  `merge_commit` and `merged_at` among its fields.
+- `ci_results`: counted CI result records, including `id`, `run_id`,
+  `head_sha`, `conclusion` and `url`.
+- `rounds`: the counted review round records, including `id`, `stream`,
+  `verdict` and `reviewer: {actor, model, ...}`.
+- `approval`: the named approval record, or null, including `decision_id`,
+  `actor` and `at`.
+- `missing`: an array of explanations, such as `CI result missing · CIR-...`.
+
+Full SHAs, fingerprints and recorded RFC3339 timestamps remain in JSON.
+The existing top-level `handoff`, `floor`, `approval` and
+`no_other_model_review` fields describe that completed evidence too. A named
+approval has state `current` historically; no current fingerprint is computed.
+Missing named records stay null or absent from their arrays, and appear as
+`⚠ <kind> missing · <id>` in text. A done task without a completion row has a
+completion object with empty expansions and `completion record missing`;
+its unavailable completion record fields are omitted. Older receipts without
+a fingerprint say `fingerprint missing`; rounds without a model say `model
+not recorded`. Available facts still render. These reads need no historical
+git objects and make no GitHub call. Epics, subtasks and cancelled tasks keep
+their existing displays, with `completion: null`. Show is outside the loop
+commands, so no declared loop-contract field changes.
 
 - `issue` is exactly `issue get`'s. `state` is null except on an epic,
   where it is `in-progress` or `to-do` as in `status`, or `completed` or
