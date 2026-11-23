@@ -74,8 +74,8 @@ func TestReviewDeliveryJournalPaths(t *testing.T) {
 					if handoffProjectionSnapshot(t, v) != before {
 						t.Fatal("replay refusal changed state or checkpoint")
 					}
-					stored, err := os.ReadFile(file)
-					if err != nil || !bytes.Equal(stored, raw) {
+					stored, readErr := os.ReadFile(file)
+					if readErr != nil || !bytes.Equal(stored, raw) {
 						t.Fatal("replay refusal changed journal")
 					}
 					if err := os.WriteFile(file, append(goodRaw, '\n'), 0o600); err != nil {
