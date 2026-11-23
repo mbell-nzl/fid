@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "hold.park",
+  "result": {
+    "hold_id": "\u003cHLD\u003e",
+    "kept_for_worktree": true,
+    "mode": "interrupted",
+    "question?": null,
+    "question_id?": null,
+    "reason?": "Usage limit",
+    "task_id": "\u003cFID\u003e"
+  }
+}

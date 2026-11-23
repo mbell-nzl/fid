@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "check-unsuccessful",
+  "error.retryable": false,
+  "exit": 8,
+  "ok": false,
+  "operation": "check.execute"
+}

@@ -1,0 +1,20 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "task.handoff",
+  "result": {
+    "base": "\u003ccommit\u003e",
+    "handoff_id": "\u003cHOF\u003e",
+    "head": "\u003ccommit\u003e",
+    "pr": "https://github.com/mbell-nzl/fid/pull/63",
+    "required_checks": [
+      "test"
+    ],
+    "result_ids": [
+      "\u003cCHK\u003e"
+    ],
+    "status": "in_review",
+    "task_id": "\u003cFID\u003e"
+  }
+}

@@ -38,6 +38,8 @@ type Options struct {
 	// Actor takes the task, as agent:<id> or human:<id>; fid next --claim.
 	Actor string
 	Model string
+	// Epic limits every kind of work to tasks in this epic; empty is unscoped.
+	Epic string
 }
 
 // Result is what fid next shows. Hold and Event are set only when --claim
@@ -169,6 +171,9 @@ func ReadFrom(conn reviewrecord.Queryer, options Options) (Result, error) {
 
 // assemble walks the order at now.
 func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result, order, error) {
+	if err := validateScope(conn, options.Epic); err != nil {
+		return Result{}, order{}, err
+	}
 	work, err := issues.ReadWork(conn)
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
@@ -181,7 +186,7 @@ func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result
 	if err != nil {
 		return Result{}, order{}, err
 	}
-	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now, reviews)
+	planned := planInScope(work, open, project.WorktreeID(options.WorkspaceRoot), now, reviews, options.Epic)
 	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
 		Served: planned.served}
 	for _, hold := range open {
