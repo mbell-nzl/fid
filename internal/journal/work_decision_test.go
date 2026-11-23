@@ -2,6 +2,7 @@ package journal
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -111,9 +112,9 @@ func assertWorkDecisionRefused(t *testing.T, e Event, reason string) {
 	}
 }
 
-// Legacy identity edits remain admitted until 1.9c owns row identity. The
-// derived creator follows that identity, without changing admission timing.
-func TestCreatorIndexFollowsLegacyIssueIdentity(t *testing.T) {
+// RESET 1.9c refuses legacy identity edits. Refusal preserves the creator
+// index along with the Issue, every other projected row and the journal.
+func TestCreatorIndexPreservesRefusedLegacyIdentity(t *testing.T) {
 	t.Parallel()
 	for _, operation := range []string{"rename", "delete"} {
 		t.Run(operation, func(t *testing.T) {
@@ -124,27 +125,46 @@ func TestCreatorIndexFollowsLegacyIssueIdentity(t *testing.T) {
 				effect.Values = map[string]any{"id": "FID-renamed"}
 			}
 			e := stateLegacy(admissionEvent("EVT-20261110-000004", "issue.updated", "issue", "FID-b", 2, effect))
+			reason := "an Issue cannot be deleted or recreated"
+			if operation == "rename" {
+				reason = "id is immutable"
+			}
 			for _, mode := range admissionModes(e) {
 				t.Run(mode, func(t *testing.T) {
 					w := newAdmissionWorkspace(t, admissionPrefix(), mode)
-					if err := w.admit(t, mode, e); err != nil {
-						t.Fatal("creator index changed legacy admission", err)
+					reference := w
+					if mode == "replay" {
+						reference = newAdmissionWorkspace(t, admissionPrefix(), "commit")
+					}
+					before := stateProjection(t, reference.root)
+					err := w.admit(t, mode, e)
+					var refusal *RowIdentityError
+					if !errors.As(err, &refusal) || refusal.Table != "issues" || refusal.Reason != reason {
+						t.Fatalf("legacy identity edit = %v, want %s refusal", err, reason)
+					}
+					if !reflect.DeepEqual(before, stateProjection(t, w.root)) {
+						t.Fatal("refused identity edit changed projection")
 					}
 					conn := openReplayDB(t, filepath.Join(config.LedgerDir(w.root), "fid.sqlite"))
 					defer closeProjectDB(t, conn)
-					id := "FID-renamed"
-					want := 1
-					if operation == "delete" {
-						id = "FID-b"
-						want = 0
-					}
-					if mode == "dry-run" {
-						id = "FID-b"
-						want = 1
-					}
 					var count int
-					if err := conn.QueryRow(`SELECT count(*) FROM issue_creators WHERE issue_id=? AND actor='human:mark'`, id).Scan(&count); err != nil || count != want {
-						t.Fatalf("creator after %s = %d/%v, want %d", mode, count, err, want)
+					if err := conn.QueryRow(`SELECT count(*) FROM issue_creators WHERE issue_id='FID-b' AND actor='human:mark'`).Scan(&count); err != nil || count != 1 {
+						t.Fatalf("creator after %s = %d/%v, want 1", mode, count, err)
+					}
+					live := mode == "dry-run" || mode == "project"
+					want := w.journalWith(t, e)
+					if live {
+						want = w.prefix
+					}
+					stored, err := os.ReadFile(w.file)
+					if err != nil || !bytes.Equal(stored, want) {
+						t.Fatalf("refusal changed journal: %v", err)
+					}
+					if err := os.WriteFile(w.file, w.prefix, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					if err := w.admit(t, "commit", admissionLaneRaise()); err != nil {
+						t.Fatalf("valid write after refusal: %v", err)
 					}
 				})
 			}

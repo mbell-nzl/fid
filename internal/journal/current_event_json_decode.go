@@ -6,25 +6,56 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
+	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
-func decodeCurrentJSON(raw string) (any, error) {
+// ValidateJSONText checks untyped JSON text using the same validator as Event
+// admission. Archive schema checks use it without a struct destination; typed
+// record readers additionally refuse aliases of their struct fields.
+func ValidateJSONText(raw string) error {
+	return validateTypedJSONText(raw, nil)
+}
+
+// Use the same wire type at admission and stored-Event decoding. Map entries
+// stay case-sensitive; only objects decoded into structs alias field names.
+func validateEventJSONText(raw string, schema int) error {
+	target := reflect.TypeFor[eventV2Wire]()
+	if schema == EventSchemaV1 {
+		target = reflect.TypeFor[eventV1Wire]()
+	}
+	return validateTypedJSONText(raw, target)
+}
+
+func validateTypedJSONText(raw string, target reflect.Type) error {
 	if !utf8.ValidString(raw) {
-		return nil, fmt.Errorf("invalid UTF-8 JSON")
+		return fmt.Errorf("invalid UTF-8 JSON")
 	}
 	decoder := json.NewDecoder(bytes.NewBufferString(raw))
 	decoder.UseNumber()
-	if err := scanCurrentJSONValue(decoder); err != nil {
-		return nil, err
+	if err := scanCurrentJSONValue(decoder, target); err != nil {
+		return err
 	}
 	if _, err := decoder.Token(); !errors.Is(err, io.EOF) {
 		if err == nil {
-			return nil, fmt.Errorf("multiple JSON values")
+			return fmt.Errorf("multiple JSON values")
 		}
+		return err
+	}
+	// Token scans keys without encoding/json's complete value constraints.
+	// Unmarshal owns syntax, nesting depth and the finite decoded-number domain
+	// for both admission and import, including unused Effect maps.
+	var decoded any
+	return json.Unmarshal([]byte(raw), &decoded)
+}
+
+func decodeCurrentJSON(raw string) (any, error) {
+	if err := ValidateJSONText(raw); err != nil {
 		return nil, err
 	}
-	decoder = json.NewDecoder(bytes.NewBufferString(raw))
+	decoder := json.NewDecoder(bytes.NewBufferString(raw))
 	decoder.UseNumber()
 	var value any
 	if err := decoder.Decode(&value); err != nil {
@@ -33,7 +64,19 @@ func decodeCurrentJSON(raw string) (any, error) {
 	return value, nil
 }
 
-func scanCurrentJSONValue(decoder *json.Decoder) error {
+// Stored retry readers allow unknown fields, but use the same key rules as
+// other embedded JSON: struct aliases are refused and map keys match exactly.
+func unmarshalCurrentJSON(raw string, target any) error {
+	if err := validateTypedJSONText(raw, reflect.TypeOf(target)); err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(raw), target)
+}
+
+func scanCurrentJSONValue(decoder *json.Decoder, target reflect.Type) error {
+	for target != nil && target.Kind() == reflect.Pointer {
+		target = target.Elem()
+	}
 	token, err := decoder.Token()
 	if err != nil {
 		return err
@@ -54,19 +97,27 @@ func scanCurrentJSONValue(decoder *json.Decoder) error {
 			if !ok {
 				return fmt.Errorf("object key is not text")
 			}
-			if keys[key] {
+			name := key
+			if target != nil && target.Kind() == reflect.Struct {
+				name = foldJSONKey(key)
+			}
+			if keys[name] {
 				return fmt.Errorf("duplicate key %q", key)
 			}
-			keys[key] = true
-			if err := scanCurrentJSONValue(decoder); err != nil {
+			keys[name] = true
+			if err := scanCurrentJSONValue(decoder, currentJSONFieldType(target, key)); err != nil {
 				return err
 			}
 		}
 		_, err := decoder.Token()
 		return err
 	case '[':
+		var element reflect.Type
+		if target != nil && (target.Kind() == reflect.Slice || target.Kind() == reflect.Array) {
+			element = target.Elem()
+		}
 		for decoder.More() {
-			if err := scanCurrentJSONValue(decoder); err != nil {
+			if err := scanCurrentJSONValue(decoder, element); err != nil {
 				return err
 			}
 		}
@@ -75,4 +126,50 @@ func scanCurrentJSONValue(decoder *json.Decoder) error {
 	default:
 		return fmt.Errorf("unexpected JSON delimiter %q", delimiter)
 	}
+}
+
+func currentJSONFieldType(target reflect.Type, key string) reflect.Type {
+	if target == nil {
+		return nil
+	}
+	if target.Kind() == reflect.Map {
+		return target.Elem()
+	}
+	if target.Kind() != reflect.Struct {
+		return nil
+	}
+	for i := range target.NumField() {
+		field := target.Field(i)
+		name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+		if name == "-" || !field.IsExported() {
+			continue
+		}
+		if name == "" && field.Anonymous {
+			embedded := field.Type
+			if embedded.Kind() == reflect.Pointer {
+				embedded = embedded.Elem()
+			}
+			if found := currentJSONFieldType(embedded, key); found != nil {
+				return found
+			}
+			continue
+		}
+		if name == "" {
+			name = field.Name
+		}
+		if foldJSONKey(name) == foldJSONKey(key) {
+			return field.Type
+		}
+	}
+	return nil
+}
+
+func foldJSONKey(key string) string {
+	return strings.Map(func(r rune) rune {
+		folded := r
+		for next := unicode.SimpleFold(r); next != r; next = unicode.SimpleFold(next) {
+			folded = min(folded, next)
+		}
+		return folded
+	}, key)
 }

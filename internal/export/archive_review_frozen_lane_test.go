@@ -29,6 +29,7 @@ func TestReviewArchiveAdmissionUsesFrozenLaneAfterRaise(t *testing.T) {
 					{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"lane": tc.current}, Preconditions: map[string]any{"lane": tc.frozen}},
 					{Op: "activity", Table: "activity_log", PK: map[string]any{"id": "raise-lane"}, Values: map[string]any{"journal_event_id": "EVT-20261110-000005", "ref_type": "issue", "ref_id": "FID-a", "event": "issue-updated"}},
 				}}
+				raise = writerUpdateFixture(t, raise, 2)
 				if err := applyLeanEmptyEvent(v, mode, raise); err != nil {
 					t.Fatal(err)
 				}

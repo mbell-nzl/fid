@@ -15,7 +15,7 @@ func ValidateTaskStartResult(raw string) error {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`
 	}
-	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+	if err := unmarshalCurrentJSON(raw, &stored); err != nil {
 		return fmt.Errorf("decode task start result: %w", err)
 	}
 	if len(stored.Fields) != 4 || stored.Fields["status"] != "in_progress" || !validTaskLane(stored.Fields["lane"]) {
@@ -49,11 +49,14 @@ func validateTaskStart(tx *sql.Tx, event Event) error {
 	}
 	last := event.Effects[len(event.Effects)-1]
 	raw, ok := last.Values["result_json"].(string)
-	if !ok || json.Unmarshal([]byte(raw), &stored) != nil {
+	if !ok {
 		return fmt.Errorf("invalid task start result")
 	}
 	if err := ValidateTaskStartResult(raw); err != nil {
 		return err
+	}
+	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+		return fmt.Errorf("decode task start result: %w", err)
 	}
 	var parent, lane sql.NullString
 	var kind, status string

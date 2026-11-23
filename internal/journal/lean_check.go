@@ -19,7 +19,7 @@ func decodeCheckJSON(raw any, target any) error {
 	if !ok {
 		return fmt.Errorf("check record requires JSON text")
 	}
-	if _, err := decodeCurrentJSON(text); err != nil {
+	if err := validateTypedJSONText(text, reflect.TypeOf(target)); err != nil {
 		return err
 	}
 	decoder := json.NewDecoder(strings.NewReader(text))

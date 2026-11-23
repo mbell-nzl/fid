@@ -2,7 +2,6 @@ package journal
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 )
 
@@ -15,7 +14,7 @@ func ValidateIssueCreateResult(raw string) error {
 			Lane any
 		}
 	}
-	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+	if err := unmarshalCurrentJSON(raw, &result); err != nil {
 		return fmt.Errorf("decode stored Issue create result: %w", err)
 	}
 	if result.Issue.Lane != nil && (result.Issue.Kind != "task" || !validTaskLane(result.Issue.Lane)) {
@@ -39,7 +38,7 @@ func ValidateIssueUpdateResult(raw string) error {
 			To    any
 		} `json:"changes"`
 	}
-	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+	if err := unmarshalCurrentJSON(raw, &result); err != nil {
 		return fmt.Errorf("decode stored Issue update result: %w", err)
 	}
 	for _, change := range result.Changes {

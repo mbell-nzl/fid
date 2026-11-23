@@ -797,7 +797,7 @@ is the whole `agent:<id>` or `human:<id>`; `worktree_id` is the SHA-256 of
 | Event | Aggregate | Effects, in order |
 |---|---|---|
 | `hold.taken` (command `next.claim`) | `hold`, the new hold | `holds` updates ending earlier holds (`ended_at`, `end_reason: replaced`, guarded by `ended_at` null), then the new hold's insert |
-| `issue.transitioned` | `issue` | gains an optional `holds` update, after the Issue's, ending its open hold as `task-completed` or `task-cancelled` |
+| `issue.transitioned` | `issue` | gains an optional `holds` update, after the Issue's, ending its open hold as `task-cancelled` (completion belongs to `task.finished`) |
 
 No other family may write a hold. The journal checks `hold.taken`'s Effects in
 stage order, and the export catalog refuses it in an archive of a schema
@@ -1033,3 +1033,35 @@ Events and SQL identifier case aliases. Keyed results bind to the epic and
 contain its immutable decision and resulting revision. No new table is
 added. V8 retains a closed epic and decision, a nonempty epic needing a
 person, and an epic with an open task, all built through public commands.
+
+
+### Reset 1.9c — Issue row admission
+
+Every journal path shares the Issue families' row identities, column domains
+and stage cardinality. Subsidiary Issue rows name the Event's Issue; label
+creation names its label aggregate; a link writes exactly the declared key
+and its inverse, then one revision row for each endpoint. Activity names the
+same subject and its own Event. An Issue update has one scalar row and one
+revision row; a revision row carries only the guarded prior plus one. A label
+operation and an updated column occur at most once per Event.
+
+Issue identity, kind, workflow, parent and creation facts are immutable,
+including in Event-v1 history; Issue deletion and recreation are refused.
+Duplicate object keys are refused throughout the serialized Event before
+shared admission and decoding. Objects decoded into structs also refuse
+aliases under `encoding/json`'s Unicode simple folding; map keys match
+exactly, including in structured Effect values. Typed embedded records use
+the same distinction between their struct fields and map entries. Every
+non-null `*_json` column is scanned in `pk`, `values`, `prior` and
+`preconditions`, including unused insert maps, before family admission or
+producer-side prior capture, and when decoding stored Events. The complete
+Event scan precedes canonicalization. Admission and import's JSON-text schema
+check reach the same validator, which calls `encoding/json.Unmarshal` after
+the key scan for syntax, nesting depth and the decoded-number domain (including
+refusal of non-finite numbers). Unknown nested response
+members retain their untyped map semantics. Import also checks its historical
+schema profile, canonical archive lines and existence
+of historical Event references, which have no index in the live projection.
+A finished task or a closed epic cannot be cancelled: undoing merged work is
+a new task following the original PR's `## Rollback` section (Mark,
+2026-11-22).

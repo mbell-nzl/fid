@@ -1691,6 +1691,98 @@ and 2 are also in their tasks' rows in `RESET.md`.
      would refuse the rename), column names and types against the
      archive's schema, and duplicate JSON keys. Move each into the shared
      rules or record why it stays import-only.
+     - 2026-11-22, settled in this PR (RESET 1.9c): shared admission binds
+       Issue-family child rows and activity to the Event's own subject,
+       label definitions to its label, and both link rows and revision
+       updates to the declared link and its inverse. Each stage is bounded;
+       update columns and label operations cannot repeat. A creation starts
+       at revision one; an update has one scalar row and one revision row,
+       guarded by its exact prior plus one. Issue identity,
+       kind, workflow, parent and creation facts are immutable, for Event-v1
+       too; no Issue deletion/recreation is admitted. Epic creation's stages
+       follow its writer: Issue, optional metadata, labels, activity, retry.
+       Link commands and admission share one relation-inverse registry.
+       Import-only audit: duplicate JSON keys now fail in the shared Event
+       decoder; shared Issue column/type/key checks complement the lean
+       family validators; the import update allowlist moves into shared
+       admission, including historical profiles before the lifecycle guard
+       existed. Import calls that same rule before schema validation to keep
+       its existing refusal classification. Transition hold subjects and
+       cancellation end reasons are checked on the common hold columns,
+       including those historical profiles.
+       Import keeps column/type validation against its declared historical
+       schema (a different profile from the live database), canonical archive
+       lines (an integrity/manifest contract), and existence of historical
+       `*_event_id` references (the projection has no Event index; standalone
+       projection admission has only an Event and a transaction). Own-Event
+       bindings, including activity's `journal_event_id`, are shared.
+     - 2026-11-22, #101 round 2: duplicate object keys use Unicode simple
+       folding, exactly as `encoding/json` matches field names. Lowercasing
+       misses long-s aliases and wrongly aliases dotted I; an ASCII-only
+       fence would also refuse otherwise valid structured details. The same
+       recursive check covers the complete serialized Event in shared
+       admission before live commit or dry run, as well as decoding stored
+       Events for replay and import. Structured maps cannot write an Event
+       that its replay decoder would refuse.
+     - 2026-11-22, #101 round 3: limit Unicode simple folding to objects
+       decoded into structs (Event wire fields and typed embedded records).
+       Map keys match exactly, as `encoding/json` and case-sensitive readers
+       do; exact duplicates are still refused in every object. In particular,
+       check names `build` and `Build`, their hand-off definition digests and
+       structured activity details with `A` and `a` are distinct entries.
+       One typed scan checks the serialized Event before admission and when
+       decoding stored Events, so admission and replay keep the same rule.
+     - 2026-11-22, #101 round 4: shared retry admission also scans the embedded
+       `result_json` text before decoding it, including Issue-family retries.
+       Exact duplicate keys, at any depth, are refused on every journal path
+       and import. The create, update, start and hand-off stored-result readers
+       use the same typed scan before decoding: struct aliases are refused,
+       map keys match exactly, and unknown response fields remain allowed.
+       This resolves the round-3 Later item about retry `result_json`; it is
+       no longer an import-only check or deferred work.
+     - 2026-11-22, #101 round 5 (separate review): a shared schema-convention
+       scan checks every non-null `*_json` value in every Effect's `pk`,
+       `values`, `prior` and `preconditions`, for every family and operation,
+       including unused insert maps and Event-v1. It runs before family
+       validation and before producer-side prior capture. Stored Event
+       decoding runs the same scan before archive schema checks; the complete
+       serialized Event is scanned before canonicalization can collapse raw
+       duplicate keys. Exact duplicates are refused throughout each JSON document; Unicode simple-fold
+       aliases are also refused where the column's reader decodes a struct.
+       Typed destinations follow the actual record types and each retry
+       family's shape; unknown nested response members and map entries stay
+       case-sensitive. The scan also shares import's JSON number domain,
+       refusing non-finite decoded numbers such as `1e999`. No Effect
+       embedded-JSON syntax/key check remains import-only. Physical column
+       availability still depends on the archive's historical profile;
+       manifest JSON remains an archive-container contract. Insert
+       prior/precondition maps are scanned rather than categorically banned;
+       existing family rules still decide whether those maps are supported.
+       A matrix derived from SQLite and the retained family catalog checks
+       every JSON column/operation/map on all journal paths and public import;
+       real criterion-writer Events pin the reported backup/restore failure.
+       Matrix setup captures the current schema and seeds from the real
+       migrations, verifies complete SQL/seed parity, and reuses that fixture
+       to keep the full matrix within the unchanged test timeout. Historical
+       profile probes and actual criterion-writer round trips retain the
+       canonical migration directory; no cases or assertions were removed.
+     - 2026-11-22, #101 round 6: admission and import's JSON-text schema check
+       now reach one journal validator. After its destination-aware key scan,
+       that validator calls `encoding/json.Unmarshal` into `any` for syntax,
+       the standard nesting-depth limit and the finite decoded-number domain;
+       the separate per-number check and import's duplicate-key scanner are
+       removed. The matrix and real criterion-writer archive journey include
+       10,001-level nesting in every tested map. Each generated import case
+       retains refusal, unchanged-target and valid recovery-import assertions;
+       its identical accepted-ledger write/export/validate/restore journey runs
+       once overall. Four import workers avoid mass parallel restore fixtures;
+       journal matrix paths reuse connections within each bounded prefix where
+       the database file stays in place. Replay, freshness and rebuild paths
+       reopen the live database path. The existing timeout
+       and checks are unchanged. The creator-index regression merged from 2.1b
+       explicitly admitted legacy identity edits only until 1.9c; it now pins
+       their typed refusal, unchanged creator/index rows and journal bytes,
+       and a successful follow-up write under 1.9c's approved identity rule.
 2. **A scoped `next`** (2.4). `fid next --epic <epic>` serves only that
    epic's tasks, so a second loop can build a small feature while a long
    one holds the main line, without disturbing it. Inside the scope the
@@ -3061,7 +3153,12 @@ atlas is out of scope for now.
 
 **D10 Approvals go stale** (amended). Reviews and approvals bind to the
 change's fingerprint (`git patch-id` of the branch diff); checks bind to the
-tree, and CI re-runs them on the final commit. A clean rebase keeps an
+tree, and CI re-runs them on the final commit. (Amended 2026-11-22, Mark: since `fid check`
+runs the lane's checks itself and binds each pass to the tree, a reviewer of
+that tree relies on those recorded passes and doesn't rerun the full suites;
+it tests adequacy instead, by reading the change, running focused tests and
+probing with mutations. The passes stand until the tree changes. The kit's
+reviewer (3.3) carries the rule.) A clean rebase keeps an
 approval valid; any edit to the change voids it (a rebase that alters lines
 next to a hunk may too, which means re-approving). Re-approval shows the full
 diffstat; Assured tasks are small. Epic approval binds to the validation list
@@ -3341,6 +3438,31 @@ such a task waits for Mark to accept it; until then the epic's wait for
   `closureCompleteIssue`). Tidy these in test maintenance and consider
   checking integration-tagged code in lint; the normal make lint command
   does not select the integration build tag.
+
+- From #101 (1.9c): some older direct retry readers (criterion, transition,
+  labels, links, Artifact verification, and hold operations other than
+  start/hand-off) still decode
+  an already-current projection with plain `encoding/json`. Shared admission
+  now validates their source Events, including every embedded-JSON map;
+  separate detection of duplicate keys in manually corrupted projection
+  rows is outside this fix. Decide whether those readers should use the same
+  defensive scan as the create/update/start/hand-off readers. This is a code
+  inspection observation, not an observed writer/admission bypass.
+
+- From #101 (1.9c): profile the journal test suite before more matrix growth.
+  Round 6 consolidated the accepted-ledger round trip, bounded import workers
+  and reused connections where the database file stays in place, keeping every
+  refusal, unchanged-target check and recovery import. Its final `make test`
+  passed with journal at 529.577s and export at 193.163s. Journal still misses
+  the requested under-300s aim and has about 70s before Go's unchanged 600s
+  default. Further headroom needs profiling; no timeout was raised.
+
+- From #101 (1.9c): Event-v1 history still has its historical scalar and
+  revision grammar. Its Issue identities are immutable and its fixed-state
+  moves are refused, but it can set a revision without Event-v2's guarded
+  prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
+  its remaining grammar or harden those scalar updates before supporting
+  such history as operational data.
 - From this PR (2.1b): proposed RESET 2.1c, the remaining review-delivery
   scope after the brief's size split: builder/person answers to open findings
   without closing them; atomic minor/nit deferral into a discovered task, link,
@@ -3363,32 +3485,6 @@ such a task waits for Mark to accept it; until then the epic's wait for
   then a changes round and another hand-off both refuse. Code inspection
   also found done requires that released reservation. Settle the intended
   takeover behavior; existing takeover/state rules are outside 2.1's scope.
-
-- From this PR (1.9b): a person can cancel a finished task or a closed
-  epic. `fid issue transition --to cancelled` allows `cancelled` from
-  `done`, and admission keeps that move because the command makes it.
-  Decide whether cancelling finished work should be refused.
-- From this PR (1.9b): `issues.workflow_id` and `parent_id` can still
-  change through `issue.updated`. Neither moves a state, since admission
-  keys fixed moves on the immutable `kind`, but moving an open task out of
-  its epic would let the epic close. Belongs with 1.9c's immutable columns.
-- From this PR (1.9b): the hold-lifecycle rule still lets
-  `issue.transitioned` end a hold as `task-completed`, though no command
-  can now complete a task through it; only `task-cancelled` is reachable.
-  Tidy in 1.9c.
-- From #97 (1.9b): Event-v1 history can still rename an Issue (set
-  `issues.id`) or delete one and insert another under its id, on replay.
-  Since #97's first fix round admission checks each state change against
-  the row it lands on, so neither can redirect a move, but the identity
-  change itself is admitted. 1.9c's "an Event can't rename its Issue"
-  should cover Event-v1 too, or record why it doesn't.
-- From #97 (1.9b): a refused subtask move names the wrong owner. When a
-  family other than `issue.transitioned` moves a subtask (an
-  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
-  that creates and moves it), `StateMoveError` says "only a person's
-  cancellation makes that move". That is `issue.transitioned`'s owner for
-  a task or an epic; a subtask's moves are `fid issue transition`'s, by
-  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
 
 - From #91 (golden-wrap): fid's text wrapper breaks lines at spaces inside
   paths it prints (a workspace or config path containing spaces wraps
@@ -3679,6 +3775,41 @@ such a task waits for Mark to accept it; until then the epic's wait for
 
 **Resolved.** Later work or decisions resolved these, so 1.8 doesn't
 import them. Dates are merge or decision dates, in New Zealand time.
+
+- From this PR (1.9b): a person can cancel a finished task or a closed
+  epic. `fid issue transition --to cancelled` allows `cancelled` from
+  `done`, and admission keeps that move because the command makes it.
+  Decide whether cancelling finished work should be refused.
+  Resolved in this PR (1.9c), 2026-11-22: The shared move table and the command refuse both moves, with the new-task/rollback explanation.
+
+- From this PR (1.9b): `issues.workflow_id` and `parent_id` can still
+  change through `issue.updated`. Neither moves a state, since admission
+  keys fixed moves on the immutable `kind`, but moving an open task out of
+  its epic would let the epic close. Belongs with 1.9c's immutable columns.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission makes both columns immutable, including on Event-v1.
+
+- From this PR (1.9b): the hold-lifecycle rule still lets
+  `issue.transitioned` end a hold as `task-completed`, though no command
+  can now complete a task through it; only `task-cancelled` is reachable.
+  Tidy in 1.9c.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission takes only task-cancelled from issue.transitioned.
+
+- From #97 (1.9b): Event-v1 history can still rename an Issue (set
+  `issues.id`) or delete one and insert another under its id, on replay.
+  Since #97's first fix round admission checks each state change against
+  the row it lands on, so neither can redirect a move, but the identity
+  change itself is admitted. 1.9c's "an Event can't rename its Issue"
+  should cover Event-v1 too, or record why it doesn't.
+  Resolved in this PR (1.9c), 2026-11-22: Shared admission refuses Issue renames and deletion/recreation on Event-v1 too.
+
+- From #97 (1.9b): a refused subtask move names the wrong owner. When a
+  family other than `issue.transitioned` moves a subtask (an
+  `issue.updated` setting its `status`, or an Event-v1 `issue.created`
+  that creates and moves it), `StateMoveError` says "only a person's
+  cancellation makes that move". That is `issue.transitioned`'s owner for
+  a task or an epic; a subtask's moves are `fid issue transition`'s, by
+  anyone. Name the owner by kind (`issuestate.OwnerCommand`).
+  Resolved in this PR (1.9c), 2026-11-22: OwnerCommand names fid issue transition for a subtask.
 
 - From #100 (2.1): proposed row 2.1b, review delivery. Mark accepted it on
   2026-11-22, with his extra-rework-rounds decision folded in.
