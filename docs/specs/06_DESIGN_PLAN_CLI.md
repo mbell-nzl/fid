@@ -1004,6 +1004,10 @@ is `internal-error` (exit 7).
 **Fixed states, task lanes and start (RESET 1.5a4; Mark, 14 November 2026).**
 
 Tasks have `todo → in_progress → in_review → done`, plus `cancelled`.
+A done task or a closed epic cannot be cancelled. The typed
+`transition-not-permitted` refusal names `finished-work-stays-done` and says
+that undoing merged work is a new task following the original PR's
+`## Rollback` section (Mark, 2026-11-22).
 Epics have `todo`, `in_progress`, `done`, `cancelled`; subtasks keep their
 existing transitions. Human state labels are “to do”, “in progress”, “in
 review”, “done”, “cancelled”. The retired task states and epic `wrapped`

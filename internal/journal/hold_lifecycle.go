@@ -200,9 +200,6 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 			return fmt.Errorf("park requires a reason")
 		}
 	} else if ended.Valid {
-		if event.EventType == "issue.transitioned" && task != event.Aggregate.ID {
-			return fmt.Errorf("transition releases another task reservation")
-		}
 		if kept != 1 || len(effect.Values) != 1 || !currentValuesEqual(effect.Values["kept"], false) {
 			return fmt.Errorf("only a kept reservation can be released")
 		}
@@ -219,14 +216,7 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 		if event.EventType == "task.taken-over" && task != event.Aggregate.ID {
 			allowed[event.EventType] = "replaced"
 		}
-		if event.EventType == "issue.transitioned" {
-			if task != event.Aggregate.ID {
-				return fmt.Errorf("transition ends another task's hold")
-			}
-			if reason != "task-completed" && reason != "task-cancelled" {
-				return fmt.Errorf("invalid task hold end")
-			}
-		} else if reason != allowed[event.EventType] {
+		if event.EventType != "issue.transitioned" && reason != allowed[event.EventType] {
 			return fmt.Errorf("invalid hold end reason")
 		}
 	}

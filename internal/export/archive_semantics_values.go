@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func validateSemanticMap(tableName string, table semanticTable, values map[string]any, required bool) error {
@@ -70,11 +72,7 @@ func sameSemanticKeys(values map[string]any, expected map[string]struct{}) bool 
 }
 
 func validateSemanticJSONText(value string) error {
-	if err := rejectDuplicateJSONKeys([]byte(value)); err != nil {
-		return fmt.Errorf("invalid JSON: %w", err)
-	}
-	var decoded any
-	if err := json.Unmarshal([]byte(value), &decoded); err != nil {
+	if err := journal.ValidateJSONText(value); err != nil {
 		return fmt.Errorf("invalid JSON: %w", err)
 	}
 	return nil

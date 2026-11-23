@@ -29,6 +29,7 @@ func TestLaneUpdateReplayAndArchiveRejectMalformedRetryResult(t *testing.T) {
 					{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"lane": "assured", "revision": 2}, Preconditions: map[string]any{"lane": "standard", "revision": 1}},
 					{Op: "activity", Table: "activity_log", PK: map[string]any{"id": "lane"}, Values: map[string]any{"journal_event_id": "EVT-20261110-000003", "ref_type": "issue", "ref_id": "FID-a", "event": "issue-updated"}},
 				}}
+				event = writerUpdateFixture(t, event, 1)
 				takeoverArchiveRetry(&event)
 				event.Idempotency.Scope = "issue.update:project-test"
 				last := &event.Effects[len(event.Effects)-1]

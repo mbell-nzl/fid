@@ -2,6 +2,7 @@ package export
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -144,7 +145,12 @@ func TestStartReplayRejectsMalformedRetryResultWithoutMutation(t *testing.T) {
 				delete(result, "result_json")
 			}
 			err := journal.ProjectEvent(validator.conn, journal.ProjectionInput{Event: event, EventHash: "sha256:malformed-result", File: "journal", Line: 2, Offset: 2})
-			if err == nil || !strings.Contains(err.Error(), "invalid original idempotency result") {
+			if row.name == "number" {
+				var refusal *journal.RowIdentityError
+				if !errors.As(err, &refusal) || refusal.EventID != event.EventID || refusal.Table != "idempotency_results" || refusal.Reason != "values.result_json requires JSON text" {
+					t.Fatalf("replay malformed retry result = %v, want shared JSON-text refusal", err)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), "invalid original idempotency result") {
 				t.Fatalf("replay malformed retry result = %v", err)
 			}
 			var task, epic string
@@ -183,6 +189,7 @@ func TestArchiveLaneLoweringKeepsThePlanningAuthorityBoundary(t *testing.T) {
 				{Op: "update", Table: "issues", PK: map[string]any{"id": "FID-a"}, Values: map[string]any{"lane": row.lane}, Preconditions: map[string]any{"lane": "standard"}},
 				{Op: "activity", Table: "activity_log", PK: map[string]any{"id": "lane"}, Values: map[string]any{"journal_event_id": "EVT-20261110-000003", "ref_type": "issue", "ref_id": "FID-a", "event": "issue-updated"}},
 			}}
+			event = writerUpdateFixture(t, event, 1)
 			raw, err := json.Marshal(event)
 			if err != nil {
 				t.Fatal(err)

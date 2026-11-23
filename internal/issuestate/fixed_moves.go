@@ -32,14 +32,12 @@ var fixedMoves = map[fixedMove]string{
 	{"task", "todo", "cancelled"}:        FamilyTransition,
 	{"task", "in_progress", "cancelled"}: FamilyTransition,
 	{"task", "in_review", "cancelled"}:   FamilyTransition,
-	{"task", "done", "cancelled"}:        FamilyTransition,
 	{"epic", "", "todo"}:                 FamilyCreate,
 	{"epic", "todo", "in_progress"}:      FamilyStart,
 	{"epic", "todo", "done"}:             FamilyEpicDone,
 	{"epic", "in_progress", "done"}:      FamilyEpicDone,
 	{"epic", "todo", "cancelled"}:        FamilyTransition,
 	{"epic", "in_progress", "cancelled"}: FamilyTransition,
-	{"epic", "done", "cancelled"}:        FamilyTransition,
 }
 
 // HasFixedStates reports whether fid's commands own an Issue kind's moves:
@@ -74,8 +72,18 @@ func StateOwners(kind, to string) map[string]bool {
 }
 
 // OwnerCommand names a move's owner in plain words.
-func OwnerCommand(family string) string {
+func OwnerCommand(family, kind string) string {
+	if family == FamilyTransition && kind == "subtask" {
+		return "fid issue transition"
+	}
 	return map[string]string{FamilyCreate: "fid issue create", FamilyStart: "fid start", FamilyHandoff: "the hand-off",
 		FamilyRework: "a review round asking for changes", FamilyDone: "fid done", FamilyEpicDone: "fid done",
 		FamilyTransition: "a person's cancellation"}[family]
 }
+
+// FinishedCancellation is shared by the command and journal admission.
+func FinishedCancellation(kind, from, to string) bool {
+	return HasFixedStates(kind) && from == "done" && to == "cancelled"
+}
+
+const FinishedWorkMessage = "finished work stays done; undoing merged work is a new task that follows the original PR's ## Rollback section"

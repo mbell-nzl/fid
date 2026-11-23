@@ -2,7 +2,6 @@ package journal
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -69,7 +68,13 @@ func validateIdempotencyBinding(event Event) (map[string]any, error) {
 	}
 	var body map[string]any
 	resultJSON, ok := row["result_json"].(string)
-	if !ok || json.Unmarshal([]byte(resultJSON), &body) != nil || body["replayed"] != false {
+	if !ok {
+		return nil, fmt.Errorf("current Event: invalid original idempotency result")
+	}
+	if err := unmarshalCurrentJSON(resultJSON, &body); err != nil {
+		return nil, fmt.Errorf("current Event: invalid original idempotency result: %w", err)
+	}
+	if body["replayed"] != false {
 		return nil, fmt.Errorf("current Event: invalid original idempotency result")
 	}
 	return row, nil

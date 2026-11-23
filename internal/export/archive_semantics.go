@@ -191,9 +191,6 @@ func (validator *semanticValidator) accept(raw []byte) error {
 	if validator == nil || validator.conn == nil {
 		return fmt.Errorf("semantic archive validation: validator is closed")
 	}
-	if err := rejectDuplicateJSONKeys(raw); err != nil {
-		return semanticFailure("effect-invalid", "Event has duplicate JSON key", err)
-	}
 	var event journal.Event
 	if err := event.UnmarshalJSON(raw); err != nil {
 		return semanticFailure("effect-invalid", "decode Event", err)
@@ -315,10 +312,10 @@ func (validator *semanticValidator) validateEvent(event journal.Event) error {
 // validateEffects checks each Effect against the archive's own projection
 // profile. The family's Effect grammar is the journal's (ValidateEventGrammar).
 func (validator *semanticValidator) validateEffects(event journal.Event) error {
+	if err := journal.ValidateEventUpdates(event); err != nil {
+		return err
+	}
 	for index, effect := range event.Effects {
-		if err := validateSemanticUpdate(effect); err != nil {
-			return err
-		}
 		table, found := validator.tables[effect.Table]
 		if !found {
 			return fmt.Errorf("semantic archive validation: Event %q Effect %d uses unavailable table %q", event.EventID, index+1, effect.Table)

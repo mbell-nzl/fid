@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -58,6 +59,9 @@ func validatePolicySnapshot(tx *sql.Tx, event Event) error {
 // Validate historical payloads without consulting today's built-in rules:
 // replay must keep the policy fid actually used, across later upgrades.
 func validatePolicyPayload(raw string, digest any) error {
+	if err := validateTypedJSONText(raw, reflect.TypeFor[policy.Effective]()); err != nil {
+		return err
+	}
 	var recorded policy.Effective
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()

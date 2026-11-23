@@ -11,6 +11,9 @@ func (err *CommandTransitionError) Error() string { return err.Message }
 // owns (issuestate.StateOwners), pointing at that command. fid issue
 // transition makes a person's cancellation and every move of a subtask.
 func fixedTransition(current issueTransitionState, to string) error {
+	if issuestate.FinishedCancellation(current.Kind, current.Status, to) {
+		return &CommandTransitionError{IssueID: current.ID, From: current.Status, To: to, Rule: "finished-work-stays-done", Message: issuestate.FinishedWorkMessage}
+	}
 	owners := issuestate.StateOwners(current.Kind, to)
 	if !issuestate.HasFixedStates(current.Kind) || owners[issuestate.FamilyTransition] {
 		return nil
