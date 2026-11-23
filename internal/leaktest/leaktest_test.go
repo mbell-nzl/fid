@@ -12,7 +12,7 @@ func TestAssertionRejectsKernelVocabulary(t *testing.T) {
 	t.Parallel()
 	for _, word := range []string{
 		"Envelope", "envelopes", "Activation", "activations", "Obligation", "obligations",
-		"Attempt", "attempts", "Attention Item", "attention items", "Run", "runs", "Claim", "claims",
+		"Attention Item", "attention items",
 		"ENV-123", "STP-123", "ATT-123", "env-123", "stp-123", "att-123",
 	} {
 		t.Run(word, func(t *testing.T) {
@@ -29,7 +29,12 @@ func TestAssertionRejectsKernelVocabulary(t *testing.T) {
 
 func TestAssertionAcceptsPlainWordsAndWordBoundaries(t *testing.T) {
 	t.Parallel()
-	for _, output := range []string{"", "Task held here; check passed; ready for hand-off", "running reclaimed enveloped activationless", "HLD-123 CHK-123 EVT-123"} {
+	for _, output := range []string{
+		"", "Task held here; check passed; ready for hand-off", "running reclaimed enveloped activationless", "HLD-123 CHK-123 EVT-123",
+		// Ordinary fid English since the kernel went (Mark, 2026-11-23): a real flag, a check that runs, a retry.
+		"Take the task in its builder's worktree: fid next --claim", "Claim it with fid next --claim; claims are holds",
+		"fid check runs the lane's checks; 2 runs", "Run fid status", "two attempts failed; attempt again",
+	} {
 		t.Run(output, func(t *testing.T) {
 			t.Parallel()
 			recorder := &testRecorder{}

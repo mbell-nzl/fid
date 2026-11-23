@@ -4,8 +4,11 @@ package leaktest
 
 import "regexp"
 
-// Keep the established pattern unchanged: every human-output test shares it.
-var kernelWords = regexp.MustCompile(`(?i)\b(envelopes?|activations?|obligations?|attempts?|attention items?|runs?|claims?)\b|ENV-|STP-|ATT-`)
+// Every human-output test shares this one pattern. It names only words that
+// have no meaning in fid since the kernel went; "claim", "run" and "attempt"
+// are ordinary fid English (`fid next --claim`, a check that runs) and were
+// dropped on Mark's decision of 2026-11-23.
+var kernelWords = regexp.MustCompile(`(?i)\b(envelopes?|activations?|obligations?|attention items?)\b|ENV-|STP-|ATT-`)
 
 type testingT interface {
 	Helper()
