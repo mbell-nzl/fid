@@ -993,6 +993,14 @@ Builder's transactional choices:
   golden and refusal leaks each failed with the shared diagnostic, then
   were restored.
 
+Amended 2026-11-23 (Mark): the shared pattern no longer refuses "claim",
+"run" or "attempt" in any form. The kernel's code is gone, and those words
+are now ordinary fid English: `fid next --claim` is a real flag, and `fid
+check` runs checks. Avoiding them had bent wording twice (the review input's
+`purpose` field in 1.6b, and 2.1d's status text). The pattern keeps the
+words that still mean nothing in fid (envelope, activation, obligation,
+attention item) and the `ENV-`, `STP-` and `ATT-` prefixes, so V2 holds.
+
 ## Decided 2026-11-15 (orchestrator, under Mark's delegation)
 
 Mark delegated 1.6's design to the orchestrator on 2026-11-15: "You can
