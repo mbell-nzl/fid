@@ -1893,7 +1893,7 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
   and public import's refusal, unchanged-target and recovery import.
   Serialized/stored readers, destination-map rules, fixture parity and the
   accepted write/export/validate/restore journey stay.
-- Mark's continuation applies the same split to row identity. All 174 corpus
+- The orchestrator's continuation (2026-11-23) applies the same split to row identity. All 174 corpus
   probes (35 controls, 139 malformed) retain a complete admission boundary
   against a real projection: commit for Event-v2, projection for Event-v1,
   which commit cannot accept. The first carrier per schema/table/reason
