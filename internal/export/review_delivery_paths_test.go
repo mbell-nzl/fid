@@ -60,9 +60,9 @@ func TestReviewDeliveryJournalPaths(t *testing.T) {
 						return err
 					})
 				} else {
-					raw, err := journal.MarshalCanonicalJSON(e)
-					if err != nil {
-						t.Fatal(err)
+					raw, marshalErr := journal.MarshalCanonicalJSON(e)
+					if marshalErr != nil {
+						t.Fatal(marshalErr)
 					}
 					raw = append(raw, '\n')
 					if err := os.WriteFile(file, raw, 0o600); err != nil {
