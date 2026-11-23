@@ -14,6 +14,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/defaultconflict"
 	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -45,6 +46,8 @@ type Options struct {
 // Result is what fid next shows. Hold and Event are set only when --claim
 // takes or keeps a hold; the rest serves the text.
 type Result struct {
+	Rework          *defaultconflict.Evidence
+	Unavailable     string
 	Review          *doneeval.ReviewWork
 	Questions       []questions.Question
 	Waiting         *Waiting
@@ -197,6 +200,14 @@ func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task
+		if c := reviews[task.ID].conflict; planned.kind == KindRework && c != nil {
+			result.Rework = &c.Evidence
+		} else if planned.kind == KindRework {
+			result.Rework, err = readDefaultConflict(conn, planned.own.ID)
+			if err != nil {
+				return Result{}, order{}, err
+			}
+		}
 		if planned.kind == KindReview {
 			result.Review = reviews[task.ID].work
 		}
@@ -219,7 +230,8 @@ func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result
 		result.Waiting = &Waiting{Kind: "review", TaskID: planned.ownReview.TaskID}
 	} else if planned.own != nil && reviews[planned.own.TaskID].capped {
 		result.Waiting = &Waiting{Kind: "rework-cap", TaskID: planned.own.TaskID}
-	} else if planned.own != nil && planned.own.InReview() {
+	} else if planned.own != nil && planned.own.InReview() && result.Rework == nil {
+		result.Unavailable = reviews[planned.own.TaskID].unavailable
 		result.Waiting = &Waiting{Kind: "review", TaskID: planned.own.TaskID}
 	} else if planned.own != nil && planned.own.Question != nil {
 		q := planned.own.Question
@@ -245,6 +257,11 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	if planned.kind == KindResume && planned.own.Live(result.Now) {
 		result.Hold = planned.own
 		return nil
+	}
+	if result.Rework != nil && planned.own.InReview() {
+		if err := returnDefaultConflict(lock, conn, options, result, planned); err != nil {
+			return err
+		}
 	}
 	ended := map[string]bool{}
 	var replaces *string
@@ -312,6 +329,12 @@ func (result Result) Fields() map[string]any {
 		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}
 	}
 	fields := map[string]any{"waiting": result.Waiting, "answer": result.Answer, "kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
+	if result.Rework != nil {
+		fields["rework"] = result.Rework
+	}
+	if result.Unavailable != "" {
+		fields["rework_unavailable"] = result.Unavailable
+	}
 	if result.ReworkAllowance != nil {
 		fields["rework_allowance"] = result.ReworkAllowance
 	}

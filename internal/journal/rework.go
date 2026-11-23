@@ -106,7 +106,7 @@ func validReworkColumn(event Event, effect Effect, value any) bool {
 	}
 	switch effect.Op {
 	case "update":
-		return event.EventType == "review.round-recorded"
+		return event.EventType == "review.round-recorded" || event.EventType == "task.default-conflict"
 	case "insert":
 		return currentEventValue(value) == nil && (event.EventType == "hold.taken" || event.EventType == "task.taken-over")
 	}

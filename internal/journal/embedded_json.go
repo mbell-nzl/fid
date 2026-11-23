@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/approvalrecord"
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/completionrecord"
+	"github.com/mbell-nzl/fid/internal/defaultconflict"
 	"github.com/mbell-nzl/fid/internal/epicrecord"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
@@ -50,6 +51,7 @@ func validateEmbeddedJSON(event Event) error {
 // still check their complete records. Structs fold keys like encoding/json;
 // map/interface destinations keep exact keys at every nested map boundary.
 var embeddedJSONTypes = map[string]reflect.Type{
+	"default_conflicts.record_json":                  reflect.TypeFor[defaultconflict.Record](),
 	"review_claims.binding_json":                     reflect.TypeFor[fingerprint.Result](),
 	"completions.record_json":                        reflect.TypeFor[completionrecord.Record](),
 	"review_rounds.record_json":                      reflect.TypeFor[reviewrecord.Round](),

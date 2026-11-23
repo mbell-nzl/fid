@@ -314,7 +314,7 @@ func validateStateMove(tx *sql.Tx, event Event, effect Effect) error {
 		// lets only issue.created insert an Issue, and Event-v1 history
 		// named its families freely.
 		return nil
-	case owner != event.EventType:
+	case !issuestate.OwnsMove(event.EventType, move.Kind, move.From, move.To):
 	case owner == issuestate.FamilyTransition && issuestate.HasFixedStates(move.Kind) && cancelDecisions(event) != 1:
 		move.Undecided = true
 	default:
