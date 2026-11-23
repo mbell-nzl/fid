@@ -99,6 +99,7 @@ else:
 	assertGolden(t, filepath.Join("review", "comment.md"), normalize(string(body)))
 	before := startEventCount(t, f.workspace)
 	requestCount, _ := os.ReadFile(requests)
+	lifecycleResult(t, recordReviewTask(t, f, in, "post-round", "human:courier", task), "review.record")
 	lifecycleResult(t, f.run("--json", "review", "post", id), "review.post")
 	got, _ := os.ReadFile(log)
 	if string(got) != string(body) || startEventCount(t, f.workspace) != before {
@@ -117,8 +118,19 @@ else:
 	if string(afterReads) != string(requestCount) {
 		t.Fatal("retry/read contacted gh")
 	}
+	if err := os.WriteFile(offline, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	answer, _ := lifecycleResult(t, f.run("--json", "finding", "answer", finding, "--actor", "agent:builder", "--text", "Accepted explanation"), "finding.answer")
 	responseID := answer["response"].(map[string]any)["id"].(string)
+	status = f.run("--json", "status")
+	if status.err != nil || !strings.Contains(status.stdout, "review-post-pending") || !strings.Contains(status.stdout, responseID) {
+		t.Fatalf("pending response missing: %#v", status)
+	}
+	if err := os.Remove(offline); err != nil {
+		t.Fatal(err)
+	}
+	lifecycleResult(t, f.run("--json", "review", "post", id), "review.post")
 	if got := f.run("--json", "review", "post", responseID); got.err == nil {
 		t.Fatal("review post accepted a response as its round")
 	}

@@ -3177,6 +3177,8 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   round/person closure records keep their schema. Agent deferrals derive
   `issue_creators` from the Event actor in the same projection transaction,
   so discovered tasks wait for acceptance. Deferral never reopens the source.
+  Invalid responses and unknown post-round IDs use `invalid-argument` (exit 2).
+  Transport failures leave recording successful and return pending post IDs.
 - CLI recording attempts delivery after its canonical write. Round comments
   follow jig’s headings, attribution, profiles, round, lane, purpose, finding
   severity/action/location/evidence/fix, earlier dispositions and verification.

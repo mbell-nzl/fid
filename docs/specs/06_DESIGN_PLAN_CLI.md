@@ -1505,8 +1505,8 @@ task or an unstarted or finished task. A `CHANGES` round on a task already
 including when the builder already has the new rework hold. `APPROVE`
 never moves state or changes a reservation. Person takeover, cancellation
 and missing-worktree NEEDS YOU work for rework as for other kept work.
-Review selection and the rework cap are built in 2.1. Posting and
-discovered work remain in proposed 2.1b.
+Review selection and the rework cap are built in 2.1. Posting and discovered
+work are built in 2.1c, described below.
 
 For example, this input adapts the actual 1.6b round-one jig-format review
 of conflicting merge retries (its second, minor finding is omitted here):
@@ -1618,7 +1618,8 @@ For example, a later independent session can submit:
 ```
 
 This passes only when that disposition leaves no major open. A builder’s
-answer never closes a major; answers and deferrals are described below. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
+answer never closes a major; answers and deferrals are described below. A
+previous APPROVE cannot hide a later CHANGES. Raw round verdicts
 remain immutable even when a person later closes the last major.
 `reviewrecord.OpenMajors` is the shared task-wide reader for the later done
 evaluator; it never filters findings by fingerprint or review stream.
@@ -2260,11 +2261,11 @@ evidence finding gate human-outcome ready receipt requirement resume review
 run stats stop workflow
 ```
 
-Except for `review` (the lean record/list contract in RESET 1.6d) and
-`finding` (the person’s close command in RESET 1.6e), each is an unknown root command (`operation-unavailable`,
+Except for `review` (the lean record/list/post contract) and
+`finding` (close, answer and defer), each is an unknown root command (`operation-unavailable`,
 exit 2), with the known path `fid` as its operation and sorted current
 alternatives. The retired review schema, Event and tables stay refused;
-review delivery remains proposed 2.1c. There is no `fid admin`. Issue Concern
+review delivery is implemented in RESET 2.1c. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.

@@ -78,7 +78,7 @@ func changeResponse(t *testing.T, e *journal.Event, change func(*reviewrecord.Re
 func TestFindingResponseAdmission(t *testing.T) {
 	t.Parallel()
 	for _, deferred := range []bool{false, true} {
-		for _, name := range []string{"valid", "actor", "time", "task", "blank", "command", "aggregate", "extra", "identity", "finding", "legacy", "case", "unknown JSON", "handoff", "Event time"} {
+		for _, name := range []string{"valid", "actor", "time", "task", "blank", "command", "aggregate", "extra", "identity", "finding", "legacy", "case", "unknown JSON", "handoff", "Event time", "Event actor"} {
 			t.Run(map[bool]string{false: "answer", true: "defer"}[deferred]+"/"+name, func(t *testing.T) {
 				t.Parallel()
 				v, e := responseArchiveFixture(t, deferred)
@@ -90,6 +90,8 @@ func TestFindingResponseAdmission(t *testing.T) {
 					changeResponse(t, &e, func(r *reviewrecord.Response) { r.HandoffID = "HOF-other" })
 				case "Event time":
 					e.OccurredAt = e.OccurredAt.Add(time.Minute)
+				case "Event actor":
+					e.ActorV2.ActorID = "other-person"
 				case "time":
 					changeResponse(t, &e, func(r *reviewrecord.Response) { r.At = "invalid" })
 				case "task":

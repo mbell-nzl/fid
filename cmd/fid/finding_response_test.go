@@ -241,11 +241,11 @@ func TestFindingDeferralAtomicAndUnaccepted(t *testing.T) {
 				if err := conn.QueryRow(`SELECT i.lane,c.actor,a.text FROM issues i JOIN issue_creators c ON c.issue_id=i.id JOIN acceptance_criteria a ON a.issue_id=i.id WHERE i.id=?`, created).Scan(&lane, &creator, &criterion); err != nil {
 					t.Fatal(err)
 				}
-				if err := conn.QueryRow(`SELECT count(*) FROM links WHERE from_id=? AND relation='discovered_from' AND to_id=?`, created, task).Scan(&links); err != nil {
+				if err := conn.QueryRow(`SELECT count(*) FROM links WHERE (from_id=? AND relation='discovered_from' AND to_id=?) OR (from_id=? AND relation='discovered' AND to_id=?)`, created, task, task, created).Scan(&links); err != nil {
 					t.Fatal(err)
 				}
 				closeCommandDB(t, conn)
-				if lane != "standard" || creator != "agent:builder" || links != 1 || !strings.Contains(criterion, ids[index]) || !strings.Contains(criterion, "Retry conflicts lack coverage") || !strings.Contains(criterion, "Disabling the conflict guard") || !strings.Contains(criterion, "Retry a changed task") {
+				if lane != "standard" || creator != "agent:builder" || links != 2 || !strings.Contains(criterion, ids[index]) || !strings.Contains(criterion, "Retry conflicts lack coverage") || !strings.Contains(criterion, "Disabling the conflict guard") || !strings.Contains(criterion, "Retry a changed task") {
 					t.Fatalf("discovery=%s / %s / %s / %d", lane, creator, criterion, links)
 				}
 				status := f.run("--json", "status")
