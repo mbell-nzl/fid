@@ -727,6 +727,20 @@ Use when: saying what evidence a hand-off or `done` relies on.
 Avoid: "Execution Receipt", "Execution Attempt" or "Evidence Record", which
 it replaces; avoid counting a start without a result.
 
+### Default conflict
+
+Definition: The latest hand-off head no longer merges cleanly into the
+locally known `origin/<default>`, proven by git without fetching. Once the
+review gates and task-wide majors gate are satisfied, only its kept
+builder worktree receives this as `rework`, cause `default-conflict`.
+An immutable receipt returns the state and reservation together; it is
+not a review round and does not count against the rework cap. The builder
+merges, checks and hands off again. Review and approval currency follows
+the new hand-off's fingerprint. Clean or unavailable comparisons do not
+return work, nor does an approved task with only an open minor to answer.
+Use when: explaining why an approved PR needs a builder update, or the
+optional `next.rework` evidence and status's default-conflict item.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation

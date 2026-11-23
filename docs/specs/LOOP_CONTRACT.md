@@ -64,7 +64,8 @@ worktree's hold atomically. Both have exactly these kinds:
 
 - `new`: build the task, beginning with `start`.
 - `resume`: continue interrupted work, or the worktree's live hold.
-- `rework`: fix the task after changes were requested, check and hand off
+- `rework`: fix the task after changes were requested or update an approved
+  PR that conflicts with the local default branch, check and hand off
   again; it is already started.
 - `review`: review the declared stream and all required profiles.
 - `none`: no work can be served here. `task` and `hold` are null. This is
@@ -90,6 +91,19 @@ when `kind` is `none`. An answer is null or
 `{question_id, question, text, decision_id}`; pass the person's question
 and answer text to the resumed agent. It remains on subsequent selections
 until a newer question replaces it.
+
+Approved work whose latest hand-off no longer merges into the locally known
+`origin/<default>` returns only to its kept builder worktree as `rework`.
+Its optional `rework` object contains `cause: default-conflict`, `default_ref`,
+`default_commit`, `handoff_id`, `head` and `conflicting_paths` (an array).
+Non-UTF-8 paths also have optional `conflicting_path_bytes` (base64 per path).
+The loop merges the default branch, checks and hands off again. No review
+round or allowance is required by this return; only CHANGES rounds count
+against the cap. A clean merge, review still due, or missing local comparison
+never produces this return. `rework_unavailable`, when present, explains a
+missing local comparison; `--explain` shows that problem in text. Reads never
+fetch. Review and person-approval currency still follows the new hand-off's
+fingerprint. The added fields are optional; the version stays `fid-cli.v1`.
 
 When a served task has any rework allowance, both forms of `next` include
 the optional object `rework_allowance: {decision_id, rounds, reason, actor,
@@ -172,8 +186,8 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
   "next_kinds": ["new", "resume", "rework", "review", "none"],
   "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
   "fields": {
-    "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
-    "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
+    "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
+    "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
     "task.start": ["task_id", "hold_id", "status"],
     "hold.heartbeat": ["task_id", "hold_id", "last_heartbeat_at", "expires_at", "heartbeat_interval_seconds"],
     "hold.park": ["task_id", "hold_id", "mode", "kept_for_worktree", "reason?", "question_id?", "question?"],
