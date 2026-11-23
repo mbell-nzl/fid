@@ -21,7 +21,7 @@ var declaredTextDomains = map[string]map[string]flagDomain{
 	"issue list":       {"status": opaqueFlagDomain("P21 §4.1 issue.list opaque state"), "epic": opaqueFlagDomain("P21 §4.1 issue.list / §2 ID"), "label": textDomain(255)},
 	"issue transition": {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state"), "reason": textDomain(4096)},
 
-	"next": {"actor": nextActorDomain},
+	"next": {"actor": nextActorDomain, "epic": opaqueFlagDomain("RESET 2.4 epic scope")},
 }
 
 func textDomain(maximumBytes int) flagDomain {

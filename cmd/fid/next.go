@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/modelid"
 	"github.com/mbell-nzl/fid/internal/next"
 	"github.com/mbell-nzl/fid/internal/policy"
@@ -32,8 +33,8 @@ var nextActorDomain = flagDomain{[]string{"string"}, "RESET 1.4a next.claim; P21
 
 func newNextCommand() *cobra.Command {
 	var (
-		claim, explain bool
-		actor, model   string
+		claim, explain     bool
+		actor, model, epic string
 	)
 	cmd := &cobra.Command{
 		Use:   "next",
@@ -41,7 +42,7 @@ func newNextCommand() *cobra.Command {
 		Long: "Show the task fid would hand this worktree next: the one it already holds, then work others wait on, " +
 			"then unstarted tasks in fid status's order, passing over held, blocked and out-of-sequence tasks.\n\n" +
 			"--claim --actor <actor> takes the task as a hold for this worktree, in one Event; repeating it returns the " +
-			"same hold. --explain lists the whole order with a verdict for each task.",
+			"same hold. --epic limits all work, including reviews, to that epic. --explain lists the whole order with a verdict for each task.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			operation := leafOperation(cmd)
 			if refused := refuseNextRequest(cmd, claim, actor, model); refused != nil {
@@ -52,7 +53,7 @@ func newNextCommand() *cobra.Command {
 				return renderNextFailure(cmd, operation, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor, Model: model}
+			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor, Model: model, Epic: epic}
 			read := next.Read
 			if claim {
 				read = next.Claim
@@ -80,6 +81,7 @@ func newNextCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Who takes the task, agent:<id> or human:<id>; only with --claim")
 	cmd.Flags().StringVar(&model, "model", "", "Builder model as <family>/<model>; required for agents taking work")
 	cmd.Flags().BoolVar(&explain, "explain", false, "List the whole order with a verdict for each task")
+	cmd.Flags().StringVar(&epic, "epic", "", "Serve only this epic's tasks, including review work")
 	return cmd
 }
 
@@ -156,6 +158,15 @@ func renderNextFailure(cmd *cobra.Command, operation string, cause error) error 
 }
 
 func nextFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure, error) {
+	var scopeError *next.EpicScopeError
+	if errors.As(cause, &scopeError) {
+		return cli.NewFailure(cli.CodeUnsupportedKind, cli.BoundedMessage(scopeError.Error()), nil,
+			map[string]any{"argument": "--epic", "value": scopeError.ID, "allowed": []string{"an epic ID"}})
+	}
+	var notFound *issues.NotFoundError
+	if errors.As(cause, &notFound) {
+		return issueMutationFailure(cmd, operation, "", cause)
+	}
 	var policyError *policy.SourceError
 	if errors.As(cause, &policyError) {
 		failure, err := cli.NewFailure(cli.CodePolicyUnavailable, cli.BoundedMessage(policyError.Error()), nil,

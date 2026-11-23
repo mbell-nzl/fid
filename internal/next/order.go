@@ -73,9 +73,19 @@ type order struct {
 // occupy a reviewer worktree while live, even if comparison objects are lost.
 // The queue retains every unstarted task and every task with an open hold.
 func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time, reviewPlans ...map[string]reviewCandidate) order {
-	planned := order{queue: []Entry{}, served: -1, held: map[string]holds.Hold{}}
+	var reviews map[string]reviewCandidate
 	if len(reviewPlans) > 0 {
-		planned.reviews = reviewPlans[0]
+		reviews = reviewPlans[0]
+	}
+	return planInScope(work, open, worktreeID, now, reviews, "")
+}
+
+func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now time.Time, candidates map[string]reviewCandidate, scope string) order {
+	planned := order{queue: []Entry{}, served: -1, held: map[string]holds.Hold{}}
+	planned.reviews = candidates
+	outside := map[string]bool{}
+	for _, task := range work.Tasks {
+		outside[task.ID] = scope != "" && epicOf(task.OverviewTask) != scope
 	}
 	for _, candidate := range planned.reviews {
 		if candidate.claim != nil && candidate.claim.WorktreeID == worktreeID {
@@ -145,6 +155,9 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time,
 		if task.UnacceptedBy != "" {
 			entry.Reason = pointer(ReasonNotAccepted)
 		}
+		if outside[task.ID] {
+			entry.Reason, entry.After = pointer(ReasonOutsideScope), nil
+		}
 		if planned.served < 0 && entry.Reason == nil {
 			planned.served = len(planned.queue)
 		}
@@ -156,6 +169,11 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time,
 			planned.kind, planned.served = KindNone, -1
 			return planned
 		}
+	}
+	// Scope cannot abandon occupied work and start a second task here.
+	if outside[resume] || planned.ownReview != nil && outside[planned.ownReview.TaskID] {
+		planned.kind, planned.served = KindNone, -1
+		return planned
 	}
 	if planned.ownReview != nil && planned.reviews[planned.ownReview.TaskID].work == nil {
 		planned.kind, planned.served = KindNone, -1

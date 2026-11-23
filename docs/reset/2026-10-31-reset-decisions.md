@@ -3014,6 +3014,46 @@ RESET.md records the split and each row's done-when.
 - No dependency added. Internal names, the separate table and the reuse of
   hold JSON/heartbeat are transactional choices made by the builder.
 
+**Decided for 2.4, 2026-11-22.**
+
+The orchestrator settled this design under Mark's delegation, for his review.
+
+- `docs/specs/LOOP_CONTRACT.md` first declares the existing `fid-cli.v1`:
+  envelope, command exits, selected task and session, all five next kinds,
+  three waiting kinds, the person's answer, review hand-off/PR/stream and
+  required profiles, session commands, reviews and done statuses. The version
+  stays `fid-cli.v1`. Changing or removing a declared field, kind or exit
+  requires a version bump; an additional optional field does not.
+- The initial contract now covers 2.1b: next's latest rework allowance and
+  guidance, and successful `none` while an unaccepted task occupies its
+  worktree; no loop consumes the declaration yet, so it stays `fid-cli.v1`.
+- Contract goldens select only declared fields and exits. The specification
+  includes their machine-readable paths, with optional fields and array
+  elements explicit. Public-command journeys compare the produced next and
+  waiting kinds to the declared sets. They cover interruption and answers,
+  review races, rework with a new hand-off and approval, the cap boundary,
+  both review profiles and streams, and done's batch statuses.
+- `next --epic <epic>` scopes every kind, including reviews, to that epic.
+  Tasks outside it, including tasks without an epic, get `outside-scope`,
+  ahead of other informational reasons. Within it the normal ordering,
+  dependencies, sequence, holds and cap remain. With no available scoped
+  work the result is `none`; unscoped workers retain their order. Unknown
+  IDs use `issue-not-found` (3); a non-epic uses `unsupported-kind` (2).
+- Implementation choice: scope is checked inside the planner's projection
+  read (under the write lock for a claim), before any policy snapshot or
+  session is written. The full queue is retained. An occupied build or
+  reviewer worktree whose task is outside a newly requested scope returns
+  `none`, preserving the existing reservation and the one-task-per-worktree
+  rule. The CLI only passes the option and shapes typed domain errors.
+- Implementation choices: fixture epics have explicit priorities, and
+  sequential tasks have sequences at creation. Goldens mask only shaped IDs,
+  commits and times; journeys assert task identity, distinct hand-offs and
+  exclusive sessions. All fixtures use temporary repositories and explicit
+  git test identities. No dependency, migration or journal change is needed.
+- V9's `check:loop-selftest` verifier lands with 2.5's actual loop and stub
+  agents. 2.4 supplies its declared version and kind sets. Its done-when is
+  amended from "V4, V9" to "V4; the contract V9 checks" for Mark's review.
+
 **Decided for 2.1b, 2026-11-22.**
 
 Built from the orchestrator's design, settled under Mark's delegation for his
@@ -3417,6 +3457,15 @@ Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
 
+- From this PR (2.4): an extra integration-tagged lint run
+  (`golangci-lint run --build-tags integration ./cmd/fid/integration/...`)
+  found nine issues, all in files unchanged by 2.4: an unchecked
+  `conn.Close` in `projection_helpers_test.go`, import ordering in
+  `rework_test.go`, and seven unused helpers (`p21Missing`, `p23Number`,
+  `p23NumberValue`, `p23Clone`, `p22Git`, `p22GitOutput`,
+  `closureCompleteIssue`). Tidy these in test maintenance and consider
+  checking integration-tagged code in lint; the normal make lint command
+  does not select the integration build tag.
 
 - From #101 (1.9c): some older direct retry readers (criterion, transition,
   labels, links, Artifact verification, and hold operations other than

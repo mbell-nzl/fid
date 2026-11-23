@@ -1,0 +1,37 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "review.record",
+  "result": {
+    "round.findings[].evidence": [
+      "Retry case reproduced"
+    ],
+    "round.findings[].fix": [
+      "Handle the retry"
+    ],
+    "round.findings[].id": [
+      "\u003cRND\u003e"
+    ],
+    "round.findings[].location": [
+      null
+    ],
+    "round.findings[].profile": [
+      "code"
+    ],
+    "round.findings[].severity": [
+      "major"
+    ],
+    "round.findings[].summary": [
+      "Missing retry case"
+    ],
+    "round.handoff_id": "\u003cHOF\u003e",
+    "round.id": "\u003cRND\u003e",
+    "round.profiles": [
+      "code"
+    ],
+    "round.stream": "primary",
+    "round.task_id": "\u003cFID\u003e",
+    "round.verdict": "CHANGES"
+  }
+}
