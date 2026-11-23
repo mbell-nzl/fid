@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -11,6 +12,37 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
+
+func TestReviewDeliveryInvalidArgumentDetails(t *testing.T) {
+	t.Parallel()
+	f, ids, _ := closureFixture(t)
+	for _, tc := range []struct {
+		args              []string
+		argument, allowed string
+	}{
+		{[]string{"finding", "answer", ids[0], "--actor", "agent:stranger", "--text", "Fixed"}, "finding", "an open finding and a builder or person"},
+		{[]string{"finding", "defer", ids[2], "--actor", "agent:stranger", "--title", "Later"}, "finding", "an open finding and a builder or person"},
+		{[]string{"review", "post", "RND-unknown"}, "round", "a recorded review round"},
+	} {
+		t.Run(strings.Join(tc.args[:2], "."), func(t *testing.T) {
+			got := f.run(append([]string{"--json"}, tc.args...)...)
+			var reply struct {
+				Error struct {
+					Details struct {
+						Argument string   `json:"argument"`
+						Allowed  []string `json:"allowed"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(got.stderr), &reply); err != nil {
+				t.Fatal(err)
+			}
+			if got.err == nil || reply.Error.Details.Argument != tc.argument || strings.Join(reply.Error.Details.Allowed, ",") != tc.allowed {
+				t.Fatalf("wrong command guidance: %s", got.stderr)
+			}
+		})
+	}
+}
 
 func TestFindingDeferralEpicAndLane(t *testing.T) {
 	t.Parallel()

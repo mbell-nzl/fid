@@ -135,7 +135,9 @@ func TestFindingResponseAdmission(t *testing.T) {
 				e.Effects[0].Values["title"] = " "
 			case "epic":
 				changeResponse(t, &e, func(r *reviewrecord.Response) { p := "FID-a"; r.DeferredTask.EpicID = &p })
+				e.Effects[0].Values["parent_id"] = "FID-a"
 			case "criterion":
+				changeResponse(t, &e, func(r *reviewrecord.Response) { r.Text = "Unrelated work" })
 				e.Effects[1].Values["text"] = "Unrelated work"
 			case "issue":
 				e.Effects[0].Values["kind"] = "epic"
@@ -152,12 +154,16 @@ func TestFindingResponseAdmission(t *testing.T) {
 			case "missing disposition":
 				e.Effects = e.Effects[:len(e.Effects)-1]
 			}
-			assertResponseAdmission(t, v, e, false)
+			reason := ""
+			if name == "epic" {
+				reason = "deferral parent must be an epic"
+			}
+			assertResponseAdmission(t, v, e, false, reason)
 		})
 	}
 }
 
-func assertResponseAdmission(t *testing.T, v *semanticValidator, e journal.Event, valid bool) {
+func assertResponseAdmission(t *testing.T, v *semanticValidator, e journal.Event, valid bool, reasons ...string) {
 	t.Helper()
 	before := handoffProjectionSnapshot(t, v)
 	err := applyLeanEmptyEvent(v, "replay", e)
@@ -169,6 +175,11 @@ func assertResponseAdmission(t *testing.T, v *semanticValidator, e journal.Event
 	}
 	if err == nil {
 		t.Fatal("malformed response admitted")
+	}
+	for _, reason := range reasons {
+		if !strings.Contains(err.Error(), reason) {
+			t.Fatalf("admission error = %v, want %q", err, reason)
+		}
 	}
 	if handoffProjectionSnapshot(t, v) != before {
 		t.Fatal("refusal changed projection or checkpoint")

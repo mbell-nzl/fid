@@ -1691,7 +1691,9 @@ deferrals retain the generated criterion. Text success is `✓ Answered <finding
 · <text>` or `✓ Deferred <finding> → <task> · <title>`. These commands have no
 request retry key. Unknown/closed findings, invalid actors, blank text/titles,
 invalid parent/lane and major deferrals use `invalid-argument` (exit 2), changing
-nothing. Common repository, journal and lock refusals apply.
+nothing. Their error details name argument `finding`, with allowed input
+`an open finding and a builder or person`. Common repository, journal and
+lock refusals apply.
 
 After recording, fid attempts a comment rendered from its immutable round or
 response. Round comments follow jig’s review layout: verdict, reviewer actor,
@@ -1711,7 +1713,8 @@ second post. A receipt makes subsequent retries entirely local. `review post`
 retries a round plus all responses to its findings, returning `{posted: [ids],
 pending: [ids]}` without a single Event in the response (each successful post
 has its own receipt Event). Text prints each posted or pending ID. An unknown
-round is `invalid-argument`; transport failures return pending IDs.
+round is `invalid-argument`, with argument `round` and allowed input
+`a recorded review round`; transport failures return pending IDs.
 
 Failed delivery never rolls back a canonical recording or blocks `done`.
 Status derives `review-post-pending` warnings, naming each round, its pending

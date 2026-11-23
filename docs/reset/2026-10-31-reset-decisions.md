@@ -3178,7 +3178,9 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   `issue_creators` from the Event actor in the same projection transaction,
   so discovered tasks wait for acceptance. Deferral never reopens the source.
   Invalid responses and unknown post-round IDs use `invalid-argument` (exit 2).
-  Transport failures leave recording successful and return pending post IDs.
+  Error details name `finding` with builder/person guidance, or `round` with
+  recorded-round guidance, rather than inheriting the review-record hint.
+  Transport failures leave recording successful; `review post` returns pending IDs.
 - CLI recording attempts delivery after its canonical write. Round comments
   follow jig’s headings, attribution, profiles, round, lane, purpose, finding
   severity/action/location/evidence/fix, earlier dispositions and verification.
@@ -3215,7 +3217,12 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   state/bytes and subsequent valid writes. Temporary overlays check the new
   behavior rules. The completion report retains their results and check output.
 
-**Left for later:** None discovered outside this task.
+**Left for later:**
+
+- From this PR (2.1c): source inspection shows `review list` still uses the
+  generic "an independent review of the latest hand-off" allowed-input hint
+  for invalid task arguments. Give that existing read command task-specific
+  guidance in later CLI polish; 2.1c corrects the new answer/defer/post hints.
 
 **Decided for 2.3, 2026-11-21.**
 
