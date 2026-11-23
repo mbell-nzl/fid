@@ -2,13 +2,10 @@ package journal
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/mbell-nzl/fid/internal/journal/testdata/rowcorpus"
 )
 
 type rowProbe struct {
@@ -21,16 +18,10 @@ type rowProbe struct {
 
 func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 	t.Parallel()
-	raw, err := rowcorpus.JSON()
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct {
-		Prefix              []Event
-		Controls, Malformed []rowProbe
-	}
-	if err := json.Unmarshal(raw, &corpus); err != nil {
-		t.Fatal(err)
+	corpus := readRowCorpus(t)
+	representatives := map[string]bool{}
+	for _, probe := range rowIdentityRepresentatives(corpus.Malformed) {
+		representatives[probe.Name] = true
 	}
 	for _, group := range []struct {
 		name    string
@@ -41,7 +32,18 @@ func TestRowIdentityOnEveryJournalPath(t *testing.T) {
 			t.Run(group.name+"/"+probe.Name, func(t *testing.T) {
 				t.Parallel()
 				prefix := append(append([]Event{}, corpus.Prefix...), probe.Prefix...)
-				for _, mode := range admissionModes(probe.Event) {
+				modes := admissionModes(probe.Event)
+				if group.refused && !representatives[probe.Name] {
+					// Every malformed probe exercises the complete admission against a
+					// real projection. Other paths need one per schema/table/reason;
+					// controls keep every shape on every applicable path. Event-v1
+					// cannot be committed, so its full boundary is projection.
+					modes = []string{"project"}
+					if probe.Event.IsV2() {
+						modes = []string{"commit"}
+					}
+				}
+				for _, mode := range modes {
 					t.Run(mode, func(t *testing.T) {
 						w := newAdmissionWorkspace(t, prefix, mode)
 						reference := w
