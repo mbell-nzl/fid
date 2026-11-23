@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/gittest"
@@ -23,9 +24,11 @@ func TestDefaultConflictAfterTakeoverResumes(t *testing.T) {
 				t.Fatal(got)
 			}
 			moveConflictDefault(t, f, tc.conflict)
+			assertTakeoverConflictStatus(t, f, task, tc.conflict)
 			builder := f.workspace
 			f.workspace = gittest.AddWorktree(t, builder)
 			taken, _ := lifecycleResult(t, f.run("--json", "takeover", task, "--actor", "human:mark", "--reason", "Recover the task in another worktree"), "task.takeover")
+			assertTakeoverConflictStatus(t, f, task, false)
 			_, revision := taskState(t, f, task)
 			before := readAllPolicyJournal(t, f.workspace)
 			for _, claim := range []bool{false, true} {
@@ -51,6 +54,7 @@ func TestDefaultConflictAfterTakeoverResumes(t *testing.T) {
 				t.Errorf("takeover resume changed task state/revision: %s/%v", state, rev)
 			}
 			f.workspace = builder
+			assertTakeoverConflictStatus(t, f, task, false)
 			old, event := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 			if old["kind"] != "none" || old["rework"] != nil || event != nil {
 				t.Errorf("released builder reservation got work: %v; event=%v", old, event)
@@ -59,5 +63,40 @@ func TestDefaultConflictAfterTakeoverResumes(t *testing.T) {
 				t.Error("next after takeover changed journal bytes")
 			}
 		})
+	}
+}
+
+func assertTakeoverConflictStatus(t *testing.T, f *statusFixture, task string, conflict bool) {
+	t.Helper()
+	status, _ := lifecycleResult(t, f.run("--json", "status"), "project.status")
+	wantKind, wantAction := "merge", "https://github.com/mbell-nzl/fid/pull/63"
+	if conflict {
+		wantKind, wantAction = "default-conflict", "fid next --claim in the builder's worktree"
+	}
+	items := 0
+	for _, value := range status["needs_you"].([]any) {
+		item := value.(map[string]any)
+		subject, ok := item["subject"].(map[string]any)
+		if !ok || subject["id"] != task {
+			continue
+		}
+		items++
+		if item["kind"] != wantKind || item["next_action"] != wantAction {
+			t.Errorf("status action for task=%v, want kind=%s action=%s", item, wantKind, wantAction)
+		}
+	}
+	if items != 1 {
+		t.Errorf("status has %d actions for task, want 1: %v", items, status)
+	}
+	text := f.run("status")
+	if text.err != nil {
+		t.Fatal(text)
+	}
+	if conflict {
+		if !strings.Contains(text.stdout, wantAction) || !strings.Contains(text.stdout, "PR no longer merges") {
+			t.Errorf("status text must name the builder's fid next --claim action:\n%s", text.stdout)
+		}
+	} else if strings.Contains(text.stdout, "PR no longer merges") || strings.Contains(text.stdout, "fid next --claim") || !strings.Contains(text.stdout, task+": merge PR #63") {
+		t.Errorf("status text must keep the existing merge action without a builder update:\n%s", text.stdout)
 	}
 }
