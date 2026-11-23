@@ -10,6 +10,7 @@
     "checks": [],
     "checks_base": null,
     "children": [],
+    "completion": null,
     "epic": {
       "id": "FID-8a1b2c",
       "kind": "epic",

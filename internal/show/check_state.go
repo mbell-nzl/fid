@@ -24,6 +24,10 @@ type Check struct {
 
 func (result *Result) readChecks(root string) {
 	result.Checks, result.Warnings = []Check{}, []status.Warning{}
+	if result.doneTask() {
+		result.completedChecks()
+		return
+	}
 	if result.Issue.Kind != "task" {
 		return
 	}

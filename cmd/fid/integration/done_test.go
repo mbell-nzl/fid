@@ -157,10 +157,28 @@ func TestDoneBuiltBinaryStandardAndAssuredJourney(t *testing.T) {
 			entry := p24EndKeyedCapture(j.root)["task.done"]
 			assertDoneKeyedRetries(t, j, entry)
 			p21Run(t, j.binary, j.root, "rebuild", "--json")
-			shown := p21Run(t, j.binary, j.root, "--json", "show", j.task)
-			if p21PathString(t, shown, "result", "issue", "status") != "done" {
-				t.Fatalf("show=%v", shown)
+			closureRun(t, j.root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "--allow-empty", "-qm", "Later HEAD")
+			shownJSON, stderr, err := j.run(t, "--json", "show", j.task)
+			if err != nil || stderr != "" {
+				t.Fatalf("show=%v %s", err, stderr)
 			}
+			shown := p23Envelope(t, shownJSON)
+			if p21PathString(t, shown, "result", "completion", "id") != p21PathString(t, r, "result", "completion", "id") || p21PathString(t, shown, "result", "completion", "merge_observation", "merge_commit") != strings.Repeat("a", 40) {
+				t.Fatalf("show receipt=%v", shown)
+			}
+			checks := p21Path(t, shown, "result", "checks").([]any)
+			if len(checks) != 1 || checks[0].(map[string]any)["satisfied"] != true {
+				t.Fatalf("completed checks=%v", checks)
+			}
+			human, stderr, err := j.run(t, "show", j.task)
+			if err != nil || stderr != "" || !strings.Contains(human, "Completed") || !strings.Contains(human, "CI ✓ success") || strings.Contains(human, "HEAD") {
+				t.Fatalf("receipt=%v %s %s", err, human, stderr)
+			}
+			afterLog, err := os.ReadFile(j.log)
+			if err != nil || !bytes.Equal(log, afterLog) {
+				t.Fatalf("show contacted GitHub: %s / %v", afterLog, err)
+			}
+
 			next := p21Run(t, j.binary, j.root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 			if p21Path(t, next, "result", "waiting") != nil {
 				t.Fatalf("reservation=%v", next)
