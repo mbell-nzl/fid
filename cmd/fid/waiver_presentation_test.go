@@ -65,15 +65,25 @@ func TestWaiverPresentationAndCurrency(t *testing.T) {
 
 func TestWaivedRoutineAcceptsOnlyRequiredTestAdequacyProfile(t *testing.T) {
 	t.Parallel()
-	f, task := canonicalReviewFixtureWithClock(t, "assured", false, time.Now, func(f *statusFixture) {
-		trustedShowPolicy(t, f, func(raw string) string {
-			return strings.Replace(raw, "test_adequacy=[]", "test_adequacy=['**/*.md']", 1)
-		})
-	})
-	waiveSuccess(t, waiveForTest(f, task, task+"\n", true))
+	f, task := waivedRoutineTestAdequacyFixture(t)
 	in := reviewInput()
 	in["profiles"] = []string{"test-adequacy"}
 	lifecycleResult(t, recordReviewTask(t, f, in, "waived-profile", "human:courier", task), "review.record")
+}
+
+func waivedRoutineTestAdequacyFixture(t *testing.T) (*statusFixture, string) {
+	t.Helper()
+	f, task := canonicalReviewFixtureWithClock(t, "assured", false, time.Now, func(f *statusFixture) {
+		trustedShowPolicy(t, f, func(raw string) string {
+			updated := strings.Replace(raw, "test_adequacy = []", "test_adequacy = ['**/*.md']", 1)
+			if updated == raw {
+				t.Fatal("fixture did not configure Markdown paths for test adequacy")
+			}
+			return updated
+		})
+	})
+	waiveSuccess(t, waiveForTest(f, task, task+"\n", true))
+	return f, task
 }
 
 func TestLatestCurrentWaiverSetsEffectiveLane(t *testing.T) {
