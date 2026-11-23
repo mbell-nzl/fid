@@ -184,7 +184,7 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 		return planned
 	}
 	switch {
-	case resume != "" && (planned.own.Rework() || planned.reviews[resume].conflict != nil):
+	case resume != "" && (planned.own.Rework() || planned.own.InReview() && planned.reviews[resume].conflict != nil):
 		planned.kind = KindRework
 	case resume != "":
 		planned.kind = KindResume
