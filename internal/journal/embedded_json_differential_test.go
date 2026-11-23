@@ -33,13 +33,13 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 		t.Fatal(err)
 	}
 	original := readJSONTestArchive(t, archive)
-	probes := journal.EmbeddedJSONMatrixForTest(t)
+	probes := journal.EmbeddedJSONRepresentativesForTest(journal.EmbeddedJSONMatrixForTest(t))
 	for i := range probes {
 		probes[i].MigrationsDir = migrations
 	}
 	t.Run("paths", func(t *testing.T) { journal.CheckEmbeddedJSONMatrixPathsForTest(t, probes) })
-	// Four import workers avoid thousands of parallel SQLite restore fixtures
-	// competing with the journal paths and the rest of the package's tests.
+	// Bound import concurrency alongside the seven journal paths. Each worker
+	// keeps refusal, unchanged-target and recovery checks for its representatives.
 	const importWorkers = 4
 	for worker := range importWorkers {
 		t.Run(fmt.Sprintf("imports-%d", worker), func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 			}
 		})
 	}
-	// Every malformed case retains its refusal, unchanged-target assertion and
+	// Every representative retains its refusal, unchanged-target assertion and
 	// successful recovery import. The accepted archive is identical for every
 	// case, so exercise its write/export/validate/restore journey once overall.
 	t.Run("accepted", func(t *testing.T) {

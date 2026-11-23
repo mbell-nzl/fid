@@ -18,6 +18,7 @@ import (
 // can import export without creating a journal -> export -> journal cycle.
 type EmbeddedJSONProbeForTest struct {
 	Name, Placement, Column, Reason, MigrationsDir string
+	Variant, Raw                                   string
 	Event                                          Event
 }
 
@@ -104,7 +105,7 @@ func EmbeddedJSONMatrixForTest(t *testing.T) []EmbeddedJSONProbeForTest {
 							case "depth":
 								reason = "exceeded max depth"
 							}
-							probes = append(probes, EmbeddedJSONProbeForTest{Name: family + "/" + operation + "/" + column + "/" + placement + "/" + variant, Placement: placement, Column: column, Reason: reason, Event: e})
+							probes = append(probes, EmbeddedJSONProbeForTest{Name: family + "/" + operation + "/" + column + "/" + placement + "/" + variant, Placement: placement, Column: column, Reason: reason, Variant: variant, Raw: variants[variant], Event: e})
 						}
 					}
 				}
@@ -160,6 +161,9 @@ func checkEmbeddedJSONModesForTest(t *testing.T, probes []EmbeddedJSONProbeForTe
 					}
 					if err == nil || !strings.Contains(err.Error(), reason) {
 						t.Fatalf("embedded JSON %s in %s = %v, want %s refusal", probe.Column, probe.Placement, err, reason)
+					}
+					if probe.Variant != "" {
+						checkEmbeddedJSONRowRefusal(t, probe, err)
 					}
 					live := mode == "commit" || mode == "dry-run" || mode == "project"
 					if !live {

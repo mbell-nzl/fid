@@ -1850,6 +1850,75 @@ Mark made these decisions on 2026-11-22, after 1.9b (#97), 2.2b (#98) and
    "upgraded at each epic close or when a merged fix is needed" (Decided
    2026-11-17, item 3).
 
+## Decided 2026-11-23
+
+Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
+
+1. **1.9d: journal test time, before 2.1c.** 1.9c's generated
+   malformed-JSON matrix sends 1,220 probes through seven journal paths.
+   `internal/journal` took 530 s of Go's 600 s default in `make test`, and
+   GitHub CI timed it out at 20 minutes on #103's head. The full matrix
+   moves to the shared validators, with one probe per map and variant
+   through each path and import. No timeout or check definition changes.
+2. **2.1c joins the reset, before 2.5.** Mark accepted the proposed row
+   (answers and deferrals; fid posts each round to the PR from its own
+   record). 2.5's loop then needs no posting code of its own.
+3. **2.1d: updating an approved task whose PR stopped merging,** before
+   2.5. Until now only a round asking for changes gave a builder its
+   worktree back, so a PR that stopped merging after approval needed a
+   review round to find the conflict (#101 and #103). When the latest
+   hand-off's head no longer merges cleanly into the local
+   `origin/<default>`, which fid tests with git and never fetches, the
+   builder's worktree gets the task back as rework without a round. It
+   merges the default branch, runs `fid check` and hands off again. Rounds
+   and the approval stay current only while the fingerprint is unchanged.
+   A builder can't otherwise take an approved task back to fix an open
+   minor: it answers or defers it (2.1c), so an approval keeps meaning
+   that head.
+4. **Two Later items.** Moving a task to another epic, and accepting every
+   waiting task in one command (Later list, "From Mark (2026-11-23)").
+
+**Decided for 1.9d, 2026-11-23.**
+
+- The full schema/catalog-derived embedded-JSON matrix (1,220 probes) runs
+  directly through `ValidateEventShape`, `Event.UnmarshalJSON` and import's
+  shared `journal.ValidateJSONText` boundary, without a repository per probe.
+  The schema is still enumerated from the real migrations. Event refusals
+  assert `RowIdentityError`, the Event ID, map/column and identifying reason.
+  Untyped import JSON accepts case-distinct map keys; typed struct aliases
+  are refused earlier by Event decoding.
+- The first generated carrier for each of four maps and four variants is
+  selected in stable order. These 16 representatives retain every path's
+  refusal, complete projection/journal comparison and valid recovery write,
+  and public import's refusal, unchanged-target and recovery import.
+  Serialized/stored readers, destination-map rules, fixture parity and the
+  accepted write/export/validate/restore journey stay.
+- The orchestrator's continuation (2026-11-23) applies the same split to row identity. All 174 corpus
+  probes (35 controls, 139 malformed) retain a complete admission boundary
+  against a real projection: commit for Event-v2, projection for Event-v1,
+  which commit cannot accept. The first carrier per schema/table/reason
+  gives 51 malformed representatives on every applicable path. Including
+  schema keeps all nine legacy probes on all six legacy modes. Every control
+  still runs on every path, including every link relation/inverse value.
+  Repository journeys fall from 1,209 to 681; the typed table/reason refusal,
+  projection/journal comparisons and valid recovery-write body is unchanged.
+  Import's full row corpus and historical-schema refusals remain unchanged.
+- Twenty-six temporary source-overlay mutations are caught by test
+  assertions on the final tree: the first pass's eleven embedded-JSON guards,
+  each mode's row-refusal wiring, common row admission removed and tested
+  independently through each mode, and a removed link-inverse rule caught by
+  a non-representative probe at the complete commit boundary. No production
+  seam, dependency, timeout, check definition or CI file changes.
+- Standalone journal ran in 434.396s before the first pass and 356.300s after
+  it. The continuation baseline on that tree was 366.780s; the final run was
+  292.615s. Embedded-JSON representative paths fell from 26.39-60.14s to
+  0.33-0.82s in the first pass. The focused row-identity run took 89.746s.
+  `make test` journal fell from the first pass's 467.900s to 351.962s;
+  export was 205.528s and `cmd/fid` was 410.169s. The under-300s journal
+  aim is still unmet; the remaining hotspot is on the Later list.
+  GitHub CI timing remains for the orchestrator to measure; these are local
+  results, with the unchanged check definitions and timeout values.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -3456,6 +3525,27 @@ such a task waits for Mark to accept it; until then the epic's wait for
   passed with journal at 529.577s and export at 193.163s. Journal still misses
   the requested under-300s aim and has about 70s before Go's unchanged 600s
   default. Further headroom needs profiling; no timeout was raised.
+  Became RESET 1.9d (Mark, 2026-11-23), after GitHub CI timed the package
+  out at 20 minutes on #103's head.
+  Resolved by 1.9d, 2026-11-23: the full embedded-JSON matrix now runs at
+  the shared validators, and row identity retains the complete corpus at
+  one real admission boundary with schema/table/reason representatives on
+  every path. Both splits keep their refusal, state and recovery assertions
+  and are guarded by source-overlay mutations.
+
+- From this PR (1.9d): the embedded-JSON and row-identity splits reduce
+  standalone journal from 434.396s before the first pass to 292.615s, but
+  `make test` journal is 351.962s, above the 300s aim. Its
+  refusal, state-preservation and recovery assertions stay intact; no timeout
+  or check changes. The next aggregate repository cost is
+  `TestForgedStateMovesRefusedOnEveryJournalPath` (about 204s of overlapping
+  leaf elapsed time, not CPU or package wall time). Its typed refusals differ
+  by family, subject, from/to state and legacy status, so a table/reason split
+  cannot simply reuse row identity's equivalence classes. A further cut needs
+  an explicit selection contract preserving those state-move distinctions;
+  until then retain its complete path matrix. The 22.82s family-validation
+  test also stays: each of its 18 mutations covers a distinct rule, so keeping
+  a carrier per rule on live projection and replay retains all its cases.
 
 - From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state
@@ -3463,6 +3553,16 @@ such a task waits for Mark to accept it; until then the epic's wait for
   prior-plus-one row. No real ledger holds Event-v1. Decide whether to retire
   its remaining grammar or harden those scalar updates before supporting
   such history as operational data.
+- From Mark (2026-11-23): move a task to another epic. Since 1.9c an
+  Issue's parent can't change on the general update path, so moving a
+  Later item into phase 2 (1.9d) meant filing it again and cancelling the
+  old one. A dedicated command and Event, admitted on every journal path:
+  the target is an open epic, done or cancelled tasks don't move, epic
+  sequences and blocks links stay valid, actor and reason recorded.
+- From Mark (2026-11-23): accept every waiting task in one command (for
+  example `fid accept --all`, or by epic), listing what it accepts and
+  recording one decision each; agents stay refused. `fid accept` takes
+  explicit IDs only.
 - From this PR (2.1b): proposed RESET 2.1c, the remaining review-delivery
   scope after the brief's size split: builder/person answers to open findings
   without closing them; atomic minor/nit deferral into a discovered task, link,
