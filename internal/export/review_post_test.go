@@ -92,7 +92,10 @@ func TestReviewCommentKeepsRecordedHandoff(t *testing.T) {
 	if err := applyLeanEmptyEvent(v, "replay", e); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := v.conn.Exec(`INSERT INTO handoffs SELECT 'HOF-later',task_id,hold_id,policy_snapshot,json_set(record_json,'$.id','HOF-later','$.pr','https://github.com/owner/repo/pull/64') FROM handoffs WHERE id='HOF-100001'`); err != nil {
+	if _, err := v.conn.Exec(`INSERT INTO holds(id,task_id,worktree_id,worktree_root,actor,since,expires_at,ended_at,end_reason) SELECT 'HLD-later',task_id,worktree_id,worktree_root,actor,since,expires_at,ended_at,'review' FROM holds WHERE id='HLD-1'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := v.conn.Exec(`INSERT INTO handoffs SELECT 'HOF-later',task_id,'HLD-later',policy_snapshot,json_set(record_json,'$.id','HOF-later','$.hold_id','HLD-later','$.pr','https://github.com/owner/repo/pull/64') FROM handoffs WHERE id='HOF-100001'`); err != nil {
 		t.Fatal(err)
 	}
 	for _, id := range []string{"RND-123456", "FRS-one"} {
