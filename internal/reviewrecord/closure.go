@@ -9,10 +9,12 @@ import (
 // Closure names the immutable authority that closed a finding. Open dispositions
 // remain in their review round; only terminal dispositions have a Closure.
 type Closure struct {
-	RoundID     string `json:"round_id,omitempty"`
-	DecisionID  string `json:"decision_id,omitempty"`
-	Disposition string `json:"disposition"`
-	Reason      string `json:"reason"`
+	ResponseID     string `json:"response_id,omitempty"`
+	DeferredTaskID string `json:"deferred_task_id,omitempty"`
+	RoundID        string `json:"round_id,omitempty"`
+	DecisionID     string `json:"decision_id,omitempty"`
+	Disposition    string `json:"disposition"`
+	Reason         string `json:"reason"`
 }
 
 func FindingTask(conn Queryer, id string) (string, error) {
@@ -36,6 +38,15 @@ func ReadClosure(conn Queryer, id string) (*Closure, error) {
 	var round, decision sql.NullString
 	err := conn.QueryRow(`SELECT round_id,decision_id,disposition,reason FROM finding_closures WHERE finding_id=?`, id).Scan(&round, &decision, &c.Disposition, &c.Reason)
 	if err == sql.ErrNoRows {
+		responses, err := Responses(conn, id)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range responses {
+			if r.DeferredTask != nil {
+				return &Closure{ResponseID: r.ID, DeferredTaskID: r.DeferredTask.ID, Disposition: "deferred", Reason: r.Text}, nil
+			}
+		}
 		return nil, nil
 	}
 	if err != nil {

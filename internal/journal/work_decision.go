@@ -59,7 +59,7 @@ func validateWorkDecision(event Event, conn *sql.Tx) error {
 // The creation actor belongs to the Event, not its user-editable activity.
 // Rebuilding the projection backfills attribution for every existing task.
 func projectIssueCreator(tx *sql.Tx, event Event) error {
-	if !event.IsV2() || event.EventType != "issue.created" {
+	if !event.IsV2() || event.EventType != "issue.created" && event.EventType != "finding.deferred" {
 		return nil
 	}
 	var installed int
@@ -69,6 +69,10 @@ func projectIssueCreator(tx *sql.Tx, event Event) error {
 	if installed == 0 {
 		return nil
 	}
-	_, err := tx.Exec(`INSERT INTO issue_creators(issue_id,actor) VALUES(?,?)`, event.Aggregate.ID, event.ActorV2.ActorType+":"+event.ActorV2.ActorID)
+	id := event.Aggregate.ID
+	if event.EventType == "finding.deferred" {
+		id, _ = event.Effects[0].PK["id"].(string)
+	}
+	_, err := tx.Exec(`INSERT INTO issue_creators(issue_id,actor) VALUES(?,?)`, id, event.ActorV2.ActorType+":"+event.ActorV2.ActorID)
 	return err
 }

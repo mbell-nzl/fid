@@ -20,7 +20,7 @@ func selectionGoldens(t *testing.T, f *statusFixture, name string, args ...strin
 		if got.err != nil {
 			t.Fatal(got)
 		}
-		out := got.stdout
+		out := regexp.MustCompile(`RND-[0-9a-f]{6}`).ReplaceAllString(got.stdout, "RND-<new>")
 		builder := filepath.Join(filepath.Dir(f.configHome), "worktree")
 		if f.workspace != builder {
 			out = strings.ReplaceAll(out, builder, "<BUILDER>")

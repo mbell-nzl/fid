@@ -1,0 +1,13 @@
+{
+  "warnings": [
+    {
+      "kind": "review-post-pending",
+      "next_action": "fid review post RND-<new>",
+      "pending": [
+        "RND-<new>"
+      ],
+      "round_id": "RND-<new>",
+      "summary": "PR comments pending for review RND-<new>"
+    }
+  ]
+}

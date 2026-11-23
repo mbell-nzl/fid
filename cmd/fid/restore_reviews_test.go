@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/github"
+	"github.com/mbell-nzl/fid/internal/reviewpost"
 
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
@@ -44,6 +50,8 @@ func recordV8Reviews(t *testing.T, root, task string) {
 			}
 		}
 	}
+	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "answer", ids[2], "--actor", "human:mark", "--text", "Fixed in the next round"), "finding.answer")
+	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "defer", ids[4], "--actor", "human:mark", "--title", "Optional follow-up"), "finding.defer")
 	lifecycleResult(t, executeCommandForTest(root, "--json", "finding", "close", ids[1], "--actor", "human:mark", "--reason", "Accepted risk", "--idempotency-key", "v8-close"), "finding.close")
 	recordV8Rework(t, root, task, ids[2])
 	claimV8Review(t, reviewer, task)
@@ -53,6 +61,7 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	f := &statusFixture{t: t, workspace: root, clock: time.Now}
 	lifecycleResult(t, recordReviewTask(t, f, in, "v8-fixed-separate", "human:courier", task), "review.record")
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-after-edit"))
+	recordV8Posts(t, root, task)
 }
 
 func claimV8Review(t *testing.T, root, task string) {
@@ -150,6 +159,33 @@ func assertV8Reviews(t *testing.T, workspace string) {
 		var n int
 		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 3, "separate": 2}[stream] {
 			t.Fatalf("V8 %s=%d/%v", stream, n, err)
+		}
+	}
+}
+
+func recordV8Posts(t *testing.T, root, task string) {
+	t.Helper()
+	conn, err := reviewwork.OpenProjection(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rounds, err := reviewrecord.Read(conn, task)
+	_ = conn.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	run := func(_ context.Context, args, _ []string) github.Result {
+		if args[0] == "api" {
+			return github.Result{Stdout: []byte("[]")}
+		}
+		n++
+		return github.Result{Stdout: []byte(fmt.Sprintf("%s#issuecomment-%d", strings.Replace(args[2], "/pull/", "/issues/", 1), n))}
+	}
+	for _, r := range rounds {
+		result, err := reviewpost.Round(context.Background(), root, issueMigrationsDir(), r.ID, run)
+		if err != nil || len(result.Pending) != 0 {
+			t.Fatalf("V8 posts=%v/%v", result, err)
 		}
 	}
 }

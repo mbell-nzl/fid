@@ -46,8 +46,16 @@ func WriteText(w io.Writer, task string, views []RoundView, renderer display.Ren
 				by := f.Closure.RoundID
 				if by == "" {
 					by = f.Closure.DecisionID
+					if by == "" {
+						by = f.Closure.ResponseID + " → " + f.Closure.DeferredTaskID
+					}
 				}
 				prose("      ", "By "+by+" · "+f.Closure.Disposition+" · "+f.Closure.Reason)
+			}
+			for _, r := range f.Responses {
+				if r.DeferredTask == nil {
+					prose("      ", "Answer by "+r.Actor+" · "+r.Text)
+				}
 			}
 			prose("      ", f.Summary)
 			if f.Location != nil {

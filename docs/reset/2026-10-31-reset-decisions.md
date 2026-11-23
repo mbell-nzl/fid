@@ -3151,6 +3151,70 @@ it done; the proposed row and Later list preserve all remaining scope.
   and the next valid write succeeds. Export/import and rebuild preserve both
   decisions and the absence of acceptance for pending discoveries.
 
+**Decided for 2.1c, 2026-11-23.**
+
+Built the approved review-delivery design in lane Assured, stacked on 1.9d.
+
+- `fid finding answer <finding> --actor <a> --text <why>` records an immutable
+  builder/person response to an open finding of any severity. Every actor that
+  held the task to build it counts as a builder, including ended holds. An
+  answer never closes the finding. Review list and the next reviewer’s input
+  include the responses in journal order.
+- `fid finding defer <finding> --actor <a> --title <text> [--epic <id>]
+  [--lane <lane>]` accepts minor/nit findings only. One `finding.deferred`
+  Event creates the task, acceptance criterion, discovered-from link and its
+  inverse, source revision bump and closing response. The criterion retains
+  the finding ID, summary, evidence and requested fix. The task inherits the
+  reviewed task’s epic unless overridden. Its lane starts at Standard (or a
+  requested Assured lane), raised by the finding location’s floor under the
+  response hand-off’s frozen policy. Check/hand-off still computes the floor
+  of all paths eventually changed. Routine and unknown lanes refuse.
+- Migration 0038 adds immutable `finding_responses`: `FRS-` identity, finding
+  ID, optional unique deferred task ID, complete typed `record_json`. Answers
+  use `finding.answered`; deferrals use `finding.deferred`. Both use a
+  `finding-response` aggregate and no request retry key. A closing response
+  derives a `deferred` closure with response and discovered-task IDs; existing
+  round/person closure records keep their schema. Agent deferrals derive
+  `issue_creators` from the Event actor in the same projection transaction,
+  so discovered tasks wait for acceptance. Deferral never reopens the source.
+- CLI recording attempts delivery after its canonical write. Round comments
+  follow jig’s headings, attribution, profiles, round, lane, purpose, finding
+  severity/action/location/evidence/fix, earlier dispositions and verification.
+  Answers and deferrals post short comments from their own canonical records.
+  Delivery failures leave recording successful. `fid review post <round>`
+  retries the round and responses to its findings, returning posted and pending
+  record IDs. The latest hand-off **at recording time** fixes each comment’s
+  destination, including a response’s recorded `handoff_id`: later hand-offs
+  cannot redirect an interrupted delivery to another PR.
+- Migration 0039 adds immutable `review_posts`, keyed by canonical record ID,
+  with task/hand-off, PR, comment URL, render version (1), rendered-body digest
+  and posting time. The version-1 renderer remains the receipt digest format;
+  a future layout must retain it to admit existing history.
+  `review.posted` is a `review-post` aggregate attributed to fid’s service.
+  Admission binds every field to the canonical record and verifies that the
+  URL names a comment on its recorded PR. Both catalogs register all three
+  families. Round and response IDs keep distinct RND-/FRS- namespaces, which
+  admission checks before IDs become delivery keys. Cache schema 21 rebuilds older projections. No dependency is added.
+- Posting holds the journal lock across reconciliation, `gh pr comment` and
+  receipt append. A stable HTML marker includes record ID and body digest.
+  Retries with a receipt use no network; without one, fid checks paginated PR
+  comments first, recovering an accepted comment whose local receipt was lost.
+  A matching marker with edited body refuses rather than posting a second
+  comment. The API listing, output and request duration are bounded. The body
+  travels in a private temporary file, removed after use; no shell evaluates it.
+- Pending delivery is derived from canonical records without receipts. Offline
+  status warns once per affected round, with pending IDs and `fid review post`;
+  it adds no NEEDS YOU item. `status`, `show`, `next` and review list stay offline,
+  and delivery adds no completion gate. Test suites block the real `gh` by
+  default; transport tests use a fake runner or executable. V8 compares both
+  new tables, including posted receipts, answers and a deferred discovery.
+- Admission tests send the full malformed matrix through the common boundary
+  once, with representative append, replay and import refusals, unchanged
+  state/bytes and subsequent valid writes. Temporary overlays check the new
+  behavior rules. The completion report retains their results and check output.
+
+**Left for later:** None discovered outside this task.
+
 **Decided for 2.3, 2026-11-21.**
 
 The orchestrator settled this design under Mark's delegation, for his review.
@@ -3571,6 +3635,7 @@ such a task waits for Mark to accept it; until then the epic's wait for
   warnings and `fid review post`. Its atomic deferral Event must also derive
   the new task’s creator from that Event’s actor, keeping agent deferrals
   unaccepted. Keep the original design and Assured lane.
+  Resolved by “Decided for 2.1c, 2026-11-23”, above.
 - From this PR (2.1b): D6's exception serving discovered work that blocks a
   task in an approved epic needs 3.1's epic approval; add it there. Until then,
   every agent-created task and subtask requires a person's acceptance.

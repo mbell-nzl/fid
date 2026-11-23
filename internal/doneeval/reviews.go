@@ -13,8 +13,9 @@ type ReviewWork struct {
 		Head string `json:"head"`
 		Base string `json:"base"`
 	} `json:"handoff"`
-	Stream           string   `json:"stream"`
-	RequiredProfiles []string `json:"required_profiles"`
+	Stream           string                     `json:"stream"`
+	RequiredProfiles []string                   `json:"required_profiles"`
+	Findings         []reviewrecord.FindingView `json:"findings,omitempty"`
 }
 
 // GatherReviews reads just the frozen hand-off policy and review/approval
@@ -58,6 +59,9 @@ func DueReview(s Snapshot) *ReviewWork {
 		return nil
 	}
 	w := &ReviewWork{Stream: stream, RequiredProfiles: profiles}
+	for _, round := range s.Rounds {
+		w.Findings = append(w.Findings, round.Findings...)
+	}
 	w.Handoff.ID, w.Handoff.PR, w.Handoff.Head, w.Handoff.Base = s.Handoff.ID, s.Handoff.PR, s.Handoff.Head, s.Handoff.Base
 	return w
 }

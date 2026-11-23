@@ -11,8 +11,9 @@ type RoundView struct {
 
 type FindingView struct {
 	Finding
-	Open    bool     `json:"open"`
-	Closure *Closure `json:"closure,omitempty"`
+	Open      bool       `json:"open"`
+	Responses []Response `json:"responses,omitempty"`
+	Closure   *Closure   `json:"closure,omitempty"`
 }
 
 // NoOtherModelReview is the shared Assured disclosure for the approve prompt,
@@ -48,7 +49,11 @@ func currentViews(conn Queryer, rounds []Round, fp Binding) ([]RoundView, error)
 			if err != nil {
 				return nil, err
 			}
-			v.Findings = append(v.Findings, FindingView{f, c == nil, c})
+			responses, err := Responses(conn, f.ID)
+			if err != nil {
+				return nil, err
+			}
+			v.Findings = append(v.Findings, FindingView{Finding: f, Open: c == nil, Closure: c, Responses: responses})
 		}
 		views = append(views, v)
 	}

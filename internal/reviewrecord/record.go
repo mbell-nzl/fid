@@ -158,7 +158,7 @@ func (r Round) Input() Input {
 }
 
 func (r Round) Validate() error {
-	if r.ID == "" || r.TaskID == "" || r.HandoffID == "" || !actor.MatchString(r.RecordedBy) || !policy.Allows(r.RecordedBy, policy.WorkSet) || r.Findings == nil {
+	if !strings.HasPrefix(r.ID, "RND-") || r.TaskID == "" || r.HandoffID == "" || !actor.MatchString(r.RecordedBy) || !policy.Allows(r.RecordedBy, policy.WorkSet) || r.Findings == nil {
 		return fmt.Errorf("incomplete review round identity")
 	}
 	if err := r.Input().Validate(); err != nil {

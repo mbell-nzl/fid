@@ -40,6 +40,6 @@ func newFindingCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Person making the decision")
 	cmd.Flags().StringVar(&reason, "reason", "", "Why the finding is closed")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Retry key")
-	parent.AddCommand(cmd)
+	parent.AddCommand(cmd, newFindingResponseCommand(false), newFindingResponseCommand(true))
 	return parent
 }

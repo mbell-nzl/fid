@@ -22,7 +22,7 @@ func init() {
 
 func newReviewCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "review", Short: "Record and read attributed reviews."}
-	cmd.AddCommand(newReviewRecordCommand(), newReviewListCommand())
+	cmd.AddCommand(newReviewRecordCommand(), newReviewListCommand(), newReviewPostCommand())
 	return cmd
 }
 
@@ -49,6 +49,7 @@ func newReviewRecordCommand() *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, "review.record", err, "")
 		}
+		postRecordedRound(cmd, root, result.Round.ID)
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
 			return err

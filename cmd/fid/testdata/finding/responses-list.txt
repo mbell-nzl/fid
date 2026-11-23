@@ -1,0 +1,25 @@
+╭ fid review FID-<new> ─────────────────────────────────── <DATE> ╮
+
+  RND-<new> · primary · CHANGES · current
+    agent:reviewer · claude/opus-5.5 · other model: true
+    Session review-session-1 · profiles: code, test-adequacy
+    patch-id-verbatim-per-file-v1
+    <fingerprint-or-commit>
+    RND-<new>-1 · major · open
+      Answer by agent:builder · Regression added in the next change
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+    RND-<new>-2 · major · open
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+    RND-<new>-3 · minor · closed
+      By FRS-<new> → FID-<new> · deferred · Address RND-<new>-3:
+      Retry conflicts lack coverage\nEvidence: Disabling the conflict
+      guard left focused tests green.\nFix: Retry a changed task and
+      PR; assert refusal and unchanged state.
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+    RND-<new>-4 · nit · open
+      Retry conflicts lack coverage
+      cmd/fid/merge_records_test.go:111
+╰──────────────────────────────────────────────────────────────────────╯

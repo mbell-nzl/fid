@@ -1,0 +1,26 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<TIME>"
+  },
+  "ok": true,
+  "operation": "finding.defer",
+  "result": {
+    "response": {
+      "id": "FRS-<new>",
+      "finding_id": "RND-<new>-4",
+      "handoff_id": "HOF-<new>",
+      "task_id": "FID-<new>",
+      "actor": "agent:builder",
+      "text": "Address RND-<new>-4: Retry conflicts lack coverage\nEvidence: Disabling the conflict guard left focused tests green.\nFix: Retry a changed task and PR; assert refusal and unchanged state.",
+      "at": "<TIME>",
+      "deferred_task": {
+        "id": "FID-<new>",
+        "title": "Follow up the finding",
+        "epic_id": null,
+        "lane": "standard"
+      }
+    }
+  }
+}
