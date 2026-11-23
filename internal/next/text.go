@@ -104,10 +104,12 @@ func (text textWriter) message(result Result, explain bool) []string {
 		lines := text.prose(indent, "Review "+review.Stream+": "+strings.Join(review.RequiredProfiles, ", "))
 		lines = append(lines, text.prose(indent, "Hand-off "+review.Handoff.ID+" · head "+review.Handoff.Head+" · base "+review.Handoff.Base)...)
 		return append(lines, text.step(review.Handoff.PR)...)
-	case result.Kind == KindRework && result.Rework != nil:
-		return text.prose(indent, "Rework here (default-conflict): PR no longer merges into "+result.Rework.DefaultRef+". Merge the default branch, then check and hand off again.")
 	case result.Kind == KindRework:
-		lines := text.prose(indent, "Rework here: fix the review findings, then check and hand off again.")
+		message := "Rework here: fix the review findings, then check and hand off again."
+		if result.Rework != nil {
+			message = "Rework here (default-conflict): PR no longer merges into " + result.Rework.DefaultRef + ". Merge the default branch, then check and hand off again."
+		}
+		lines := text.prose(indent, message)
 		if result.ReworkAllowance != nil {
 			lines = append(lines, text.prose(indent, "Guidance: "+result.ReworkAllowance.Reason)...)
 		}

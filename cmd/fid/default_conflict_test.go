@@ -322,3 +322,33 @@ func TestDefaultConflictUpgradesExistingProjection(t *testing.T) {
 		t.Fatalf("existing projection cannot return conflict: %v", got)
 	}
 }
+
+func TestDefaultConflictRoutineWithoutRequiredReviews(t *testing.T) {
+	t.Parallel()
+	f, task := canonicalReviewFixtureWithLane(t, "routine")
+	moveConflictDefault(t, f, true)
+	got, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
+	if got["kind"] != "rework" || got["rework"].(map[string]any)["cause"] != "default-conflict" {
+		t.Fatalf("Routine conflict cannot return without a review round: %v", got)
+	}
+	listed, _ := lifecycleResult(t, f.run("--json", "review", "list", task), "review.list")
+	if len(listed["rounds"].([]any)) != 0 {
+		t.Fatalf("Routine update manufactured a review round: %v", listed)
+	}
+}
+
+func TestDefaultConflictRetainsAllowanceGuidance(t *testing.T) {
+	t.Parallel()
+	f, task := canonicalReviewFixture(t)
+	approveConflictReviews(t, f, task, "standard")
+	const guidance = "Keep the documented compatibility behavior"
+	lifecycleResult(t, f.run("--json", "rework", "allow", task, "--rounds", "1", "--actor", "human:mark", "--reason", guidance), "task.rework-allow")
+	moveConflictDefault(t, f, true)
+	got := f.run("next", "--explain")
+	if got.err != nil || !strings.Contains(got.stdout, guidance) {
+		t.Fatalf("default update lost existing allowance guidance: %#v", got)
+	}
+	if !strings.Contains(got.stdout, "fid show "+task) {
+		t.Fatalf("default update lost the task inspection action: %s", got.stdout)
+	}
+}

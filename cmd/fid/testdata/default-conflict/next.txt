@@ -7,6 +7,7 @@
   Rework here (default-conflict): PR no longer merges into
   origin/trunk. Merge the default branch, then check and hand off
   again.
+      → fid show FID-9f13aa
 
   IN ORDER
   ● FID-9f13aa  Harden login rate limiting                   in review

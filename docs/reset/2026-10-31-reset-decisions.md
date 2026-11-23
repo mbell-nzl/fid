@@ -3141,12 +3141,16 @@ Built under Mark's delegation, for his review. Lane: Assured.
 - Migration 0038 adds immutable `default_conflicts` receipts, keyed by a
   `DFC-<six-hex>` ID with task, kept hold and typed evidence JSON. The receipt
   also retains the observed fingerprint for admission without git objects.
+  Routine work with no required reviews computes that binding when a
+  conflict is found, without creating a review round.
   `task.default-conflict` is an Event-v2 work-actor family for `next.claim`,
   with a `default-conflict` aggregate. Exactly three ordered Effects insert
   the receipt, move its task `in_review` to `in_progress` with its next
   revision, and set that hold's `rework_at`, atomically. The normal linked
   `hold.taken` follows under the same write lock. If the process stops
   between those Events, the reservation and cause remain available.
+  Existing allowance guidance and the task inspection action remain visible
+  for both causes of rework.
 - Shared admission binds the latest hand-off/head, task, kept hold, review
   currency, command, actor type, aggregate and exact Effects. It checks the
   recorded evidence shape on live append, replay and import, without

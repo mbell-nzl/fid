@@ -74,7 +74,17 @@ func readReviews(conn reviewrecord.Queryer, options Options, work issues.Work, n
 				candidate.unavailable = err.Error()
 			}
 			if evidence != nil {
-				candidate.conflict = &defaultconflict.Record{Evidence: *evidence, Binding: s.Fingerprint}
+				fp := s.Fingerprint
+				// Routine work may require no reviews, so the shared reader has no
+				// binding yet. A conflict still needs a complete historical receipt.
+				if fp.Algorithm == "" {
+					fp, err = fingerprint.Compute(options.WorkspaceRoot, s.Handoff.Base, s.Handoff.Head)
+				}
+				if err != nil {
+					candidate.unavailable = err.Error()
+				} else {
+					candidate.conflict = &defaultconflict.Record{Evidence: *evidence, Binding: fp}
+				}
 			}
 		}
 		if options.Actor != "" {
