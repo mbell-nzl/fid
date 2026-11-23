@@ -5,6 +5,7 @@ package journal
 var currentEventTables = map[string]currentTable{
 	"review_posts":         currentTableColumns("id", "id:s task_id:s handoff_id:s pr:s url:s render_version:i digest:s posted_at:s"),
 	"finding_responses":    currentTableColumns("id", "id:s finding_id:s deferred_task_id:s? record_json:s"),
+	"default_conflicts":    currentTableColumns("id", "id:s task_id:s hold_id:s record_json:s"),
 	"review_claims":        currentTableColumns("id", "id:s task_id:s handoff_id:s stream:s worktree_id:s worktree_root:s actor:s model:s since:s last_heartbeat_at:s expires_at:s ended_at:s? binding_json:s"),
 	"completions":          currentTableColumns("id", "id:s task_id:s handoff_id:s merge_id:s record_json:s"),
 	"finding_closures":     currentTableColumns("finding_id", "finding_id:s round_id:s? decision_id:s? disposition:s reason:s"),

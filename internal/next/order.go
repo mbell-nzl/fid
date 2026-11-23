@@ -141,7 +141,7 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 				entry.Reason = pointer(ReasonBuiltByActor)
 			}
 		} else if task.ID != resume || (planned.own != nil && planned.own.Waiting()) {
-			if hold, ok := planned.held[task.ID]; ok && hold.InReview() {
+			if hold, ok := planned.held[task.ID]; ok && hold.InReview() && planned.reviews[task.ID].conflict == nil {
 				entry.Reason = pointer(ReasonHeldElsewhere)
 			} else if ok && hold.Waiting() {
 				entry.Reason = pointer(ReasonWaitingForYou)
@@ -179,12 +179,12 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 		planned.kind, planned.served = KindNone, -1
 		return planned
 	}
-	if planned.own != nil && (planned.own.Waiting() || planned.own.InReview() || planned.reviews[planned.own.TaskID].capped) {
+	if planned.own != nil && (planned.own.Waiting() || planned.own.InReview() && planned.reviews[planned.own.TaskID].conflict == nil || planned.reviews[planned.own.TaskID].capped) {
 		planned.kind, planned.served = KindNone, -1
 		return planned
 	}
 	switch {
-	case resume != "" && planned.own.Rework():
+	case resume != "" && (planned.own.Rework() || planned.own.InReview() && planned.reviews[resume].conflict != nil):
 		planned.kind = KindRework
 	case resume != "":
 		planned.kind = KindResume

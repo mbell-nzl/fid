@@ -39,7 +39,7 @@ func TestEpicCloseMigrationPreservesDecisionsAndReferences(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, version := range []uint{35, 37, 36, 34} {
+	for _, version := range []uint{35, 37, 38, 39, 40, 41, 40, 39, 38, 37, 36, 34} {
 		if err := m.Migrate(version); err != nil {
 			t.Fatal(err)
 		}

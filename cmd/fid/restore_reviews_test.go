@@ -21,6 +21,7 @@ import (
 func recordV8Reviews(t *testing.T, root, task string) {
 	t.Helper()
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-before-edit"))
+	waiveSuccess(t, waiveForTest(&statusFixture{t: t, workspace: root, clock: time.Now}, task, task+"\n", true, "--lane", "standard", "--idempotency-key", "v8-waiver-before-edit"))
 	var ids []string
 	reviewer := gittest.AddWorktree(t, root)
 	claimV8Review(t, reviewer, task)
@@ -62,6 +63,7 @@ func recordV8Reviews(t *testing.T, root, task string) {
 	lifecycleResult(t, recordReviewTask(t, f, in, "v8-fixed-separate", "human:courier", task), "review.record")
 	approveSuccess(t, approvePublicForTest(t, root, task, task+"\n", true, true, true, "--idempotency-key", "v8-approval-after-edit"))
 	recordV8Posts(t, root, task)
+	recordV8DefaultConflict(t, root)
 }
 
 func claimV8Review(t *testing.T, root, task string) {
@@ -113,6 +115,10 @@ func assertV8Reviews(t *testing.T, workspace string) {
 		t.Fatal(err)
 	}
 	defer func() { _ = conn.Close() }()
+	var conflicts int
+	if err := conn.QueryRow(`SELECT count(*) FROM default_conflicts`).Scan(&conflicts); err != nil || conflicts != 1 {
+		t.Fatalf("V8 default-conflict receipts=%d/%v", conflicts, err)
+	}
 	var rounds, findings, models, manual, closures int
 	var claims int
 	if err := conn.QueryRow(`SELECT count(*) FROM review_claims WHERE ended_at IS NOT NULL`).Scan(&claims); err != nil || claims != 2 {
@@ -130,7 +136,7 @@ func assertV8Reviews(t *testing.T, workspace string) {
 			t.Fatal(err)
 		}
 	}
-	if rounds != 5 || findings != 6 || closures != 4 || models == 0 || manual == 0 {
+	if rounds != 6 || findings != 6 || closures != 4 || models == 0 || manual == 0 {
 		t.Fatalf("V8 reviews=%d findings=%d modeled holds=%d manual holds=%d closures=%d", rounds, findings, models, manual, closures)
 	}
 	for _, severity := range []string{"major", "minor", "nit"} {
@@ -157,7 +163,7 @@ func assertV8Reviews(t *testing.T, workspace string) {
 	}
 	for _, stream := range []string{"primary", "separate"} {
 		var n int
-		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 3, "separate": 2}[stream] {
+		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE json_extract(record_json,'$.stream')=?`, stream).Scan(&n); err != nil || n != map[string]int{"primary": 4, "separate": 2}[stream] {
 			t.Fatalf("V8 %s=%d/%v", stream, n, err)
 		}
 	}
@@ -188,4 +194,27 @@ func recordV8Posts(t *testing.T, root, task string) {
 			t.Fatalf("V8 posts=%v/%v", result, err)
 		}
 	}
+}
+
+func recordV8DefaultConflict(t *testing.T, root string) {
+	t.Helper()
+	builder := gittest.AddWorktree(t, root)
+	f := &statusFixture{t: t, workspace: builder, clock: time.Now}
+	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Approved default conflict at backup", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "v8-conflict-create"), "issue.create")
+	task := created["issue"].(map[string]any)["id"].(string)
+	took, _ := lifecycleResult(t, f.run("--json", "takeover", task, "--actor", "human:mark", "--reason", "Build the update subject"), "task.takeover")
+	hold := took["hold_id"].(string)
+	lifecycleResult(t, f.run("--json", "start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "v8-conflict-start"), "task.start")
+	writeBackupTestFile(t, filepath.Join(builder, "notes.md"), "Approved content\n")
+	runGitForTest(t, builder, "add", ".")
+	runGitForTest(t, builder, "commit", "-qm", "Approved conflict subject")
+	reviewHandoffTask(t, f, "v8-conflict-handoff", task)
+	approveConflictReviews(t, f, task, "standard")
+	moveConflictDefault(t, f, true)
+	updated, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "human:mark"), "next.claim")
+	if updated["kind"] != "rework" || updated["rework"].(map[string]any)["cause"] != "default-conflict" {
+		t.Fatalf("V8 conflict return=%v", updated)
+	}
+	hold = updated["hold"].(map[string]any)["id"].(string)
+	lifecycleResult(t, f.run("--json", "park", "--hold", hold, "--actor", "human:mark", "--interrupted", "--reason", "Keep conflict update across restore", "--idempotency-key", "v8-conflict-park"), "hold.park")
 }

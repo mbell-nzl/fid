@@ -69,18 +69,11 @@ func Load(root string) (Loaded, error) {
 	if !slices.Contains(strings.Fields(string(remotes)), "origin") {
 		return builtInDefaults()
 	}
-	target, err := gitPolicy(root, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
-	ref := strings.TrimSpace(string(target))
-	if err != nil || !strings.HasPrefix(ref, "refs/remotes/origin/") || ref == "refs/remotes/origin/HEAD" {
-		return Loaded{}, sourceError(Source{}, "origin's default branch is unknown")
-	}
-	commitBytes, err := gitPolicy(root, "rev-parse", "--verify", ref+"^{commit}")
+	source, err := DefaultSource(root)
 	if err != nil {
-		ref = strings.TrimPrefix(ref, "refs/remotes/")
-		return Loaded{}, sourceError(Source{Ref: ref}, "origin's default branch %s does not exist", ref)
+		return Loaded{}, err
 	}
-	commit := strings.TrimSpace(string(commitBytes))
-	source := Source{Ref: strings.TrimPrefix(ref, "refs/remotes/"), Commit: commit}
+	commit := source.Commit
 	entry, err := gitPolicy(root, "ls-tree", commit, "--", config.ProjectIdentityFileName)
 	if err != nil {
 		return Loaded{}, sourceError(source, "read .fid.toml: %v", err)
@@ -124,4 +117,20 @@ func gitPolicy(root string, args ...string) ([]byte, error) {
 		return nil, fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(output)))
 	}
 	return output, nil
+}
+
+// DefaultSource resolves only the local origin default ref, without fetching.
+func DefaultSource(root string) (Source, error) {
+	target, err := gitPolicy(root, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
+	ref := strings.TrimSpace(string(target))
+	if err != nil || !strings.HasPrefix(ref, "refs/remotes/origin/") || ref == "refs/remotes/origin/HEAD" {
+		return Source{}, sourceError(Source{}, "origin's default branch is unknown")
+	}
+	commitBytes, err := gitPolicy(root, "rev-parse", "--verify", ref+"^{commit}")
+	if err != nil {
+		ref = strings.TrimPrefix(ref, "refs/remotes/")
+		return Source{}, sourceError(Source{Ref: ref}, "origin's default branch %s does not exist", ref)
+	}
+	commit := strings.TrimSpace(string(commitBytes))
+	return Source{Ref: strings.TrimPrefix(ref, "refs/remotes/"), Commit: commit}, nil
 }

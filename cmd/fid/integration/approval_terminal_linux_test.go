@@ -21,9 +21,10 @@ import (
 // is built without coverage; no helper test process is launched here.
 func approvalCorpusCommand(t *testing.T, workspace, binary string, args ...string) (string, string, error) {
 	t.Helper()
-	task := ""
+	task, action := "", "approve"
 	for i, arg := range args {
-		if arg == "approve" && i+1 < len(args) {
+		if (arg == "approve" || arg == "waive") && i+1 < len(args) {
+			action = arg
 			task = args[i+1]
 			break
 		}
@@ -65,7 +66,7 @@ func approvalCorpusCommand(t *testing.T, workspace, binary string, args ...strin
 			n, err := leader.Read(chunk)
 			if n > 0 {
 				read.Write(chunk[:n])
-				if !sent && strings.Contains(read.String(), "Type "+task+" to approve: ") {
+				if !sent && strings.Contains(read.String(), "Type "+task+" to "+action+": ") {
 					sent = true
 					_, _ = io.WriteString(leader, task+"\n")
 				}
@@ -84,7 +85,7 @@ func approvalCorpusCommand(t *testing.T, workspace, binary string, args ...strin
 	prompt := string(bytes.ReplaceAll(<-reached, []byte("\r\n"), []byte("\n")))
 	stderr := prompt
 	if err == nil {
-		if prompt != "" && (!strings.Contains(prompt, "Diffstat:") || !strings.Contains(prompt, "Type "+task+" to approve: ")) {
+		if prompt != "" && ((action == "approve" && !strings.Contains(prompt, "Diffstat:")) || !strings.Contains(prompt, "Type "+task+" to "+action+": ")) {
 			t.Fatalf("unexpected approval prompt: %q", prompt)
 		}
 		// The prompt is a person's terminal output, separate from the JSON envelope

@@ -8,12 +8,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/approvalrecord"
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/completionrecord"
+	"github.com/mbell-nzl/fid/internal/defaultconflict"
 	"github.com/mbell-nzl/fid/internal/epicrecord"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 // JSON text is an Event boundary, independent of the family or SQL operation.
@@ -51,6 +53,7 @@ func validateEmbeddedJSON(event Event) error {
 // map/interface destinations keep exact keys at every nested map boundary.
 var embeddedJSONTypes = map[string]reflect.Type{
 	"finding_responses.record_json":                  reflect.TypeFor[reviewrecord.Response](),
+	"default_conflicts.record_json":                  reflect.TypeFor[defaultconflict.Record](),
 	"review_claims.binding_json":                     reflect.TypeFor[fingerprint.Result](),
 	"completions.record_json":                        reflect.TypeFor[completionrecord.Record](),
 	"review_rounds.record_json":                      reflect.TypeFor[reviewrecord.Round](),
@@ -68,6 +71,9 @@ var embeddedJSONTypes = map[string]reflect.Type{
 }
 
 func embeddedJSONType(event Event, table, column string) reflect.Type {
+	if table == "person_decisions" && column == "binding_json" && event.EventType == "task.waived" {
+		return reflect.TypeFor[waiverrecord.Binding]()
+	}
 	if table == "person_decisions" && column == "binding_json" && event.EventType == "task.approved" {
 		return reflect.TypeFor[approvalrecord.Binding]()
 	}
@@ -77,6 +83,8 @@ func embeddedJSONType(event Event, table, column string) reflect.Type {
 	switch event.EventType {
 	case "task.finished":
 		return reflect.TypeFor[completionrecord.Result]()
+	case "task.waived":
+		return reflect.TypeFor[waiverrecord.Result]()
 	case "task.approved":
 		return reflect.TypeFor[approvalrecord.Result]()
 	case "epic.closed":

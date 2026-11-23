@@ -34,6 +34,7 @@ type Result struct {
 	ChecksBase *string
 	Warnings   []status.Warning
 	Approval   decisionview.Approval
+	Completion *Completion
 }
 
 // Build reads the issue whose ID is exactly options.ID.
@@ -43,6 +44,9 @@ func Build(options Options) (Result, error) {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}
 	result := Result{IssueView: view, Now: options.Now}
+	if err := result.readCompletion(options.WorkspaceRoot); err != nil {
+		return Result{}, fmt.Errorf("read show completion: %w", err)
+	}
 	result.readChecks(options.WorkspaceRoot)
 	if err := result.readApproval(options.WorkspaceRoot); err != nil {
 		return Result{}, fmt.Errorf("read show approval: %w", err)
@@ -60,6 +64,7 @@ func Build(options Options) (Result, error) {
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
 	fields := map[string]any{
+		"completion":            result.Completion,
 		"approval":              result.Approval.Decision,
 		"no_other_model_review": result.Approval.NoOtherModelReview,
 		"floor":                 result.Floor,
@@ -79,6 +84,9 @@ func (result Result) Fields() map[string]any {
 		"working":               result.Working,
 		"kept":                  result.Kept,
 		"scheduling":            result.Scheduling,
+	}
+	if result.Approval.Waivers != nil {
+		fields["waivers"] = result.Approval.Waivers
 	}
 	if result.Merge != nil {
 		fields["merge"] = result.Merge

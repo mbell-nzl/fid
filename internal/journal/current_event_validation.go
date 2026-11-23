@@ -63,7 +63,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
 				for column := range values {
 					if strings.EqualFold(column, "rework_at") && !validReworkColumn(event, effect, values[column]) {
-						return fmt.Errorf("rework reservation requires a review round")
+						return fmt.Errorf("rework reservation requires a review round or default conflict")
 					}
 					if strings.EqualFold(column, "model") && (!event.IsV2() || effect.Op != "insert" || (event.EventType != "hold.taken" && event.EventType != "task.taken-over")) {
 						return fmt.Errorf("build models require a validated Event-v2 hold insert")
@@ -98,7 +98,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && event.EventType == "epic.closed" {
 		return fmt.Errorf("epic close requires Event-v2")
 	}
-	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.finished") {
+	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.waived" || event.EventType == "task.finished") {
 		return fmt.Errorf("approval requires Event-v2")
 	}
 	if err := validateReworkHold(tx, event); err != nil {
@@ -119,6 +119,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if event.EventType == "finding.answered" || event.EventType == "finding.deferred" {
 		return validateFindingResponse(tx, event)
 	}
+	if event.EventType == "task.default-conflict" {
+		return validateDefaultConflict(tx, event)
+	}
 	if event.EventType == "work.accepted" || event.EventType == "rework.allowed" {
 		return validateWorkDecision(event, tx)
 	}
@@ -135,6 +138,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "task.finished" {
 		return validateCompletion(tx, event)
+	}
+	if event.EventType == "task.waived" {
+		return validateWaiver(tx, event)
 	}
 	if event.EventType == "task.approved" {
 		return validateApproval(tx, event)

@@ -33,6 +33,9 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		if operation == "task.done" {
 			name = "done"
 		}
+		if operation == "task.waive" {
+			name = "waive"
+		}
 		if operation == "task.approve" {
 			name = "approve"
 		}
@@ -61,7 +64,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 20 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 21 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }

@@ -993,6 +993,14 @@ Builder's transactional choices:
   golden and refusal leaks each failed with the shared diagnostic, then
   were restored.
 
+Amended 2026-11-23 (Mark): the shared pattern no longer refuses "claim",
+"run" or "attempt" in any form. The kernel's code is gone, and those words
+are now ordinary fid English: `fid next --claim` is a real flag, and `fid
+check` runs checks. Avoiding them had bent wording twice (the review input's
+`purpose` field in 1.6b, and 2.1d's status text). The pattern keeps the
+words that still mean nothing in fid (envelope, activation, obligation,
+attention item) and the `ENV-`, `STP-` and `ATT-` prefixes, so V2 holds.
+
 ## Decided 2026-11-15 (orchestrator, under Mark's delegation)
 
 Mark delegated 1.6's design to the orchestrator on 2026-11-15: "You can
@@ -1877,6 +1885,10 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
    that head.
 4. **Two Later items.** Moving a task to another epic, and accepting every
    waiting task in one command (Later list, "From Mark (2026-11-23)").
+5. **fid's own rework cap is 5.** `.fid.toml` sets `rework_cap = 5` in
+   every lane: a builder gets rework for up to five rounds that asked for
+   changes before the task waits for a person (`fid rework allow`). fid's
+   built-in default stays 3. The policy change is its own Assured PR.
 
 **Decided for 1.9d, 2026-11-23.**
 
@@ -2950,7 +2962,7 @@ acceptance criteria open.
   first setting path and a count of others. A policy/comparison failure
   warns and retains the hand-off's explanation if known. No read writes.
 
-**Approved waiver design retained for proposed 2.2c (not built here):**
+**Approved waiver design (built by 2.2c, 2026-11-24):**
 `fid waive <task> --lane <routine|standard> --reason <text> --actor human:<id>
 --idempotency-key <key>` mirrors approve's interactive terminal requirement,
 confirmation, retries and text/JSON replies. It records a `person_decisions`
@@ -2994,6 +3006,53 @@ remain the follow-up builder's transactional choices.
   that the byte list agrees with the readable list. Other receipts need no
   extra byte list. This is required to honor the conservative unsupported
   path rule on replay, rather than changing its result after serialization.
+
+**Decided for 2.2c, 2026-11-24.**
+
+Built the approved waiver design above, in the Assured lane. A person in an
+interactive terminal confirms the task, hand-off lane, computed floor and
+setting paths, hard floor and paths, and target lane. A `waive` decision
+binds the target lane to the latest hand-off's algorithm, fingerprint, ID,
+base and head. Only algorithm and fingerprint decide currency. The latest
+matching waiver sets every lane-dependent done gate, including checks,
+review profiles, separate review, approval and rollback; it never edits the
+task lane or hand-off. An edit restores the hand-off lane's gates. Built-in
+hard floors cannot be waived. Show and status reuse `internal/decisionview`;
+show explains the waiver in Lane, approval becomes `not-required`, and
+status marks stale waivers. Both expose full waiver decisions with `current`.
+
+Implementation choices:
+
+- Event `task.waived`, command `task.waive`, aggregate `decision` sequence 1.
+  `person_decisions.binding_json` holds `lane` alongside the five fingerprint
+  fields; `binding_id` is the fingerprint. Migration 0039 extends the existing
+  decision constraints; cache version 21 triggers the normal rebuild. These
+  follow 2.1d's migration 0038 and cache version 20 in the stacked branch.
+  No dependency is added.
+- Refusal codes `waiver-not-in-review`, `waiver-handoff-required`,
+  `waiver-not-lower`, `waiver-hard-floor` use precondition, non-retryable,
+  with a `paths` array. Actor, terminal, reason, retry and cancellation
+  behavior mirrors approve, including optional retry keys.
+- `internal/waiverrecord` owns offline admission and currency;
+  `internal/waiverwork` owns the locked transaction. The latest hand-off reader
+  moved into `internal/handoffrecord`, with the existing review reader
+  delegating to it, so review admission can use waived profiles without a
+  package cycle. Historical profiles with no waivers need no new columns.
+- Matching decisions are considered newest first, preserving a waiver when
+  a previously waived change returns. New waiver packages and the command
+  join fid's configured Assured trust-boundary paths under the existing rule.
+- Shared admission enforces immutable decisions and typed binding/retry JSON
+  on append, replay and import. Export/import retain current waivers; V8
+  retains a waiver made stale by rework while keeping its existing Assured
+  completion evidence. Display remains read-only.
+
+- Integration with 2.1d (2026-11-24) retains both Event families throughout
+  shared admission, embedded JSON, archive schema catalogs and V8. Default
+  conflicts retain schema 38; waivers first appear in schema 39. Status checks
+  merge conflicts before selecting the effective lane's approval action.
+  Both tasks' done marks and decision blocks remain.
+
+Left for later: none discovered outside this task.
 
 **Decided for 2.1, 2026-11-22.**
 
@@ -3172,7 +3231,7 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   A sequential epic requires a sequence: discovered tasks append after its
   highest existing sequence, allocated and admitted from the prior projection
   in the same Event. Other scheduling leaves the sequence unset.
-- Migration 0038 adds immutable `finding_responses`: `FRS-` identity, finding
+- Migration 0040 adds immutable `finding_responses`: `FRS-` identity, finding
   ID, optional unique deferred task ID, complete typed `record_json`. Answers
   use `finding.answered`; deferrals use `finding.deferred`. Both use a
   `finding-response` aggregate and no request retry key. A closing response
@@ -3193,7 +3252,7 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   record IDs. The latest hand-off **at recording time** fixes each comment’s
   destination, including a response’s recorded `handoff_id`: later hand-offs
   cannot redirect an interrupted delivery to another PR.
-- Migration 0039 adds immutable `review_posts`, keyed by canonical record ID,
+- Migration 0041 adds immutable `review_posts`, keyed by canonical record ID,
   with task/hand-off, PR, comment URL, render version (1), rendered-body digest
   and posting time. The version-1 renderer remains the receipt digest format;
   a future layout must retain it to admit existing history.
@@ -3201,7 +3260,7 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   Admission binds every field to the canonical record and verifies that the
   URL names a comment on its recorded PR. Both catalogs register all three
   families. Round and response IDs keep distinct RND-/FRS- namespaces, which
-  admission checks before IDs become delivery keys. Cache schema 21 rebuilds older projections. No dependency is added.
+  admission checks before IDs become delivery keys. Cache schema 22 rebuilds older projections. No dependency is added.
 - Posting holds the journal lock across reconciliation, `gh pr comment` and
   receipt append. A stable HTML marker includes record ID and body digest.
   Retries with a receipt use no network; without one, fid checks paginated PR
@@ -3223,12 +3282,82 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   state/bytes and subsequent valid writes. Temporary overlays check the new
   behavior rules. The completion report retains their results and check output.
 
+- Update round (2026-11-24), stacked on 2.2c (#111): keep default conflicts
+  at migration 0038 and waivers at 0039; finding responses and posting receipts
+  follow at 0040/0041, with projection cache version 22. Admission, archive
+  catalogs and V8 retain all three features together; no gate or delivery rule
+  changes. Existing decisions blocks and task done marks remain.
+
 **Left for later:**
 
 - From this PR (2.1c): source inspection shows `review list` still uses the
   generic "an independent review of the latest hand-off" allowed-input hint
   for invalid task arguments. Give that existing read command task-specific
   guidance in later CLI polish; 2.1c corrects the new answer/defer/post hints.
+
+**Decided for 2.1d, 2026-11-23.**
+
+Built under Mark's delegation, for his review. Lane: Assured.
+
+- Deviation to keep the existing human-output check: status JSON gives the
+  exact `fid next --claim` action; human status says to take the task in its
+  builder's worktree with `fid next`. The check forbids the literal flag in
+  ordinary human output. No check is changed.
+- Eligibility is the shared `doneeval.ReviewsDone` predicate used by status's
+  approve/merge action, with no recorded merge, including 2.1's existing V5 person-closure exception
+  for a `CHANGES` round. A still-due primary or separate review never takes
+  this path. An Assured person's approval need not have happened yet.
+- `git merge-tree --write-tree --name-only -z --no-messages` tests the latest
+  hand-off head against the local `origin/HEAD` target, resolved by the same
+  helper as policy. Exit 1 with conflicting paths proves a conflict; exit 0
+  serves nothing. An unknown ref, missing commit or other git failure serves
+  nothing and `next --explain` describes unavailable local evidence. Lazy
+  fetching is disabled; fid never fetches. No checkout, index or ref changes.
+- Only the kept hand-off worktree gets kind `rework`. Optional `rework`
+  evidence names `default-conflict`, default ref/commit, hand-off, head and
+  conflicting paths; non-UTF-8 names retain their bytes alongside readable
+  paths. A conflict replaces the status approve/merge action with a
+  `default-conflict` item describing the builder's update. Clean approved
+  work remains reserved for review, including work with an open minor.
+- Migration 0038 adds immutable `default_conflicts` receipts, keyed by a
+  `DFC-<six-hex>` ID with task, kept hold and typed evidence JSON. The receipt
+  also retains the observed fingerprint for admission without git objects.
+  Routine work with no required reviews computes that binding when a
+  conflict is found, without creating a review round.
+  `task.default-conflict` is an Event-v2 work-actor family for `next.claim`,
+  with a `default-conflict` aggregate. Exactly three ordered Effects insert
+  the receipt, move its task `in_review` to `in_progress` with its next
+  revision, and set that hold's `rework_at`, atomically. The normal linked
+  `hold.taken` follows under the same write lock. If the process stops
+  between those Events, the reservation and cause remain available.
+  Existing allowance guidance and the task inspection action remain visible
+  for both causes of rework.
+- Shared admission binds the latest hand-off/head, task, kept hold, review
+  currency, command, actor type, aggregate and exact Effects. It checks the
+  recorded evidence shape on live append, replay and import, without
+  rerunning git. Other families cannot move the state or set `rework_at`.
+  A refused Event changes no journal bytes or projected rows; a subsequent
+  valid write works. Both catalogs include the family; archive schema is 38.
+  Cache version 20 forces existing projections to rebuild with migration
+  0038 before the first read or claim; a focused upgrade regression covers
+  an old schema-37 projection with a matching journal.
+- This return creates no round and charges no cap allowance. Only `CHANGES`
+  rounds count. The builder merges, checks and hands off again. Existing
+  fingerprint readers retain rounds and approval when unchanged and mark
+  both stale when changed; public-command tests cover both outcomes.
+- `fid-cli.v1` stays current; the `rework` fields are optional additions to
+  the loop contract and its selected-field goldens. The public integration
+  journey approves two tasks, merges the first into the local default,
+  returns the conflicting second to its builder, resolves, checks, hands
+  off, reviews and finishes it. Import into a repo without comparison
+  objects and V8's backup/wipe/restore retain the receipt.
+- Transactional choices: a shared origin resolver; one receipt table rather
+  than overloading review rounds; restoring the cause across an interrupted
+  claim; exact new-task state in the claim response. Import comparisons use
+  checkpoint Event identity/hash and schema/status, since archive chunk
+  filenames and byte offsets are local storage details. No dependency added.
+
+**Left for later:** none discovered within this task.
 
 **Decided for 2.3, 2026-11-21.**
 
@@ -3277,6 +3406,57 @@ the approval alongside its other task details in its existing transaction.
 Show uses a read transaction for the approval evidence. Times use the full
 recorded RFC3339 timestamp in text and JSON. There is no new dependency,
 migration, Event family, network call or write command.
+
+**Decided for 2.3b, 2026-11-23.**
+
+The orchestrator settled the completion-receipt design under Mark's delegation,
+for his review. The builder implemented it in `internal/show`, lane Standard.
+
+**Departure from the example, preserving the row's guarantee:** the existing
+V2 vocabulary guard rejects both `run` and `runs` in human output, including
+GitHub's `/actions/runs/` URL path. The first full test run caught that in
+`TestMergedOfflineReadsGolden`. Under the brief's closest-design delegation,
+text uses `CI ✓ success · #<id> on <commit>` and retains the CI URL in JSON
+only. This keeps result, identity and commit visible offline without changing
+or weakening the guard. The new text goldens use the same guard.
+
+- Done tasks get a Completed block after the header rows, before criteria and
+  children. It names the completion's time, actor and ID; merged PR number,
+  commit and time; every counted CI run's conclusion, ID and commit; the
+  completed hand-off's ID and head; fingerprint; counted rounds'
+  IDs, streams, verdicts, reviewer actors and models; and the Assured approval,
+  recorded other-model disclosure and Rollback presence.
+- Checks use the exact required names and result IDs in that hand-off,
+  displaying when they passed and `counts at <head>`. They do not compare
+  finished work with today's HEAD, policy, changed paths or fingerprint.
+  Unfinished work retains those comparisons. Text uses the existing wrapping,
+  escaping and local clock, with eight-character SHAs and fingerprints.
+- JSON's `completion` embeds the immutable completion fields and expands
+  `handoff`, `merge_observation`, `ci_results`, `rounds`, `approval` and `missing`.
+  Timestamps, SHAs and recorded CI URLs remain full. It is null outside done
+  tasks, including epics, subtasks and cancellation. No declared loop-contract field changes.
+- Missing evidence rows remain explicit while other facts render. A missing
+  completion row produces an object with empty expansions and a missing-record
+  explanation. Missing fingerprints and reviewer models are explained too.
+  Current GitHub state and historical git objects are never needed.
+
+**Builder's implementation choices:** one read transaction expands the
+completion. Existing exported readers load completion, rounds and approvals;
+small typed JSON queries read the exact hand-off, merge and CI IDs, because
+those packages expose latest/by-task readers rather than exact-ID readers.
+The JSON key `merge_observation` distinguishes the immutable observation
+from the existing `merge` pending-review state. Only IDs named by completion
+are expanded, in recorded order; later records
+cannot replace them. Top-level hand-off, floor and approval fields also use
+that historical evidence; the approval is historically current, and the
+recorded disclosure is reused. Done-task text moves Hand-off and Approval
+into Completed. Missing explanations are an array of text strings alongside
+the typed evidence IDs. No dependency, migration, Event, record-package change,
+network operation or new git read was added; the Assured path floor does not
+apply. Tests include text/JSON goldens, public-command completion fixtures,
+missing and competing records, and a built-binary journey with fake `gh`.
+
+**Left for later:** None discovered in this task.
 
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive

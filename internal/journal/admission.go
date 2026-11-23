@@ -131,7 +131,7 @@ func outOfOrderEventIDError(id string, next int) error {
 // The families that checked their own size before it was shared keep
 // their wording.
 func eventSizeLabel(family string) string {
-	labels := map[string]string{"epic.closed": "epic close", "task.finished": "completion", "task.approved": "approval", "finding.closed": "finding close", "review.round-recorded": "review"}
+	labels := map[string]string{"epic.closed": "epic close", "task.finished": "completion", "task.approved": "approval", "task.waived": "waiver", "finding.closed": "finding close", "review.round-recorded": "review"}
 	if label, found := labels[family]; found {
 		return label
 	}
@@ -314,7 +314,7 @@ func validateStateMove(tx *sql.Tx, event Event, effect Effect) error {
 		// lets only issue.created insert an Issue, and Event-v1 history
 		// named its families freely.
 		return nil
-	case owner != event.EventType:
+	case !issuestate.OwnsMove(event.EventType, move.Kind, move.From, move.To):
 	case owner == issuestate.FamilyTransition && issuestate.HasFixedStates(move.Kind) && cancelDecisions(event) != 1:
 		move.Undecided = true
 	default:

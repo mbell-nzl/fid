@@ -43,7 +43,7 @@ func DueReview(s Snapshot) *ReviewWork {
 	if s.Task.State != "in_review" || s.Handoff == nil || s.Policy == nil {
 		return nil
 	}
-	profiles, err := reviewrecord.RequiredProfiles(*s.Handoff, *s.Policy)
+	profiles, err := reviewrecord.RequiredProfiles(s.reviewHandoff(), *s.Policy)
 	if err != nil {
 		return nil
 	}
@@ -73,4 +73,17 @@ func ReviewsDone(s Snapshot) bool {
 	o := Outcome{Gates: map[Gate]GateResult{}}
 	evaluateReviews(&o, s)
 	return o.Gates[PrimaryGate].State == Satisfied && o.Gates[SeparateGate].State == Satisfied && o.Gates[MajorsGate].State == Satisfied
+}
+
+// AwaitingMerge matches status's approve/merge eligibility. Recorded merges
+// awaiting CI must never return to a builder, including after a squash merge.
+func AwaitingMerge(conn reviewrecord.Queryer, s Snapshot) (bool, error) {
+	if !ReviewsDone(s) {
+		return false, nil
+	}
+	var n int
+	if err := conn.QueryRow(`SELECT count(*) FROM merge_observations WHERE task_id=?`, s.Task.ID).Scan(&n); err != nil {
+		return false, err
+	}
+	return n == 0, nil
 }

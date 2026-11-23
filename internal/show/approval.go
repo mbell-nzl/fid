@@ -12,7 +12,7 @@ import (
 )
 
 func (result *Result) readApproval(root string) error {
-	if result.Issue.Kind != "task" || result.Handoff == nil {
+	if result.doneTask() || result.Issue.Kind != "task" || result.Handoff == nil {
 		return nil
 	}
 	conn, err := reviewwork.OpenProjection(root)

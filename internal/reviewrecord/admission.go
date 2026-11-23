@@ -7,9 +7,11 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/pathglob"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 type Queryer interface {
@@ -44,15 +46,7 @@ func RequiredProfiles(h handoffrecord.Record, p policy.Effective) ([]string, err
 }
 
 func LatestHandoff(conn Queryer, task string) (handoffrecord.Record, error) {
-	var raw string
-	if err := conn.QueryRow(`SELECT record_json FROM handoffs WHERE task_id=? ORDER BY rowid DESC LIMIT 1`, task).Scan(&raw); err != nil {
-		return handoffrecord.Record{}, fmt.Errorf("review needs a hand-off: %w", err)
-	}
-	var h handoffrecord.Record
-	if err := json.Unmarshal([]byte(raw), &h); err != nil {
-		return h, err
-	}
-	return h, nil
+	return handoffrecord.Latest(conn, task)
 }
 
 // Admit is shared by live writes, replay and import. It never recomputes a
@@ -83,6 +77,14 @@ func Admit(conn Queryer, r Round) error {
 	if err := json.Unmarshal([]byte(raw), &p); err != nil {
 		return err
 	}
+	assured := h.Lane == "assured"
+	waiver, err := waiverrecord.Current(conn, r.TaskID, fingerprint.Result{Algorithm: r.Binding.Algorithm, Fingerprint: r.Binding.Fingerprint})
+	if err != nil {
+		return err
+	}
+	if waiver.State == "current" {
+		h.Lane = waiver.Decision.Binding.Lane
+	}
 	required, err := RequiredProfiles(h, p)
 	if err != nil {
 		return err
@@ -92,7 +94,7 @@ func Admit(conn Queryer, r Round) error {
 			return fmt.Errorf("review is missing required profile %s", profile)
 		}
 	}
-	if r.Stream == "separate" && h.Lane != "assured" {
+	if r.Stream == "separate" && !assured {
 		return fmt.Errorf("separate review requires an Assured hand-off")
 	}
 	rounds, err := Read(conn, r.TaskID)

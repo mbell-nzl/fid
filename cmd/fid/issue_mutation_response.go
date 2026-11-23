@@ -216,7 +216,13 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		for _, unmet := range blockedTransition.Unmet {
 			unsatisfied = append(unsatisfied, unmet.Rule)
 		}
-		return transitionNotPermittedFailure(blockedTransition.IssueID, blockedTransition.CurrentState, blockedTransition.RequestedState, unsatisfied)
+		failure, err := transitionNotPermittedFailure(blockedTransition.IssueID, blockedTransition.CurrentState, blockedTransition.RequestedState, unsatisfied)
+		for _, rule := range unsatisfied {
+			if rule == "lane-lowering-requires-waiver" {
+				failure.NextAction = "after hand-off, lower the gates with fid waive " + blockedTransition.IssueID
+			}
+		}
+		return failure, err
 	}
 	return genericFailure(mutationErr, cli.CodeInvalidArgument, "invalid Issue mutation request", nil, map[string]any{"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

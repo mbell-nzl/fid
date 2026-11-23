@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 // Gather reads fid's evidence through a caller-owned projection snapshot. The
@@ -89,12 +90,21 @@ func reviewBase(conn reviewrecord.Queryer, task string) (Snapshot, error) {
 
 func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *fingerprint.Result) error {
 	var err error
+	if err := gatherReviews(root, conn, s, recorded); err != nil {
+		return err
+	}
 	s.Checks, err = checkread.Read(conn, s.Task.ID)
 	if err != nil {
 		return err
 	}
 	if s.Policy != nil {
-		checks := checkread.Evaluate(s.Task.ID, s.Handoff.Tree, s.Handoff.RequiredChecks, s.Policy.Checks, s.Checks)
+		required := s.Handoff.RequiredChecks
+		if s.Waiver.State == "current" {
+			// Evaluate explains absent or invalid lane configuration as missing
+			// evidence. Gathering must not bypass that single gate evaluator.
+			required, _ = policy.Required(*s.Policy, s.EffectiveLane(), s.Task.ID, s.Handoff.Paths())
+		}
+		checks := checkread.Evaluate(s.Task.ID, s.Handoff.Tree, required, s.Policy.Checks, s.Checks)
 		if recorded == nil {
 			s.ArtifactProblems, err = checkread.VerifyKept(root, checks)
 		}
@@ -103,7 +113,7 @@ func gatherLocal(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *
 		}
 		s.ArtifactsVerified = true
 	}
-	return gatherReviews(root, conn, s, recorded)
+	return nil
 }
 
 func gatherReviews(root string, conn reviewrecord.Queryer, s *Snapshot, recorded *fingerprint.Result) error {
@@ -120,12 +130,16 @@ func gatherReviews(root string, conn reviewrecord.Queryer, s *Snapshot, recorded
 	if err != nil {
 		return err
 	}
+	waivers, err := waiverrecord.Read(conn, s.Task.ID)
+	if err != nil {
+		return err
+	}
 	fp := fingerprint.Result{}
 	// Routine work with no review/approval evidence does not need a fingerprint
 	// merely to explain missing gates, and may have an empty committed diff.
 	if recorded != nil {
 		fp = *recorded
-	} else if len(rounds) > 0 || len(approvals) > 0 {
+	} else if len(rounds) > 0 || len(approvals) > 0 || len(waivers) > 0 {
 		fp, err = fingerprint.Compute(root, s.Handoff.Base, s.Handoff.Head)
 		if err != nil {
 			return err
@@ -137,5 +151,9 @@ func gatherReviews(root string, conn reviewrecord.Queryer, s *Snapshot, recorded
 		return err
 	}
 	s.Approval, err = approvalrecord.Current(conn, s.Task.ID, fp)
+	if err != nil {
+		return err
+	}
+	s.Waiver, err = waiverrecord.Current(conn, s.Task.ID, fp)
 	return err
 }

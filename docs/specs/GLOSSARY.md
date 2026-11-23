@@ -649,6 +649,17 @@ and fid records the policy in force at that point.
 Use when: saying which results and which policy a review and `done` rely on.
 Avoid: the retired V1 `handoff` document (Retired Product Terms).
 
+**Completion receipt**
+Definition: The immutable evidence `fid done` accepted when finishing a task:
+its hand-off and checked head, merge and CI results, counted review rounds,
+approval, fingerprint, Rollback observation, other-model disclosure, actor
+and time. `fid show` expands the named records offline in its Completed block
+and JSON `completion` object; missing historical records are explicit.
+Use when: explaining what a done task completed with, independently of the
+current HEAD or policy.
+Avoid: treating it as a fresh check or a new approval, or applying it to an
+epic's person-recorded close.
+
 **Lane floor**
 Definition: The highest lane required by the committed changed paths between
 HEAD and its merge-base with the local origin default branch. Assured rules
@@ -656,8 +667,19 @@ win over Routine paths; unmatched paths are Standard; unsupported Git paths
 are Assured. No changed paths leaves the planned lane unchanged. Only
 `.fid.toml` and `.github/workflows/**` set unwaivable hard floors.
 Use when: explaining the checks selected before hand-off and a lane raised
-at hand-off. Fingerprint-bound waivers remain the proposed 2.2c follow-up.
+at hand-off. A person's fingerprint-bound waiver lowers the effective lane
+for done's gates, never below the hard floor; an edited change makes it stale.
 Avoid: treating a configured Assured path or a check's `defined_by` as hard.
+
+**Lane waiver**
+Definition: An immutable person's decision of kind `waive`, made with
+`fid waive` for an in-review task's latest hand-off. Its binding records the
+new lane, fingerprint algorithm and value, hand-off ID, base and head. Only
+the algorithm and fingerprint determine whether it is current. The latest
+current waiver sets done's effective lane; it never changes recorded lanes.
+Use when: a person deliberately lowers the gates for a particular change.
+Avoid: treating it as permission to waive `.fid.toml` or CI workflow floors,
+or as a permanent lowering of a task's lane.
 
 **Policy snapshot**
 Definition: fid's record of the policy it trusts: its source (`origin/<default
@@ -729,6 +751,20 @@ Use when: saying what evidence a hand-off or `done` relies on.
 Avoid: "Execution Receipt", "Execution Attempt" or "Evidence Record", which
 it replaces; avoid counting a start without a result.
 
+### Default conflict
+
+Definition: The latest hand-off head no longer merges cleanly into the
+locally known `origin/<default>`, proven by git without fetching. Once the
+review gates and task-wide majors gate are satisfied, only its kept
+builder worktree receives this as `rework`, cause `default-conflict`.
+An immutable receipt returns the state and reservation together; it is
+not a review round and does not count against the rework cap. The builder
+merges, checks and hands off again. Review and approval currency follows
+the new hand-off's fingerprint. Clean or unavailable comparisons do not
+return work, nor does an approved task with only an open minor to answer.
+Use when: explaining why an approved PR needs a builder update, or the
+optional `next.rework` evidence and status's default-conflict item.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation
@@ -737,4 +773,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-11-22 (accepted work and allowances, RESET 2.1b)*
+*Last updated: 2026-11-23 (completion receipt, RESET 2.3b)*

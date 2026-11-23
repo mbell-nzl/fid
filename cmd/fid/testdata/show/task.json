@@ -64,6 +64,7 @@
         "blocked_by": []
       }
     ],
+    "completion": null,
     "epic": {
       "id": "FID-e3a1c0",
       "kind": "epic",

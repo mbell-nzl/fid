@@ -73,6 +73,10 @@ var p24CodeRows = map[string]p24CodeFactory{
 var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
+	"waiver-not-in-review":           waiverCodePair("waiver-not-in-review"),
+	"waiver-handoff-required":        waiverCodePair("waiver-handoff-required"),
+	"waiver-not-lower":               waiverCodePair("waiver-not-lower"),
+	"waiver-hard-floor":              waiverCodePair("waiver-hard-floor"),
 	"done-epic-not-open":             epicDoneCodePair("done-epic-not-open"),
 	"done-epic-open-tasks":           epicDoneCodePair("done-epic-open-tasks"),
 	"done-task-not-in-review":        doneCodePair("done-task-not-in-review"),

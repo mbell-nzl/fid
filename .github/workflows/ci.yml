@@ -82,10 +82,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # One shard (Mark, 7 November 2026): minutes are scarce, and each extra
-        # shard repeats about two minutes of setup and compiling. To add shards,
-        # extend this list and raise --count in run and merge to match.
-        shard: [0]
+        # Four shards (Mark, 2026-11-23): fid is public, so Actions minutes are
+        # free, and one shard took 11-20 minutes. Each shard repeats about two
+        # minutes of setup and compiling. To change the count, edit this list
+        # and --count in run and merge to match, and refresh durations.json.
+        shard: [0, 1, 2, 3]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -100,7 +101,7 @@ jobs:
           cache: true
 
       - name: Tests (race where goroutines start, coverage, exhaustive shard)
-        run: python3 .github/scripts/ci_tests.py run --count 1 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
+        run: python3 .github/scripts/ci_tests.py run --count 4 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
 
       - name: Retain coverage and execution evidence
         if: always()
@@ -152,7 +153,7 @@ jobs:
 
       - name: Verify complete execution and combine coverage
         if: steps.gate.outputs.mode == 'full'
-        run: python3 .github/scripts/ci_tests.py merge --count 1 --root "$RUNNER_TEMP/ci-results" --out coverage.out
+        run: python3 .github/scripts/ci_tests.py merge --count 4 --root "$RUNNER_TEMP/ci-results" --out coverage.out
 
       - name: Coverage report
         if: steps.gate.outputs.mode == 'full'

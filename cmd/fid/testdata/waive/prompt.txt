@@ -1,0 +1,5 @@
+Waive FID-9f13aa · assured → standard
+Floor: assured · paths: secure/task.go
+Hard floor: none · paths: none
+New lane: standard
+Type FID-9f13aa to waive: <input>

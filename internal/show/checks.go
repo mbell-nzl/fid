@@ -35,7 +35,14 @@ func (text textWriter) checks(result Result) []string {
 				message += " · required"
 			}
 			if record.Satisfied != nil {
-				if *record.Satisfied {
+				if result.doneTask() && result.Completion != nil && result.Completion.Handoff != nil {
+					head := short(result.Completion.Handoff.Head)
+					if *record.Satisfied {
+						message += " · counts at " + head
+					} else {
+						message += " · no recorded pass at " + head
+					}
+				} else if *record.Satisfied {
 					message += " · counts on HEAD"
 				} else {
 					message += " · no counting pass on HEAD"

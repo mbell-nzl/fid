@@ -58,6 +58,10 @@
     "tree-dirty",
     "unsupported-kind",
     "unsupported-relation",
+    "waiver-handoff-required",
+    "waiver-hard-floor",
+    "waiver-not-in-review",
+    "waiver-not-lower",
     "worktree-busy"
   ],
   "operations": [

@@ -105,7 +105,11 @@ func (text textWriter) message(result Result, explain bool) []string {
 		lines = append(lines, text.prose(indent, "Hand-off "+review.Handoff.ID+" · head "+review.Handoff.Head+" · base "+review.Handoff.Base)...)
 		return append(lines, text.step(review.Handoff.PR)...)
 	case result.Kind == KindRework:
-		lines := text.prose(indent, "Rework here: fix the review findings, then check and hand off again.")
+		message := "Rework here: fix the review findings, then check and hand off again."
+		if result.Rework != nil {
+			message = "Rework here (default-conflict): PR no longer merges into " + result.Rework.DefaultRef + ". Merge the default branch, then check and hand off again."
+		}
+		lines := text.prose(indent, message)
 		if result.ReworkAllowance != nil {
 			lines = append(lines, text.prose(indent, "Guidance: "+result.ReworkAllowance.Reason)...)
 		}
@@ -131,6 +135,9 @@ func (text textWriter) message(result Result, explain bool) []string {
 // nothing says nothing is ready, counting what stops each task by kind, in
 // the order each kind first appears.
 func (text textWriter) nothing(result Result, explain bool) []string {
+	if result.Unavailable != "" && explain {
+		return text.prose(indent, "Default update unavailable: "+result.Unavailable)
+	}
 	if waiting := result.Waiting; waiting != nil {
 		if waiting.Kind == "rework-cap" {
 			return append(text.item(display.RoleWarning, display.SymbolWarning, waiting.TaskID+" reached its rework cap; waiting for you"), text.step("fid status")...)

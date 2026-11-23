@@ -60,8 +60,8 @@ func assertEveryProjectCommandRefuses(t *testing.T, start string, want repositor
 	t.Helper()
 	inputs := t.TempDir()
 	cases := projectCommandRefusalCases(t, start, inputs)
-	if len(cases) != 45 {
-		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (45)", len(cases))
+	if len(cases) != 46 {
+		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (46)", len(cases))
 	}
 	before := make([]map[string]workspaceSnapshotEntry, len(watched))
 	for index, directory := range watched {
@@ -178,6 +178,8 @@ func projectCommandFlags(key, outside string) []string {
 		return []string{"--rounds", "1", "--reason", "Refusal"}
 	case "done":
 		return []string{"--actor", "agent:finisher"}
+	case "waive":
+		return []string{"--actor", "human:mark", "--reason", "Refusal", "--lane", "routine"}
 	case "approve":
 		return []string{"--actor", "human:mark", "--reason", "Refusal"}
 	case "takeover", "finding close":

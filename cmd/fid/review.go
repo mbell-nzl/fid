@@ -140,6 +140,8 @@ func reviewFailure(cmd *cobra.Command, operation string, cause error, actor stri
 	switch operation {
 	case "task.approve":
 		argument, allowed = "task", "an interactive person approving a task in review with local hand-off objects"
+	case "task.waive":
+		argument, allowed = "task", "an interactive person lowering gates for a handed-off task in review"
 	case "finding.answer", "finding.defer":
 		argument, allowed = "finding", "an open finding and a builder or person"
 	case "review.post":

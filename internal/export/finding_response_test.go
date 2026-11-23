@@ -22,7 +22,7 @@ import (
 func responseArchiveFixture(t *testing.T, deferred bool) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, initial := reviewArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 38); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 40); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -30,7 +30,7 @@ func responseArchiveFixture(t *testing.T, deferred bool) (*semanticValidator, jo
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.profile = 38
+	v.profile = 40
 	var round reviewrecord.Round
 	if err := json.Unmarshal([]byte(initial.Effects[0].Values["record_json"].(string)), &round); err != nil {
 		t.Fatal(err)

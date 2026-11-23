@@ -10,7 +10,7 @@ import (
 func postArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, e := responseArchiveFixture(t, false)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 39); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 41); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -18,7 +18,7 @@ func postArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.profile = 39
+	v.profile = 41
 	s, err := reviewcomment.ReadSubject(v.conn, "RND-123456")
 	if err != nil {
 		t.Fatal(err)
