@@ -10,6 +10,7 @@
     "checks": [],
     "checks_base": null,
     "children": [],
+    "completion": null,
     "epic": null,
     "floor": {
       "lane": null,

@@ -1,0 +1,18 @@
+╭ FID-aaaaaa ──────────────────────────────────────────────────── task ╮
+
+  ✓ Completion receipt in fid show                                done
+
+  Lane        Assured
+
+  Completed   2026-11-23 02:47 · CMP-f1ab58 · agent:orchestrator
+              PR #101 merged as 33333333 · 2026-11-23 02:46
+              CI ✓ success · run 45102091114 on 33333333
+              https://github.com/owner/repo/actions/runs/45102091114
+              Hand-off HOF-477dfd at 11111111 · fingerprint 22222222
+              Rounds ✓ RND-517555 primary APPROVE ·
+              agent:claude-reviewer (anthropic/claude-opus-5-5)
+              Rounds ✓ RND-8e5e05 separate APPROVE ·
+              agent:sol-reviewer (openai/gpt-6.1-sol)
+              Approval ✓ PDN-c10c3e human:mark · 2026-11-23 02:44
+              Rollback present
+╰──────────────────────────────────────────────────────────────────────╯

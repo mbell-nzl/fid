@@ -95,6 +95,7 @@
         "blocked_by": []
       }
     ],
+    "completion": null,
     "epic": null,
     "floor": null,
     "handoff": null,
