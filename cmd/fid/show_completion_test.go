@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -135,6 +136,12 @@ func TestShowCompletionMissingRecords(t *testing.T) {
 			}
 			_ = conn.Close()
 			shown, _ := lifecycleResult(t, f.run("--json", "show", task), "issue.show")
+			if missing == "check result" {
+				check := shown["checks"].([]any)[0].(map[string]any)
+				if check["satisfied"] != false {
+					t.Fatalf("missing check counted: %v", check)
+				}
+			}
 			raw, _ := json.Marshal(shown["completion"])
 			out := f.run("show", task)
 			if missing == "completion" {
@@ -225,5 +232,33 @@ func TestShowCompletionLegacyFacts(t *testing.T) {
 	}
 	if strings.Contains(text, "actions/runs") {
 		t.Fatal("invented an unrecorded CI URL")
+	}
+}
+
+func TestShowCompletionAllCountedCIRuns(t *testing.T) {
+	t.Parallel()
+	f, task, hold := doneBuildFixture(t, "standard", false)
+	lifecycleResult(t, f.run(append([]string{"--json"}, doneHandoffArgs(hold)...)...), "task.handoff")
+	lifecycleResult(t, recordReviewTask(t, f, reviewInput(), "primary", "human:courier", task), "review.record")
+	facts := doneFacts(t, f, task)
+	for i, conclusion := range []string{"success", "skipped"} {
+		run := facts.CI.Runs[0]
+		run.ID, run.WorkflowID = int64(202+i), int64(2+i)
+		run.Name, run.Path = "other", ".github/workflows/other.yml"
+		run.Conclusion = conclusion
+		run.URL = "https://github.com/mbell-nzl/fid/actions/runs/" + fmt.Sprint(run.ID)
+		facts.CI.Runs = append(facts.CI.Runs, run)
+	}
+	lifecycleResult(t, runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher"), "task.done")
+	shown, _ := lifecycleResult(t, f.run("--json", "show", task), "issue.show")
+	receipt := shown["completion"].(map[string]any)
+	runs := receipt["ci_results"].([]any)
+	if len(runs) != 2 || runs[0].(map[string]any)["run_id"] != float64(101) || runs[1].(map[string]any)["run_id"] != float64(202) {
+		t.Fatalf("not all counted runs: %v", runs)
+	}
+	out := f.run("show", task)
+	text := strings.Join(strings.Fields(out.stdout), " ")
+	if out.err != nil || !strings.Contains(text, "run 101") || !strings.Contains(text, "run 202") || strings.Contains(text, "run 203") {
+		t.Fatal(out)
 	}
 }

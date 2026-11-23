@@ -9,10 +9,10 @@
               CI ✓ success · run 45102091114 on 33333333
               https://github.com/owner/repo/actions/runs/45102091114
               Hand-off HOF-477dfd at 11111111 · fingerprint 22222222
-              Rounds ✓ RND-517555 primary APPROVE ·
-              agent:claude-reviewer (anthropic/claude-opus-5-5)
+              Rounds ✓ RND-517555 primary APPROVE · agent:sol-reviewer
+              (openai/gpt-6.1-sol)
               Rounds ✓ RND-8e5e05 separate APPROVE ·
-              agent:sol-reviewer (openai/gpt-6.1-sol)
+              agent:sol-reviewer-2 (openai/gpt-6.1-sol)
               Approval ✓ PDN-c10c3e human:mark · 2026-11-23 02:44
               no other-model review
               Rollback present

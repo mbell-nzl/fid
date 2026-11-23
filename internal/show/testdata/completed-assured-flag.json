@@ -15,7 +15,7 @@
   ],
   "approval_id": "PDN-c10c3e",
   "fingerprint": {
-    "algorithm": "test",
+    "algorithm": "patch-id-verbatim-per-file-v1",
     "fingerprint": "2222222222222222222222222222222222222222222222222222222222222222",
     "base": "0000000000000000000000000000000000000000",
     "head": "1111111111111111111111111111111111111111"
@@ -80,8 +80,8 @@
       "task_id": "",
       "handoff_id": "",
       "reviewer": {
-        "actor": "agent:claude-reviewer",
-        "model": "anthropic/claude-opus-5-5",
+        "actor": "agent:sol-reviewer",
+        "model": "openai/gpt-6.1-sol",
         "session_id": ""
       },
       "stream": "primary",
@@ -104,7 +104,7 @@
       "task_id": "",
       "handoff_id": "",
       "reviewer": {
-        "actor": "agent:sol-reviewer",
+        "actor": "agent:sol-reviewer-2",
         "model": "openai/gpt-6.1-sol",
         "session_id": ""
       },

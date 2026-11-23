@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/approvalrecord"
 	"github.com/mbell-nzl/fid/internal/completionrecord"
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
@@ -23,7 +24,7 @@ var updateCompletionGoldens = flag.Bool("update", false, "rewrite completion gol
 func completionMock(lane string, flag bool) Result {
 	stamp := "2026-11-23T02:47:00Z"
 	h := &handoffrecord.Record{View: handoffrecord.View{ID: "HOF-477dfd", PR: "https://github.com/owner/repo/pull/101", Head: strings.Repeat("1", 40), Base: strings.Repeat("0", 40), At: stamp, RequiredChecks: []string{}, ResultIDs: []string{}}, TaskID: "FID-aaaaaa", Lane: lane}
-	fp := reviewrecord.Binding{Algorithm: "test", Fingerprint: strings.Repeat("2", 64), Base: h.Base, Head: h.Head}
+	fp := reviewrecord.Binding{Algorithm: fingerprint.Algorithm, Fingerprint: strings.Repeat("2", 64), Base: h.Base, Head: h.Head}
 	c := &Completion{Record: &completionrecord.Record{ID: "CMP-f1ab58", TaskID: h.TaskID, HandoffID: h.ID, MergeID: "MRG-aaaaaa", CIResultIDs: []string{"CIR-aaaaaa"}, ObservedCIResultIDs: []string{"CIR-aaaaaa"}, RoundIDs: []string{"RND-517555"}, Fingerprint: fp, NoOtherModelReview: flag, Actor: "agent:orchestrator", At: stamp}, Handoff: h,
 		Merge:     &mergerecord.Merge{ID: "MRG-aaaaaa", TaskID: h.TaskID, HandoffID: h.ID, PR: h.PR, Number: 101, Repository: "owner/repo", BaseBranch: "main", MergeCommit: strings.Repeat("3", 40), HeadSHA: h.Head, MergedAt: "2026-11-23T02:46:00Z"},
 		CIResults: []mergerecord.CIResult{{ID: "CIR-aaaaaa", RunID: 45102091114, HeadSHA: strings.Repeat("3", 40), Conclusion: "success", URL: "https://github.com/owner/repo/actions/runs/45102091114"}},
@@ -34,6 +35,11 @@ func completionMock(lane string, flag bool) Result {
 		c.RoundIDs = append(c.RoundIDs, "RND-8e5e05")
 		c.Rounds = append(c.Rounds, reviewrecord.Round{ID: "RND-8e5e05", Stream: "separate", Verdict: "APPROVE", Reviewer: reviewrecord.Reviewer{Actor: "agent:sol-reviewer", Model: "openai/gpt-6.1-sol"}})
 	}
+	if flag {
+		c.Rounds[0].Reviewer.Actor, c.Rounds[0].Reviewer.Model = "agent:sol-reviewer", "openai/gpt-6.1-sol"
+		c.Rounds[1].Reviewer.Actor, c.Rounds[1].Reviewer.Model = "agent:sol-reviewer-2", "openai/gpt-6.1-sol"
+	}
+
 	return Result{IssueView: issues.IssueView{Issue: issues.IssueDetail{IssueSummary: issues.IssueSummary{ID: h.TaskID, Kind: "task", Title: "Completion receipt in fid show", Status: "done", StatusCategory: "completed", Lane: &lane}}}, Completion: c, Now: time.Date(2026, 11, 24, 15, 47, 0, 0, time.UTC)}
 }
 

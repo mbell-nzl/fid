@@ -3199,6 +3199,47 @@ Show uses a read transaction for the approval evidence. Times use the full
 recorded RFC3339 timestamp in text and JSON. There is no new dependency,
 migration, Event family, network call or write command.
 
+**Decided for 2.3b, 2026-11-23.**
+
+The orchestrator settled the completion-receipt design under Mark's delegation,
+for his review. The builder implemented it in `internal/show`, lane Standard.
+
+- Done tasks get a Completed block after the header rows, before criteria and
+  children. It names the completion's time, actor and ID; merged PR number,
+  commit and time; every counted CI run's conclusion, ID, commit and recorded
+  URL; the completed hand-off's ID and head; fingerprint; counted rounds'
+  IDs, streams, verdicts, reviewer actors and models; and the Assured approval,
+  recorded other-model disclosure and Rollback presence.
+- Checks use the exact required names and result IDs in that hand-off,
+  displaying when they passed and `counts at <head>`. They do not compare
+  finished work with today's HEAD, policy, changed paths or fingerprint.
+  Unfinished work retains those comparisons. Text uses the existing wrapping,
+  escaping and local clock, with eight-character SHAs and fingerprints.
+- JSON's `completion` embeds the immutable completion fields and expands
+  `handoff`, `merge`, `ci_results`, `rounds`, `approval` and `missing`.
+  Timestamps and SHAs remain full. It is null outside done tasks, including
+  epics, subtasks and cancellation. No declared loop-contract field changes.
+- Missing evidence rows remain explicit while other facts render. A missing
+  completion row produces an object with empty expansions and a missing-record
+  explanation. Missing fingerprints and reviewer models are explained too.
+  Current GitHub state and historical git objects are never needed.
+
+**Builder's implementation choices:** one read transaction expands the
+completion. Existing exported readers load completion, rounds and approvals;
+small typed JSON queries read the exact hand-off, merge and CI IDs, because
+those packages expose latest/by-task readers rather than exact-ID readers.
+Only IDs named by completion are expanded, in recorded order; later records
+cannot replace them. Top-level hand-off, floor and approval fields also use
+that historical evidence; the approval is historically current, and the
+recorded disclosure is reused. Done-task text moves Hand-off and Approval
+into Completed. Missing explanations are an array of text strings alongside
+the typed evidence IDs. No dependency, migration, Event, record-package change,
+network operation or new git read was added; the Assured path floor does not
+apply. Tests include text/JSON goldens, public-command completion fixtures,
+missing and competing records, and a built-binary journey with fake `gh`.
+
+**Left for later:** None discovered in this task.
+
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies
