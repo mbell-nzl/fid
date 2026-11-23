@@ -1878,6 +1878,34 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
 4. **Two Later items.** Moving a task to another epic, and accepting every
    waiting task in one command (Later list, "From Mark (2026-11-23)").
 
+**Decided for 1.9d, 2026-11-23.**
+
+- The full schema/catalog-derived embedded-JSON matrix (1,220 probes) now
+  runs directly through `ValidateEventShape`, `Event.UnmarshalJSON` and
+  import's shared `journal.ValidateJSONText` boundary, without a repository
+  per probe. The schema is still enumerated from the real migrations.
+  Event refusals assert `RowIdentityError`, the Event ID, map/column and
+  identifying reason. Untyped import JSON accepts case-distinct map keys;
+  typed struct aliases are refused earlier by Event decoding.
+- The first generated carrier for each of four maps and four variants is
+  selected in the matrix's stable order. These 16 representatives retain
+  every path's refusal, complete projection/journal comparison and valid
+  recovery write, and public import's refusal, unchanged-target and recovery
+  import. Serialized/stored reader probes, destination-map rules, fixture
+  parity and the accepted write/export/validate/restore journey stay.
+- Eleven temporary source-overlay mutations are caught by test assertions:
+  removing shared admission or import validation, removing the common
+  `json.Unmarshal`, ignoring its depth failure, and swallowing the refusal
+  on each of the seven journal paths. No production seam, dependency,
+  timeout, check definition or CI file changes.
+- This session's standalone journal run fell from 434.396s to 356.300s.
+  The direct full matrix took 4.06s; each representative journal path took
+  0.33–0.82s, versus 26.39–60.14s before. The under-300s aim is still
+  unmet; the remaining repository matrices are a separate Later item.
+  `make test` passed with journal at 467.900s, export at 227.552s and
+  `cmd/fid` at 461.406s. Its unchanged 600s timeout was not hit; GitHub CI
+  timing remains unmeasured in this builder session.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -3437,6 +3465,21 @@ such a task waits for Mark to accept it; until then the epic's wait for
   default. Further headroom needs profiling; no timeout was raised.
   Became RESET 1.9d (Mark, 2026-11-23), after GitHub CI timed the package
   out at 20 minutes on #103's head.
+  Resolved by 1.9d, 2026-11-23: the full embedded-JSON matrix now runs at
+  the shared validators, with representative repository journeys and
+  mutation guards. The remaining under-300s aim is tracked separately below.
+
+- From this PR (1.9d): the approved embedded-JSON split reduces journal's
+  standalone run from 434.396s to 356.300s, but misses the under-300s aim.
+  `make test` passed with journal at 467.900s (132.100s below its unchanged
+  600s timeout), export at 227.552s and `cmd/fid` at 461.406s.
+  Profile the remaining repository matrices before further growth and propose
+  a separate reduction that preserves their assertions. In the after trace,
+  `TestRowIdentityOnEveryJournalPath` has 1,210 leaf cases totalling 1,016s
+  of overlapping elapsed time; that sum is not package wall time or CPU time.
+  A parent test's reported duration can include waiting for parallel children,
+  so `TestEmbeddedJSONDifferential`'s 344.99s does not locate all that work:
+  its seven representative journal paths each took under a second.
 
 - From #101 (1.9c): Event-v1 history still has its historical scalar and
   revision grammar. Its Issue identities are immutable and its fixed-state
