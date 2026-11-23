@@ -27,6 +27,15 @@ func FindingResponseEffects(conn reviewrecord.Queryer, r reviewrecord.Response) 
 			Effect{Op: "insert", Table: "issues", PK: map[string]any{"id": d.ID}, Values: map[string]any{"kind": "task", "title": d.Title, "parent_id": parent, "workflow_id": "task-default", "status": "todo", "revision": 1, "owner_role": "developer", "lane": d.Lane, "created_at": r.At, "updated_at": r.At}},
 			Effect{Op: "insert", Table: "acceptance_criteria", PK: map[string]any{"id": r.ID + "-ac"}, Values: map[string]any{"issue_id": d.ID, "ordinal": 1, "text": r.Text}},
 		)
+		if d.EpicID != nil {
+			var sequence sql.NullInt64
+			if err := conn.QueryRow(`SELECT CASE WHEN scheduling='sequential' THEN (SELECT COALESCE(MAX(sequence),0)+1 FROM issues WHERE parent_id=?) END FROM epic_metadata WHERE issue_id=?`, *d.EpicID, *d.EpicID).Scan(&sequence); err != nil {
+				return nil, fmt.Errorf("assign deferred sequence: %w", err)
+			}
+			if sequence.Valid {
+				effects[0].Values["sequence"] = sequence.Int64
+			}
+		}
 		for _, link := range []struct{ from, relation, to string }{{d.ID, "discovered_from", r.TaskID}, {r.TaskID, "discovered", d.ID}} {
 			effects = append(effects, Effect{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": link.from, "relation": link.relation, "to_type": "issue", "to_id": link.to}, Values: map[string]any{"created_at": r.At}})
 		}

@@ -3169,6 +3169,9 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   requested Assured lane), raised by the finding location’s floor under the
   response hand-off’s frozen policy. Check/hand-off still computes the floor
   of all paths eventually changed. Routine and unknown lanes refuse.
+  A sequential epic requires a sequence: discovered tasks append after its
+  highest existing sequence, allocated and admitted from the prior projection
+  in the same Event. Other scheduling leaves the sequence unset.
 - Migration 0038 adds immutable `finding_responses`: `FRS-` identity, finding
   ID, optional unique deferred task ID, complete typed `record_json`. Answers
   use `finding.answered`; deferrals use `finding.deferred`. Both use a

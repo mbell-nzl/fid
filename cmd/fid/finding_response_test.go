@@ -305,3 +305,34 @@ func TestFindingDeferralAtomicAndUnaccepted(t *testing.T) {
 		})
 	}
 }
+
+func TestFindingDeferralSequentialEpic(t *testing.T) {
+	t.Parallel()
+	f, ids, _ := closureFixture(t)
+	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "epic", "--title", "Sequential discoveries", "--scheduling", "sequential", "--actor", "human:mark", "--idempotency-key", "epic"), "issue.create")
+	epic := created["issue"].(map[string]any)["id"].(string)
+	lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--title", "Existing last task", "--epic", epic, "--sequence", "4", "--actor", "human:mark", "--idempotency-key", "last"), "issue.create")
+	count := startEventCount(t, f.workspace)
+	result, _ := lifecycleResult(t, f.run("--json", "finding", "defer", ids[2], "--actor", "agent:builder", "--title", "Follow up", "--epic", epic), "finding.defer")
+	task := result["response"].(map[string]any)["deferred_task"].(map[string]any)["id"].(string)
+	if startEventCount(t, f.workspace) != count+1 {
+		t.Fatal("sequential deferral was not atomic")
+	}
+	for _, rebuild := range []bool{false, true} {
+		if rebuild {
+			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+				t.Fatal(err)
+			}
+		}
+		conn, err := reviewwork.OpenProjection(f.workspace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var sequence int
+		err = conn.QueryRow(`SELECT sequence FROM issues WHERE id=?`, task).Scan(&sequence)
+		closeCommandDB(t, conn)
+		if err != nil || sequence != 5 {
+			t.Fatalf("deferred sequence=%d/%v, want 5", sequence, err)
+		}
+	}
+}

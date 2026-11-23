@@ -1679,6 +1679,8 @@ path floor. Routine and unknown lanes refuse. The later check/hand-off computes
 its normal floor from actual changed paths. The acceptance criterion includes
 finding ID, summary, evidence and requested fix. One Event includes the task,
 criterion, `discovered_from` link and inverse, source revision bump and response.
+In a sequential epic it appends after the highest existing task sequence;
+other scheduling leaves sequence unset. Admission checks that allocation too.
 The Event actor supplies the new task’s creator: an agent’s discovery waits for
 `fid accept`, as ordinary agent-created work does. A deferral’s derived closure
 has disposition `deferred`, `response_id` and `deferred_task_id`, and it prevents
