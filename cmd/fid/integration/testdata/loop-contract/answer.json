@@ -1,0 +1,12 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "task.answer",
+  "result": {
+    "answer": "Include them.",
+    "decision_id": "\u003cPDN\u003e",
+    "question_id": "\u003cQST\u003e",
+    "task_id": "\u003cFID\u003e"
+  }
+}

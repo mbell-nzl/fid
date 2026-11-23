@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "invalid-argument",
+  "error.retryable": false,
+  "exit": 2,
+  "ok": false,
+  "operation": "review.record"
+}

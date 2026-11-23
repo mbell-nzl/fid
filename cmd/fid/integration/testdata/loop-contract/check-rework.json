@@ -1,0 +1,24 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "check.execute",
+  "result": {
+    "checks[].counts": [
+      true
+    ],
+    "checks[].exit_code": [
+      0
+    ],
+    "checks[].id": [
+      "\u003cCHK\u003e"
+    ],
+    "checks[].name": [
+      "test"
+    ],
+    "checks[].outcome": [
+      "passed"
+    ],
+    "task_id": "\u003cFID\u003e"
+  }
+}

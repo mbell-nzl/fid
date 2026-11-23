@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "internal-error",
+  "error.retryable": false,
+  "exit": 7,
+  "ok": false,
+  "operation": "next.get"
+}

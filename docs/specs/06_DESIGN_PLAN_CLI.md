@@ -759,7 +759,7 @@ fid issue ac add|list
 fid label add|list
 fid issue label add|remove
 fid link add|remove|list
-fid next [--claim --actor <actor>] [--explain]
+fid next [--claim --actor <actor>] [--epic <epic>] [--explain]
 ```
 
 Issues use fixed built-in states for their kind. New issues ignore retired
@@ -810,6 +810,7 @@ passed over with a typed reason, the first that applies:
 
 | Reason | When |
 |---|---|
+| `outside-scope` | `--epic` names a different epic, or the task has no epic; takes precedence over other reasons |
 | `not-accepted` | an agent created this task and no person has accepted it |
 | `held-elsewhere` | another worktree's live build hold or review reservation |
 | `built-by-actor` | the claiming actor ever held this task to build it, including ended holds |
@@ -835,6 +836,15 @@ on them, only on `kind`.
   database backs the lock up with at most one open hold per task and per
   worktree; if that ever refuses, it is a bug, reported as
   `internal-error`.
+- `--epic <epic>` scopes every kind of work, including review, resume and
+  rework, to that epic's tasks. The usual order, dependencies, sequence,
+  holds and rework cap still apply within it. Other tasks stay in the queue
+  with `outside-scope` (text: `outside scope`), even when they block scoped
+  work. Nothing available in scope returns `none`; unscoped workers keep
+  their usual selection. An occupied worktree whose task is outside the
+  requested scope returns `none`, retaining its session. An unknown ID is
+  `issue-not-found` (exit 3); an existing non-epic is `unsupported-kind`
+  (exit 2); an explicit empty value is `invalid-argument` (exit 2).
 - `--explain` lists the whole order with a verdict for each task, with or
   without `--claim`. It changes only the text.
 
@@ -861,7 +871,8 @@ parked started task keeps its worktree reservation after the hold ends.
 `done` arrives in 1.6. A worktree is identified by its root path, so a moved
 worktree is another worktree.
 
-The JSON result, with exit 0 for every kind:
+The loop-facing subset is declared and versioned in
+[LOOP_CONTRACT.md](LOOP_CONTRACT.md). The JSON result, with exit 0 for every kind:
 
 ```json
 {"kind": "new", "worktree": "/home/mark/projects/fid",

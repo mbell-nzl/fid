@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "task.done",
+  "result": {
+    "completion?.task_id": null,
+    "outcomes?[].completion?.task_id": [
+      "\u003cFID\u003e"
+    ],
+    "outcomes?[].refusal?.code": [
+      null
+    ],
+    "outcomes?[].status": [
+      "completed"
+    ],
+    "outcomes?[].task_id": [
+      "\u003cFID\u003e"
+    ],
+    "status?": null
+  }
+}

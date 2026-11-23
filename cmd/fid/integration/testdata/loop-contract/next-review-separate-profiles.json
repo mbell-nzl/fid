@@ -1,0 +1,30 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "next.get",
+  "result": {
+    "answer.decision_id": null,
+    "answer.question": null,
+    "answer.question_id": null,
+    "answer.text": null,
+    "hold.id": null,
+    "kind": "review",
+    "review?.handoff.base": "\u003ccommit\u003e",
+    "review?.handoff.head": "\u003ccommit\u003e",
+    "review?.handoff.id": "\u003cHOF\u003e",
+    "review?.handoff.pr": "https://github.com/mbell-nzl/fid/pull/63",
+    "review?.required_profiles": [
+      "code",
+      "test-adequacy"
+    ],
+    "review?.stream": "separate",
+    "rework_allowance?.actor": null,
+    "rework_allowance?.at": null,
+    "rework_allowance?.decision_id": null,
+    "rework_allowance?.reason": null,
+    "rework_allowance?.rounds": null,
+    "task.id": "\u003cFID\u003e",
+    "waiting.kind": null
+  }
+}
