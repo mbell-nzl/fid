@@ -3056,6 +3056,10 @@ Implementation choices:
   recorded fingerprint and selects checks from the hand-off's frozen policy;
   Lane, Completed, approval and rollback show the waived requirements offline,
   even without git objects, while the task and hand-off retain their lanes.
+  Lower-lane-only check results are selected from result insertions before
+  that completion's Event in canonical journal order. An outstanding check
+  finishing after done cannot replace its historical pass, even with the
+  same caller timestamp or after rebuild. The completion schema is unchanged.
 
 Left for later: none discovered outside this task.
 
