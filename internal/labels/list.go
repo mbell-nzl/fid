@@ -15,11 +15,11 @@ func List(options ListOptions) ([]Label, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return nil, fmt.Errorf("label list: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return nil, fmt.Errorf("label list: migrations dir is required")
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return nil, err
 	}
 

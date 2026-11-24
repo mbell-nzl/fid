@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func approveConflictReviews(t *testing.T, f *statusFixture, task, lane string) {
@@ -179,7 +180,7 @@ func TestApprovedDefaultConflictClaimAndFreshness(t *testing.T) {
 			reviewHandoffTask(t, f, "updated-handoff", task)
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}

@@ -31,7 +31,7 @@ func expectedLeanCapabilities(t *testing.T) []any {
 func TestLeanArchiveRefusesAddedRetiredCapabilityWithoutMutation(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
-	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("valid lean control: %v", err)
 	}
 	entries := archiveContents(t, fixture.archive)
@@ -49,9 +49,9 @@ func TestLeanArchiveRefusesAddedRetiredCapabilityWithoutMutation(t *testing.T) {
 	for _, operation := range []string{"validate", "import"} {
 		var err error
 		if operation == "validate" {
-			_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 		} else {
-			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "retired-capability"})
+			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "retired-capability"})
 		}
 		assertArchiveCheck(t, err, "capability-snapshot-mismatch")
 		if workspaceTreeDigest(t, fixture.workspace) != sourceBefore || workspaceTreeDigest(t, target) != targetBefore || workspaceTreeDigest(t, filepath.Dir(archive)) != archiveBefore {
@@ -78,9 +78,9 @@ func TestRetiredArchiveMemberCaseVariantsRefusedWithoutMutation(t *testing.T) {
 			target := gittest.NewWorkspace(t)
 			sourceBefore, targetBefore := workspaceTreeDigest(t, fixture.workspace), workspaceTreeDigest(t, target)
 			archiveBefore := workspaceTreeDigest(t, filepath.Dir(archive))
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			assertArchiveCheck(t, err, "entry-extra")
-			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "retired-member"})
+			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "retired-member"})
 			assertArchiveCheck(t, err, "entry-extra")
 			if workspaceTreeDigest(t, fixture.workspace) != sourceBefore || workspaceTreeDigest(t, target) != targetBefore || workspaceTreeDigest(t, filepath.Dir(archive)) != archiveBefore {
 				t.Fatal("refusal changed files")

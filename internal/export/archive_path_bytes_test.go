@@ -37,7 +37,7 @@ func pathBytesPolicy(t *testing.T, v *semanticValidator, edit func(*policy.Effec
 
 func beforePathBytesEvent(t *testing.T, lines [][]byte, mode, family string) (*semanticValidator, journal.Event) {
 	t.Helper()
-	v, err := newSemanticValidator(testMigrationsDir(t), 26)
+	v, err := newSemanticValidator(testMigrationsFS(t), 26)
 	if err != nil {
 		t.Fatal(err)
 	}

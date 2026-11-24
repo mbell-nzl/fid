@@ -2,8 +2,8 @@ package issues
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -11,13 +11,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func BenchmarkList10kIssuesWithRegistry(b *testing.B) {
 	workspace := gittest.NewWorkspace(b)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: benchmarkIssueMigrationsDir(b),
+		MigrationsFS:  benchmarkIssueMigrationsFS(b),
 	}); err != nil {
 		b.Fatalf("InitializeWorkspace() error = %v", err)
 	}
@@ -39,7 +40,7 @@ func BenchmarkList10kIssuesWithRegistry(b *testing.B) {
 		b.Fatalf("close seeded projection: %v", err)
 	}
 
-	options := ListOptions{WorkspaceRoot: workspace, MigrationsDir: benchmarkIssueMigrationsDir(b)}
+	options := ListOptions{WorkspaceRoot: workspace, MigrationsFS: benchmarkIssueMigrationsFS(b)}
 	b.ReportAllocs()
 	b.ResetTimer()
 	var total time.Duration
@@ -64,11 +65,7 @@ func BenchmarkList10kIssuesWithRegistry(b *testing.B) {
 	}
 }
 
-func benchmarkIssueMigrationsDir(tb testing.TB) string {
+func benchmarkIssueMigrationsFS(tb testing.TB) fs.FS {
 	tb.Helper()
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		tb.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }

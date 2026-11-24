@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sort"
 	"strings"
@@ -19,8 +20,8 @@ import (
 
 // Validate checks one archive without importing, repairing, or writing project state.
 type ValidateOptions struct {
-	ArchivePath   string
-	MigrationsDir string
+	ArchivePath  string
+	MigrationsFS fs.FS
 }
 
 func Validate(options ValidateOptions) (Validation, error) {
@@ -80,7 +81,7 @@ func Validate(options ValidateOptions) (Validation, error) {
 		checks = append(checks, validateManifestEntries(manifest, entries)...)
 		profileChecks := append(validateManifestSources(manifest), validateCapabilities(manifest)...)
 		if len(checks) == 0 {
-			journalChecks := validateJournalEntries(manifest, entries, options.MigrationsDir)
+			journalChecks := validateJournalEntries(manifest, entries, options.MigrationsFS)
 			// An old profile cannot disguise removed history as a mere profile mismatch.
 			// Entry integrity still precedes semantic inspection of archive contents.
 			unsupported := false
@@ -213,7 +214,7 @@ func validateCapabilities(manifest manifest) []Check {
 	return nil
 }
 
-func validateJournalEntries(manifest manifest, entries map[string]scannedEntry, migrationsDir string) []Check {
+func validateJournalEntries(manifest manifest, entries map[string]scannedEntry, migrationsFS fs.FS) []Check {
 	paths := make([]string, 0)
 	for path := range entries {
 		if strings.HasPrefix(path, "journal/") {
@@ -234,7 +235,7 @@ func validateJournalEntries(manifest manifest, entries map[string]scannedEntry, 
 	var semantic *semanticValidator
 	if manifest.Schema == manifestSchema {
 		var err error
-		semantic, err = newSemanticValidator(migrationsDir, manifest.ProjectionSchema)
+		semantic, err = newSemanticValidator(migrationsFS, manifest.ProjectionSchema)
 		if err != nil {
 			return []Check{check("schema-unsupported", nil, err.Error())}
 		}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/reviewpost"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
@@ -189,7 +190,7 @@ func recordV8Posts(t *testing.T, root, task string) {
 		return github.Result{Stdout: []byte(fmt.Sprintf("%s#issuecomment-%d", strings.Replace(args[2], "/pull/", "/issues/", 1), n))}
 	}
 	for _, r := range rounds {
-		result, err := reviewpost.Round(context.Background(), root, issueMigrationsDir(), r.ID, run)
+		result, err := reviewpost.Round(context.Background(), root, fidmigrations.FS, r.ID, run)
 		if err != nil || len(result.Pending) != 0 {
 			t.Fatalf("V8 posts=%v/%v", result, err)
 		}

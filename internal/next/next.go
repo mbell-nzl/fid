@@ -7,6 +7,7 @@ package next
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -30,7 +31,7 @@ import (
 
 type Options struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	// Clock reads the time, in the zone the text shows. fid next reads it
 	// once, just before it walks the order: after refreshing the
 	// projection, and with --claim under the write lock, so a hold that
@@ -104,7 +105,7 @@ func CheckActor(actor string) error {
 // Read is fid next without --claim: what this worktree would be handed. It
 // records nothing.
 func Read(options Options) (Result, error) {
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return Result{}, fmt.Errorf("read next: %w", err)
 	}
 	conn, err := openProjection(options.WorkspaceRoot)
@@ -129,7 +130,7 @@ func Claim(options Options) (Result, error) {
 	}
 	var result Result
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid next --claim --actor " + options.Actor}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := openProjection(options.WorkspaceRoot)

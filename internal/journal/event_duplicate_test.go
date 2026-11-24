@@ -76,7 +76,7 @@ func TestMalformedEventDuplicateJSONKeys(t *testing.T) {
 					if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
 						t.Fatal(err)
 					}
-					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsDir(t)); err != nil {
+					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsFS(t)); err != nil {
 						t.Fatal(err)
 					}
 					if err := w.admit(t, "commit", admissionLaneRaise()); err != nil {
@@ -144,7 +144,7 @@ func TestStructuredEventDuplicateJSONKeys(t *testing.T) {
 					if err := os.WriteFile(w.file, w.prefix, 0o644); err != nil {
 						t.Fatal(err)
 					}
-					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsDir(t)); err != nil {
+					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsFS(t)); err != nil {
 						t.Fatal(err)
 					}
 					if err := w.admit(t, "commit", admissionLaneRaise()); err != nil {

@@ -25,7 +25,7 @@ func normalizeCreateRequest(options CreateOptions) (createRequest, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return createRequest{}, fmt.Errorf("create issue: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return createRequest{}, fmt.Errorf("create issue: migrations dir is required")
 	}
 	if strings.TrimSpace(options.Title) == "" {
@@ -51,7 +51,7 @@ func normalizeCreateRequest(options CreateOptions) (createRequest, error) {
 }
 
 func ensureIssueProjection(options CreateOptions) (config.ProjectConfig, error) {
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return config.ProjectConfig{}, err
 	}
 	return config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))

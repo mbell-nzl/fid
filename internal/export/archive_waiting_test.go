@@ -49,7 +49,7 @@ func TestArchiveWaitingAndAnswerBindings(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), 23)
+			validator, err := newSemanticValidator(testMigrationsFS(t), 23)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -104,7 +104,7 @@ func TestArchiveWaitingAndAnswerBindings(t *testing.T) {
 
 func TestArchiveCannotReleaseUnansweredWaitingReservation(t *testing.T) {
 	t.Parallel()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 23)
+	validator, err := newSemanticValidator(testMigrationsFS(t), 23)
 	if err != nil {
 		t.Fatal(err)
 	}

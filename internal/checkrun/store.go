@@ -25,7 +25,7 @@ func (options Options) write(action func(store) error) error {
 		options.beforeWrite()
 	}
 	return journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid check"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

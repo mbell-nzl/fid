@@ -17,7 +17,7 @@ func TestListFiltersByKind(t *testing.T) {
 
 	epic, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "epic",
 		Title:         "Phase 4 discovery",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -29,7 +29,7 @@ func TestListFiltersByKind(t *testing.T) {
 
 	task, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Implement issue list",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -42,7 +42,7 @@ func TestListFiltersByKind(t *testing.T) {
 
 	if _, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "subtask",
 		Title:         "Add filter coverage",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -53,7 +53,7 @@ func TestListFiltersByKind(t *testing.T) {
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "status",
 				options: ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Status:        "todo",
 				},
 				wantIDs: []string{"FID-epic01", "FID-task01"},
@@ -99,7 +99,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "status category",
 				options: ListOptions{
 					WorkspaceRoot:  workspace,
-					MigrationsDir:  testIssueMigrationsDir(t),
+					MigrationsFS:   testIssueMigrationsFS(t),
 					StatusCategory: "started",
 				},
 				wantIDs: []string{"FID-task02"},
@@ -108,7 +108,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "epic",
 				options: ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					EpicID:        "FID-epic01",
 				},
 				wantIDs: []string{"FID-task01", "FID-task02", "FID-task03"},
@@ -117,7 +117,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "label",
 				options: ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Label:         "core",
 				},
 				wantIDs: []string{"FID-task01", "FID-task03"},
@@ -126,7 +126,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "priority",
 				options: ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Priorities:    []int{1},
 				},
 				wantIDs: []string{"FID-task01", "FID-task04"},
@@ -135,7 +135,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				name: "empty result",
 				options: ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Label:         "missing",
 				},
 				wantIDs: []string{},
@@ -187,7 +187,7 @@ func TestListFiltersAndOrdering(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := List(ListOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Kind:          "task",
 					Order:         tt.order,
 				})

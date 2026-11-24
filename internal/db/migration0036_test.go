@@ -10,7 +10,7 @@ func TestReviewClaimsMigrationAndVersions(t *testing.T) {
 	if ActiveMigrationVersion != 41 || ProjectionSchemaVersion != 22 {
 		t.Fatalf("review delivery, waivers and default conflicts require migration 41 / cache 22; got %d / %d", ActiveMigrationVersion, ProjectionSchemaVersion)
 	}
-	m, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	m, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, m, conn)
 	if err := m.Migrate(35); err != nil {
 		t.Fatal(err)

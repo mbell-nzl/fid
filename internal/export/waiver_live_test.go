@@ -97,7 +97,7 @@ func TestWaiverMalformedAppendAndCatchupPreserveState(t *testing.T) {
 					if err := os.WriteFile(path, append(append([]byte{}, prefix...), append(tail, '\n')...), 0o600); err != nil {
 						t.Fatal(err)
 					}
-					_, err = journal.EnsureProjectionFresh(root, testMigrationsDir(t))
+					_, err = journal.EnsureProjectionFresh(root, testMigrationsFS(t))
 				}
 				if err == nil || handoffProjectionSnapshot(t, v) != before {
 					t.Fatalf("refusal changed state: %v", err)

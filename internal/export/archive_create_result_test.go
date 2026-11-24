@@ -63,21 +63,21 @@ func TestArchiveValidateRejectsMalformedCreationLaneWithValidIntegrity(t *testin
 		t.Run(kind, func(t *testing.T) {
 			t.Parallel()
 			workspace := gittest.NewWorkspace(t)
-			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 				t.Fatal(err)
 			}
 			scheduling := ""
 			if kind == "epic" {
 				scheduling = "prioritised"
 			}
-			if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Kind: kind, Title: "Planned work", Scheduling: scheduling, Actor: "agent:builder", IdempotencyKey: "create"}); err != nil {
+			if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Kind: kind, Title: "Planned work", Scheduling: scheduling, Actor: "agent:builder", IdempotencyKey: "create"}); err != nil {
 				t.Fatal(err)
 			}
 			archive := filepath.Join(t.TempDir(), "create.zip")
 			if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archive}); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+			if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 				t.Fatalf("valid control: %v", err)
 			}
 			contents := archiveContents(t, archive)
@@ -99,7 +99,7 @@ func TestArchiveValidateRejectsMalformedCreationLaneWithValidIntegrity(t *testin
 			contents["manifest.json"] = encodeManifestMap(t, manifest)
 			writeTestArchive(t, archive, contents)
 			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			assertArchiveCheck(t, err, "reference-invalid")
 			invalid := err.(*InvalidArchiveError)
 			if len(invalid.Checks) != 1 || !strings.Contains(invalid.Checks[0].Detail, "Issue create result") {

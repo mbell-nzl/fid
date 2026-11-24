@@ -20,7 +20,7 @@ func TestLeanCheckExportImportPreservesRecordsAndArtifact(t *testing.T) {
 	var task string
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string { task = addLeanExportFacts(t, root); return task })
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "lean-import"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "lean-import"}); err != nil {
 		t.Fatal(err)
 	}
 	var original string
@@ -143,7 +143,7 @@ func TestLeanCheckReplayAndImportRejectForgedObservations(t *testing.T) {
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), 25)
+			validator, err := newSemanticValidator(testMigrationsFS(t), 25)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -194,7 +194,7 @@ func TestLeanCheckProjectionUpgradeRebuildsTheOldCache(t *testing.T) {
 	if err := conn.Close(); err != nil {
 		t.Fatal(err)
 	}
-	result, err := journal.EnsureProjectionFresh(fixture.workspace, testMigrationsDir(t))
+	result, err := journal.EnsureProjectionFresh(fixture.workspace, testMigrationsFS(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ func newApproveCommandWithTerminal(terminal func(any) bool) *cobra.Command {
 		if !terminal(cmd.InOrStdin()) || !terminal(cmd.ErrOrStderr()) {
 			return approveFailure(cmd, fmt.Errorf("standard input and standard error must be terminals"))
 		}
-		result, err := approvalwork.Record(approvalwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Confirm: func(p approvalwork.Preview) (bool, error) {
+		result, err := approvalwork.Record(approvalwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: args[0], Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Confirm: func(p approvalwork.Preview) (bool, error) {
 			if err := approvalwork.WritePrompt(cmd.ErrOrStderr(), p); err != nil {
 				return false, err
 			}

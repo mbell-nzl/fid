@@ -41,7 +41,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("Remove(projection) error = %v", err)
 	}
-	if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+	if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 	conn = openIdempotencyDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
@@ -191,7 +191,7 @@ func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
 	}
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	return workspace, openIdempotencyDB(t, dbPath)

@@ -4,23 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
-
-func issueMigrationsDir() string {
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		return "migrations"
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
-}
 
 func renderIssueError(writer io.Writer, err error) error {
 	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {

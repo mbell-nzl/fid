@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestIssueListFiltersAndOrdering(t *testing.T) {
@@ -189,7 +190,7 @@ func seedIssueListCommandFixture(t *testing.T, workspace string) {
 		}
 	}
 	appendCommandIssueEvent(t, workspace, journal.Event{EventSchema: journal.EventSchemaV1, EventType: "issue.read-fixture", Actor: journal.Actor{Role: "developer"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}, Effects: effects})
-	if _, err := journal.EnsureProjectionFresh(workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.EnsureProjectionFresh(workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	for id, status := range map[string]string{"FID-task02": "in_progress", "FID-task03": "done", "FID-task04": "done"} {

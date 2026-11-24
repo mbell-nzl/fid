@@ -7,7 +7,7 @@ import (
 
 func TestMigration0024PreservesAllowedStatesAndConstrainsTaskLanes(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(23); err != nil {
 		t.Fatal(err)
@@ -72,7 +72,7 @@ func TestMigration0024DoesNotConvertNewStatesOnDowngrade(t *testing.T) {
 	for _, row := range []struct{ kind, state string }{{"task", "in_review"}, {"epic", "done"}} {
 		t.Run(row.kind, func(t *testing.T) {
 			t.Parallel()
-			migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+			migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 			defer closeMigrator(t, migrator, conn)
 			if err := migrator.Migrate(24); err != nil {
 				t.Fatal(err)

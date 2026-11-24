@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/export"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +40,7 @@ func newExportImportCommand() *cobra.Command {
 		} else if err != nil {
 			target = repository // Import reports an unusable target itself.
 		}
-		result, err := export.Import(export.ImportOptions{ArchivePath: args[0], RepositoryRoot: target, MigrationsDir: issueMigrationsDir(), IdempotencyKey: key})
+		result, err := export.Import(export.ImportOptions{ArchivePath: args[0], RepositoryRoot: target, MigrationsFS: fidmigrations.FS, IdempotencyKey: key})
 		if err != nil {
 			return renderExportError(cmd, "export.import", args[0], err)
 		}
@@ -84,7 +85,7 @@ func newExportCreateCommand() *cobra.Command {
 
 func newExportValidateCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "validate <archive-path>", Short: "Validate an export archive without mutation.", Args: canonicalExactArgs("export.validate", 1), RunE: func(cmd *cobra.Command, args []string) error {
-		result, err := export.Validate(export.ValidateOptions{ArchivePath: args[0], MigrationsDir: issueMigrationsDir()})
+		result, err := export.Validate(export.ValidateOptions{ArchivePath: args[0], MigrationsFS: fidmigrations.FS})
 		if err != nil {
 			return renderExportError(cmd, "export.validate", args[0], err)
 		}

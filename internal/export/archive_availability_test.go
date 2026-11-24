@@ -16,7 +16,7 @@ import (
 func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
 	artifactEntry := addLeanArtifactExportFacts(t, workspace)
@@ -33,7 +33,7 @@ func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing
 	}
 	verified, err := artifactverify.Verify(artifactverify.Options{
 		WorkspaceRoot:  workspace,
-		MigrationsDir:  testMigrationsDir(t),
+		MigrationsFS:   testMigrationsFS(t),
 		ActorID:        "agent:builder",
 		IdempotencyKey: "fixture-artifact-unavailable",
 		Request:        artifactverify.Request{ArtifactID: artifactID},
@@ -50,7 +50,7 @@ func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing
 	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
 		t.Fatalf("create unavailable Artifact archive: %v", err)
 	}
-	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("validate unavailable Artifact archive: %#v", err)
 	}
 

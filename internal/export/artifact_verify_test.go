@@ -36,7 +36,7 @@ func TestLeanArtifactVerificationPreservesIdentityAndCheckResult(t *testing.T) {
 	}
 	file := records[0].Result.Artifacts[0]
 	retained := retainedArtifactMetadata(t, conn, file.ID)
-	options := artifactverify.Options{WorkspaceRoot: fixture.workspace, MigrationsDir: testMigrationsDir(t), ActorID: "agent:builder", IdempotencyKey: "available", Request: artifactverify.Request{ArtifactID: file.ID}}
+	options := artifactverify.Options{WorkspaceRoot: fixture.workspace, MigrationsFS: testMigrationsFS(t), ActorID: "agent:builder", IdempotencyKey: "available", Request: artifactverify.Request{ArtifactID: file.ID}}
 	first, err := artifactverify.Verify(options)
 	if err != nil {
 		t.Fatal(err)
@@ -190,7 +190,7 @@ func TestLeanArtifactVerificationRefusesWithoutMutation(t *testing.T) {
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			before := workspaceTreeDigest(t, fixture.workspace)
-			_, err := artifactverify.Verify(artifactverify.Options{WorkspaceRoot: fixture.workspace, MigrationsDir: testMigrationsDir(t), ActorID: row.actor, Request: artifactverify.Request{ArtifactID: row.id}, IdempotencyKey: row.key})
+			_, err := artifactverify.Verify(artifactverify.Options{WorkspaceRoot: fixture.workspace, MigrationsFS: testMigrationsFS(t), ActorID: row.actor, Request: artifactverify.Request{ArtifactID: row.id}, IdempotencyKey: row.key})
 			var denied *artifactverify.DeniedActorError
 			if err == nil || !strings.Contains(err.Error(), row.message) || errors.As(err, &denied) != row.denied || workspaceTreeDigest(t, fixture.workspace) != before {
 				t.Fatalf("verify refusal=%v", err)

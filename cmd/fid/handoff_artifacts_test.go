@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func keptTaskCheckPath(t *testing.T, f *statusFixture, task string) string {
@@ -71,7 +72,7 @@ func TestHandoffRequiresKeptArtifactsNowButReplayDoesNot(t *testing.T) {
 			if err := os.Remove(path); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 			if got := f.run(args...); got.err != nil || got.stdout != first.stdout {

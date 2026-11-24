@@ -31,7 +31,7 @@ func archiveStartEvent(t *testing.T) journal.Event {
 
 func startArchiveValidator(t *testing.T) *semanticValidator {
 	t.Helper()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 24)
+	validator, err := newSemanticValidator(testMigrationsFS(t), 24)
 	if err != nil {
 		t.Fatal(err)
 	}

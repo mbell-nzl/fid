@@ -14,7 +14,7 @@ import (
 func approvalArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, h := handoffArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 33); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 33); err != nil {
 		t.Fatal(err)
 	}
 	var err error

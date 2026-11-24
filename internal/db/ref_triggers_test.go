@@ -2,13 +2,13 @@ package db_test
 
 import (
 	"database/sql"
-	"path/filepath"
-	"runtime"
+	"io/fs"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestPolymorphicRefTriggersRejectDanglingRefsAndAllowResolvableRows(t *testing.T) {
@@ -220,18 +220,12 @@ func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive
 func openRefTriggerDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	return openSchema17DB(t, testRefTriggerMigrationsDir(t))
+	return openSchema17DB(t, testRefTriggerMigrationsFS(t))
 }
 
-func testRefTriggerMigrationsDir(t *testing.T) string {
+func testRefTriggerMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeRefTriggerDB(t *testing.T, conn *sql.DB) {

@@ -3,6 +3,7 @@ package mergework
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,10 +15,12 @@ import (
 )
 
 type Options struct {
-	lock                                        *journal.WriteLock
-	conn                                        *sql.DB
-	WorkspaceRoot, MigrationsDir, TaskID, Actor string
-	Clock                                       func() time.Time
+	lock          *journal.WriteLock
+	conn          *sql.DB
+	WorkspaceRoot string
+	MigrationsFS  fs.FS
+	TaskID, Actor string
+	Clock         func() time.Time
 }
 
 type writeContext struct {
@@ -37,7 +40,7 @@ func withWrite(options Options, build func(writeContext) (journal.Event, error))
 		return commit(options, options.lock, options.conn, build)
 	}
 	return journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid record merge/CI"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

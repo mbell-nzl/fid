@@ -13,6 +13,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/mergework"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func mergeFixture(t *testing.T) (*statusFixture, mergework.Options, string, github.PullRequest, string) {
@@ -36,7 +37,7 @@ func mergeFixture(t *testing.T) (*statusFixture, mergework.Options, string, gith
 	}
 	now := statusNow.Add(time.Minute)
 	pr := github.PullRequest{Number: 63, URL: fields["pr"].(string), State: "MERGED", Merged: true, MergedAt: &now, MergeCommit: strings.Repeat("a", 40), HeadSHA: fields["head"].(string), BaseRef: "main", BaseRepository: github.Repository{Owner: "mbell-nzl", Name: "fid"}}
-	options := mergework.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), TaskID: "FID-9f13aa", Actor: "agent:observer", Clock: func() time.Time { return now }}
+	options := mergework.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, TaskID: "FID-9f13aa", Actor: "agent:observer", Clock: func() time.Time { return now }}
 	return f, options, fields["handoff_id"].(string), pr, handoff.Tree
 }
 

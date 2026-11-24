@@ -14,7 +14,7 @@ import (
 func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Migrate(12); err != nil {
@@ -48,7 +48,7 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 func TestMigration0013CancelledReceiptTerminalConstraint(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Migrate(13); err != nil {
@@ -92,7 +92,7 @@ func TestMigration0013CancelledReceiptTerminalConstraint(t *testing.T) {
 func TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Migrate(13); err != nil {

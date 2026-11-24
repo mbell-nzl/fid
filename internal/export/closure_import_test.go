@@ -32,11 +32,11 @@ func addClosureExportFacts(t *testing.T, root string) string {
 	in := first.Input()
 	in.Dispositions = []reviewrecord.Disposition{{FindingID: first.Findings[0].ID, Disposition: "resolved", Reason: "Regression passes"}, {FindingID: first.Findings[1].ID, Disposition: "not-applicable", Reason: "Outside this change"}}
 	in.Findings = []reviewrecord.FindingInput{first.Findings[0].FindingInput, first.Findings[0].FindingInput}
-	result, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "human:courier", IdempotencyKey: "close-by-round", Input: in})
+	result, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "human:courier", IdempotencyKey: "close-by-round", Input: in})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := holdwork.CloseFinding(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), FindingID: result.Round.Findings[0].ID, Actor: "human:mark", Reason: "Accepted risk", IdempotencyKey: "close-by-person"}); err != nil {
+	if _, err := holdwork.CloseFinding(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), FindingID: result.Round.Findings[0].ID, Actor: "human:mark", Reason: "Accepted risk", IdempotencyKey: "close-by-person"}); err != nil {
 		t.Fatal(err)
 	}
 	return task
@@ -82,14 +82,14 @@ func TestFindingClosureExportImportRebuild(t *testing.T) {
 			t.Fatalf("fixture missing %s: %s", text, before)
 		}
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	if closureSnapshot(t, f.workspace) != before {
 		t.Fatal("rebuild changed closures")
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "closure-import"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "closure-import"}); err != nil {
 		t.Fatal(err)
 	}
 	if closureSnapshot(t, target) != before {
@@ -129,7 +129,7 @@ func TestFindingClosureImportRefusesWithoutPublication(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "refused"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "refused"})
 			assertArchiveCheck(t, err, "reference-invalid")
 			if !reflect.DeepEqual(before, workspaceTreeDigest(t, target)) {
 				t.Fatal("refusal changed target")

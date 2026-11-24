@@ -71,7 +71,7 @@ func TestSemanticValidatorChecksPolicySnapshots(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), test.profile)
+			validator, err := newSemanticValidator(testMigrationsFS(t), test.profile)
 			if err != nil {
 				t.Fatal(err)
 			}

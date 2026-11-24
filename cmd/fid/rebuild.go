@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ func newRebuildCommand() *cobra.Command {
 			}
 
 			startedAt := time.Now()
-			stats, err := journal.RebuildWorkspace(workspaceRoot, rebuildMigrationsDir())
+			stats, err := journal.RebuildWorkspace(workspaceRoot, fidmigrations.FS)
 			if err != nil {
 				return renderRebuildOperationError(cmd, jsonMode, err)
 			}
@@ -193,15 +193,6 @@ func renderRebuildFailure(cmd *cobra.Command, jsonMode bool, code cli.Code, mess
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, fmt.Errorf("%s", code))
 	}
 	return writeHumanFailure(cmd, "project.rebuild", failure, fmt.Errorf("%s", code))
-}
-
-func rebuildMigrationsDir() string {
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		return "migrations"
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
 }
 
 func writeRebuildLine(writer io.Writer, format string, args ...any) error {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ const IssueLabelsLimit = 100
 
 type AddLabelOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	IssueID        string
 	Label          string
 	Actor          string
@@ -37,7 +38,7 @@ type AddLabelResult struct {
 
 type RemoveLabelOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	IssueID        string
 	Label          string
 	Actor          string
@@ -57,7 +58,7 @@ type RemoveLabelResult struct {
 func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 	request, err := prepareIssueLabelWrite(
 		options.WorkspaceRoot,
-		options.MigrationsDir,
+		options.MigrationsFS,
 		options.IssueID,
 		options.Label,
 		options.Actor,
@@ -86,7 +87,7 @@ func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
 	request, err := prepareIssueLabelWrite(
 		options.WorkspaceRoot,
-		options.MigrationsDir,
+		options.MigrationsFS,
 		options.IssueID,
 		options.Label,
 		options.Actor,
@@ -122,7 +123,7 @@ type issueLabelOperationSpec struct {
 
 type issueLabelWriteRequest struct {
 	workspaceRoot  string
-	migrationsDir  string
+	migrationsFS   fs.FS
 	issueID        string
 	label          string
 	actor          standaloneActor
@@ -146,7 +147,7 @@ type issueLabelWriteResult struct {
 }
 
 func prepareIssueLabelWrite(
-	workspaceRoot, migrationsDir, issueID, label, actorValue, idempotencyKey string,
+	workspaceRoot string, migrationsFS fs.FS, issueID, label, actorValue, idempotencyKey string,
 	argvBuilder func(string, string, string, string) []string,
 	opName string,
 	spec issueLabelOperationSpec,
@@ -154,7 +155,7 @@ func prepareIssueLabelWrite(
 	if strings.TrimSpace(workspaceRoot) == "" {
 		return issueLabelWriteRequest{}, fmt.Errorf("%s: workspace root is required", opName)
 	}
-	if strings.TrimSpace(migrationsDir) == "" {
+	if migrationsFS == nil {
 		return issueLabelWriteRequest{}, fmt.Errorf("%s: migrations dir is required", opName)
 	}
 
@@ -176,7 +177,7 @@ func prepareIssueLabelWrite(
 
 	return issueLabelWriteRequest{
 		workspaceRoot:  workspaceRoot,
-		migrationsDir:  migrationsDir,
+		migrationsFS:   migrationsFS,
 		issueID:        trimmedIssueID,
 		label:          trimmedLabel,
 		actor:          actor,
@@ -204,7 +205,7 @@ func issueLabelWrite(request issueLabelWriteRequest) (issueLabelWriteResult, err
 }
 
 func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteRequest, result *issueLabelWriteResult) error {
-	if _, err := journal.EnsureProjectionFreshWithLock(lock, request.migrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFreshWithLock(lock, request.migrationsFS); err != nil {
 		return err
 	}
 

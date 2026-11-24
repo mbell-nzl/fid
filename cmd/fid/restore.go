@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/backup"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/export"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ func newRestoreCommand() *cobra.Command {
 			}
 			environment := commandBackupEnvironment(cmd)
 			restored, ledgerPath, err := backup.Restore(backup.RestoreOptions{WorkspaceRoot: root, Environment: environment.environ,
-				MigrationsDir: issueMigrationsDir()})
+				MigrationsFS: fidmigrations.FS})
 			if err != nil {
 				return renderRestoreFailure(cmd, root, err)
 			}

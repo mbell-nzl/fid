@@ -20,7 +20,7 @@ func mergeArchiveFixture(t *testing.T) (*semanticValidator, journal.Event, journ
 func mergeArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator, journal.Event, journal.Event) {
 	t.Helper()
 	validator, handoff := handoffArchiveFixtureWithLane(t, lane)
-	if err := migrateSemanticProjection(validator.conn, testMigrationsDir(t), 28); err != nil {
+	if err := migrateSemanticProjection(validator.conn, testMigrationsFS(t), 28); err != nil {
 		t.Fatal(err)
 	}
 	var err error

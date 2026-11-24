@@ -37,11 +37,11 @@ func addReviewExportFacts(t *testing.T, root string) string {
 	}
 	fixtureGit(t, root, "add", ".")
 	fixtureGit(t, root, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Reviewed change")
-	taken, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "human:coded", Model: "codex/gpt-6.1-sol", Reason: "Build with model"})
+	taken, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "human:coded", Model: "codex/gpt-6.1-sol", Reason: "Build with model"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: taken.Fields["hold_id"].(string), Actor: "human:coded", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "review-handoff"})
+	_, err = holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: taken.Fields["hold_id"].(string), Actor: "human:coded", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "review-handoff"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func addReviewExportFacts(t *testing.T, root string) string {
 	for _, severity := range []string{"major", "minor", "nit"} {
 		in.Findings = append(in.Findings, reviewrecord.FindingInput{Profile: "code", Severity: severity, Summary: severity + " finding", Location: &reviewrecord.Location{File: "internal/example.go", Line: 42}, Evidence: "Observed behaviour", Fix: "Add coverage"})
 	}
-	if _, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "human:courier", IdempotencyKey: "review-record", Input: in}); err != nil {
+	if _, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "human:courier", IdempotencyKey: "review-record", Input: in}); err != nil {
 		t.Fatal(err)
 	}
 	return task
@@ -94,14 +94,14 @@ func TestReviewExportImportRebuildPreservesCanonicalReview(t *testing.T) {
 			t.Fatalf("fixture missing %s", text)
 		}
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	if reviewExportSnapshot(t, f.workspace) != before {
 		t.Fatal("rebuild changed review")
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "review-import"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "review-import"}); err != nil {
 		t.Fatal(err)
 	}
 	if reviewExportSnapshot(t, target) != before {
@@ -160,7 +160,7 @@ func TestReviewArchiveImportRefusesForgedBindingWithoutPublication(t *testing.T)
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "refused"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "refused"})
 			assertArchiveCheck(t, err, "reference-invalid")
 			if !reflect.DeepEqual(before, workspaceTreeDigest(t, target)) {
 				t.Fatal("refused import changed target")

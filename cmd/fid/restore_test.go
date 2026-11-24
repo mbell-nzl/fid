@@ -22,6 +22,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 type restoredForTest struct {
@@ -173,16 +174,16 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	identityGit(t, workspace, "add", ".")
 	identityGit(t, workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-q", "-m", "Lean check files")
 	current, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "human:mark"), "next.claim")
-	_, checkErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-lean-check", Names: []string{"restore", "missing"}, Version: checkrun.Version(), RenewInterval: 20 * time.Millisecond})
+	_, checkErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsFS: fidmigrations.FS, HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-lean-check", Names: []string{"restore", "missing"}, Version: checkrun.Version(), RenewInterval: 20 * time.Millisecond})
 	var refusal *checkrecord.Refusal
 	if !errors.As(checkErr, &refusal) || refusal.Code != "check-not-qualified" {
 		t.Fatalf("V8 lean check = %v", checkErr)
 	}
-	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-empty-check"}); err != nil {
+	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsFS: fidmigrations.FS, HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-empty-check"}); err != nil {
 		t.Fatalf("V8 empty check = %v", err)
 	}
-	_, stoppedErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-stopped-check", Names: []string{"missing", "restore"}, Version: checkrun.Version(), After: func(checkrecord.Record) error {
-		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), TaskID: ids[3], Actor: "human:operator", Reason: "Stop between checks"})
+	_, stoppedErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsFS: fidmigrations.FS, HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-stopped-check", Names: []string{"missing", "restore"}, Version: checkrun.Version(), After: func(checkrecord.Record) error {
+		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: workspace, MigrationsFS: fidmigrations.FS, TaskID: ids[3], Actor: "human:operator", Reason: "Stop between checks"})
 		return err
 	}})
 	if !errors.As(stoppedErr, &refusal) || refusal.Code != "hold-not-current" {

@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/backup"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +47,7 @@ func newBackupCommand() *cobra.Command {
 			}
 			environment := commandBackupEnvironment(cmd)
 			record, recordPath, err := backup.Run(backup.Options{WorkspaceRoot: root, Environment: environment.environ,
-				LockWait: environment.lockWait, MigrationsDir: issueMigrationsDir()})
+				LockWait: environment.lockWait, MigrationsFS: fidmigrations.FS})
 			if err != nil {
 				return renderBackupFailure(cmd, err)
 			}

@@ -16,7 +16,7 @@ func TestImportMalformedEventDuplicateJSONKeys(t *testing.T) {
 	var issueID string
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
-		created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Task", Actor: "human:mark", IdempotencyKey: "create"})
+		created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Task", Actor: "human:mark", IdempotencyKey: "create"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -52,7 +52,7 @@ func TestImportMalformedEventDuplicateJSONKeys(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "malformed"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "malformed"})
 			var refused *InvalidArchiveError
 			if !errors.As(err, &refused) {
 				t.Fatalf("import = %v, want typed archive refusal", err)
@@ -63,11 +63,11 @@ func TestImportMalformedEventDuplicateJSONKeys(t *testing.T) {
 			if before != workspaceTreeDigest(t, target) {
 				t.Fatal("refused import changed target")
 			}
-			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "valid"}); err != nil {
+			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "valid"}); err != nil {
 				t.Fatal(err)
 			}
 			title := "After refusal"
-			if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ID: issueID, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+			if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), ID: issueID, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
 				t.Fatalf("later valid write: %v", err)
 			}
 		})

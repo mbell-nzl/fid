@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ func newIssueLabelAddCommand() *cobra.Command {
 
 			result, err := issues.AddLabel(issues.AddLabelOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				IssueID:        args[0],
 				Label:          args[1],
 				Actor:          actor,
@@ -83,7 +84,7 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 
 			result, err := issues.RemoveLabel(issues.RemoveLabelOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				IssueID:        args[0],
 				Label:          args[1],
 				Actor:          actor,

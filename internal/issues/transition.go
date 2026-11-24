@@ -2,6 +2,7 @@ package issues
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 
 type TransitionOptions struct {
 	WorkspaceRoot    string
-	MigrationsDir    string
+	MigrationsFS     fs.FS
 	ID               string
 	ToState          string
 	Reason           string
@@ -116,7 +117,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return TransitionResult{}, fmt.Errorf("transition issue: migrations dir is required")
 	}
 	if strings.TrimSpace(options.ID) == "" {
@@ -131,7 +132,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if toState == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: target state is required")
 	}
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return TransitionResult{}, err
 	}
 	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
@@ -155,7 +156,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 		dbPath := filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName)

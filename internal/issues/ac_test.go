@@ -21,7 +21,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Implement AC add",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -34,7 +34,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 
 	second, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       taskCreated.ID,
 		Text:          "Second acceptance criterion",
 		Ordinal:       2,
@@ -49,7 +49,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 
 	first, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       taskCreated.ID,
 		Text:          "First acceptance criterion",
 		Ordinal:       1,
@@ -74,7 +74,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            taskCreated.ID,
 	})
 	if err != nil {
@@ -157,7 +157,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 				t.Helper()
 				created, err := Create(CreateOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Kind:          "epic",
 					Title:         "Epic without ACs",
 					Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -171,7 +171,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			options: func(workspace, issueID string) AddAcceptanceCriterionOptions {
 				return AddAcceptanceCriterionOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					IssueID:       issueID,
 					Text:          "Rejected on epic",
 					Ordinal:       1,
@@ -192,7 +192,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 				t.Helper()
 				created, err := Create(CreateOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Kind:          "task",
 					Title:         "Task for role validation",
 					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -205,7 +205,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			options: func(workspace, issueID string) AddAcceptanceCriterionOptions {
 				return AddAcceptanceCriterionOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					IssueID:       issueID,
 					Text:          "Malformed actor rejection",
 					Ordinal:       1,
@@ -226,7 +226,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 				t.Helper()
 				created, err := Create(CreateOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Kind:          "task",
 					Title:         "Task for ordinal validation",
 					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -239,7 +239,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			options: func(workspace, issueID string) AddAcceptanceCriterionOptions {
 				return AddAcceptanceCriterionOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					IssueID:       issueID,
 					Text:          "Ordinal rejection",
 					Ordinal:       0,
@@ -263,7 +263,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			options: func(workspace, issueID string) AddAcceptanceCriterionOptions {
 				return AddAcceptanceCriterionOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					IssueID:       issueID,
 					Text:          "Not found rejection",
 					Ordinal:       1,
@@ -309,11 +309,11 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 		{
 			name: "requires workspace root",
 			options: AddAcceptanceCriterionOptions{
-				MigrationsDir: testIssueMigrationsDir(t),
-				IssueID:       "FID-123",
-				Text:          "Missing workspace",
-				Ordinal:       1,
-				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				MigrationsFS: testIssueMigrationsFS(t),
+				IssueID:      "FID-123",
+				Text:         "Missing workspace",
+				Ordinal:      1,
+				Actor:        testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: workspace root is required",
 		},
@@ -332,7 +332,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 			name: "requires issue id",
 			options: AddAcceptanceCriterionOptions{
 				WorkspaceRoot: t.TempDir(),
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Text:          "Missing issue id",
 				Ordinal:       1,
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -343,7 +343,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 			name: "requires text",
 			options: AddAcceptanceCriterionOptions{
 				WorkspaceRoot: t.TempDir(),
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				IssueID:       "FID-123",
 				Ordinal:       1,
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -354,7 +354,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 			name: "requires positive ordinal",
 			options: AddAcceptanceCriterionOptions{
 				WorkspaceRoot: t.TempDir(),
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				IssueID:       "FID-123",
 				Text:          "Bad ordinal",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -381,13 +381,13 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 
 	t.Run("accepts exact maxima", func(t *testing.T) {
 		workspace := newIssueWorkspace(t)
-		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC boundaries", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", Title: "AC boundaries", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)
 		}
 		result, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testIssueMigrationsDir(t),
+			MigrationsFS:  testIssueMigrationsFS(t),
 			IssueID:       created.ID,
 			Text:          strings.Repeat("x", 4096),
 			Ordinal:       2147483647,
@@ -412,13 +412,13 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newIssueWorkspace(t)
-			created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC rejection", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+			created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", Title: "AC rejection", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
 			}
 			journalPath := journalPathForWorkspace(t, workspace)
 			before := countJournalLines(journalPath)
-			_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: test.text, Ordinal: test.ordinal, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+			_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), IssueID: created.ID, Text: test.text, Ordinal: test.ordinal, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err == nil || err.Error() != test.wantErr {
 				t.Fatalf("AddAcceptanceCriterion() error = %v, want %q", err, test.wantErr)
 			}
@@ -432,7 +432,7 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC limit", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", Title: "AC limit", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -453,7 +453,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 
 	journalPath := journalPathForWorkspace(t, workspace)
 	before := countJournalLines(journalPath)
-	_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: "over limit", Ordinal: 1001, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+	_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), IssueID: created.ID, Text: "over limit", Ordinal: 1001, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	var limit *ResultLimitExceededError
 	if !errors.As(err, &limit) || limit.Collection != "acceptance_criteria" || limit.Limit != 1000 || limit.Observed != 1001 {
 		t.Fatalf("AddAcceptanceCriterion() error = %#v, want acceptance_criteria 1001/1000 limit", err)
@@ -461,7 +461,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 	if got := countJournalLines(journalPath); got != before {
 		t.Fatalf("journal lines after limit rejection = %d, want %d", got, before)
 	}
-	atLimit, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID})
+	atLimit, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), IssueID: created.ID})
 	if err != nil || len(atLimit.Criteria) != 1000 {
 		t.Fatalf("ListAcceptanceCriteria(at limit) = (%d, %v), want (1000, nil)", len(atLimit.Criteria), err)
 	}
@@ -471,7 +471,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 		t.Fatalf("insert over-limit acceptance criterion: %v", err)
 	}
 	closeIssueTestDB(t, conn)
-	_, err = ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID})
+	_, err = ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), IssueID: created.ID})
 	if !errors.As(err, &limit) || limit.Collection != "acceptance_criteria" || limit.Limit != 1000 || limit.Observed != 1001 {
 		t.Fatalf("ListAcceptanceCriteria() error = %#v, want acceptance_criteria 1001/1000 limit", err)
 	}
@@ -502,7 +502,7 @@ func TestAddAcceptanceCriterionTieBreaksByID(t *testing.T) {
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            "FID-ordering",
 	})
 	if err != nil {
@@ -523,7 +523,7 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Round-trip AC add",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -534,7 +534,7 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 
 	result, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       taskCreated.ID,
 		Text:          "Canonical event",
 		Ordinal:       1,
@@ -590,7 +590,7 @@ func TestAcceptanceCriteriaRemainOrderedWithoutRoleVerifications(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Retained criteria",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -606,7 +606,7 @@ func TestAcceptanceCriteriaRemainOrderedWithoutRoleVerifications(t *testing.T) {
 	} {
 		_, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testIssueMigrationsDir(t),
+			MigrationsFS:  testIssueMigrationsFS(t),
 			IssueID:       created.ID,
 			Ordinal:       item.ordinal,
 			Text:          item.text,
@@ -617,12 +617,12 @@ func TestAcceptanceCriteriaRemainOrderedWithoutRoleVerifications(t *testing.T) {
 		}
 	}
 	listed, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
-		WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID,
+		WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), IssueID: created.ID,
 	})
 	if err != nil {
 		t.Fatalf("ListAcceptanceCriteria() error = %v", err)
 	}
-	issue, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
+	issue, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID})
 	if err != nil {
 		t.Fatalf("Get() error = %v", err)
 	}
@@ -670,7 +670,7 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 
 	_, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       "FID-missing",
 		Text:          "Missing issue",
 		Ordinal:       1,
@@ -696,7 +696,7 @@ func TestListAcceptanceCriteriaEmptyAndNotFound(t *testing.T) {
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Empty acceptance criteria",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -707,7 +707,7 @@ func TestListAcceptanceCriteriaEmptyAndNotFound(t *testing.T) {
 
 	got, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       taskCreated.ID,
 	})
 	if err != nil {
@@ -719,7 +719,7 @@ func TestListAcceptanceCriteriaEmptyAndNotFound(t *testing.T) {
 
 	_, err = ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		IssueID:       "FID-missing",
 	})
 	if err == nil {

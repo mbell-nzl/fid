@@ -24,7 +24,7 @@ type exportSourceFixture struct {
 func newExportSourceFixture(t *testing.T, populate func(*testing.T, string) string) exportSourceFixture {
 	t.Helper()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	if populate != nil {
@@ -139,7 +139,7 @@ func TestExportSourceFixtureCopiesKeepDatabaseAndArchiveMutationsIsolated(t *tes
 			t.Fatalf("archive copy changed: %s: %v", path, err)
 		}
 	}
-	if _, err := Validate(ValidateOptions{ArchivePath: thirdArchive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: thirdArchive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("untouched cloned archive invalid: %v", err)
 	}
 }

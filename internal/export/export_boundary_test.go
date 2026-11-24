@@ -24,7 +24,7 @@ func TestArchiveRejectsSpecialEntriesAndExpandedMember(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			workspace, archivePath := fixture.clone(t)
-			if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
+			if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)}); err != nil {
 				t.Fatalf("full valid control: %v", err)
 			}
 			contents := archiveContents(t, archivePath)
@@ -37,7 +37,7 @@ func TestArchiveRejectsSpecialEntriesAndExpandedMember(t *testing.T) {
 			}
 			writeBoundaryContents(t, archivePath, contents, tc.mode)
 			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)})
 			if after := workspaceTreeDigest(t, workspace); after != before {
 				t.Fatal("validation changed source project")
 			}

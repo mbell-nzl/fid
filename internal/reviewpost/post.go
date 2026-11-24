@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 	"time"
 
@@ -24,7 +25,7 @@ var errReceiptCommit = errors.New("commit review post receipt")
 
 // Round also retries answers and deferrals to that round's findings. Posting
 // failures leave the canonical records intact and their derived queue pending.
-func Round(ctx context.Context, root, migrations, round string, run github.Runner) (Result, error) {
+func Round(ctx context.Context, root string, migrations fs.FS, round string, run github.Runner) (Result, error) {
 	if !strings.HasPrefix(round, "RND-") {
 		return Result{}, fmt.Errorf("review post requires a round")
 	}

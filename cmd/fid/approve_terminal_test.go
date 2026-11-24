@@ -19,6 +19,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 // The child is fid itself, with real terminal file descriptors. It receives a
@@ -152,7 +153,7 @@ func TestV6ApprovalSurvivesCleanRebaseAndStalesOnEdit(t *testing.T) {
 	if latest.Decision.ID == old.Decision.ID {
 		t.Fatal("reapproval reused old decision")
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	assertApprovalState(t, f.workspace, task, "current")
@@ -223,7 +224,7 @@ func TestApproveRevertedChangeUsesOriginalDecision(t *testing.T) {
 	reviewHandoffTask(t, f, "reverted-handoff", task)
 	for _, rebuild := range []bool{false, true} {
 		if rebuild {
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 		}

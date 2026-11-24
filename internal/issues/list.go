@@ -3,6 +3,7 @@ package issues
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 type ListOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	Kind           string
 	Status         string
 	StatusCategory string
@@ -53,14 +54,14 @@ func List(options ListOptions) ([]ListItem, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return nil, fmt.Errorf("list issues: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return nil, fmt.Errorf("list issues: migrations dir is required")
 	}
 	if err := validateListOptions(options); err != nil {
 		return nil, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return nil, err
 	}
 

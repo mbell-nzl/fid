@@ -27,7 +27,7 @@ func TestRebuildWorkspacePreservesFullRetainedProjectionWithRefTriggersActive(t 
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)
 	}
-	stats, err = RebuildWorkspace(root, testProjectMigrationsDir(t))
+	stats, err = RebuildWorkspace(root, testProjectMigrationsFS(t))
 	if err != nil || stats.EventsReplayed != 1 {
 		t.Fatalf("rebuild = %#v/%v", stats, err)
 	}

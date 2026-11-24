@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,7 @@ func newIssueCreateCommand() *cobra.Command {
 
 			result, err := issues.Create(issues.CreateOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				Kind:          kind, Lane: issueCreateOptionalString(cmd, "lane", lane),
 				Title:          title,
 				Actor:          actor,

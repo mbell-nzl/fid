@@ -43,7 +43,7 @@ func mutateArchiveEvent(t *testing.T, data []byte, eventType string, mutate func
 func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, addLeanArtifactExportFacts)
-	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("valid control: %v", err)
 	}
 	original := archiveContents(t, fixture.archive)
@@ -92,7 +92,7 @@ func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
 			archive := filepath.Join(t.TempDir(), "corrupt.zip")
 			writeTestArchive(t, archive, entries)
 			before := workspaceTreeDigest(t, fixture.workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			assertArchiveCheck(t, err, row.code)
 			if workspaceTreeDigest(t, fixture.workspace) != before {
 				t.Fatal("semantic rejection mutated project")

@@ -3,14 +3,15 @@ package db_test
 import (
 	"database/sql"
 	"encoding/json"
+	"io/fs"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issuestate"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestMigration0007SeedsFrozenV01WorkflowDefinitions(t *testing.T) {
@@ -112,7 +113,7 @@ func migratedWorkflowSeedDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testWorkflowSeedMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testWorkflowSeedMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	conn, err := fiddb.Open(dbPath)
@@ -122,15 +123,9 @@ func migratedWorkflowSeedDB(t *testing.T) *sql.DB {
 	return conn
 }
 
-func testWorkflowSeedMigrationsDir(t *testing.T) string {
+func testWorkflowSeedMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeWorkflowSeedDB(t *testing.T, conn *sql.DB) {

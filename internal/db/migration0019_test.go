@@ -8,7 +8,7 @@ import (
 
 func TestMigration0019AddsOnlyFieldDigestColumn(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(18); err != nil {
 		t.Fatal(err)

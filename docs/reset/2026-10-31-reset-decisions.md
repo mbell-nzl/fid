@@ -1931,6 +1931,36 @@ Mark made these decisions on 2026-11-23, after 1.9c (#101) merged.
   GitHub CI timing remains for the orchestrator to measure; these are local
   results, with the unchanged check definitions and timeout values.
 
+## RESET embed implementation (2026-11-24)
+
+Mark accepted FID-818b28 before 2.5's first loop and the 3.2 release. Lane:
+Assured. The approved design embeds all SQL migration pairs in the binary,
+so replay and archive validation use that build's history after its source
+checkout disappears, with `-trimpath`, and after the checkout changes branches.
+
+- `migrations.FS` exposes the embedded `*.sql` files as `fs.FS`. The CLI
+  passes that source directly; its three `runtime.Caller` migration-path
+  helpers are removed. SQL history, schema versions and archive formats stay
+  the same.
+- Both database migration and private archive-semantic projection use
+  golang-migrate's `source/iofs` driver. It is in the existing v4 module;
+  neither `go.mod` nor `go.sum` needs a new module.
+- Builder's transactional choices: use `fs.FS` directly, with `MigrationsFS`
+  and `migrationsFS` replacing directory-named fields and parameters. Keep
+  package boundaries and existing missing-source refusals. Historical subset
+  and generated schema fixtures still stage their files and pass `os.DirFS`;
+  ordinary fixtures read the embedded source. The import crash subprocess
+  selects that same embedded source itself instead of receiving a source
+  pathname through its environment.
+- The integration regression builds ordinary and `-trimpath` binaries from a
+  temporary source copy, removes that copy, then exercises init, an Issue
+  write, rebuild, export creation, export validation and backup to a temporary
+  local bare repository. Both variants failed at init before the change.
+  Focused tests cover supplied memory/directory subsets, down migrations,
+  archive profile selection and nil-source refusals.
+- This task has no RESET row; the approved brief leaves `RESET.md` unchanged
+  and uses `Refs: RESET 3.2` for the work preparing that release.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -3773,6 +3803,11 @@ first, as before, and the orchestrator also files it as a task in fid's
 Later epic, as an agent. Once 2.1 adds acceptance of agent-created work,
 such a task waits for Mark to accept it; until then the epic's wait for
 3.2 holds it back.
+
+- From this PR (embed): `make fmt-check` walks only `cmd`, `internal` and
+  `.github/scripts`, so it does not check the new top-level `migrations` Go
+  package. The package is formatted explicitly in this PR. Include it in a
+  later Assured check-definition change; no check is changed here.
 
 - From this PR (2.4): an extra integration-tagged lint run
   (`golangci-lint run --build-tags integration ./cmd/fid/integration/...`)

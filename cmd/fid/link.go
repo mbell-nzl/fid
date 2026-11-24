@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/links"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +47,7 @@ func newLinkAddCommand() *cobra.Command {
 
 			result, err := links.Add(links.AddOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				FromType:       fromType,
 				FromID:         args[0],
 				Relation:       args[1],
@@ -121,7 +122,7 @@ func newLinkRemoveCommand() *cobra.Command {
 
 			result, err := links.Remove(links.RemoveOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				FromType:       fromType,
 				FromID:         args[0],
 				Relation:       args[1],
@@ -188,7 +189,7 @@ func newLinkListCommand() *cobra.Command {
 
 			items, err := links.List(links.ListOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				EntityType:    entityType,
 				EntityID:      args[0],
 			})

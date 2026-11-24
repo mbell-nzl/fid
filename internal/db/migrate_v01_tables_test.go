@@ -3,20 +3,22 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/golang-migrate/migrate/v4"
 	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	_ "github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
 func TestMigrateUpCreatesRetainedAndGenericTables(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
+	if err := MigrateUp(dbPath, testMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -94,9 +96,9 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrationsDir := testMigrationsDir(t)
+	migrationsFS := testMigrationsFS(t)
 
-	migrator, conn := newTestMigrator(t, dbPath, migrationsDir)
+	migrator, conn := newTestMigrator(t, dbPath, migrationsFS)
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
@@ -127,9 +129,9 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrationsDir := testMigrationsDir(t)
+	migrationsFS := testMigrationsFS(t)
 
-	migrator, conn := newTestMigrator(t, dbPath, migrationsDir)
+	migrator, conn := newTestMigrator(t, dbPath, migrationsFS)
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
@@ -324,7 +326,7 @@ func assertForeignKeysContain(t *testing.T, conn *sql.DB, table string, want ...
 	}
 }
 
-func newTestMigrator(t *testing.T, dbPath, migrationsDir string) (*migrate.Migrate, *sql.DB) {
+func newTestMigrator(t *testing.T, dbPath string, migrationsFS fs.FS) (*migrate.Migrate, *sql.DB) {
 	t.Helper()
 
 	conn, err := Open(dbPath)
@@ -338,16 +340,16 @@ func newTestMigrator(t *testing.T, dbPath, migrationsDir string) (*migrate.Migra
 		t.Fatalf("WithInstance() error = %v", err)
 	}
 
-	absoluteMigrationsDir, err := filepath.Abs(migrationsDir)
+	source, err := iofs.New(migrationsFS, ".")
 	if err != nil {
 		closeDB(t, conn)
-		t.Fatalf("filepath.Abs(%q) error = %v", migrationsDir, err)
+		t.Fatalf("iofs.New() error = %v", err)
 	}
 
-	migrator, err := migrate.NewWithDatabaseInstance("file://"+absoluteMigrationsDir, driverName, driver)
+	migrator, err := migrate.NewWithInstance("iofs", source, driverName, driver)
 	if err != nil {
 		closeDB(t, conn)
-		t.Fatalf("NewWithDatabaseInstance() error = %v", err)
+		t.Fatalf("NewWithInstance() error = %v", err)
 	}
 
 	return migrator, conn

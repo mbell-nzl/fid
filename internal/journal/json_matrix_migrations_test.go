@@ -3,6 +3,7 @@ package journal
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,7 +17,7 @@ import (
 // the real migration runner. Matrix cases need the final profile, not thousands
 // of repetitions of its historical table rewrites. No production SQL is edited.
 // Compare schema, indexes, triggers, views and every seeded row before use.
-func JSONMigrationFixtureForTest(t *testing.T) string {
+func JSONMigrationFixtureForTest(t *testing.T) fs.FS {
 	t.Helper()
 	canonical := openReplayDB(t, filepath.Join(t.TempDir(), "canonical.sqlite"))
 	defer closeProjectDB(t, canonical)
@@ -49,7 +50,7 @@ func JSONMigrationFixtureForTest(t *testing.T) string {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "snapshot.sqlite")
-	if err := fiddb.MigrateUp(path, dir); err != nil {
+	if err := fiddb.MigrateUp(path, os.DirFS(dir)); err != nil {
 		t.Fatal(err)
 	}
 	snapshot, err := fiddb.Open(path)
@@ -60,7 +61,7 @@ func JSONMigrationFixtureForTest(t *testing.T) string {
 	if !reflect.DeepEqual(statements, jsonSchemaStatements(t, snapshot)) || !reflect.DeepEqual(currentProjectionSnapshot(t, canonical), currentProjectionSnapshot(t, snapshot)) {
 		t.Fatal("current-schema fixture differs from the real migrations")
 	}
-	return dir
+	return os.DirFS(dir)
 }
 
 type jsonSchemaStatement struct{ kind, name, sql string }

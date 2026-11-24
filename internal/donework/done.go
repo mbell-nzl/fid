@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"reflect"
 	"time"
 
@@ -22,9 +23,11 @@ import (
 )
 
 type Options struct {
-	WorkspaceRoot, MigrationsDir, TaskID, Actor, IdempotencyKey, Reason string
-	Clock                                                               func() time.Time
-	Runner                                                              github.Runner
+	WorkspaceRoot                         string
+	MigrationsFS                          fs.FS
+	TaskID, Actor, IdempotencyKey, Reason string
+	Clock                                 func() time.Time
+	Runner                                github.Runner
 }
 
 type Refusal struct {
@@ -46,7 +49,7 @@ func Finish(ctx context.Context, o Options) (completionrecord.Result, error) {
 	if !policy.Allows(o.Actor, policy.WorkSet) {
 		return completionrecord.Result{}, &persondecision.DeniedError{Actor: o.Actor}
 	}
-	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsFS); err != nil {
 		return completionrecord.Result{}, err
 	}
 	conn, err := reviewwork.OpenProjection(o.WorkspaceRoot)
@@ -86,7 +89,7 @@ func Finish(ctx context.Context, o Options) (completionrecord.Result, error) {
 	remote, remoteErr := observe(ctx, o, target, s.Handoff.PR)
 	var result completionrecord.Result
 	err = journal.WithLock(o.WorkspaceRoot, journal.LockOwner{Command: "fid done"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsFS); err != nil {
 			return err
 		}
 		if r, found, err := retry(conn, request); err != nil || found {
@@ -124,7 +127,7 @@ func Finish(ctx context.Context, o Options) (completionrecord.Result, error) {
 			if err := policysnapshot.Ensure(lock, conn, loaded, now); err != nil {
 				return err
 			}
-			opts := mergework.Options{WorkspaceRoot: o.WorkspaceRoot, MigrationsDir: o.MigrationsDir, TaskID: o.TaskID, Actor: o.Actor, Clock: func() time.Time { return now }}
+			opts := mergework.Options{WorkspaceRoot: o.WorkspaceRoot, MigrationsFS: o.MigrationsFS, TaskID: o.TaskID, Actor: o.Actor, Clock: func() time.Time { return now }}
 			m, err := mergework.RecordMergeLocked(lock, conn, opts, s.Handoff.ID, *remote.PR, remote.HeadTree)
 			if err != nil {
 				return err

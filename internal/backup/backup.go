@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,10 +64,10 @@ type Options struct {
 	// Environment is the process environment. It locates user config and
 	// fid's cache, and git runs with it, less variables naming another
 	// repository, so the user's own git credentials and transport apply.
-	Environment   []string
-	LockWait      time.Duration
-	MigrationsDir string
-	Now           func() time.Time
+	Environment  []string
+	LockWait     time.Duration
+	MigrationsFS fs.FS
+	Now          func() time.Time
 }
 
 // Record is one line of the record, and the result fid backup reports.

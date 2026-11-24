@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ const fidVersion = "0.1.0"
 
 type CreateOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	Lane           *string
 	Kind           string
 	Title          string
@@ -45,7 +46,7 @@ type CreateResult struct {
 
 type GetOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	ID            string
 }
 

@@ -2,6 +2,7 @@ package journal
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -13,23 +14,23 @@ type EnsureProjectionResult struct {
 	ReplayStats ReplayStats
 }
 
-func EnsureProjectionFresh(workspaceRoot, migrationsDir string) (EnsureProjectionResult, error) {
-	return ensureProjectionFresh(workspaceLedgerDir(workspaceRoot), migrationsDir, nil)
+func EnsureProjectionFresh(workspaceRoot string, migrationsFS fs.FS) (EnsureProjectionResult, error) {
+	return ensureProjectionFresh(workspaceLedgerDir(workspaceRoot), migrationsFS, nil)
 }
 
-func EnsureProjectionFreshWithLock(lock *WriteLock, migrationsDir string) (EnsureProjectionResult, error) {
+func EnsureProjectionFreshWithLock(lock *WriteLock, migrationsFS fs.FS) (EnsureProjectionResult, error) {
 	if lock == nil {
 		return EnsureProjectionResult{}, fmt.Errorf("ensure projection fresh with lock: lock is nil")
 	}
-	return ensureProjectionFresh(lock.ledgerDir, migrationsDir, lock)
+	return ensureProjectionFresh(lock.ledgerDir, migrationsFS, lock)
 }
 
-func ensureProjectionFresh(ledgerDir, migrationsDir string, heldLock *WriteLock) (EnsureProjectionResult, error) {
+func ensureProjectionFresh(ledgerDir string, migrationsFS fs.FS, heldLock *WriteLock) (EnsureProjectionResult, error) {
 	decision, meta, err := readProjectionFreshness(ledgerDir)
 	if err != nil {
 		return EnsureProjectionResult{}, err
 	}
-	return refreshProjection(ledgerDir, migrationsDir, decision, meta, heldLock)
+	return refreshProjection(ledgerDir, migrationsFS, decision, meta, heldLock)
 }
 
 func readProjectionFreshness(ledgerDir string) (fiddb.ProjectionFreshness, fiddb.ProjectionMeta, error) {
@@ -77,7 +78,7 @@ func readProjectionFreshness(ledgerDir string) (fiddb.ProjectionFreshness, fiddb
 	return decision, meta, nil
 }
 
-func refreshProjection(ledgerDir, migrationsDir string, decision fiddb.ProjectionFreshness, meta fiddb.ProjectionMeta, heldLock *WriteLock) (EnsureProjectionResult, error) {
+func refreshProjection(ledgerDir string, migrationsFS fs.FS, decision fiddb.ProjectionFreshness, meta fiddb.ProjectionMeta, heldLock *WriteLock) (EnsureProjectionResult, error) {
 	if decision == fiddb.ProjectionFresh {
 		return EnsureProjectionResult{Decision: decision}, nil
 	}
@@ -87,7 +88,7 @@ func refreshProjection(ledgerDir, migrationsDir string, decision fiddb.Projectio
 			// A writer or another reader may have refreshed the projection while
 			// we waited. Read its state again before replaying or replacing it.
 			var err error
-			result, err = ensureProjectionFresh(ledgerDir, migrationsDir, lock)
+			result, err = ensureProjectionFresh(ledgerDir, migrationsFS, lock)
 			return err
 		})
 		return result, err
@@ -95,13 +96,13 @@ func refreshProjection(ledgerDir, migrationsDir string, decision fiddb.Projectio
 
 	switch decision {
 	case fiddb.ProjectionCatchUp:
-		stats, err := catchUpWorkspaceLocked(heldLock, migrationsDir, meta)
+		stats, err := catchUpWorkspaceLocked(heldLock, migrationsFS, meta)
 		if err != nil {
 			return EnsureProjectionResult{}, err
 		}
 		return EnsureProjectionResult{Decision: decision, ReplayStats: stats}, nil
 	case fiddb.ProjectionRebuild:
-		stats, err := rebuildWorkspaceLocked(heldLock, migrationsDir)
+		stats, err := rebuildWorkspaceLocked(heldLock, migrationsFS)
 		if err != nil {
 			return EnsureProjectionResult{}, err
 		}
@@ -111,23 +112,23 @@ func refreshProjection(ledgerDir, migrationsDir string, decision fiddb.Projectio
 	}
 }
 
-func RebuildWorkspace(workspaceRoot, migrationsDir string) (ReplayStats, error) {
-	return RebuildLedger(workspaceLedgerDir(workspaceRoot), migrationsDir)
+func RebuildWorkspace(workspaceRoot string, migrationsFS fs.FS) (ReplayStats, error) {
+	return RebuildLedger(workspaceLedgerDir(workspaceRoot), migrationsFS)
 }
 
 // RebuildLedger is RebuildWorkspace for the ledger at ledgerDir rather than
 // the project at a root, for a ledger being staged, which has no .git to find
 // it by.
-func RebuildLedger(ledgerDir, migrationsDir string) (ReplayStats, error) {
-	return rebuildWorkspaceWithOwner(ledgerDir, migrationsDir, LockOwner{
+func RebuildLedger(ledgerDir string, migrationsFS fs.FS) (ReplayStats, error) {
+	return rebuildWorkspaceWithOwner(ledgerDir, migrationsFS, LockOwner{
 		Command: "fid rebuild",
 	})
 }
 
-func rebuildWorkspaceWithOwner(ledgerDir, migrationsDir string, owner LockOwner) (ReplayStats, error) {
+func rebuildWorkspaceWithOwner(ledgerDir string, migrationsFS fs.FS, owner LockOwner) (ReplayStats, error) {
 	var stats ReplayStats
 	err := tryWithLedgerLock(ledgerDir, owner, func(lock *WriteLock) error {
-		replayed, err := rebuildWorkspaceLocked(lock, migrationsDir)
+		replayed, err := rebuildWorkspaceLocked(lock, migrationsFS)
 		stats = replayed
 		return err
 	})
@@ -138,7 +139,7 @@ func rebuildWorkspaceWithOwner(ledgerDir, migrationsDir string, owner LockOwner)
 	return stats, nil
 }
 
-func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats, error) {
+func rebuildWorkspaceLocked(lock *WriteLock, migrationsFS fs.FS) (ReplayStats, error) {
 	dbPath := filepath.Join(lock.ledgerDir, "fid.sqlite")
 	temporary, err := os.CreateTemp(filepath.Dir(dbPath), ".fid-rebuild-*.sqlite")
 	if err != nil {
@@ -152,7 +153,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 		return ReplayStats{}, fmt.Errorf("prepare rebuild projection: %w", err)
 	}
 	defer func() { _ = os.Remove(temporaryPath) }()
-	if err := fiddb.MigrateUp(temporaryPath, migrationsDir); err != nil {
+	if err := fiddb.MigrateUp(temporaryPath, migrationsFS); err != nil {
 		return ReplayStats{}, err
 	}
 
@@ -173,9 +174,9 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 	return replayed, nil
 }
 
-func catchUpWorkspaceLocked(lock *WriteLock, migrationsDir string, meta fiddb.ProjectionMeta) (ReplayStats, error) {
+func catchUpWorkspaceLocked(lock *WriteLock, migrationsFS fs.FS, meta fiddb.ProjectionMeta) (ReplayStats, error) {
 	dbPath := filepath.Join(lock.ledgerDir, "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := fiddb.MigrateUp(dbPath, migrationsFS); err != nil {
 		return ReplayStats{}, err
 	}
 

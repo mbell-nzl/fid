@@ -25,7 +25,7 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 	t.Run("readers", journal.CheckEmbeddedJSONReadersForTest)
 	source := gittest.NewWorkspace(t)
 	migrations := journal.JSONMigrationFixtureForTest(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: migrations, Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: migrations, Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	archive := filepath.Join(t.TempDir(), "valid.zip")
@@ -35,7 +35,7 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 	original := readJSONTestArchive(t, archive)
 	probes := journal.EmbeddedJSONRepresentativesForTest(journal.EmbeddedJSONMatrixForTest(t))
 	for i := range probes {
-		probes[i].MigrationsDir = migrations
+		probes[i].MigrationsFS = migrations
 	}
 	t.Run("paths", func(t *testing.T) { journal.CheckEmbeddedJSONMatrixPathsForTest(t, probes) })
 	// Bound import concurrency alongside the seven journal paths. Each worker
@@ -52,7 +52,7 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 					malformed := appendJSONTestArchive(t, original, event)
 					target := gittest.NewWorkspace(t)
 					before := jsonTestTree(t, target)
-					_, err := export.Import(export.ImportOptions{ArchivePath: malformed, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "malformed"})
+					_, err := export.Import(export.ImportOptions{ArchivePath: malformed, RepositoryRoot: target, MigrationsFS: migrations, IdempotencyKey: "malformed"})
 					var refusal *export.InvalidArchiveError
 					if !errors.As(err, &refusal) {
 						t.Fatalf("import = %v, want archive refusal", err)
@@ -64,7 +64,7 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 					if !bytes.Equal(before, jsonTestTree(t, target)) {
 						t.Fatal("refusal changed import target")
 					}
-					if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "valid"}); err != nil {
+					if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: migrations, IdempotencyKey: "valid"}); err != nil {
 						t.Fatal(err)
 					}
 				})
@@ -77,21 +77,21 @@ func TestEmbeddedJSONDifferential(t *testing.T) {
 	t.Run("accepted", func(t *testing.T) {
 		t.Parallel()
 		target := gittest.NewWorkspace(t)
-		if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: migrations, IdempotencyKey: "valid"}); err != nil {
+		if _, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: migrations, IdempotencyKey: "valid"}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: migrations, Kind: "task", Title: "After restore", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsFS: migrations, Kind: "task", Title: "After restore", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
 			t.Fatalf("valid follow-up: %v", err)
 		}
 		accepted := filepath.Join(t.TempDir(), "accepted.zip")
 		if _, err := export.Create(export.CreateOptions{WorkspaceRoot: target, ArchivePath: accepted}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := export.Validate(export.ValidateOptions{ArchivePath: accepted, MigrationsDir: migrations}); err != nil {
+		if _, err := export.Validate(export.ValidateOptions{ArchivePath: accepted, MigrationsFS: migrations}); err != nil {
 			t.Fatal(err)
 		}
 		restored := gittest.NewWorkspace(t)
-		if _, err := export.Import(export.ImportOptions{ArchivePath: accepted, RepositoryRoot: restored, MigrationsDir: migrations, IdempotencyKey: "round-trip"}); err != nil {
+		if _, err := export.Import(export.ImportOptions{ArchivePath: accepted, RepositoryRoot: restored, MigrationsFS: migrations, IdempotencyKey: "round-trip"}); err != nil {
 			t.Fatal(err)
 		}
 	})

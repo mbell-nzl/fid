@@ -11,7 +11,7 @@ import (
 func TestArchiveWithValidHashesButInvalidCheckReferenceRejects(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, addLeanArtifactExportFacts)
-	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("valid lean-history control: %v", err)
 	}
 	entries := archiveContents(t, fixture.archive)
@@ -25,7 +25,7 @@ func TestArchiveWithValidHashesButInvalidCheckReferenceRejects(t *testing.T) {
 	archive := filepath.Join(t.TempDir(), "missing-reference.zip")
 	writeTestArchive(t, archive, entries)
 	before := workspaceTreeDigest(t, fixture.workspace)
-	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 	assertArchiveCheck(t, err, "reference-invalid")
 	if workspaceTreeDigest(t, fixture.workspace) != before {
 		t.Fatal("reference rejection mutated source")
@@ -34,7 +34,7 @@ func TestArchiveWithValidHashesButInvalidCheckReferenceRejects(t *testing.T) {
 
 func TestSemanticValidatorRejectsMissingHoldReference(t *testing.T) {
 	t.Parallel()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 26)
+	validator, err := newSemanticValidator(testMigrationsFS(t), 26)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestSemanticValidatorRejectsHoldEffectFamilyTampering(t *testing.T) {
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), 26)
+			validator, err := newSemanticValidator(testMigrationsFS(t), 26)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -82,7 +82,7 @@ func TestSemanticValidatorRejectsHoldEffectFamilyTampering(t *testing.T) {
 
 func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
 	t.Parallel()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 26)
+	validator, err := newSemanticValidator(testMigrationsFS(t), 26)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
 	}

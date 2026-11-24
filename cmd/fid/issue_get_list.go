@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ func newIssueGetCommand() *cobra.Command {
 			if err != nil {
 				return renderIssueReadError(cmd, jsonMode, "issue.get", err)
 			}
-			issue, err := issues.ReadIssueDetail(issues.GetOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ID: args[0]})
+			issue, err := issues.ReadIssueDetail(issues.GetOptions{WorkspaceRoot: workspaceRoot, MigrationsFS: fidmigrations.FS, ID: args[0]})
 			if err != nil {
 				return renderIssueReadError(cmd, jsonMode, "issue.get", err)
 			}
@@ -60,7 +61,7 @@ func newIssueListCommand() *cobra.Command {
 			if err != nil {
 				return renderIssueReadError(cmd, jsonMode, "issue.list", err)
 			}
-			options := issues.ListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Kind: kind, Status: status, StatusCategory: statusCategory, EpicID: epicID, Label: label, Priorities: priorities, Order: order}
+			options := issues.ListOptions{WorkspaceRoot: workspaceRoot, MigrationsFS: fidmigrations.FS, Kind: kind, Status: status, StatusCategory: statusCategory, EpicID: epicID, Label: label, Priorities: priorities, Order: order}
 			items, err := issues.ListIssueSummaries(options)
 			if err != nil {
 				return renderIssueReadError(cmd, jsonMode, "issue.list", err)

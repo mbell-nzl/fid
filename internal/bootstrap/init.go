@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,7 +18,7 @@ import (
 
 type InitOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	Prefix        string
 }
 
@@ -53,7 +54,7 @@ type initPlan struct {
 	projectConfig config.ProjectConfig
 	prefix        string
 	explicit      bool
-	migrationsDir string
+	migrationsFS  fs.FS
 }
 
 type AlreadyInitializedError struct {
@@ -99,7 +100,7 @@ func initializeWorkspaceWithHooks(options InitOptions, hooks initHooks) (InitRes
 	if err != nil {
 		return InitResult{}, err
 	}
-	if err := verifyStagedRebuild(stagedLedger, stagePaths.DatabasePath, plan.migrationsDir, hooks); err != nil {
+	if err := verifyStagedRebuild(stagedLedger, stagePaths.DatabasePath, plan.migrationsFS, hooks); err != nil {
 		return InitResult{}, err
 	}
 	if err := syncStagedWorkspace(stagePaths.WorkspaceDir); err != nil {
@@ -129,7 +130,7 @@ func prepareInitialization(options InitOptions) (initPlan, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return initPlan{}, fmt.Errorf("initialize workspace: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return initPlan{}, fmt.Errorf("initialize workspace: migrations dir is required")
 	}
 	workspaceRoot, err := filepath.Abs(options.WorkspaceRoot)
@@ -164,7 +165,7 @@ func prepareInitialization(options InitOptions) (initPlan, error) {
 	if err == nil {
 		projectConfig.ProjectID = id
 	}
-	return initPlan{workspaceRoot, targetPaths, projectConfig, prefix, explicit, options.MigrationsDir}, nil
+	return initPlan{workspaceRoot, targetPaths, projectConfig, prefix, explicit, options.MigrationsFS}, nil
 }
 
 func stageWorkspace(stagedLedger string, projectConfig config.ProjectConfig, hooks initHooks) (config.WorkspacePaths, error) {
@@ -182,7 +183,7 @@ func stageWorkspace(stagedLedger string, projectConfig config.ProjectConfig, hoo
 }
 
 func initializeStagedWorkspace(stagedLedger, databasePath string, plan initPlan, hooks initHooks) (InitResult, error) {
-	if err := fiddb.MigrateUp(databasePath, plan.migrationsDir); err != nil {
+	if err := fiddb.MigrateUp(databasePath, plan.migrationsFS); err != nil {
 		return InitResult{}, err
 	}
 	if err := runInitHook(hooks, initStageSchemaInitialized); err != nil {
@@ -198,12 +199,12 @@ func initializeStagedWorkspace(stagedLedger, databasePath string, plan initPlan,
 	return result, nil
 }
 
-func verifyStagedRebuild(stagedLedger, databasePath, migrationsDir string, hooks initHooks) error {
+func verifyStagedRebuild(stagedLedger, databasePath string, migrationsFS fs.FS, hooks initHooks) error {
 	beforeRebuild, err := os.ReadFile(databasePath)
 	if err != nil {
 		return fmt.Errorf("read staged projection before rebuild: %w", err)
 	}
-	if _, err := journal.RebuildLedger(stagedLedger, migrationsDir); err != nil {
+	if _, err := journal.RebuildLedger(stagedLedger, migrationsFS); err != nil {
 		return fmt.Errorf("rebuild staged projection: %w", err)
 	}
 	if err := runInitHook(hooks, initStageRebuilt); err != nil {

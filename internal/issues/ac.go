@@ -3,6 +3,7 @@ package issues
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ const AcceptanceCriteriaLimit = 1000
 
 type AddAcceptanceCriterionOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	IssueID        string
 	Text           string
 	Ordinal        int
@@ -41,7 +42,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: migrations dir is required")
 	}
 	issueID := strings.TrimSpace(options.IssueID)
@@ -66,7 +67,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		return AddAcceptanceCriterionResult{}, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
 

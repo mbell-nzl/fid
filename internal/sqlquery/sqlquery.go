@@ -3,6 +3,7 @@ package sqlquery
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -37,7 +38,7 @@ var readPragmasWithArgs = map[string]struct{}{
 
 type Options struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	Query         string
 }
 
@@ -76,8 +77,8 @@ func Run(options Options) (Result, error) {
 	if workspaceRoot == "" {
 		return Result{}, fmt.Errorf("sql query: workspace root is required")
 	}
-	migrationsDir := strings.TrimSpace(options.MigrationsDir)
-	if migrationsDir == "" {
+	migrationsFS := options.MigrationsFS
+	if migrationsFS == nil {
 		return Result{}, fmt.Errorf("sql query: migrations dir is required")
 	}
 
@@ -86,7 +87,7 @@ func Run(options Options) (Result, error) {
 		return Result{}, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsFS); err != nil {
 		return Result{}, err
 	}
 
