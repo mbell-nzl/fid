@@ -22,7 +22,7 @@ func TestProjectionRefreshRechecksAfterWriterCommits(t *testing.T) {
 func testProjectionRefreshAfterWriter(t *testing.T, path string) {
 	t.Helper()
 	workspace, conn := newIdempotencyWorkspace(t)
-	ledgerDir, migrations := config.LedgerDir(workspace), testProjectMigrationsDir(t)
+	ledgerDir, migrations := config.LedgerDir(workspace), testProjectMigrationsFS(t)
 	if err := WithLock(workspace, LockOwner{Command: "test writer"}, func(lock *WriteLock) error {
 		_, err := CommitEvent(lock, conn, scaleIssueCreatedEvent(1, 1, 1))
 		return err
@@ -106,7 +106,7 @@ func TestFreshProjectionReadDoesNotWaitForWriter(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
-	migrations := testProjectMigrationsDir(t)
+	migrations := testProjectMigrationsFS(t)
 	if _, err := RebuildWorkspace(workspace, migrations); err != nil {
 		t.Fatal(err)
 	}

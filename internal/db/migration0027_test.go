@@ -12,7 +12,7 @@ import (
 
 func TestLatestSchemaContainsOnlyRetainedTables(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Up(); err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func TestLatestSchemaContainsOnlyRetainedTables(t *testing.T) {
 
 func TestMigration0027RoundTripPreservesRetainedState(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(26); err != nil {
 		t.Fatal(err)
@@ -111,7 +111,7 @@ func assertNoDroppedTableReferences(t *testing.T, before, after databaseState) {
 
 func TestMigration0027DropsPopulatedKernelAndKeepsSharedArtifacts(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(16); err != nil {
 		t.Fatal(err)

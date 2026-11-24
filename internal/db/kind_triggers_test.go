@@ -2,14 +2,15 @@ package db_test
 
 import (
 	"database/sql"
+	"io/fs"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestIssueParentKindTriggerRejectsInvalidHierarchiesAndAllowsValidRows(t *testing.T) {
@@ -281,7 +282,7 @@ func TestIssueSequenceSchedulingTriggerRejectsInvalidTaskStatesAndAllowsValidRow
 func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 	t.Parallel()
 
-	conn := openSchema17DB(t, testKindTriggerMigrationsDir(t))
+	conn := openSchema17DB(t, testKindTriggerMigrationsFS(t))
 	defer closeKindTriggerDB(t, conn)
 
 	insertIssueRow(t, conn, issueRow{
@@ -371,7 +372,7 @@ func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 func TestEpicReferenceKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 	t.Parallel()
 
-	conn := openSchema17DB(t, testKindTriggerMigrationsDir(t))
+	conn := openSchema17DB(t, testKindTriggerMigrationsFS(t))
 	defer closeKindTriggerDB(t, conn)
 
 	insertIssueRow(t, conn, issueRow{
@@ -557,7 +558,7 @@ func openKindTriggerDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testKindTriggerMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testKindTriggerMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -616,15 +617,9 @@ func assertSQLErrorContains(t *testing.T, err error, want string) {
 	}
 }
 
-func testKindTriggerMigrationsDir(t *testing.T) string {
+func testKindTriggerMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeKindTriggerDB(t *testing.T, conn *sql.DB) {

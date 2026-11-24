@@ -14,13 +14,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func retryFixture(t *testing.T) Options {
 	t.Helper()
 	root := gittest.NewWorkspace(t)
-	migrations := filepath.Join(gittest.ModuleRoot(), "migrations")
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: root, MigrationsDir: migrations, Prefix: "FID"}); err != nil {
+	migrations := fidmigrations.FS
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: root, MigrationsFS: migrations, Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	file, err := os.OpenFile(filepath.Join(root, ".fid.toml"), os.O_APPEND|os.O_WRONLY, 0)
@@ -45,16 +46,16 @@ func retryFixture(t *testing.T) Options {
 		}
 	}
 	lane := "standard"
-	task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: migrations, Kind: "task", Lane: &lane, Title: "Concurrent retries", Actor: "human:mark", IdempotencyKey: "task"})
+	task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: migrations, Kind: "task", Lane: &lane, Title: "Concurrent retries", Actor: "human:mark", IdempotencyKey: "task"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsDir: migrations, TaskID: task.ID, Actor: "human:mark", Reason: "Build fixture"})
+	held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsFS: migrations, TaskID: task.ID, Actor: "human:mark", Reason: "Build fixture"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	options := Options{WorkspaceRoot: root, MigrationsDir: migrations, HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", Names: []string{"test"}, IdempotencyKey: "check", Version: "test"}
-	if _, err := holdwork.Start(holdwork.Options{WorkspaceRoot: root, MigrationsDir: migrations, HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: "start"}); err != nil {
+	options := Options{WorkspaceRoot: root, MigrationsFS: migrations, HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", Names: []string{"test"}, IdempotencyKey: "check", Version: "test"}
+	if _, err := holdwork.Start(holdwork.Options{WorkspaceRoot: root, MigrationsFS: migrations, HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: "start"}); err != nil {
 		t.Fatal(err)
 	}
 	return options
@@ -146,7 +147,7 @@ func TestSameKeyRetryAtResultAndBetweenChecksStop(t *testing.T) {
 				if !stopping {
 					return nil
 				}
-				_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, TaskID: record.Start.TaskID, Actor: "human:operator", Reason: "Stop between checks"})
+				_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, TaskID: record.Start.TaskID, Actor: "human:operator", Reason: "Stop between checks"})
 				afterFirst = true
 				return err
 			}

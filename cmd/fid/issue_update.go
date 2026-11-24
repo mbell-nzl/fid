@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ func newIssueUpdateCommand() *cobra.Command {
 
 			result, err := issues.Update(issues.UpdateOptions{
 				WorkspaceRoot:    workspaceRoot,
-				MigrationsDir:    issueMigrationsDir(),
+				MigrationsFS:     fidmigrations.FS,
 				ID:               args[0],
 				Actor:            actor,
 				IdempotencyKey:   idempotencyKey,

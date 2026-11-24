@@ -46,7 +46,7 @@ func TestArchiveChecksTakeoverAndPersonDecisionBindings(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), 22)
+			validator, err := newSemanticValidator(testMigrationsFS(t), 22)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -106,7 +106,7 @@ func TestArchiveChecksHeartbeatSessionAndExpiry(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			validator, err := newSemanticValidator(testMigrationsDir(t), 22)
+			validator, err := newSemanticValidator(testMigrationsFS(t), 22)
 			if err != nil {
 				t.Fatal(err)
 			}

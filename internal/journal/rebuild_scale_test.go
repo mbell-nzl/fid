@@ -42,7 +42,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -62,7 +62,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 		t.Fatalf("rebuilt state after delete = %q, want %q", afterDeleteRebuild, before)
 	}
 
-	secondRebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	secondRebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() second pass error = %v", err)
 	}

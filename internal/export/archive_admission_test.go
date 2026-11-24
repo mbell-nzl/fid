@@ -22,26 +22,26 @@ func TestImportAdmitsEveryFamilyTheWritersProduce(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
-		if _, err := labels.Add(labels.AddOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Name: "backend", Actor: "human:mark", IdempotencyKey: "label"}); err != nil {
+		if _, err := labels.Add(labels.AddOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Name: "backend", Actor: "human:mark", IdempotencyKey: "label"}); err != nil {
 			t.Fatal(err)
 		}
-		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Labelled task", Actor: "human:mark", IdempotencyKey: "task"})
+		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Labelled task", Actor: "human:mark", IdempotencyKey: "task"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := issues.AddLabel(issues.AddLabelOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), IssueID: task.ID, Label: "backend", Actor: "human:mark", IdempotencyKey: "add"}); err != nil {
+		if _, err := issues.AddLabel(issues.AddLabelOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), IssueID: task.ID, Label: "backend", Actor: "human:mark", IdempotencyKey: "add"}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := issues.RemoveLabel(issues.RemoveLabelOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), IssueID: task.ID, Label: "backend", Actor: "human:mark", IdempotencyKey: "remove"}); err != nil {
+		if _, err := issues.RemoveLabel(issues.RemoveLabelOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), IssueID: task.ID, Label: "backend", Actor: "human:mark", IdempotencyKey: "remove"}); err != nil {
 			t.Fatal(err)
 		}
 		return task.ID
 	})
-	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("validate = %v", err)
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "labels"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "labels"}); err != nil {
 		t.Fatalf("import = %v", err)
 	}
 	assertImportedJournalEquals(t, fixture.workspace, target)
@@ -127,7 +127,7 @@ func TestImportRefusesEventIDsTheWritersWouldNotAllocate(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
-		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Before the backup", Actor: "human:mark", IdempotencyKey: "task"})
+		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Before the backup", Actor: "human:mark", IdempotencyKey: "task"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -173,19 +173,19 @@ func TestImportRefusesEventIDsTheWritersWouldNotAllocate(t *testing.T) {
 			archive := filepath.Join(t.TempDir(), "forged.zip")
 			writeTestArchive(t, archive, entries)
 
-			_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			assertEventIDCheck(t, err, forgedID)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "forged"})
+			_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "forged"})
 			assertEventIDCheck(t, err, forgedID)
 			if workspaceTreeDigest(t, target) != before {
 				t.Fatal("refused import changed the target")
 			}
-			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "unforged"}); err != nil {
+			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "unforged"}); err != nil {
 				t.Fatalf("import of the unforged archive = %v", err)
 			}
-			if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After the restore", Actor: "human:mark", IdempotencyKey: "after"}); err != nil {
+			if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "After the restore", Actor: "human:mark", IdempotencyKey: "after"}); err != nil {
 				t.Fatalf("write with an allocated ID after the restore = %v", err)
 			}
 		})

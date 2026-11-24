@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path/filepath"
+	"io/fs"
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
-	migratefile "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/mbell-nzl/fid/internal/journal"
 	_ "modernc.org/sqlite"
 )
@@ -60,12 +60,12 @@ type archiveSemanticFacts struct {
 	TerminalEventHash string
 }
 
-func newSemanticValidator(migrationsDir string, projectionSchema int) (*semanticValidator, error) {
+func newSemanticValidator(migrationsFS fs.FS, projectionSchema int) (*semanticValidator, error) {
 	if projectionSchema != 19 && projectionSchema != 20 && projectionSchema != 21 && projectionSchema != 22 && projectionSchema != 23 && projectionSchema != 24 && projectionSchema != 25 && projectionSchema != 26 && projectionSchema != 27 && projectionSchema != 28 && projectionSchema != 29 && projectionSchema != 30 && projectionSchema != 31 && projectionSchema != 32 && projectionSchema != 33 && projectionSchema != 34 && projectionSchema != 35 && projectionSchema != 36 && projectionSchema != 37 && projectionSchema != 38 && projectionSchema != 39 && projectionSchema != 40 && projectionSchema != 41 {
 		return nil, fmt.Errorf("semantic archive validation: unsupported projection schema %d", projectionSchema)
 	}
-	if strings.TrimSpace(migrationsDir) == "" {
-		return nil, fmt.Errorf("semantic archive validation: migrations directory is required")
+	if migrationsFS == nil {
+		return nil, fmt.Errorf("semantic archive validation: migrations filesystem is required")
 	}
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -80,7 +80,7 @@ func newSemanticValidator(migrationsDir string, projectionSchema int) (*semantic
 		_ = conn.Close()
 		return nil, fmt.Errorf("semantic archive validation: enable recursive triggers: %w", err)
 	}
-	if err := migrateSemanticProjection(conn, migrationsDir, projectionSchema); err != nil {
+	if err := migrateSemanticProjection(conn, migrationsFS, projectionSchema); err != nil {
 		_ = conn.Close()
 		return nil, err
 	}
@@ -98,16 +98,15 @@ func newSemanticValidator(migrationsDir string, projectionSchema int) (*semantic
 	}, nil
 }
 
-func migrateSemanticProjection(conn *sql.DB, migrationsDir string, projectionSchema int) error {
-	absMigrations, err := filepath.Abs(migrationsDir)
-	if err != nil {
-		return fmt.Errorf("semantic archive validation: resolve migrations: %w", err)
+func migrateSemanticProjection(conn *sql.DB, migrationsFS fs.FS, projectionSchema int) error {
+	if migrationsFS == nil {
+		return fmt.Errorf("semantic archive validation: migrations filesystem is required")
 	}
 	driver, err := migratesqlite.WithInstance(conn, &migratesqlite.Config{})
 	if err != nil {
 		return fmt.Errorf("semantic archive validation: create migration driver: %w", err)
 	}
-	source, err := (&migratefile.File{}).Open("file://" + absMigrations)
+	source, err := iofs.New(migrationsFS, ".")
 	if err != nil {
 		return fmt.Errorf("semantic archive validation: open trusted migration source: %w", err)
 	}

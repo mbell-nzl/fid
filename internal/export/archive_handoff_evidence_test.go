@@ -37,20 +37,20 @@ func checkedHandoffArchiveFixture(t *testing.T) ([][]byte, string) {
 		fixtureGit(t, root, "update-ref", "refs/remotes/origin/trunk", "HEAD")
 		fixtureGit(t, root, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
 		lane := "standard"
-		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Lane: &lane, Title: "Checked hand-off", Actor: "human:mark", IdempotencyKey: "task"})
+		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Lane: &lane, Title: "Checked hand-off", Actor: "human:mark", IdempotencyKey: "task"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task.ID, Actor: "human:mark", Reason: "Build receipt fixture"})
+		held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task.ID, Actor: "human:mark", Reason: "Build receipt fixture"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", IdempotencyKey: "start"}
+		options := holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", IdempotencyKey: "start"}
 		if _, err := holdwork.Start(options); err != nil {
 			t.Fatal(err)
 		}
 		for _, key := range []string{"older-checks", "latest-checks"} {
-			response, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: key, Version: "test"})
+			response, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: key, Version: "test"})
 			if err != nil || len(response.Checks) != 2 {
 				t.Fatalf("fixture checks = %#v / %v", response, err)
 			}
@@ -91,7 +91,7 @@ func TestHandoffReplayAndImportValidateCountingEvidence(t *testing.T) {
 		} {
 			t.Run(mode+"/"+row.name, func(t *testing.T) {
 				t.Parallel()
-				validator, err := newSemanticValidator(testMigrationsDir(t), 26)
+				validator, err := newSemanticValidator(testMigrationsFS(t), 26)
 				if err != nil {
 					t.Fatal(err)
 				}

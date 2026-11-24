@@ -20,7 +20,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Transition me",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -34,7 +34,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 
 	result, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -55,7 +55,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 
 	issue, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -168,7 +168,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 
 	afterRebuild, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -183,7 +183,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Registry edge source",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -204,7 +204,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
@@ -250,7 +250,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Registry rule source",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -260,7 +260,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 	}
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
@@ -280,7 +280,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "done",
 		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
@@ -295,7 +295,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Registry category source",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -317,7 +317,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
@@ -332,7 +332,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Explicit cancellation edge",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -353,7 +353,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "cancelled", Reason: "Test cancellation",
 		Actor: "human:mark", IdempotencyKey: testIdempotencyKey(),
@@ -371,7 +371,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Reserved gate seam",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -397,7 +397,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	}
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -424,22 +424,22 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 func TestTransitionIntoStartedRequiresStart(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Start requires its command", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", Title: "Start requires its command", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
+	before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	path := journalPathForWorkspace(t, workspace)
 	lines := countJournalLines(path)
-	_, err = Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID, ToState: "in_progress", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
+	_, err = Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID, ToState: "in_progress", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
 	var refused *CommandTransitionError
 	if !errors.As(err, &refused) || refused.Rule != "use-start" {
 		t.Fatalf("transition = %v", err)
 	}
-	after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
+	after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,7 +456,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 
 	created, err := createTransitionSubtask(t, CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Reject invalid transition",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -467,7 +467,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 
 	before, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -479,7 +479,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "done",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -506,7 +506,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 
 	after, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -532,25 +532,25 @@ func TestTransitionRejectsRetiredQAStates(t *testing.T) {
 func assertRetiredTaskStates(t *testing.T, states []string) {
 	t.Helper()
 	workspace := newIssueWorkspace(t)
-	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Retired task states", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", Title: "Retired task states", Actor: "agent:developer", IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatal(err)
 	}
 	seedTransitionAcceptanceCriteria(t, workspace, created.ID, acceptanceCriterionSeed{ID: "AC-retired", Ordinal: 1, Text: "Existing criterion"})
 	seedIssueStatus(t, workspace, created.ID, "in_progress")
-	before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
+	before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	path := journalPathForWorkspace(t, workspace)
 	lines := countJournalLines(path)
 	for _, state := range states {
-		_, err := Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID, ToState: state, Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
+		_, err := Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID, ToState: state, Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
 		var invalid *InvalidTransitionError
 		if !errors.As(err, &invalid) || invalid.RequestedState != state {
 			t.Fatalf("retired %s = %v", state, err)
 		}
-		after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: created.ID})
+		after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: created.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -564,11 +564,11 @@ func assertRetiredTaskStates(t *testing.T, states []string) {
 func TestTransitionRejectsRetiredEpicStatesWithOpenOrFinishedChildren(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	epic, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "epic", Title: "Epic states are fixed", Scheduling: "prioritised", Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
+	epic, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "epic", Title: "Epic states are fixed", Scheduling: "prioritised", Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	child, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", ParentID: &epic.ID, Title: "Child task", Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
+	child, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), Kind: "task", ParentID: &epic.ID, Title: "Child task", Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -577,20 +577,20 @@ func TestTransitionRejectsRetiredEpicStatesWithOpenOrFinishedChildren(t *testing
 		if childState != "todo" {
 			seedIssueStatus(t, workspace, child.ID, childState)
 		}
-		before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: epic.ID})
+		before, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: epic.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
 		path := journalPathForWorkspace(t, workspace)
 		lines := countJournalLines(path)
 		for _, state := range []string{"wrapped", "closed"} {
-			_, err := Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: epic.ID, ToState: state, Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
+			_, err := Transition(TransitionOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: epic.ID, ToState: state, Actor: "human:mark", IdempotencyKey: testIdempotencyKey()})
 			var invalid *InvalidTransitionError
 			if !errors.As(err, &invalid) {
 				t.Fatalf("retired epic %s with child %s = %v", state, childState, err)
 			}
 		}
-		after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: epic.ID})
+		after, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: epic.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -608,7 +608,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 
 	parent, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Parent task",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -618,7 +618,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 	}
 	subtask, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "subtask",
 		Title:         "Child subtask",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -629,7 +629,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 	}
 	task, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Cancel from todo",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -640,7 +640,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            subtask.ID,
 		ToState:       "in_progress",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -650,7 +650,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 
 	subtaskAfterStart, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            subtask.ID,
 	})
 	if err != nil {
@@ -665,7 +665,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            task.ID,
 		ToState:       "cancelled", Reason: "Test cancellation",
 		Actor: "human:mark", IdempotencyKey: testIdempotencyKey(),
@@ -674,7 +674,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 	}
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -687,7 +687,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -745,7 +745,7 @@ func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, c
 // Generic transition machinery remains observable through unchanged subtasks.
 func createTransitionSubtask(t *testing.T, options CreateOptions) (CreateResult, error) {
 	t.Helper()
-	parent, err := Create(CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "task", Title: "Transition parent", Actor: options.Actor, IdempotencyKey: testIdempotencyKey()})
+	parent, err := Create(CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, Kind: "task", Title: "Transition parent", Actor: options.Actor, IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		return CreateResult{}, err
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -17,9 +18,10 @@ import (
 // EmbeddedJSONProbeForTest crosses into the external differential test, which
 // can import export without creating a journal -> export -> journal cycle.
 type EmbeddedJSONProbeForTest struct {
-	Name, Placement, Column, Reason, MigrationsDir string
-	Variant, Raw                                   string
-	Event                                          Event
+	Name, Placement, Column, Reason string
+	MigrationsFS                    fs.FS
+	Variant, Raw                    string
+	Event                           Event
 }
 
 // EmbeddedJSONMatrixForTest derives columns from SQLite, and table/operation
@@ -145,9 +147,9 @@ func checkEmbeddedJSONModesForTest(t *testing.T, probes []EmbeddedJSONProbeForTe
 						if w.conn != nil {
 							closeProjectDB(t, w.conn)
 						}
-						migrations := probe.MigrationsDir
-						if migrations == "" {
-							migrations = testProjectMigrationsDir(modeTest)
+						migrations := probe.MigrationsFS
+						if migrations == nil {
+							migrations = testProjectMigrationsFS(modeTest)
 						}
 						w = newJSONAdmissionWorkspace(modeTest, mode, migrations)
 					}

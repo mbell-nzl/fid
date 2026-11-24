@@ -12,7 +12,7 @@ func TestMigrateUpSeedsTaskDefaultWorkflowStates(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
+	if err := MigrateUp(dbPath, testMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -88,7 +88,7 @@ func TestMigration0007DownAndUpRestoresWorkflowTables(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Up(); err != nil {
@@ -120,7 +120,7 @@ func migratedWorkflowTablesDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
+	if err := MigrateUp(dbPath, testMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	conn, err := Open(dbPath)

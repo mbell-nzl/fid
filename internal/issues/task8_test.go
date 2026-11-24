@@ -21,7 +21,7 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task", Title: "Fixed clock Issue", Actor: "agent:task-8", IdempotencyKey: "fixed-create",
 		now: clock,
 	})
@@ -30,7 +30,7 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 	}
 	if _, err := Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID, Actor: "agent:task-8", IdempotencyKey: "fixed-update", Title: stringPointer("Fixed clock update"), ExpectedRevision: intPointer(1),
 		now: clock,
 	}); err != nil {
@@ -38,7 +38,7 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 	}
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID, ToState: "cancelled", Reason: "Test cancellation", Actor: "human:task-8", IdempotencyKey: "fixed-transition", ExpectedRevision: intPointer(2),
 		now: clock,
 	}); err != nil {
@@ -69,7 +69,7 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Legacy in-process Issue",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -79,7 +79,7 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 	}
 	updated, err := Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		Title:            stringPointer("Legacy in-process update"),
@@ -90,7 +90,7 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 	}
 	transitioned, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		ToState:       "cancelled", Reason: "Test cancellation",
 		Actor: "human:developer", IdempotencyKey: testIdempotencyKey(),

@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/maintenance"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +69,7 @@ func newMaintenanceCheckCommand() *cobra.Command {
 			if err != nil {
 				return renderMaintenanceCheckError(cmd, err)
 			}
-			if _, err := journal.EnsureProjectionFresh(workspaceRoot, issueMigrationsDir()); err != nil {
+			if _, err := journal.EnsureProjectionFresh(workspaceRoot, fidmigrations.FS); err != nil {
 				return renderMaintenanceCheckError(cmd, err)
 			}
 

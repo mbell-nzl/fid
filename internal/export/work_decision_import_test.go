@@ -21,7 +21,7 @@ func TestWorkDecisionsSurviveExportImport(t *testing.T) {
 		t.Helper()
 		lane := "standard"
 		for i := range 2 {
-			task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Agent discovery", Actor: "agent:orchestrator", Lane: &lane, IdempotencyKey: fmt.Sprintf("create-%d", i)})
+			task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Agent discovery", Actor: "agent:orchestrator", Lane: &lane, IdempotencyKey: fmt.Sprintf("create-%d", i)})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -30,23 +30,23 @@ func TestWorkDecisionsSurviveExportImport(t *testing.T) {
 				continue
 			}
 			accepted = task.ID
-			if _, err := holdwork.Accept(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: accepted, Actor: "human:mark", Reason: "Approved discovery"}); err != nil {
+			if _, err := holdwork.Accept(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: accepted, Actor: "human:mark", Reason: "Approved discovery"}); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := holdwork.AllowRework(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: accepted, Actor: "human:mark", Reason: "Continue the fix", Rounds: 2}); err != nil {
+			if _, err := holdwork.AllowRework(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: accepted, Actor: "human:mark", Reason: "Continue the fix", Rounds: 2}); err != nil {
 				t.Fatal(err)
 			}
 		}
 		return accepted
 	})
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "work-decisions"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "work-decisions"}); err != nil {
 		t.Fatal(err)
 	}
 	for _, root := range []string{f.workspace, target} {
 		for _, rebuild := range []bool{false, true} {
 			if rebuild {
-				if _, err := journal.RebuildWorkspace(root, testMigrationsDir(t)); err != nil {
+				if _, err := journal.RebuildWorkspace(root, testMigrationsFS(t)); err != nil {
 					t.Fatal(err)
 				}
 			}

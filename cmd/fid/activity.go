@@ -5,6 +5,7 @@ import (
 
 	internalactivity "github.com/mbell-nzl/fid/internal/activity"
 	"github.com/mbell-nzl/fid/internal/cli"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,7 @@ func newActivityListCommand() *cobra.Command {
 
 			items, err := internalactivity.List(internalactivity.ListOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				On:            on,
 				Since:         since,
 				Event:         eventName,

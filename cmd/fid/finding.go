@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,7 @@ func newFindingCommand() *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, "finding.close", err)
 		}
-		result, err := holdwork.CloseFinding(holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), FindingID: args[0], Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
+		result, err := holdwork.CloseFinding(holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, FindingID: args[0], Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
 		if err != nil {
 			return renderHoldFailure(cmd, "finding.close", err)
 		}

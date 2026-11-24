@@ -14,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/next"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +54,7 @@ func newNextCommand() *cobra.Command {
 				return renderNextFailure(cmd, operation, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor, Model: model, Epic: epic}
+			options := next.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, Clock: environment.now, Actor: actor, Model: model, Epic: epic}
 			read := next.Read
 			if claim {
 				read = next.Claim

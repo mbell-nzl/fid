@@ -14,7 +14,7 @@ func TestEnsureProjectionFreshRebuildsStoredPriorProjectionSchemaVersion(t *test
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-	if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+	if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
@@ -24,7 +24,7 @@ func TestEnsureProjectionFreshRebuildsStoredPriorProjectionSchemaVersion(t *test
 	}
 	closeProjectDB(t, conn)
 
-	result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+	result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 	if err != nil {
 		t.Fatalf("EnsureProjectionFresh() error = %v", err)
 	}

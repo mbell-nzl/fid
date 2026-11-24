@@ -2,6 +2,7 @@ package journal
 
 import (
 	"database/sql"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,11 +16,11 @@ import (
 // own databases using the verified current-schema fixture.
 type jsonAdmissionWorkspace struct {
 	admissionWorkspace
-	migrations string
+	migrations fs.FS
 	conn       *sql.DB
 }
 
-func newJSONAdmissionWorkspace(t *testing.T, mode, migrations string) jsonAdmissionWorkspace {
+func newJSONAdmissionWorkspace(t *testing.T, mode string, migrations fs.FS) jsonAdmissionWorkspace {
 	t.Helper()
 	root := newReplayWorkspace(t)
 	dir := filepath.Join(config.LedgerDir(root), "journal")

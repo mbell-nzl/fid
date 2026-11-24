@@ -8,6 +8,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func createAcceptanceTask(t *testing.T, f *statusFixture, actor, kind, parent string) string {
@@ -35,7 +36,7 @@ func TestAcceptanceSelectionAndStatus(t *testing.T) {
 	agent := createAcceptanceTask(t, f, "agent:orchestrator", "task", "")
 	human := createAcceptanceTask(t, f, "human:mark", "task", "")
 	// The rule also applies to work created before the projection is rebuilt.
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	next := commandResultFields(t, f, "next", "--explain")
@@ -76,7 +77,7 @@ func TestAcceptanceSelectionAndStatus(t *testing.T) {
 			t.Fatal(status)
 		}
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	if got := commandResultFields(t, f, "next")["task"].(map[string]any)["id"]; got != agent {

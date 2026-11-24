@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestReviewDeliveryInvalidArgumentDetails(t *testing.T) {
@@ -181,7 +182,7 @@ func TestFindingAnswersStayOpen(t *testing.T) {
 	}
 	for _, rebuild := range []bool{false, true} {
 		if rebuild {
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -256,7 +257,7 @@ func TestFindingDeferralAtomicAndUnaccepted(t *testing.T) {
 			}
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -320,7 +321,7 @@ func TestFindingDeferralSequentialEpic(t *testing.T) {
 	}
 	for _, rebuild := range []bool{false, true} {
 		if rebuild {
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 		}

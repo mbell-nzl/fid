@@ -24,10 +24,10 @@ import (
 func TestAppendAfterImportRefusesADateBeforeTheLastImportedEvent(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
-	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Before the import", Actor: "agent:fixture", IdempotencyKey: "clock-issue"}); err != nil {
+	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Before the import", Actor: "agent:fixture", IdempotencyKey: "clock-issue"}); err != nil {
 		t.Fatalf("create source issue: %v", err)
 	}
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
@@ -35,7 +35,7 @@ func TestAppendAfterImportRefusesADateBeforeTheLastImportedEvent(t *testing.T) {
 		t.Fatalf("create archive: %v", err)
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "clock"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "clock"}); err != nil {
 		t.Fatalf("Import() error = %v", err)
 	}
 	journalDir := filepath.Join(config.LedgerDir(target), config.JournalDirName)

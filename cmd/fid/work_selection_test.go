@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/next"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func selectionNext(t *testing.T, f *statusFixture, actor string) map[string]any {
@@ -149,7 +150,7 @@ func TestConcurrentReviewClaimsAndLiveAdmission(t *testing.T) {
 	errors := make(chan error, 2)
 	for i, root := range roots {
 		go func() {
-			r, err := next.Claim(next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: f.clock, Actor: fmt.Sprintf("agent:reviewer-%d", i), Model: "claude/opus-5.5"})
+			r, err := next.Claim(next.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, Clock: f.clock, Actor: fmt.Sprintf("agent:reviewer-%d", i), Model: "claude/opus-5.5"})
 			results <- r
 			errors <- err
 		}()
@@ -183,7 +184,7 @@ func TestConcurrentReviewClaimsAndLiveAdmission(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "review reservation differs") || !before.equal(snapshotWorkspacePersistence(t, f.workspace)) {
 		t.Fatalf("live malformed append changed state or failed elsewhere: %v", err)
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	f.workspace = roots[0]

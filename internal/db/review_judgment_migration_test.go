@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,7 +16,7 @@ import (
 func TestMigration0017CreatesExactlyTheAcceptedObjects(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Migrate(16); err != nil {
@@ -64,7 +65,7 @@ func TestMigration0017CreatesExactlyTheAcceptedObjects(t *testing.T) {
 func TestMigration0017ObligationRegistrationDiscriminator(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(17); err != nil {
 		t.Fatalf("Migrate(17) error = %v", err)
@@ -158,7 +159,7 @@ index 6bcffc4..715a384 100644
 func TestMigration0017PreservesReceiptEvidenceAndArtifactLinksInPlace(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(16); err != nil {
 		t.Fatalf("Migrate(16) error = %v", err)
@@ -199,7 +200,7 @@ func assertMigration0017MatchesAcceptedDDL(t *testing.T) {
 		{"0017_p23_review_judgment.down.sql", "## 3. Migration 0017 Down", "## 4. Migration 0018 Up - V1 Judgment Removal"},
 	} {
 		t.Run(test.filename, func(t *testing.T) {
-			got, err := os.ReadFile(filepath.Join(testMigrationsDir(t), test.filename))
+			got, err := fs.ReadFile(testMigrationsFS(t), test.filename)
 			if err != nil {
 				t.Fatalf("read migration: %v", err)
 			}

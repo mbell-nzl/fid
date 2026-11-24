@@ -739,17 +739,17 @@ completion record and only the evidence IDs that record names:
 
 - Completion time, ID and `fid done` actor.
 - PR number, merge commit and merge time.
-- Each counted CI result's conclusion, run ID as `#<id>` and commit.
-  Multiple counted runs remain separate. Full CI URLs remain in JSON; text
-  omits them because the V2 vocabulary guard rejects `runs` in GitHub
-  Actions URL paths, along with the standalone noun `run`.
+- Each counted CI result's conclusion, run ID as `run <id>` and commit.
+  When recorded, the full CI URL follows on its own continuation row,
+  never wrapped or cut, even on a narrow terminal. No URL row is shown
+  when no URL was recorded. Multiple counted runs remain separate.
 - Completed hand-off ID and head, and the completion's fingerprint.
 - Each counted round's ID, stream, verdict, reviewer actor and model.
 - Assured approval's decision ID, person and time; the recorded
   `no other-model review` disclosure when true; `Rollback present` or
   `Rollback absent` as recorded.
 
-Text reads `CI ✓ success · #101 on <commit>` for a successful CI result.
+Text reads `CI ✓ success · run 101 on <commit>` for a successful CI result.
 Text shortens commit SHAs and the fingerprint to eight characters. Times
 use the existing local clock format, adding the date when not today. Values
 wrap beneath the label and external text is escaped as in other show rows.

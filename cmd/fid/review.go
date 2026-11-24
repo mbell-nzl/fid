@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,7 @@ func newReviewRecordCommand() *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, "review.record", err, "")
 		}
-		result, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, IdempotencyKey: key, Input: in, Clock: commandDisplayEnvironment(cmd).now})
+		result, err := reviewwork.Record(reviewwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: args[0], Actor: actor, IdempotencyKey: key, Input: in, Clock: commandDisplayEnvironment(cmd).now})
 		if err != nil {
 			return reviewFailure(cmd, "review.record", err, "")
 		}
@@ -73,7 +74,7 @@ func newReviewListCommand() *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, "review.list", err, "")
 		}
-		if _, err := journal.EnsureProjectionFresh(root, issueMigrationsDir()); err != nil {
+		if _, err := journal.EnsureProjectionFresh(root, fidmigrations.FS); err != nil {
 			return reviewFailure(cmd, "review.list", err, "")
 		}
 		views, err := reviewwork.List(root, args[0])

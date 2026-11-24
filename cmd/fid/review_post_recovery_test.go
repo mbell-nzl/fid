@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/reviewpost"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestReviewReceiptProjectionRecovery(t *testing.T) {
@@ -48,7 +49,7 @@ BEGIN SELECT RAISE(ABORT, 'injected receipt checkpoint failure'); END`, id))
 			}
 			before := startEventCount(t, f.workspace)
 			run, requests, writes := recoveryCommentRunner(t, !receiptFailure)
-			first, err := reviewpost.Round(context.Background(), f.workspace, issueMigrationsDir(), id, run)
+			first, err := reviewpost.Round(context.Background(), f.workspace, fidmigrations.FS, id, run)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +70,7 @@ BEGIN SELECT RAISE(ABORT, 'injected receipt checkpoint failure'); END`, id))
 				t.Errorf("first delivery wrote %d comments, want one", *writes)
 			}
 			for attempt := range 2 {
-				retried, retryErr := reviewpost.Round(context.Background(), f.workspace, issueMigrationsDir(), id, run)
+				retried, retryErr := reviewpost.Round(context.Background(), f.workspace, fidmigrations.FS, id, run)
 				if retryErr != nil || len(retried.Pending) != 0 || !slices.Equal(retried.Posted, []string{id, answer}) {
 					t.Fatalf("ordinary retry %d did not recover: %+v / %v", attempt+1, retried, retryErr)
 				}

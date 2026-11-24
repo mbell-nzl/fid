@@ -25,7 +25,7 @@ func closeEpic(o Options, afterRead func()) (epicrecord.Result, error) {
 	if strings.TrimSpace(o.Reason) == "" {
 		return result, &persondecision.ReasonRequiredError{}
 	}
-	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsFS); err != nil {
 		return result, err
 	}
 	conn, err := reviewwork.OpenProjection(o.WorkspaceRoot)
@@ -47,7 +47,7 @@ func closeEpic(o Options, afterRead func()) (epicrecord.Result, error) {
 		afterRead()
 	}
 	err = journal.WithLock(o.WorkspaceRoot, journal.LockOwner{Command: "fid done"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsFS); err != nil {
 			return err
 		}
 		if r, found, err := epicRetry(conn, request); err != nil || found {
@@ -134,7 +134,7 @@ func EpicTarget(o Options) (bool, error) {
 	if !policy.Allows(o.Actor, policy.WorkSet) {
 		return false, &persondecision.DeniedError{Actor: o.Actor}
 	}
-	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsFS); err != nil {
 		return false, err
 	}
 	conn, err := reviewwork.OpenProjection(o.WorkspaceRoot)

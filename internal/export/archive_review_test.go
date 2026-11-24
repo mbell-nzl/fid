@@ -21,7 +21,7 @@ func reviewArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 func reviewArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, h := handoffArchiveFixtureWithLane(t, lane)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 30); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 30); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -164,7 +164,7 @@ func TestBuildModelArchiveAndReplayValidation(t *testing.T) {
 		for _, model := range []string{"", "codex/gpt-6.1-sol", "invalid", "a/b/c"} {
 			t.Run(mode+"/"+model, func(t *testing.T) {
 				t.Parallel()
-				v, err := newSemanticValidator(testMigrationsDir(t), 30)
+				v, err := newSemanticValidator(testMigrationsFS(t), 30)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -193,7 +193,7 @@ func TestBuildModelsRejectLegacyOrUnrelatedWriters(t *testing.T) {
 		for _, schema := range []int{1, 2} {
 			t.Run(fmt.Sprintf("%s/v%d", mode, schema), func(t *testing.T) {
 				t.Parallel()
-				v, err := newSemanticValidator(testMigrationsDir(t), 30)
+				v, err := newSemanticValidator(testMigrationsFS(t), 30)
 				if err != nil {
 					t.Fatal(err)
 				}

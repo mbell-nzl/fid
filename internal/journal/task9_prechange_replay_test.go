@@ -61,7 +61,7 @@ func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testin
 	}
 	// Line 2's retry result predates the request field digests, so admission
 	// refuses it before reaching the removed family on line 3.
-	_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	_, err = RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	var corrupt *CorruptJournalError
 	if !errors.As(err, &corrupt) || corrupt.Line != 2 || !strings.Contains(err.Error(), "missing idempotency field digests") {
 		t.Fatalf("rebuild pre-change journal = %v, want line-2 incomplete retry refusal", err)
@@ -79,7 +79,7 @@ func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testin
 	if err := os.WriteFile(journalPath, trimmed, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	_, err = RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	if !errors.As(err, &corrupt) || corrupt.Line != 2 || !strings.Contains(err.Error(), "schema-unsupported") {
 		t.Fatalf("rebuild without the old retry result = %v, want line-2 unsupported-family refusal", err)
 	}

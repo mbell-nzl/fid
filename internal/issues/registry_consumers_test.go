@@ -12,7 +12,7 @@ func TestGetAndListUseProjectedWorkflowCategories(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Projected category consumer",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -34,7 +34,7 @@ func TestGetAndListUseProjectedWorkflowCategories(t *testing.T) {
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -46,7 +46,7 @@ func TestGetAndListUseProjectedWorkflowCategories(t *testing.T) {
 
 	listed, err := List(ListOptions{
 		WorkspaceRoot:  workspace,
-		MigrationsDir:  testIssueMigrationsDir(t),
+		MigrationsFS:   testIssueMigrationsFS(t),
 		StatusCategory: "started",
 	})
 	if err != nil {

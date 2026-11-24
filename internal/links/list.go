@@ -17,7 +17,7 @@ func List(options ListOptions) ([]ListItem, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return nil, fmt.Errorf("link list: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return nil, fmt.Errorf("link list: migrations dir is required")
 	}
 	entityID := strings.TrimSpace(options.EntityID)
@@ -29,7 +29,7 @@ func List(options ListOptions) ([]ListItem, error) {
 		return nil, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return nil, err
 	}
 

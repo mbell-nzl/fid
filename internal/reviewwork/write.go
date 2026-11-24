@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -20,9 +21,11 @@ import (
 )
 
 type Options struct {
-	WorkspaceRoot, MigrationsDir, TaskID, Actor, IdempotencyKey string
-	Input                                                       reviewrecord.Input
-	Clock                                                       func() time.Time
+	WorkspaceRoot                 string
+	MigrationsFS                  fs.FS
+	TaskID, Actor, IdempotencyKey string
+	Input                         reviewrecord.Input
+	Clock                         func() time.Time
 }
 
 type Result struct {
@@ -44,7 +47,7 @@ func Record(o Options) (Result, error) {
 	}
 	var result Result
 	err := journal.WithLock(o.WorkspaceRoot, journal.LockOwner{Command: "fid review record"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(o.WorkspaceRoot), config.DatabaseFileName))

@@ -27,7 +27,7 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 
 		result, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testLinksMigrationsDir(t),
+			MigrationsFS:  testLinksMigrationsFS(t),
 			FromID:        firstIssueID,
 			Relation:      "blocks",
 			ToID:          secondIssueID,
@@ -117,7 +117,7 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 
 		if _, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testLinksMigrationsDir(t),
+			MigrationsFS:  testLinksMigrationsFS(t),
 			FromID:        issueID,
 			Relation:      "implements",
 			ToType:        "requirement",
@@ -142,7 +142,7 @@ func TestAddRejectsDuplicateWithoutActivityAppend(t *testing.T) {
 	secondIssueID := createLinksIssue(t, workspace, "Second issue")
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
@@ -158,7 +158,7 @@ func TestAddRejectsDuplicateWithoutActivityAppend(t *testing.T) {
 
 	_, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,

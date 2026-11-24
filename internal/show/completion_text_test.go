@@ -79,3 +79,30 @@ func TestCompletionGoldens(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletionCIText(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, url string
+	}{
+		{"recorded URL", "https://github.com/owner/repo/actions/runs/45102091114"},
+		{"URL wider than the box", "https://github.com/" + strings.Repeat("long-repository-name", 5) + "/actions/runs/45102091114"},
+		{"no recorded URL", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			r := completionMock("standard", false)
+			r.Completion.CIResults[0].URL = tc.url
+			got := writeText(t, r, display.Renderer{})
+			want := "              CI ✓ success · run 45102091114 on 33333333\n"
+			if tc.url != "" {
+				want += "              " + tc.url + "\n"
+			}
+			want += "              Hand-off "
+			if !strings.Contains(got, want) {
+				t.Fatalf("CI receipt must show the run, its whole URL when recorded, then the hand-off; want %q in:\n%s", want, got)
+			}
+			leaktest.AssertNoKernelWords(t, got)
+		})
+	}
+}

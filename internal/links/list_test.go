@@ -17,7 +17,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        primaryIssueID,
 		Relation:      "blocks",
 		ToID:          outgoingIssueID,
@@ -28,7 +28,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 	beforeRejected := countLinksJournalEvents(t, workspace)
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        primaryIssueID,
 		Relation:      "implements",
 		ToType:        "requirement",
@@ -39,7 +39,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 	}
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        incomingIssueID,
 		Relation:      "discovered_from",
 		ToID:          primaryIssueID,
@@ -50,7 +50,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		EntityID:      primaryIssueID,
 	})
 	if err != nil {
@@ -91,7 +91,7 @@ func TestListReturnsEmptySliceForEntityWithNoLinks(t *testing.T) {
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		EntityID:      issueID,
 	})
 	if err != nil {

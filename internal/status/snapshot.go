@@ -17,7 +17,7 @@ import (
 // readWork keeps status's grouping and next's queue on one projection snapshot.
 // afterOverview lets tests commit a concurrent transition between the reads.
 func readWork(options Options, afterOverview func()) (issues.Overview, next.Result, *Result, error) {
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return issues.Overview{}, next.Result{}, nil, err
 	}
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

@@ -18,7 +18,7 @@ func handoffArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 
 func handoffArchiveFixtureWithLane(t *testing.T, lane string) (*semanticValidator, journal.Event) {
 	t.Helper()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 26)
+	validator, err := newSemanticValidator(testMigrationsFS(t), 26)
 	if err != nil {
 		t.Fatal(err)
 	}

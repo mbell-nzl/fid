@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"bytes"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestBuildProjectInitializedEventMatchesV2Golden(t *testing.T) {
@@ -50,7 +52,7 @@ func TestInitializeFailureBeforeActivationLeavesNoWorkspace(t *testing.T) {
 
 			_, err := initializeWorkspaceWithHooks(InitOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: migrationFixtureDir(t),
+				MigrationsFS:  migrationFixtureFS(t),
 				Prefix:        "FID",
 			}, initHooks{before: func(current initStage) error {
 				if current == step {
@@ -84,7 +86,7 @@ func TestInitializeRefusesIdentityChangedWhileStaging(t *testing.T) {
 			}
 			other := []byte("# written while init stages\n[project]\nid = \"project-22222222222222222222222222222222\"\n")
 			_, err := initializeWorkspaceWithHooks(InitOptions{
-				WorkspaceRoot: root, MigrationsDir: migrationFixtureDir(t), Prefix: "FID",
+				WorkspaceRoot: root, MigrationsFS: migrationFixtureFS(t), Prefix: "FID",
 			}, initHooks{before: func(stage initStage) error {
 				if stage == initStageActivated {
 					return os.WriteFile(path, other, 0o644)
@@ -140,7 +142,7 @@ func assertNoActivationResidue(t *testing.T, workspaceRoot string) {
 	}
 }
 
-func migrationFixtureDir(t *testing.T) string {
+func migrationFixtureFS(t *testing.T) fs.FS {
 	t.Helper()
-	return filepath.Clean(filepath.Join("..", "..", "migrations"))
+	return fidmigrations.FS
 }

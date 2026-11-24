@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +52,7 @@ func newIssueACAddCommand() *cobra.Command {
 
 			result, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				IssueID:        args[0],
 				Text:           text,
 				Ordinal:        ordinal,
@@ -115,7 +116,7 @@ func newIssueACListCommand() *cobra.Command {
 
 			result, err := issues.ListAcceptanceCriteria(issues.ListAcceptanceCriteriaOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				IssueID:       args[0],
 			})
 			if err != nil {

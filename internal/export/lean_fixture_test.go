@@ -40,22 +40,22 @@ func addLeanExportFacts(t *testing.T, root string) string {
 	fixtureGit(t, root, "update-ref", "refs/remotes/origin/trunk", "HEAD")
 	fixtureGit(t, root, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
 	lane := "standard"
-	task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Lane: &lane, Title: "Portable check", Actor: "human:mark", IdempotencyKey: "lean-task"})
+	task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Lane: &lane, Title: "Portable check", Actor: "human:mark", IdempotencyKey: "lean-task"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task.ID, Actor: "human:mark", Reason: "Build export fixture"})
+	held, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task.ID, Actor: "human:mark", Reason: "Build export fixture"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", IdempotencyKey: "lean-start"}
+	options := holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: held.Fields["hold_id"].(string), Actor: "human:mark", IdempotencyKey: "lean-start"}
 	if _, err := holdwork.Start(options); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: options.HoldID, Actor: options.Actor, Names: []string{"test"}, IdempotencyKey: "lean-check", Version: "test"}); err != nil {
+	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: options.HoldID, Actor: options.Actor, Names: []string{"test"}, IdempotencyKey: "lean-check", Version: "test"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: "empty-check", Version: "test"}); err != nil {
+	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: "empty-check", Version: "test"}); err != nil {
 		t.Fatal(err)
 	}
 	for _, raw := range leanJournalLines(t, root) {

@@ -18,7 +18,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
@@ -31,7 +31,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 
 	result, err := Remove(RemoveOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
@@ -87,7 +87,7 @@ func TestRemoveRejectsMissingLinkBeforeAppend(t *testing.T) {
 
 	_, err := Remove(RemoveOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
@@ -114,7 +114,7 @@ func TestRemoveRejectsRemovedRequirementInverse(t *testing.T) {
 	before := countLinksJournalEvents(t, workspace)
 	_, err := Remove(RemoveOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        issueID,
 		Relation:      "implements",
 		ToType:        "requirement",

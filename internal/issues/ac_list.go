@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,7 @@ const issueReadOnlyDriverName = "sqlite"
 
 type ListAcceptanceCriteriaOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	IssueID       string
 }
 
@@ -39,14 +40,14 @@ func ListAcceptanceCriteria(options ListAcceptanceCriteriaOptions) (AcceptanceCr
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AcceptanceCriteriaList{}, fmt.Errorf("list acceptance criteria: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return AcceptanceCriteriaList{}, fmt.Errorf("list acceptance criteria: migrations dir is required")
 	}
 	if strings.TrimSpace(options.IssueID) == "" {
 		return AcceptanceCriteriaList{}, fmt.Errorf("list acceptance criteria: issue id is required")
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return AcceptanceCriteriaList{}, err
 	}
 

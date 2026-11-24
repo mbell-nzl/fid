@@ -30,7 +30,7 @@ func TestLeanEmptyCheckReplayAndImportRejectCoherentForgeries(t *testing.T) {
 			for _, mode := range []string{"replay", "import"} {
 				t.Run(mode, func(t *testing.T) {
 					t.Parallel()
-					validator, err := newSemanticValidator(testMigrationsDir(t), 25)
+					validator, err := newSemanticValidator(testMigrationsFS(t), 25)
 					if err != nil {
 						t.Fatal(err)
 					}

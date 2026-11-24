@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/next"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestStatusReadyTransitionBetweenReads(t *testing.T) {
@@ -25,7 +26,7 @@ func TestStatusReadyTransitionBetweenReads(t *testing.T) {
 			result, err := build(options, func() {
 				var err error
 				if state == "in_progress" {
-					work := holdwork.Options{WorkspaceRoot: other, MigrationsDir: options.MigrationsDir, TaskID: tasks[0].ID, Actor: "human:mark", Reason: "Snapshot start", IdempotencyKey: "snapshot-takeover"}
+					work := holdwork.Options{WorkspaceRoot: other, MigrationsFS: options.MigrationsFS, TaskID: tasks[0].ID, Actor: "human:mark", Reason: "Snapshot start", IdempotencyKey: "snapshot-takeover"}
 					taken, takeErr := holdwork.Takeover(work)
 					err = takeErr
 					if err == nil {
@@ -34,7 +35,7 @@ func TestStatusReadyTransitionBetweenReads(t *testing.T) {
 						_, err = holdwork.Start(work)
 					}
 				} else {
-					_, err = issues.Transition(issues.TransitionOptions{WorkspaceRoot: other, MigrationsDir: options.MigrationsDir, ID: tasks[0].ID, ToState: state, Reason: "Snapshot transition", Actor: "human:mark", IdempotencyKey: "transition-during-status"})
+					_, err = issues.Transition(issues.TransitionOptions{WorkspaceRoot: other, MigrationsFS: options.MigrationsFS, ID: tasks[0].ID, ToState: state, Reason: "Snapshot transition", Actor: "human:mark", IdempotencyKey: "transition-during-status"})
 				}
 
 				if err != nil {
@@ -73,16 +74,13 @@ func TestStatusReadyTransitionBetweenReads(t *testing.T) {
 func snapshotWorkspace(t *testing.T) (Options, []issues.CreateResult) {
 	t.Helper()
 	root := gittest.NewWorkspace(t)
-	migrations, err := filepath.Abs(filepath.Join("..", "..", "migrations"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: root, MigrationsDir: migrations}); err != nil {
+	migrations := fidmigrations.FS
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: root, MigrationsFS: migrations}); err != nil {
 		t.Fatal(err)
 	}
 	tasks := []issues.CreateResult{}
 	for priority, title := range []string{"First task", "Second task"} {
-		created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: migrations, Kind: "task",
+		created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: migrations, Kind: "task",
 			Title: title, Priority: &priority, Lane: snapshotLane(), Actor: "human:mark", IdempotencyKey: title})
 		if err != nil {
 			t.Fatal(err)
@@ -100,7 +98,7 @@ func snapshotWorkspace(t *testing.T) (Options, []issues.CreateResult) {
 	if err := conn.QueryRow("PRAGMA journal_mode=WAL").Scan(&mode); err != nil || mode != "wal" {
 		t.Fatalf("enable WAL: mode %q, error %v", mode, err)
 	}
-	return Options{WorkspaceRoot: root, MigrationsDir: migrations, Now: time.Now(),
+	return Options{WorkspaceRoot: root, MigrationsFS: migrations, Now: time.Now(),
 		Environment: []string{"HOME=" + t.TempDir(), "XDG_CONFIG_HOME=" + t.TempDir()}}, tasks
 }
 
@@ -127,19 +125,19 @@ func snapshotLane() *string { lane := "standard"; return &lane }
 func TestEpicNeedsYouUsesStatusSnapshot(t *testing.T) {
 	t.Parallel()
 	options, _ := snapshotWorkspace(t)
-	epic, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "epic", Title: "All tasks finished", Scheduling: "prioritised", Actor: "human:mark", IdempotencyKey: "epic"})
+	epic, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, Kind: "epic", Title: "All tasks finished", Scheduling: "prioritised", Actor: "human:mark", IdempotencyKey: "epic"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	child, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "task", Title: "Cancelled", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "child"})
+	child, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, Kind: "task", Title: "Cancelled", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "child"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, ID: child.ID, ToState: "cancelled", Actor: "human:mark", Reason: "Not needed"}); err != nil {
+	if _, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, ID: child.ID, ToState: "cancelled", Actor: "human:mark", Reason: "Not needed"}); err != nil {
 		t.Fatal(err)
 	}
 	result, err := build(options, func() {
-		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Kind: "task", Title: "New open task", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "new-child"}); err != nil {
+		if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, Kind: "task", Title: "New open task", ParentID: &epic.ID, Actor: "human:mark", IdempotencyKey: "new-child"}); err != nil {
 			t.Fatal(err)
 		}
 	})

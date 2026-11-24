@@ -1,15 +1,16 @@
 package sqlquery
 
 import (
+	"io/fs"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestClassifyAllowsReadStatements(t *testing.T) {
@@ -80,7 +81,7 @@ func TestRunReturnsStructuredRows(t *testing.T) {
 
 	result, err := Run(Options{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testSQLQueryMigrationsDir(t),
+		MigrationsFS:  testSQLQueryMigrationsFS(t),
 		Query:         "SELECT id, active, applies_to FROM workflows ORDER BY id LIMIT 2",
 	})
 	if err != nil {
@@ -125,20 +126,14 @@ func newSQLQueryWorkspace(t *testing.T) string {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testSQLQueryMigrationsDir(t),
+		MigrationsFS:  testSQLQueryMigrationsFS(t),
 	}); err != nil {
 		t.Fatalf("InitializeWorkspace() error = %v", err)
 	}
 	return workspace
 }
 
-func testSQLQueryMigrationsDir(t *testing.T) string {
+func testSQLQueryMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }

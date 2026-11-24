@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,7 @@ func newReworkCommand() *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, operation, err)
 		}
-		result, err := holdwork.AllowRework(holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, Reason: reason, Rounds: rounds, Clock: commandDisplayEnvironment(cmd).now})
+		result, err := holdwork.AllowRework(holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: args[0], Actor: actor, Reason: reason, Rounds: rounds, Clock: commandDisplayEnvironment(cmd).now})
 		if err != nil {
 			return renderHoldFailure(cmd, operation, err)
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestReviewAdmissionUsesFrozenLaneAfterRaise(t *testing.T) {
@@ -27,7 +28,7 @@ func TestReviewAdmissionUsesFrozenLaneAfterRaise(t *testing.T) {
 			// Exercise admission both before and after rebuilding canonical Events.
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}

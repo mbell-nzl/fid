@@ -332,10 +332,10 @@ func (w admissionWorkspace) replayStored(t *testing.T, mode string) error {
 		_, err := ReplayJournal(conn, w.journal, &ReplayOptions{StartFile: filepath.Base(w.file), StartOffset: int64(len(w.prefix))})
 		return err
 	case "freshen":
-		_, err := EnsureProjectionFresh(w.root, testProjectMigrationsDir(t))
+		_, err := EnsureProjectionFresh(w.root, testProjectMigrationsFS(t))
 		return err
 	case "rebuild":
-		_, err := RebuildWorkspace(w.root, testProjectMigrationsDir(t))
+		_, err := RebuildWorkspace(w.root, testProjectMigrationsFS(t))
 		return err
 	}
 	t.Fatalf("unknown admission mode %q", mode)

@@ -187,7 +187,7 @@ func TestImportRefusesArchiveWithForgedStateMove(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
-		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Before the backup", Actor: "human:mark", IdempotencyKey: "task"})
+		task, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Before the backup", Actor: "human:mark", IdempotencyKey: "task"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -230,19 +230,19 @@ func TestImportRefusesArchiveWithForgedStateMove(t *testing.T) {
 	archive := filepath.Join(t.TempDir(), "forged.zip")
 	writeTestArchive(t, archive, entries)
 
-	_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+	_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 	assertStateMoveCheck(t, err, last.Aggregate.ID)
 	target := gittest.NewWorkspace(t)
 	before := workspaceTreeDigest(t, target)
-	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "forged"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "forged"})
 	assertStateMoveCheck(t, err, last.Aggregate.ID)
 	if workspaceTreeDigest(t, target) != before {
 		t.Fatal("refused import changed the target")
 	}
-	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "unforged"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "unforged"}); err != nil {
 		t.Fatalf("import of the unforged archive = %v", err)
 	}
-	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After the restore", Actor: "human:mark", IdempotencyKey: "after"}); err != nil {
+	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "After the restore", Actor: "human:mark", IdempotencyKey: "after"}); err != nil {
 		t.Fatalf("write after the restore = %v", err)
 	}
 }

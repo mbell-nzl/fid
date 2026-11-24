@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func newStartCommand() *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, "task.start", err)
 		}
-		result, err := holdwork.Start(holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
+		result, err := holdwork.Start(holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, HoldID: hold, Actor: actor, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
 		if err != nil {
 			return renderHoldFailure(cmd, "task.start", err)
 		}

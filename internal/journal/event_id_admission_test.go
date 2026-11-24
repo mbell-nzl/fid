@@ -116,7 +116,7 @@ func assertAllocatedWritesFollow(t *testing.T, w admissionWorkspace, at time.Tim
 			t.Fatalf("write with an allocated ID = %q, %v; want %s", committed.EventID, err, id)
 		}
 	}
-	if _, err := RebuildWorkspace(w.root, testProjectMigrationsDir(t)); err != nil {
+	if _, err := RebuildWorkspace(w.root, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("rebuild after the allocated writes: %v", err)
 	}
 }

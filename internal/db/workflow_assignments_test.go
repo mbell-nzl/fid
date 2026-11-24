@@ -15,7 +15,7 @@ import (
 func TestMigrations0009And0010RoundTripWithoutResidue(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 
 	if err := migrator.Migrate(8); err != nil && err != migrate.ErrNoChange {

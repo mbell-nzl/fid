@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/checkrun"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestShowWaivedCompletionKeepsCheckBeforeDone(t *testing.T) {
@@ -31,7 +32,7 @@ func TestShowWaivedCompletionKeepsCheckBeforeDone(t *testing.T) {
 			// This check starts before done and finishes after. Its caller clock will be
 			// equal to completion, or advance to another journal file: neither its
 			// start order nor its timestamps may decide the historical result.
-			options := checkrun.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: "human:builder", IdempotencyKey: "pending-lower", Names: []string{"lower"}, Clock: func() time.Time { return stamp }, Version: "test"}
+			options := checkrun.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, HoldID: hold, Actor: "human:builder", IdempotencyKey: "pending-lower", Names: []string{"lower"}, Clock: func() time.Time { return stamp }, Version: "test"}
 			options.Before = func(string) error {
 				lifecycleResult(t, f.run(append([]string{"--json"}, doneHandoffArgs(hold)...)...), "task.handoff")
 				waiveSuccess(t, waiveForTest(f, task, task+"\n", true, "--lane", "standard"))
@@ -61,7 +62,7 @@ func TestShowWaivedCompletionKeepsCheckBeforeDone(t *testing.T) {
 			}
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -105,7 +106,7 @@ func TestShowWaivedCompletionRequiresCanonicalBoundary(t *testing.T) {
 			t.Fatalf("missing completion boundary accepted: %#v", out)
 		}
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	lifecycleResult(t, f.run("--json", "show", task), "issue.show")

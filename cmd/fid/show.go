@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/show"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ func newShowCommand() *cobra.Command {
 				return renderShowFailure(cmd, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			result, err := show.Build(show.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), ID: args[0], Now: environment.now()})
+			result, err := show.Build(show.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, ID: args[0], Now: environment.now()})
 			if err != nil {
 				return renderShowFailure(cmd, err)
 			}

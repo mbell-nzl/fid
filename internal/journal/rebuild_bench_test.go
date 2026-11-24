@@ -1,14 +1,15 @@
 package journal
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func BenchmarkRebuildWorkspace1kEvents(b *testing.B) {
@@ -31,7 +32,7 @@ func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
 	}
 
 	seed := seedScaleReplayWorkspace(b, workspace, targetEvents)
-	migrationsDir := testProjectMigrationsDirTB(b)
+	migrationsFS := testProjectMigrationsFSTB(b)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -39,7 +40,7 @@ func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
 	var total time.Duration
 	for iteration := 0; iteration < b.N; iteration++ {
 		start := time.Now()
-		stats, err := RebuildWorkspace(workspace, migrationsDir)
+		stats, err := RebuildWorkspace(workspace, migrationsFS)
 		total += time.Since(start)
 		if err != nil {
 			b.Fatalf("RebuildWorkspace() error = %v", err)
@@ -70,13 +71,7 @@ func rebuildTarget(eventCount int) (time.Duration, bool) {
 	}
 }
 
-func testProjectMigrationsDirTB(tb testing.TB) string {
+func testProjectMigrationsFSTB(tb testing.TB) fs.FS {
 	tb.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		tb.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }

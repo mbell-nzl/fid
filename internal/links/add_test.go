@@ -3,9 +3,9 @@ package links
 import (
 	"database/sql"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -14,6 +14,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestRelationInverseMapMatchesIssueOnlySet(t *testing.T) {
@@ -66,7 +67,7 @@ func TestAddSupportsInverseDeclaredRelationAndRejectsRequirementEndpoints(t *tes
 
 		result, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testLinksMigrationsDir(t),
+			MigrationsFS:  testLinksMigrationsFS(t),
 			FromID:        secondIssueID,
 			Relation:      "blocked_by",
 			ToID:          firstIssueID,
@@ -100,7 +101,7 @@ func TestAddSupportsInverseDeclaredRelationAndRejectsRequirementEndpoints(t *tes
 		before := countLinksJournalEvents(t, workspace)
 		_, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testLinksMigrationsDir(t),
+			MigrationsFS:  testLinksMigrationsFS(t),
 			FromID:        issueID,
 			Relation:      "implements",
 			ToType:        "requirement",
@@ -128,7 +129,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				secondIssueID := createLinksIssue(t, workspace, "Second issue")
 				if _, err := Add(AddOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testLinksMigrationsDir(t),
+					MigrationsFS:  testLinksMigrationsFS(t),
 					FromID:        firstIssueID,
 					Relation:      "blocks",
 					ToID:          secondIssueID,
@@ -138,7 +139,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				}
 				return AddOptions{
 						WorkspaceRoot: workspace,
-						MigrationsDir: testLinksMigrationsDir(t),
+						MigrationsFS:  testLinksMigrationsFS(t),
 						FromID:        firstIssueID,
 						Relation:      "blocks",
 						ToID:          secondIssueID,
@@ -159,7 +160,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				secondIssueID := createLinksIssue(t, workspace, "Second issue")
 				return AddOptions{
 						WorkspaceRoot: workspace,
-						MigrationsDir: testLinksMigrationsDir(t),
+						MigrationsFS:  testLinksMigrationsFS(t),
 						FromID:        firstIssueID,
 						Relation:      "parent_of",
 						ToID:          secondIssueID,
@@ -179,7 +180,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				issueID := createLinksIssue(t, workspace, "Self issue")
 				return AddOptions{
 						WorkspaceRoot: workspace,
-						MigrationsDir: testLinksMigrationsDir(t),
+						MigrationsFS:  testLinksMigrationsFS(t),
 						FromID:        issueID,
 						Relation:      "relates_to",
 						ToID:          issueID,
@@ -200,7 +201,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				secondIssueID := createLinksIssue(t, workspace, "Second issue")
 				return AddOptions{
 						WorkspaceRoot: workspace,
-						MigrationsDir: testLinksMigrationsDir(t),
+						MigrationsFS:  testLinksMigrationsFS(t),
 						FromID:        firstIssueID,
 						Relation:      "implements",
 						ToID:          secondIssueID,
@@ -220,7 +221,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				issueID := createLinksIssue(t, workspace, "Implements issue")
 				return AddOptions{
 						WorkspaceRoot: workspace,
-						MigrationsDir: testLinksMigrationsDir(t),
+						MigrationsFS:  testLinksMigrationsFS(t),
 						FromType:      "issue",
 						FromID:        issueID,
 						Relation:      "implements",
@@ -263,21 +264,16 @@ func newLinksWorkspace(t *testing.T) string {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 	}); err != nil {
 		t.Fatalf("InitializeWorkspace() error = %v", err)
 	}
 	return workspace
 }
 
-func testLinksMigrationsDir(t *testing.T) string {
+func testLinksMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func createLinksIssue(t *testing.T, workspace, title string) string {
@@ -285,7 +281,7 @@ func createLinksIssue(t *testing.T, workspace, title string) string {
 
 	result, err := issues.Create(issues.CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		Kind:          "task",
 		Title:         title,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),

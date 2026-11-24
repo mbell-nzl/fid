@@ -17,7 +17,7 @@ import (
 func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -30,7 +30,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 	if err := os.WriteFile(keep, []byte("preserve this source file\n"), 0o644); err != nil {
 		t.Fatalf("write target source file: %v", err)
 	}
-	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "same-install"})
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "same-install"})
 	if err != nil {
 		t.Fatalf("Import() error = %v", err)
 	}
@@ -45,18 +45,18 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 		t.Fatalf("target source file changed during import: %q, %v", data, err)
 	}
 	assertImportedJournalEquals(t, source, target)
-	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After import", Actor: "human:mark", IdempotencyKey: "post-import-task"}); err != nil {
+	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "After import", Actor: "human:mark", IdempotencyKey: "post-import-task"}); err != nil {
 		t.Fatal(err)
 	}
 	before := workspaceTreeDigest(t, target)
-	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "same-install"})
+	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "same-install"})
 	if err != nil || !replayed.Replayed || replayed.ProjectID != result.ProjectID {
 		t.Fatalf("same import replay = %#v, %v", replayed, err)
 	}
 	if after := workspaceTreeDigest(t, target); after != before {
 		t.Fatal("same import replay changed installed facts")
 	}
-	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "other-install"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "other-install"})
 	var conflict *ImportTargetConflictError
 	if !errors.As(err, &conflict) || conflict.Reason != "different-import" {
 		t.Fatalf("different import error = %#v, want different-import conflict", err)
@@ -66,7 +66,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -82,7 +82,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 	if err := os.WriteFile(marker, []byte("unchanged"), 0o600); err != nil {
 		t.Fatalf("write populated target marker: %v", err)
 	}
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: populated, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "conflict"})
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: populated, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "conflict"})
 	var conflict *ImportTargetConflictError
 	if !errors.As(err, &conflict) || conflict.Reason != "populated" {
 		t.Fatalf("populated import error = %#v, want populated conflict", err)
@@ -95,7 +95,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 	if err := os.Symlink(root, unsafe); err != nil {
 		t.Fatalf("create target symlink: %v", err)
 	}
-	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: unsafe, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "unsafe"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: unsafe, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "unsafe"})
 	if !errors.As(err, &conflict) || conflict.Reason != "unsafe-path" {
 		t.Fatalf("unsafe import error = %#v, want unsafe-path conflict", err)
 	}
@@ -104,7 +104,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -113,7 +113,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 		t.Fatalf("create archive: %v", err)
 	}
 	target := gittest.NewWorkspace(t)
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "lost-response", Fault: func(stage ImportStage) error {
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "lost-response", Fault: func(stage ImportStage) error {
 		if stage == ImportAfterPublication {
 			return ErrImportFault
 		}
@@ -122,7 +122,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	if !errors.Is(err, ErrImportFault) {
 		t.Fatalf("post-publication import error = %v, want injected response-loss fault", err)
 	}
-	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "lost-response"})
+	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "lost-response"})
 	if err != nil || !replayed.Replayed {
 		t.Fatalf("response-loss replay = %#v, %v", replayed, err)
 	}
@@ -131,7 +131,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -147,7 +147,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 	if err := os.WriteFile(filepath.Join(target, ".fid-import.lock"), []byte("stale after process exit"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "snapshot", Fault: func(stage ImportStage) error {
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "snapshot", Fault: func(stage ImportStage) error {
 		if stage == ImportAfterValidation {
 			return os.WriteFile(archive, []byte("pathname replaced after snapshot"), 0o600)
 		}
@@ -169,7 +169,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 	if err := os.WriteFile(archive, archiveBytes, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "snapshot"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "snapshot"})
 	var conflict *ImportTargetConflictError
 	if !errors.As(err, &conflict) || conflict.Reason != "populated" {
 		t.Fatalf("tampered installed marker error = %#v, want populated conflict", err)

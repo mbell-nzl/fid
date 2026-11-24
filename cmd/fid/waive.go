@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/waiverrecord"
 	"github.com/mbell-nzl/fid/internal/waiverwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,7 @@ func newWaiveCommandWithTerminal(terminal func(any) bool) *cobra.Command {
 		if !terminal(cmd.InOrStdin()) || !terminal(cmd.ErrOrStderr()) {
 			return waiveFailure(cmd, fmt.Errorf("standard input and standard error must be terminals"))
 		}
-		result, err := waiverwork.Record(waiverwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, Reason: reason, Lane: lane, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Confirm: func(p waiverwork.Preview) (bool, error) {
+		result, err := waiverwork.Record(waiverwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: args[0], Actor: actor, Reason: reason, Lane: lane, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Confirm: func(p waiverwork.Preview) (bool, error) {
 			if err := waiverwork.WritePrompt(cmd.ErrOrStderr(), p); err != nil {
 				return false, err
 			}

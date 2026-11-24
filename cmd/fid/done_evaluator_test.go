@@ -14,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergework"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 // All evaluator evidence is journal-backed: no SQL seeds, even for work holds.
@@ -59,7 +60,7 @@ func doneRemoteFixture(t *testing.T, f *statusFixture, task string) (doneeval.Ta
 	}
 	now := time.Now().UTC()
 	pr := github.PullRequest{Number: 63, URL: "https://github.com/mbell-nzl/fid/pull/63", State: "MERGED", Merged: true, MergedAt: &now, MergeCommit: strings.Repeat("a", 40), HeadSHA: h.Head, BaseRef: "trunk", BaseRepository: github.Repository{Owner: "mbell-nzl", Name: "fid"}, Body: "## Rollback\nRevert the change."}
-	options := mergework.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), TaskID: task, Actor: "human:observer", Clock: time.Now}
+	options := mergework.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, TaskID: task, Actor: "human:observer", Clock: time.Now}
 	m, err := mergework.RecordMerge(options, h.ID, pr, h.Tree)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +125,7 @@ func TestDoneGatherLaneMatrixAndReplay(t *testing.T) {
 			if snapshot.Handoff.PR != "https://github.com/MBELL-NZL/FID/pull/63" || snapshot.Merge.PR != remote.PR.URL {
 				t.Fatalf("PR casing fixture changed: hand-off=%s merge=%s", snapshot.Handoff.PR, snapshot.Merge.PR)
 			}
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 			replay := gatherDone(t, f, task, target, remote)

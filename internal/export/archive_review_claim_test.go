@@ -16,7 +16,7 @@ import (
 func reviewClaimArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, _ := reviewArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 36); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 36); err != nil {
 		t.Fatal(err)
 	}
 	var err error

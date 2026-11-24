@@ -63,9 +63,9 @@ func TestRemovedFamiliesArchiveRefusalWithoutMutation(t *testing.T) {
 					for _, operation := range []string{"validate", "import"} {
 						var err error
 						if operation == "validate" {
-							_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+							_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 						} else {
-							_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "removed"})
+							_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "removed"})
 						}
 						var invalid *InvalidArchiveError
 						if !errors.As(err, &invalid) || len(invalid.Checks) != 1 || invalid.Checks[0].Code != "schema-unsupported" || invalid.Checks[0].Entry == nil || *invalid.Checks[0].Entry != path || !strings.Contains(invalid.Checks[0].Detail, family) {
@@ -148,9 +148,9 @@ func TestRetiredTableAliasesRefusedByArchivesWithoutMutation(t *testing.T) {
 				for _, operation := range []string{"validate", "import"} {
 					var err error
 					if operation == "validate" {
-						_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+						_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 					} else {
-						_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "retired-table"})
+						_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "retired-table"})
 					}
 					assertArchiveCheck(t, err, "schema-unsupported")
 					var invalid *InvalidArchiveError

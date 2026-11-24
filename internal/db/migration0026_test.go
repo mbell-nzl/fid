@@ -7,7 +7,7 @@ import (
 
 func TestMigration0026PreservesHistoryAndReviewReservation(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(25); err != nil {
 		t.Fatal(err)

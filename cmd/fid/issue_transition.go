@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mbell-nzl/fid/internal/issues"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,7 @@ func newIssueTransitionCommand() *cobra.Command {
 
 			result, err := issues.Transition(issues.TransitionOptions{
 				WorkspaceRoot:    workspaceRoot,
-				MigrationsDir:    issueMigrationsDir(),
+				MigrationsFS:     fidmigrations.FS,
 				ID:               args[0],
 				ToState:          toState,
 				Reason:           reason,

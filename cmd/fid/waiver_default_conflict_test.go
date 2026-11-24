@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestWaivedDefaultConflictSelection(t *testing.T) {
@@ -42,7 +43,7 @@ func TestWaivedDefaultConflictSelection(t *testing.T) {
 				if got["kind"] != wantWork {
 					t.Fatalf("waived %s work=%v, want %s", lane, got, wantWork)
 				}
-				if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+				if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 					t.Fatalf("waiver and default-conflict replay: %v", err)
 				}
 			})

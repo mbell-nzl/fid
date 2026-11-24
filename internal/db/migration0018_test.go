@@ -11,7 +11,7 @@ import (
 
 func TestMigration0018DeletesOnlyLegacyNonIssueReferences(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(17); err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestMigration0018DeletesOnlyLegacyNonIssueReferences(t *testing.T) {
 
 func TestMigration0018CurrentReferenceGuards(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(18); err != nil {
 		t.Fatal(err)
@@ -108,7 +108,7 @@ func TestMigration0018CurrentReferenceGuards(t *testing.T) {
 
 func TestMigration0018IssuesEnrichedColumnsAndSubjectCount(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(17); err != nil {
 		t.Fatal(err)
@@ -162,7 +162,7 @@ func migration0018ColumnNames(t *testing.T, conn *sql.DB, table string) []string
 
 func TestLatestSchemaHasNoV1JudgmentTables(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(ActiveMigrationVersion); err != nil {
 		t.Fatalf("migrate latest: %v", err)
@@ -221,7 +221,7 @@ func migration0018HasColumn(t *testing.T, conn *sql.DB, table, column string) bo
 
 func TestMigration0018DownRestoresEmptyV1Tables(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(18); err != nil {
 		t.Fatalf("migrate 18: %v", err)
@@ -238,7 +238,7 @@ func TestMigration0018DownRestoresEmptyV1Tables(t *testing.T) {
 
 func TestMigration0018DownMatchesFreshSchema17(t *testing.T) {
 	t.Parallel()
-	dir := testMigrationsDir(t)
+	dir := testMigrationsFS(t)
 	fresh, freshDB := newTestMigrator(t, filepath.Join(t.TempDir(), "fresh.sqlite"), dir)
 	defer closeMigrator(t, fresh, freshDB)
 	if err := fresh.Migrate(17); err != nil {
@@ -297,7 +297,7 @@ func migration0018SchemaObjects(t *testing.T, conn *sql.DB) map[string]string {
 func TestMigration0018DownPreservesAgentRunAndFullRollback(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, path, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, path, testMigrationsFS(t))
 	if err := migrator.Migrate(18); err != nil {
 		t.Fatal(err)
 	}
@@ -316,14 +316,14 @@ func TestMigration0018DownPreservesAgentRunAndFullRollback(t *testing.T) {
 		t.Errorf("restored run = %q %q %v", role, model, completion)
 	}
 	closeMigrator(t, migrator, conn)
-	if err := MigrateDown(path, testMigrationsDir(t)); err != nil {
+	if err := MigrateDown(path, testMigrationsFS(t)); err != nil {
 		t.Fatalf("full rollback: %v", err)
 	}
 }
 
 func TestMigration0018RoundTripIntegrity(t *testing.T) {
 	t.Parallel()
-	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	for _, version := range []uint{17, 18, 17, 18} {
 		if err := migrator.Migrate(version); err != nil {

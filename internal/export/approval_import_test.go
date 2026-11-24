@@ -20,15 +20,15 @@ import (
 func addApprovalExportFacts(t *testing.T, root string) string {
 	t.Helper()
 	task := addReviewExportFacts(t, root)
-	taken, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "human:mark", Reason: "Continue the fix"})
+	taken, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "human:mark", Reason: "Continue the fix"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: taken.Fields["hold_id"].(string), Actor: "human:mark", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "approval-handoff"})
+	_, err = holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: taken.Fields["hold_id"].(string), Actor: "human:mark", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "approval-handoff"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = approvalwork.Record(approvalwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "human:mark", Reason: "Reviewed all changes", IdempotencyKey: "approval", Confirm: func(approvalwork.Preview) (bool, error) { return true, nil }})
+	_, err = approvalwork.Record(approvalwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "human:mark", Reason: "Reviewed all changes", IdempotencyKey: "approval", Confirm: func(approvalwork.Preview) (bool, error) { return true, nil }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,14 +60,14 @@ func TestApprovalExportImportRebuildAndRefusals(t *testing.T) {
 	if len(before) != 1 {
 		t.Fatal(before)
 	}
-	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(before, approvalExportSnapshot(t, f.workspace)) {
 		t.Fatal("rebuild changed approvals")
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "approval-import"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "approval-import"}); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(before, approvalExportSnapshot(t, target)) {
@@ -105,7 +105,7 @@ func TestApprovalExportImportRebuildAndRefusals(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			refused := gittest.NewWorkspace(t)
 			state := workspaceTreeDigest(t, refused)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: refused, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "refused"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: refused, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "refused"})
 			assertArchiveCheck(t, err, "reference-invalid")
 			if !reflect.DeepEqual(state, workspaceTreeDigest(t, refused)) {
 				t.Fatal("refused import changed target")

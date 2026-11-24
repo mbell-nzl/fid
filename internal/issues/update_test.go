@@ -18,7 +18,7 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Implement update command",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -32,7 +32,7 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 
 	before, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 
 	_, err = Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		Title:    stringPointer("Implement issue update"),
@@ -53,7 +53,7 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 
 	after, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -83,7 +83,7 @@ func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Record revision",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -94,7 +94,7 @@ func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
 
 	if _, err := Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		Title: stringPointer("Record updated revision"),
@@ -179,7 +179,7 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 
 			created, err := Create(CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "task",
 				Title:         "Reject invalid update",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -192,7 +192,7 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 
 			before, err := Get(GetOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				ID:            created.ID,
 			})
 			if err != nil {
@@ -204,7 +204,7 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 
 			options := tt.mutate(created.ID)
 			options.WorkspaceRoot = workspace
-			options.MigrationsDir = testIssueMigrationsDir(t)
+			options.MigrationsFS = testIssueMigrationsFS(t)
 
 			_, err = Update(options)
 			if err == nil {
@@ -216,7 +216,7 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 
 			after, err := Get(GetOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				ID:            created.ID,
 			})
 			if err != nil {
@@ -239,7 +239,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Initial update target",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -253,7 +253,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 
 	before, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -265,7 +265,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	labels := []string{"api", "core"}
 	result, err := Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		Title:      stringPointer("Updated issue target"),
@@ -279,7 +279,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 
 	after, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -407,13 +407,13 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsFS(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
 	rebuilt, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -438,7 +438,7 @@ func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "No-op target",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -452,7 +452,7 @@ func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {
 
 	_, err = Update(UpdateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		Title: stringPointer("No-op target"),

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,9 +20,11 @@ import (
 )
 
 type Options struct {
-	WorkspaceRoot, MigrationsDir, TaskID, Actor, Reason, Lane, IdempotencyKey string
-	Clock                                                                     func() time.Time
-	Confirm                                                                   func(Preview) (bool, error)
+	WorkspaceRoot                               string
+	MigrationsFS                                fs.FS
+	TaskID, Actor, Reason, Lane, IdempotencyKey string
+	Clock                                       func() time.Time
+	Confirm                                     func(Preview) (bool, error)
 }
 
 type Cancelled struct{}
@@ -37,7 +40,7 @@ func Record(o Options) (waiverrecord.Result, error) {
 	}
 	var result waiverrecord.Result
 	err := journal.WithLock(o.WorkspaceRoot, journal.LockOwner{Command: "fid waive"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := reviewwork.OpenProjection(o.WorkspaceRoot)

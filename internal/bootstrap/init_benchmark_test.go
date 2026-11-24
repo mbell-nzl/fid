@@ -2,12 +2,12 @@ package bootstrap
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func BenchmarkInitializeWorkspace(b *testing.B) {
@@ -40,7 +40,7 @@ func BenchmarkInitializeWorkspace(b *testing.B) {
 		b.StartTimer()
 		result, err := initializeWorkspaceWithHooks(InitOptions{
 			WorkspaceRoot: workspaceRoot,
-			MigrationsDir: filepath.Clean(filepath.Join("..", "..", "migrations")),
+			MigrationsFS:  fidmigrations.FS,
 			Prefix:        "FID",
 		}, initHooks{before: func(stage initStage) error {
 			now := time.Now()

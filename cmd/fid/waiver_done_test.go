@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestDoneUsesCurrentWaiverAndReplaysCompletion(t *testing.T) {
@@ -21,7 +22,7 @@ func TestDoneUsesCurrentWaiverAndReplaysCompletion(t *testing.T) {
 	assertJSONFailureCode(t, refused.stderr, "task.done", "done-separate-review-required")
 	waiveSuccess(t, waiveForTest(f, task, task+"\n", true, "--lane", "standard"))
 	lifecycleResult(t, runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher"), "task.done")
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 	fields, _ := lifecycleResult(t, f.run("--json", "show", task), "issue.show")
@@ -46,7 +47,7 @@ func TestDoneWaiverSkipsChecksAndArtifactsNotRequiredByNewLane(t *testing.T) {
 	facts := doneFacts(t, f, task)
 	facts.PR.Body = ""
 	lifecycleResult(t, runDone(t, f, doneRunner(t, facts, nil), "--json", "done", task, "--actor", "agent:finisher"), "task.done")
-	if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 		t.Fatal(err)
 	}
 }

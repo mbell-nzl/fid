@@ -1,12 +1,15 @@
 package labels
 
-import "fmt"
+import (
+	"fmt"
+	"io/fs"
+)
 
 const ReadCollectionLimit = 10000
 
 type AddOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	Name           string
 	Colour         *string
 	Description    *string
@@ -24,7 +27,7 @@ type AddResult struct {
 
 type ListOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 }
 
 type Label struct {

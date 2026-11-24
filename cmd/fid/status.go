@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/status"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ func newStatusCommand() *cobra.Command {
 				return renderStatusFailure(cmd, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			result, err := status.Build(status.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(),
+			result, err := status.Build(status.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS,
 				Environment: environment.environ, Now: environment.now()})
 			if err != nil {
 				return renderStatusFailure(cmd, err)

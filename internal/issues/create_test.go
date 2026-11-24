@@ -197,6 +197,6 @@ func mustCreateHierarchyIssue(t *testing.T, workspace string, options CreateOpti
 func withHierarchyWorkspace(t *testing.T, workspace string, options CreateOptions) CreateOptions {
 	t.Helper()
 	options.WorkspaceRoot = workspace
-	options.MigrationsDir = testIssueMigrationsDir(t)
+	options.MigrationsFS = testIssueMigrationsFS(t)
 	return options
 }

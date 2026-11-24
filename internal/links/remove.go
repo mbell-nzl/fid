@@ -17,7 +17,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return RemoveResult{}, fmt.Errorf("link remove: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return RemoveResult{}, fmt.Errorf("link remove: migrations dir is required")
 	}
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
@@ -51,7 +51,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 

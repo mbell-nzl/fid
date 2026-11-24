@@ -29,12 +29,12 @@ func openIssueRead(options GetOptions, operation string) (*sql.DB, *issuestate.R
 	switch {
 	case strings.TrimSpace(options.WorkspaceRoot) == "":
 		return nil, nil, fmt.Errorf("%s: workspace root is required", operation)
-	case strings.TrimSpace(options.MigrationsDir) == "":
+	case options.MigrationsFS == nil:
 		return nil, nil, fmt.Errorf("%s: migrations dir is required", operation)
 	case strings.TrimSpace(options.ID) == "":
 		return nil, nil, fmt.Errorf("%s: issue id is required", operation)
 	}
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return nil, nil, err
 	}
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

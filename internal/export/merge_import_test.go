@@ -47,7 +47,7 @@ func addMergeExportFacts(t *testing.T, root string) string {
 	if err := conn.Close(); err != nil {
 		t.Fatal(err)
 	}
-	result, err := holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: hold, Actor: "human:mark", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "merge-handoff"})
+	result, err := holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), HoldID: hold, Actor: "human:mark", PR: "https://github.com/owner/repo/pull/63", IdempotencyKey: "merge-handoff"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func addMergeExportFacts(t *testing.T, root string) string {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC().Truncate(time.Second)
-	options := mergework.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), TaskID: task, Actor: "agent:observer"}
+	options := mergework.Options{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), TaskID: task, Actor: "agent:observer"}
 	repo := github.Repository{Owner: "owner", Name: "repo"}
 	pr := github.PullRequest{Number: 63, URL: handoff.PR, State: "MERGED", Merged: true, MergedAt: &now, MergeCommit: strings.Repeat("a", 40), HeadSHA: handoff.Head, BaseRef: "trunk", BaseRepository: repo}
 	m, err := mergework.RecordMerge(options, handoff.ID, pr, handoff.Tree)
@@ -123,14 +123,14 @@ func TestMergeCIExportImportAndRebuildPreserveEveryAttempt(t *testing.T) {
 	if !strings.Contains(before, `"conclusion":"success"`) || !strings.Contains(before, `"conclusion":"failure"`) || !strings.Contains(before, `"attempt":2`) {
 		t.Fatal("fixture lacks completed attempts")
 	}
-	if _, err := journal.RebuildWorkspace(fixture.workspace, testMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(fixture.workspace, testMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	if got := mergeExportSnapshot(t, fixture.workspace); got != before {
 		t.Fatal("rebuild changed observations")
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "merge-import"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "merge-import"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := mergeExportSnapshot(t, target); got != before {
@@ -172,7 +172,7 @@ func TestMergeCIImportRefusesMalformedBindingsWithoutPublication(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "refused"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "refused"})
 			assertArchiveCheck(t, err, "reference-invalid")
 			if !reflect.DeepEqual(before, workspaceTreeDigest(t, target)) {
 				t.Fatal("refused import changed target")

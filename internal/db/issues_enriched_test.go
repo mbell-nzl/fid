@@ -2,13 +2,14 @@ package db_test
 
 import (
 	"database/sql"
+	"io/fs"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestIssuesEnrichedReportsLatestTriageStatus(t *testing.T) {
@@ -109,7 +110,7 @@ func openIssuesEnrichedDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testIssuesEnrichedMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testIssuesEnrichedMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -189,15 +190,9 @@ func stringPointer(value string) *string {
 	return &value
 }
 
-func testIssuesEnrichedMigrationsDir(t *testing.T) string {
+func testIssuesEnrichedMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeIssuesEnrichedDB(t *testing.T, conn *sql.DB) {

@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"path/filepath"
+	"io/fs"
 	"reflect"
-	"runtime"
 	"sync"
 	"testing"
+
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestOpenEnablesRequiredPragmas(t *testing.T) {
@@ -122,7 +123,7 @@ func TestMigrateUpCreatesBaseSchema(t *testing.T) {
 
 	dbPath := t.TempDir() + "/fid.sqlite"
 
-	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
+	if err := MigrateUp(dbPath, testMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -144,13 +145,13 @@ func TestMigrateDownDropsMinimalSchema(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
-	migrationsDir := testMigrationsDir(t)
+	migrationsFS := testMigrationsFS(t)
 
-	if err := MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := MigrateUp(dbPath, migrationsFS); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
-	if err := MigrateDown(dbPath, migrationsDir); err != nil {
+	if err := MigrateDown(dbPath, migrationsFS); err != nil {
 		t.Fatalf("MigrateDown() error = %v", err)
 	}
 
@@ -169,15 +170,15 @@ func TestMigrateRoundTripRestoresBaseSchema(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
-	migrationsDir := testMigrationsDir(t)
+	migrationsFS := testMigrationsFS(t)
 
-	if err := MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := MigrateUp(dbPath, migrationsFS); err != nil {
 		t.Fatalf("initial MigrateUp() error = %v", err)
 	}
-	if err := MigrateDown(dbPath, migrationsDir); err != nil {
+	if err := MigrateDown(dbPath, migrationsFS); err != nil {
 		t.Fatalf("MigrateDown() error = %v", err)
 	}
-	if err := MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := MigrateUp(dbPath, migrationsFS); err != nil {
 		t.Fatalf("second MigrateUp() error = %v", err)
 	}
 
@@ -199,13 +200,13 @@ func TestMigrateUpIsIdempotentOnReopen(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
-	migrationsDir := testMigrationsDir(t)
+	migrationsFS := testMigrationsFS(t)
 
-	if err := MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := MigrateUp(dbPath, migrationsFS); err != nil {
 		t.Fatalf("first MigrateUp() error = %v", err)
 	}
 
-	if err := MigrateUp(dbPath, migrationsDir); err != nil {
+	if err := MigrateUp(dbPath, migrationsFS); err != nil {
 		t.Fatalf("second MigrateUp() error = %v", err)
 	}
 }
@@ -215,7 +216,7 @@ func TestIssuesForeignKeysAllowExistingWorkflowStatePairRegardlessOfKind(t *test
 
 	dbPath := t.TempDir() + "/fid.sqlite"
 
-	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
+	if err := MigrateUp(dbPath, testMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -323,15 +324,9 @@ func tableExists(t *testing.T, conn *sql.DB, tableName string) bool {
 	return count == 1
 }
 
-func testMigrationsDir(t *testing.T) string {
+func testMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeDB(t *testing.T, conn *sql.DB) {
