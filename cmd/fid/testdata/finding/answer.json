@@ -1,0 +1,20 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<TIME>"
+  },
+  "ok": true,
+  "operation": "finding.answer",
+  "result": {
+    "response": {
+      "id": "FRS-<new>",
+      "finding_id": "RND-<new>-1",
+      "handoff_id": "HOF-<new>",
+      "task_id": "FID-<new>",
+      "actor": "agent:builder",
+      "text": "Regression added in the next change",
+      "at": "<TIME>"
+    }
+  }
+}

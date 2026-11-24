@@ -321,7 +321,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"default_conflicts", "completions", "finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
+	for _, table := range []string{"default_conflicts", "review_posts", "completions", "finding_responses", "finding_closures", "review_rounds", "round_findings", "merge_observations", "ci_results", "handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)

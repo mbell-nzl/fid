@@ -104,8 +104,7 @@ func TestRetiredReviewInputRemainsRefused(t *testing.T) {
 	}
 }
 
-// RESET 1.6e restores only the person's close command. Retired finding
-// operations remain unavailable, in both human text and the JSON contract.
+// RESET 2.1c restores defer; the other retired operations remain unavailable.
 func TestRetiredFindingOperationsRemainRefused(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"address", "resolve", "record", "defer", "list", "show"} {
@@ -119,6 +118,14 @@ func TestRetiredFindingOperationsRemainRefused(t *testing.T) {
 				got := executeCommandForTest(t.TempDir(), args...)
 				if cli.ExitCode(got.err) != 2 || got.stdout != "" {
 					t.Fatalf("retired finding %s=%#v", name, got)
+				}
+				if name == "defer" {
+					if jsonMode {
+						assertJSONFailureCode(t, got.stderr, "finding.defer", "invalid-argument")
+					} else if !strings.Contains(got.stderr, "accepts 1 arg(s), received 0") || !strings.Contains(got.stderr, "allowed=<finding>") {
+						t.Fatal(got.stderr)
+					}
+					continue
 				}
 				if jsonMode {
 					assertJSONFailureCode(t, got.stderr, "finding", "operation-unavailable")

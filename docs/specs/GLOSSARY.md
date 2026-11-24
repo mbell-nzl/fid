@@ -715,18 +715,20 @@ Use when: a person explicitly permits more automatic rework for one task.
 Avoid: treating an allowance as fingerprint-bound or as a cap reset.
 
 **Finding answer and deferral**
-Definition: The proposed 2.1c builder/person response to an open finding. An
+Definition: A builder/person response to an open finding. An
 answer records reasoning and closes nothing. Deferral of a minor or nit
 atomically files discovered work and closes the finding by naming that task;
 a major cannot be deferred. Agent-created deferred work requires acceptance.
-Use when: describing the remaining review-delivery design, pending 2.1c.
-Avoid: presenting these as commands implemented by 2.1b.
+Use when: recording reasoning with `fid finding answer`, or filing discovered
+work with `fid finding defer`, without reopening an approved task.
+Avoid: treating an answer as a closure, or deferring a major.
 
 **Posted review**
-Definition: The proposed 2.1c PR comment rendered from fid's canonical record,
+Definition: A PR comment rendered from fid's canonical round or finding response,
 with its comment URL recorded in the journal. Failed posting remains pending;
 offline reads and task completion do not require successful delivery.
-Use when: describing review delivery still to be built in 2.1c.
+Use when: distinguishing the canonical review from its delivery receipt.
+`fid review post <round>` retries pending delivery; status warns offline.
 Avoid: a separately authored comment that can disagree with the ledger.
 
 **No other-model review**

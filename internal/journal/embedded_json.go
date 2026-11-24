@@ -52,6 +52,7 @@ func validateEmbeddedJSON(event Event) error {
 // still check their complete records. Structs fold keys like encoding/json;
 // map/interface destinations keep exact keys at every nested map boundary.
 var embeddedJSONTypes = map[string]reflect.Type{
+	"finding_responses.record_json":                  reflect.TypeFor[reviewrecord.Response](),
 	"default_conflicts.record_json":                  reflect.TypeFor[defaultconflict.Record](),
 	"review_claims.binding_json":                     reflect.TypeFor[fingerprint.Result](),
 	"completions.record_json":                        reflect.TypeFor[completionrecord.Record](),

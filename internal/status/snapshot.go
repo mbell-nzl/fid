@@ -70,5 +70,8 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 			return issues.Overview{}, next.Result{}, nil, err
 		}
 	}
+	if err := result.readPendingPosts(tx); err != nil {
+		return issues.Overview{}, next.Result{}, nil, err
+	}
 	return overview, planned, result, nil
 }

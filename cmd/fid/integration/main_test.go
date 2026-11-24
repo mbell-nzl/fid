@@ -28,6 +28,12 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "guard git discovery: %v\n", err)
 		return 1
 	}
+	ghCleanup, err := gittest.BlockGH()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	defer ghCleanup()
 	configHome, err := os.MkdirTemp("", "fid-integration-config-")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create isolated user config: %v\n", err)

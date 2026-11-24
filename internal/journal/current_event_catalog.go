@@ -36,6 +36,9 @@ func currentEffectKey(table, op string) string { return table + "/" + op }
 // Retained Event-v2 families keep their accepted Effect grammar. Lean families
 // check every stage in order; older Issue writers also retain SQL guards.
 var retainedCurrentRules = map[string]currentEventRule{
+	"review.posted":                  currentRule("review-post", fidActors, currentStage(1, currentEffectKey("review_posts", "insert"))),
+	"finding.answered":               currentRule("finding-response", workActors, currentStage(1, currentEffectKey("finding_responses", "insert"))),
+	"finding.deferred":               currentRule("finding-response", workActors, currentStage(1, currentEffectKey("issues", "insert")), currentStage(1, currentEffectKey("acceptance_criteria", "insert")), currentStage(1, currentEffectKey("links", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("finding_responses", "insert"))),
 	"task.default-conflict":          currentRule("default-conflict", workActors, currentStage(1, currentEffectKey("default_conflicts", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("holds", "update"))),
 	"rework.allowed":                 currentRule("task", personActors, currentStage(1, currentEffectKey("person_decisions", "insert"))),
 	"work.accepted":                  currentRule("issue", personActors, currentStage(1, currentEffectKey("person_decisions", "insert"))),

@@ -62,6 +62,12 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	if os.Getenv(runAsFIDVariable) != "" {
 		return runAsFID()
 	}
+	ghCleanup, err := gittest.BlockGH()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	defer ghCleanup()
 	configHome, err := os.MkdirTemp("", "fid-test-config-")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create isolated user config: %v\n", err)

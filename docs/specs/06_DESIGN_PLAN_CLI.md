@@ -1409,9 +1409,8 @@ and rebuild share the same admission rules for `work.accepted` and
 `rework.allowed`: exactly one complete, immutable person decision matching
 the Event's actor, command, subject and time.
 
-Finding answers, atomic deferral into discovered work and canonical PR-comment
-posting remain proposed RESET 2.1c, the size split of 2.1b. Until that lands,
-`review record` persists rounds only and `review list` stays offline.
+Finding answers, atomic deferral and canonical PR comments are implemented in
+RESET 2.1c, described below. Review list stays offline.
 
 **Hand-off and the worktree during review (RESET 1.5a7; Mark, 14 November 2026).**
 
@@ -1596,8 +1595,8 @@ task or an unstarted or finished task. A `CHANGES` round on a task already
 including when the builder already has the new rework hold. `APPROVE`
 never moves state or changes a reservation. Person takeover, cancellation
 and missing-worktree NEEDS YOU work for rework as for other kept work.
-Review selection and the rework cap are built in 2.1. Posting and
-discovered work remain in proposed 2.1b.
+Review selection and the rework cap are built in 2.1. Posting and discovered
+work are built in 2.1c, described below.
 
 For example, this input adapts the actual 1.6b round-one jig-format review
 of conflicting merge retries (its second, minor finding is omitted here):
@@ -1720,8 +1719,8 @@ For example, a later independent session can submit:
 ```
 
 This passes only when that disposition leaves no major open. A builder’s
-answer never closes a major; answering and deferring findings remain in
-proposed 2.1c. A previous APPROVE cannot hide a later CHANGES. Raw round verdicts
+answer never closes a major; answers and deferrals are described below. A
+previous APPROVE cannot hide a later CHANGES. Raw round verdicts
 remain immutable even when a person later closes the last major.
 `reviewrecord.OpenMajors` is the shared task-wide reader for the later done
 evaluator; it never filters findings by fingerprint or review stream.
@@ -1756,6 +1755,80 @@ refusals apply. Both catalogs register the new family; live, replay and
 import validate authority, bindings and single closure without git or
 network. Migration 31 adds the closure projection and decision kind;
 projection cache version 13 rebuilds older caught-up projections.
+
+### Finding responses and delivery (RESET 2.1c)
+
+```text
+fid finding answer <finding> --actor <a> --text <why>
+fid finding defer <finding> --actor <a> --title <text> [--epic <epic>] [--lane <lane>]
+fid review post <round>
+```
+
+All accept `--project` and `--json`, with operations `finding.answer`,
+`finding.defer` and `review.post`. An open finding can be answered by any actor
+that held its task to build it, or by a person. Blank answers refuse. An answer
+never closes a finding, including a minor or nit. Review list exposes each
+finding’s `responses` in journal order, and text names the answer’s actor and
+reasoning. Served review work includes earlier `review.findings`, with closure
+state and responses, for the next reviewer.
+
+Deferral is for minor/nit findings, with the same actor rule. It creates a
+`todo` task, inheriting the reviewed task’s epic unless overridden. The parent
+must be an epic. Lane defaults to Standard; a requested Assured lane stays
+higher, and a known finding location raises it to the frozen hand-off policy’s
+path floor. Routine and unknown lanes refuse. The later check/hand-off computes
+its normal floor from actual changed paths. The acceptance criterion includes
+finding ID, summary, evidence and requested fix. One Event includes the task,
+criterion, `discovered_from` link and inverse, source revision bump and response.
+In a sequential epic it appends after the highest existing task sequence;
+other scheduling leaves sequence unset. Admission checks that allocation too.
+The Event actor supplies the new task’s creator: an agent’s discovery waits for
+`fid accept`, as ordinary agent-created work does. A deferral’s derived closure
+has disposition `deferred`, `response_id` and `deferred_task_id`, and it prevents
+later answers or closures. The reviewed task’s state is unchanged.
+
+Both mutations return `{response}` and the Event. A response has `id` (`FRS-`),
+`finding_id`, `task_id`, latest `handoff_id`, `actor`, `text`, `at`, and optional
+`deferred_task: {id, title, epic_id, lane}`. Answers retain supplied text;
+deferrals retain the generated criterion. Text success is `✓ Answered <finding>
+· <text>` or `✓ Deferred <finding> → <task> · <title>`. These commands have no
+request retry key. Unknown/closed findings, invalid actors, blank text/titles,
+invalid parent/lane and major deferrals use `invalid-argument` (exit 2), changing
+nothing. Their error details name argument `finding`, with allowed input
+`an open finding and a builder or person`. Common repository, journal and
+lock refusals apply.
+
+After recording, fid attempts a comment rendered from its immutable round or
+response. Round comments follow jig’s review layout: verdict, reviewer actor,
+model/effort/session, stream, profiles, round, lane, purpose, every finding’s
+severity and action, location, evidence and requested fix, earlier dispositions
+and verification. Answer/deferral comments name the finding, actor, reasoning
+and discovered task where applicable. No separately supplied comment body is
+accepted. The latest hand-off at **recording** fixes the destination PR so an
+interrupted delivery cannot be redirected by a later hand-off.
+
+`review.posted` retains the comment URL, rendering version (1) and canonical
+body digest. Version 1 remains readable if later versions change the layout. Posting is
+serialized under the journal lock. A stable record/digest HTML marker lets fid
+recover a comment after a lost local receipt: it reads bounded, paginated PR
+comments before calling `gh pr comment`. An edited matching marker refuses a
+second post. A receipt makes subsequent retries entirely local. `review post`
+retries a round plus all responses to its findings, returning `{posted: [ids],
+pending: [ids]}` without a single Event in the response (each successful post
+has its own receipt Event). Text prints each posted or pending ID. An unknown
+round is `invalid-argument`, with argument `round` and allowed input
+`a recorded review round`; transport failures return pending IDs.
+If committing a receipt fails, delivery stops with that record and the remaining
+records pending. The next retry refreshes the projection before posting further
+receipts, recovering a receipt appended before its projection failed.
+
+Failed delivery never rolls back a canonical recording or blocks `done`.
+Status derives `review-post-pending` warnings, naming each round, its pending
+record IDs and `fid review post <round>`. These are warnings, never NEEDS YOU.
+Status/show/next/review-list use no network. Live append, replay and import
+validate response authority, single closure, exact deferral rows, creator
+attribution and receipts against the same canonical evidence. New records and
+receipts survive export, rebuild and restore.
 
 ### Retained Artifact verification (RESET 1.5c2)
 
@@ -2336,11 +2409,11 @@ evidence finding gate human-outcome ready receipt requirement resume review
 run stats stop workflow
 ```
 
-Except for `review` (the lean record/list contract in RESET 1.6d) and
-`finding` (the person’s close command in RESET 1.6e), each is an unknown root command (`operation-unavailable`,
+Except for `review` (the lean record/list/post contract) and
+`finding` (close, answer and defer), each is an unknown root command (`operation-unavailable`,
 exit 2), with the known path `fid` as its operation and sorted current
 alternatives. The retired review schema, Event and tables stay refused;
-review delivery remains proposed 2.1c. There is no `fid admin`. Issue Concern
+review delivery is implemented in RESET 2.1c. There is no `fid admin`. Issue Concern
 fields, the `issue list --has-concerns` filter, requirement/decision reference
 callers and execution-chain transition guards are removed. `fid next`
 replaces `ready`. `sql` and `journal inspect` remain diagnostics.

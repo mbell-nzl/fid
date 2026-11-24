@@ -1,5 +1,5 @@
-// Package github reads GitHub facts through gh. It never changes git or GitHub
-// state. Callers supply origin's identity and locally known default branch.
+// Package github exchanges GitHub facts and canonical review comments through
+// gh. Callers supply explicit repository identities.
 package github
 
 import (

@@ -22,8 +22,19 @@ type Client struct {
 }
 
 func New(repo Repository, defaultBranch string, run Runner) (*Client, error) {
+	if defaultBranch == "" {
+		return nil, fmt.Errorf("GitHub reader needs origin repository and its locally known default branch")
+	}
+	return newClient(repo, defaultBranch, run)
+}
+
+// NewCommenter needs only the canonical PR's repository; posting does not
+// inspect a default branch or consult local git refs.
+func NewCommenter(repo Repository, run Runner) (*Client, error) { return newClient(repo, "", run) }
+
+func newClient(repo Repository, defaultBranch string, run Runner) (*Client, error) {
 	parsed, err := ParseOrigin("https://github.com/" + repo.String())
-	if err != nil || !parsed.Equal(repo) || defaultBranch == "" {
+	if err != nil || !parsed.Equal(repo) {
 		return nil, fmt.Errorf("GitHub reader needs origin repository and its locally known default branch")
 	}
 	if run == nil {

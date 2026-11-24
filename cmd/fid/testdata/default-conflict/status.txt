@@ -13,4 +13,7 @@
   IN PROGRESS
   ◆ FID-e3a1c0  Planned epic                      ░░░░░░░░░░  0/1 done
       ● FID-9f13aa  Harden login rate limiting               in review
+
+  ⚠ PR comments pending for review RND-<new>
+      → fid review post RND-<new>
 ╰──────────────────────────────────────────────────────────────────────╯

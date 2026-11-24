@@ -105,10 +105,19 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		return err
 	}
 	if !event.IsV2() {
+		if event.EventType == "finding.answered" || event.EventType == "finding.deferred" || event.EventType == "review.posted" {
+			return fmt.Errorf("review delivery requires Event-v2")
+		}
 		if event.EventType == "artifact.availability-observed" {
 			return fmt.Errorf("artifact availability requires Event-v2")
 		}
 		return nil
+	}
+	if event.EventType == "review.posted" {
+		return validateReviewPost(tx, event)
+	}
+	if event.EventType == "finding.answered" || event.EventType == "finding.deferred" {
+		return validateFindingResponse(tx, event)
 	}
 	if event.EventType == "task.default-conflict" {
 		return validateDefaultConflict(tx, event)

@@ -16,4 +16,7 @@
     locally
       → restore the hand-off's recorded base and head objects locally,
         then fid show FID-9f13aa
+
+  ⚠ PR comments pending for review RND-<new>
+      → fid review post RND-<new>
 ╰──────────────────────────────────────────────────────────────────────╯

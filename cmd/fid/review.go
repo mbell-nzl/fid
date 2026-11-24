@@ -22,7 +22,7 @@ func init() {
 
 func newReviewCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "review", Short: "Record and read attributed reviews."}
-	cmd.AddCommand(newReviewRecordCommand(), newReviewListCommand())
+	cmd.AddCommand(newReviewRecordCommand(), newReviewListCommand(), newReviewPostCommand())
 	return cmd
 }
 
@@ -49,6 +49,7 @@ func newReviewRecordCommand() *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, "review.record", err, "")
 		}
+		postRecordedRound(cmd, root, result.Round.ID)
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
 			return err
@@ -136,11 +137,15 @@ func reviewFailure(cmd *cobra.Command, operation string, cause error, actor stri
 		return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, input.Error(), nil, input.Details())
 	}
 	argument, allowed := "input", "an independent review of the latest hand-off"
-	if operation == "task.waive" {
-		argument, allowed = "task", "an interactive person lowering gates for a handed-off task in review"
-	}
-	if operation == "task.approve" {
+	switch operation {
+	case "task.approve":
 		argument, allowed = "task", "an interactive person approving a task in review with local hand-off objects"
+	case "task.waive":
+		argument, allowed = "task", "an interactive person lowering gates for a handed-off task in review"
+	case "finding.answer", "finding.defer":
+		argument, allowed = "finding", "an open finding and a builder or person"
+	case "review.post":
+		argument, allowed = "round", "a recorded review round"
 	}
 	return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, cli.BoundedMessage(cause.Error()), nil, map[string]any{"argument": argument, "value": nil, "allowed": []string{allowed}})
 }

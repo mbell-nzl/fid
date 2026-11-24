@@ -1,0 +1,163 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "review.list",
+  "result": {
+    "rounds": [
+      {
+        "id": "RND-<new>",
+        "task_id": "FID-<new>",
+        "handoff_id": "HOF-<new>",
+        "reviewer": {
+          "actor": "agent:reviewer",
+          "model": "claude/opus-5.5",
+          "session_id": "review-session-1"
+        },
+        "stream": "primary",
+        "profiles": [
+          "code",
+          "test-adequacy"
+        ],
+        "verdict": "CHANGES",
+        "purpose": "Persist the task change.",
+        "verification": "go test ./... passed",
+        "provenance": {
+          "prompt": "Review the PR",
+          "output": "## Review: APPROVE\n### Findings\nNone."
+        },
+        "binding": {
+          "algorithm": "patch-id-verbatim-per-file-v1",
+          "fingerprint": "<fingerprint-or-commit>",
+          "base": "<fingerprint-or-commit>",
+          "head": "<fingerprint-or-commit>"
+        },
+        "recorded_by": "human:courier",
+        "at": "<TIME>",
+        "other_model": true,
+        "current": true,
+        "findings": [
+          {
+            "id": "RND-<new>-1",
+            "profile": "code",
+            "severity": "major",
+            "summary": "Retry conflicts lack coverage",
+            "location": {
+              "file": "cmd/fid/merge_records_test.go",
+              "line": 111
+            },
+            "evidence": "Disabling the conflict guard left focused tests green.",
+            "fix": "Retry a changed task and PR; assert refusal and unchanged state.",
+            "open": true,
+            "responses": [
+              {
+                "id": "FRS-<new>",
+                "finding_id": "RND-<new>-1",
+                "handoff_id": "HOF-<new>",
+                "task_id": "FID-<new>",
+                "actor": "agent:builder",
+                "text": "Regression added in the next change",
+                "at": "<TIME>"
+              },
+              {
+                "id": "FRS-<new>",
+                "finding_id": "RND-<new>-1",
+                "handoff_id": "HOF-<new>",
+                "task_id": "FID-<new>",
+                "actor": "agent:builder",
+                "text": "Regression added in the next change",
+                "at": "<TIME>"
+              }
+            ]
+          },
+          {
+            "id": "RND-<new>-2",
+            "profile": "code",
+            "severity": "major",
+            "summary": "Retry conflicts lack coverage",
+            "location": {
+              "file": "cmd/fid/merge_records_test.go",
+              "line": 111
+            },
+            "evidence": "Disabling the conflict guard left focused tests green.",
+            "fix": "Retry a changed task and PR; assert refusal and unchanged state.",
+            "open": true
+          },
+          {
+            "id": "RND-<new>-3",
+            "profile": "code",
+            "severity": "minor",
+            "summary": "Retry conflicts lack coverage",
+            "location": {
+              "file": "cmd/fid/merge_records_test.go",
+              "line": 111
+            },
+            "evidence": "Disabling the conflict guard left focused tests green.",
+            "fix": "Retry a changed task and PR; assert refusal and unchanged state.",
+            "open": false,
+            "responses": [
+              {
+                "id": "FRS-<new>",
+                "finding_id": "RND-<new>-3",
+                "handoff_id": "HOF-<new>",
+                "task_id": "FID-<new>",
+                "actor": "agent:builder",
+                "text": "Address RND-<new>-3: Retry conflicts lack coverage\nEvidence: Disabling the conflict guard left focused tests green.\nFix: Retry a changed task and PR; assert refusal and unchanged state.",
+                "at": "<TIME>",
+                "deferred_task": {
+                  "id": "FID-<new>",
+                  "title": "Follow up the finding",
+                  "epic_id": null,
+                  "lane": "standard"
+                }
+              }
+            ],
+            "closure": {
+              "response_id": "FRS-<new>",
+              "deferred_task_id": "FID-<new>",
+              "disposition": "deferred",
+              "reason": "Address RND-<new>-3: Retry conflicts lack coverage\nEvidence: Disabling the conflict guard left focused tests green.\nFix: Retry a changed task and PR; assert refusal and unchanged state."
+            }
+          },
+          {
+            "id": "RND-<new>-4",
+            "profile": "code",
+            "severity": "nit",
+            "summary": "Retry conflicts lack coverage",
+            "location": {
+              "file": "cmd/fid/merge_records_test.go",
+              "line": 111
+            },
+            "evidence": "Disabling the conflict guard left focused tests green.",
+            "fix": "Retry a changed task and PR; assert refusal and unchanged state.",
+            "open": false,
+            "responses": [
+              {
+                "id": "FRS-<new>",
+                "finding_id": "RND-<new>-4",
+                "handoff_id": "HOF-<new>",
+                "task_id": "FID-<new>",
+                "actor": "agent:builder",
+                "text": "Address RND-<new>-4: Retry conflicts lack coverage\nEvidence: Disabling the conflict guard left focused tests green.\nFix: Retry a changed task and PR; assert refusal and unchanged state.",
+                "at": "<TIME>",
+                "deferred_task": {
+                  "id": "FID-<new>",
+                  "title": "Follow up the finding",
+                  "epic_id": null,
+                  "lane": "standard"
+                }
+              }
+            ],
+            "closure": {
+              "response_id": "FRS-<new>",
+              "deferred_task_id": "FID-<new>",
+              "disposition": "deferred",
+              "reason": "Address RND-<new>-4: Retry conflicts lack coverage\nEvidence: Disabling the conflict guard left focused tests green.\nFix: Retry a changed task and PR; assert refusal and unchanged state."
+            }
+          }
+        ]
+      }
+    ],
+    "task_id": "FID-<new>"
+  }
+}

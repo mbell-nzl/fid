@@ -46,7 +46,7 @@ var shortCommit = regexp.MustCompile(`\b[0-9a-f]{8}\b`)
 // a temp directory whose random name is eight digits would otherwise lose
 // part of its path to the commit mask and never match <ROOT>.
 func reworkGoldenOutput(f *statusFixture, stdout string) string {
-	return shortCommit.ReplaceAllString(f.placeholders(stdout), "<commit>")
+	return regexp.MustCompile(`RND-[0-9a-f]{6}`).ReplaceAllString(shortCommit.ReplaceAllString(f.placeholders(stdout), "<commit>"), "RND-<new>")
 }
 
 func TestReworkGoldenOutputMasksRootsBeforeCommits(t *testing.T) {
