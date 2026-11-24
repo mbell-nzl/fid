@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/doneeval"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
+	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
@@ -62,13 +63,21 @@ func (result *Result) addReviewAction(root string, conn reviewrecord.Queryer, ta
 	if !doneeval.ReviewsDone(s) || result.merges[task] != nil {
 		return nil
 	}
-	kind, summary, action := "merge", task+": merge PR #"+handoffrecord.PRNumber(s.Handoff.PR), s.Handoff.PR
-	if conflict, err := defaultconflict.Inspect(root, s.Handoff.ID, s.Handoff.Head); err == nil && conflict != nil {
-		summary = task + ": PR no longer merges into " + conflict.DefaultRef + "; its builder's worktree takes it back"
-		action = "fid next --claim in the builder's worktree"
-		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "default-conflict", Summary: summary, NextAction: &action, Subject: &Subject{Type: "task", ID: task}})
-		return nil
+	// A takeover releases this reservation, so next no longer returns the
+	// task to its builder. Use the same reservation predicate as next.
+	hold, err := holds.CurrentByID(conn, s.Handoff.HoldID)
+	if err != nil {
+		return err
 	}
+	if hold.InReview() {
+		if conflict, err := defaultconflict.Inspect(root, s.Handoff.ID, s.Handoff.Head); err == nil && conflict != nil {
+			summary := task + ": PR no longer merges into " + conflict.DefaultRef + "; its builder's worktree takes it back"
+			action := "fid next --claim in the builder's worktree"
+			result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "default-conflict", Summary: summary, NextAction: &action, Subject: &Subject{Type: "task", ID: task}})
+			return nil
+		}
+	}
+	kind, summary, action := "merge", task+": merge PR #"+handoffrecord.PRNumber(s.Handoff.PR), s.Handoff.PR
 	if s.EffectiveLane() == "assured" && s.Approval.State != "current" {
 		kind, summary = "approval", task+": approve, then merge PR #"+handoffrecord.PRNumber(s.Handoff.PR)
 		if reviewrecord.NoOtherModelReview(task, s.Rounds) {

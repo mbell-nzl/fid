@@ -41,10 +41,6 @@ func WriteText(w io.Writer, result Result, renderer display.Renderer, all bool) 
 	if len(result.NeedsYou) > 0 {
 		block := []string{text.header("NEEDS YOU")}
 		for _, item := range result.NeedsYou {
-			if item.Kind == "default-conflict" {
-				action := "Take the task in its builder’s worktree with fid next"
-				item.NextAction = &action
-			}
 			block = append(block, text.item(display.RoleError, display.SymbolError, item.Summary, item.NextAction)...)
 		}
 		blocks = append(blocks, block)

@@ -3281,6 +3281,14 @@ Built under Mark's delegation, for his review. Lane: Assured.
   checkpoint Event identity/hash and schema/status, since archive chunk
   filenames and byte offsets are local storage details. No dependency added.
 
+**Amended 2026-11-24 (FID-fb5c52):** Status shows the default-conflict
+builder-update action only while the latest hand-off still owns its kept
+review reservation, using the same hold predicate as next. A person's
+takeover releases that reservation; status then keeps its existing approval
+or merge action. The human-text deviation above is lifted now that #107
+narrowed the leak check: text and JSON both name `fid next --claim in the
+builder's worktree`.
+
 **Left for later:** none discovered within this task.
 
 **Decided for 2.3, 2026-11-21.**

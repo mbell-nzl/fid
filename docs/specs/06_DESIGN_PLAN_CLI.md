@@ -353,10 +353,13 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   action is `fid approve <task> --actor human:<name> --reason <text>`.
   With current approval, or in other lanes, one `merge` item says
   `<task>: merge PR #<n>`, with the hand-off's PR URL as next action.
-  If that hand-off no longer merges into the local default branch, a
+  If that hand-off still owns its kept review reservation and no longer
+  merges into the local default branch, a
   `default-conflict` item replaces this action: `<task>: PR no longer merges
-  into origin/<default>; its builder's worktree takes it back`. JSON names
-  `fid next --claim` there; human text says to take it with `fid next`.
+  into origin/<default>; its builder's worktree takes it back`. Both text
+  and JSON name `fid next --claim in the builder's worktree`. A person's
+  takeover releases that reservation, so the existing approval or merge
+  item applies again.
   This is local evidence only: fid never fetches.
   A recorded merge suppresses both items; the existing offline CI states
   apply. Completed tasks have neither. Each IN PROGRESS task's JSON keeps
