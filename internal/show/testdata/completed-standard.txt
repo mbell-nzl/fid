@@ -6,7 +6,8 @@
 
   Completed   2026-11-23 02:47 · CMP-f1ab58 · agent:orchestrator
               PR #101 merged as 33333333 · 2026-11-23 02:46
-              CI ✓ success · #45102091114 on 33333333
+              CI ✓ success · run 45102091114 on 33333333
+              https://github.com/owner/repo/actions/runs/45102091114
               Hand-off HOF-477dfd at 11111111 · fingerprint 22222222
               Rounds ✓ RND-517555 primary APPROVE ·
               agent:claude-reviewer (anthropic/claude-opus-5-5)

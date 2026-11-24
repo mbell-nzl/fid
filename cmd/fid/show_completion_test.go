@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
 )
 
@@ -119,9 +120,15 @@ func TestShowCompletionReceipt(t *testing.T) {
 			if len(shown["warnings"].([]any)) != 0 {
 				t.Fatalf("finished task compared current evidence: %v", shown["warnings"])
 			}
+			f.screen = &display.Screen{Width: 20, Height: 200}
+			f.environ = append(f.environ, "PAGER=cat")
 			out := f.run("show", task)
 			if out.err != nil {
 				t.Fatal(out)
+			}
+			if want := "              CI ✓ success · run 101 on aaaaaaaa\n" +
+				"              https://github.com/mbell-nzl/fid/actions/runs/101\n"; !strings.Contains(out.stdout, want) {
+				t.Fatalf("narrow terminal lost the CI run or whole URL; want %q in:\n%s", want, out.stdout)
 			}
 			text := strings.Join(strings.Fields(out.stdout), " ")
 			for _, want := range []string{"Completed", completion["id"].(string), "agent:finisher", "PR #63 merged as aaaaaaaa", "CI ✓ success", "fingerprint", "primary APPROVE", tc.model, "passed at", "counts at"} {
@@ -281,7 +288,7 @@ func TestShowCompletionAllCountedCIRuns(t *testing.T) {
 	}
 	out := f.run("show", task)
 	text := strings.Join(strings.Fields(out.stdout), " ")
-	if out.err != nil || !strings.Contains(text, "#101") || !strings.Contains(text, "#202") || strings.Contains(text, "#203") {
+	if out.err != nil || !strings.Contains(text, "run 101") || !strings.Contains(text, "run 202") || strings.Contains(text, "run 203") {
 		t.Fatal(out)
 	}
 }
