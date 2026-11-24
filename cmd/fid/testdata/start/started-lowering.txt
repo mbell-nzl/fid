@@ -1,2 +1,3 @@
 error: Issue transition is not permitted
 reason: transition-not-permitted; lane-lowering-requires-waiver
+next: after hand-off, lower the gates with fid waive FID-9f13aa

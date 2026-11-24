@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/checkread"
 	"github.com/mbell-nzl/fid/internal/checkrecord"
+	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
@@ -64,7 +65,7 @@ func evaluateLocal(o *Outcome, s Snapshot) {
 		o.set(PolicyGate, RefusedState, PolicyMismatch)
 		return
 	}
-	required, err := policy.Required(p, h.Lane, s.Task.ID, h.Paths())
+	recorded, err := policy.Required(p, h.Lane, s.Task.ID, h.Paths())
 	switch {
 	case !p.Lanes[h.Lane].ChecksSet:
 		o.set(PolicyGate, Missing, ChecksNotConfigured)
@@ -72,19 +73,28 @@ func evaluateLocal(o *Outcome, s Snapshot) {
 	case !p.TestAdequacySet:
 		o.set(PolicyGate, Missing, TestPathsNotConfigured)
 		return
-	case err != nil || !slices.Equal(required, h.RequiredChecks):
+	case err != nil || !slices.Equal(recorded, h.RequiredChecks):
 		o.set(PolicyGate, RefusedState, PolicyMismatch)
 		return
 	}
-	for _, name := range required {
+	for _, name := range recorded {
 		definition, exists := p.Checks[name]
 		if !exists || h.DefinitionDigests[name] != checkrecord.Digest(checkrecord.DefinitionFor(definition)) {
 			o.set(PolicyGate, RefusedState, PolicyMismatch)
 			return
 		}
 	}
+	required, err := policy.Required(p, s.EffectiveLane(), s.Task.ID, h.Paths())
+	if !p.Lanes[s.EffectiveLane()].ChecksSet {
+		o.set(PolicyGate, Missing, ChecksNotConfigured)
+		return
+	}
+	if err != nil || ((p.RulesVersion >= 3 || s.Waiver.State == "current") && floor.HardFloor != nil && s.EffectiveLane() != "assured") {
+		o.set(PolicyGate, RefusedState, PolicyMismatch)
+		return
+	}
 	o.set(PolicyGate, Satisfied, EvidenceSatisfied)
-	checks := checkread.Evaluate(s.Task.ID, h.Tree, h.RequiredChecks, p.Checks, s.Checks)
+	checks := checkread.Evaluate(s.Task.ID, h.Tree, required, p.Checks, s.Checks)
 	o.set(ChecksGate, Satisfied, EvidenceSatisfied)
 	if len(checks.Missing) > 0 {
 		o.set(ChecksGate, Missing, ChecksUnsatisfied, checks.Missing...)
@@ -121,7 +131,7 @@ func evaluateReviews(o *Outcome, s Snapshot) {
 		o.set(PrimaryGate, Missing, PrerequisiteMissing)
 	} else {
 		var err error
-		profiles, err = reviewrecord.RequiredProfiles(*s.Handoff, *s.Policy)
+		profiles, err = reviewrecord.RequiredProfiles(s.reviewHandoff(), *s.Policy)
 		if err != nil {
 			o.set(PrimaryGate, Missing, TestPathsNotConfigured)
 		} else {
@@ -131,7 +141,7 @@ func evaluateReviews(o *Outcome, s Snapshot) {
 			}
 		}
 	}
-	if s.Handoff.Lane == "assured" {
+	if s.EffectiveLane() == "assured" {
 		evaluateAssured(o, s, profiles, profilesKnown)
 	}
 }
@@ -195,4 +205,21 @@ func reviewGate(s Snapshot, stream string, profiles []string) GateResult {
 		}
 	}
 	return result
+}
+
+// EffectiveLane changes requirements, never the immutable hand-off or task lane.
+func (s Snapshot) EffectiveLane() string {
+	if s.Waiver.State == "current" && s.Waiver.Decision != nil {
+		return s.Waiver.Decision.Binding.Lane
+	}
+	if s.Handoff != nil {
+		return s.Handoff.Lane
+	}
+	return s.Task.Lane
+}
+
+func (s Snapshot) reviewHandoff() handoffrecord.Record {
+	h := *s.Handoff
+	h.Lane = s.EffectiveLane()
+	return h
 }

@@ -99,6 +99,7 @@
     "sql",
     "start",
     "status",
-    "takeover"
+    "takeover",
+    "waive"
   ]
 }

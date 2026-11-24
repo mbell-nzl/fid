@@ -18,3 +18,4 @@ review record	purpose
 finding close	--reason
 approve	--reason
 done	task
+waive	--reason

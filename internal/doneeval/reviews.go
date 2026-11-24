@@ -42,7 +42,7 @@ func DueReview(s Snapshot) *ReviewWork {
 	if s.Task.State != "in_review" || s.Handoff == nil || s.Policy == nil {
 		return nil
 	}
-	profiles, err := reviewrecord.RequiredProfiles(*s.Handoff, *s.Policy)
+	profiles, err := reviewrecord.RequiredProfiles(s.reviewHandoff(), *s.Policy)
 	if err != nil {
 		return nil
 	}

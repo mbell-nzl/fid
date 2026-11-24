@@ -68,6 +68,14 @@ func (result Result) readyVerdict(task issues.OverviewTask) (string, display.Rol
 }
 
 func (result Result) startedVerdict(task issues.OverviewTask) string {
+	verdict := result.baseStartedVerdict(task)
+	if waiver := decisionview.LatestWaiver(result.approvals[task.ID].Waivers); waiver != nil && !waiver.Current {
+		verdict += " · stale waiver"
+	}
+	return verdict
+}
+
+func (result Result) baseStartedVerdict(task issues.OverviewTask) string {
 	if merge := result.merges[task.ID]; merge != nil && merge.Summary() != "" {
 		return merge.Summary()
 	}

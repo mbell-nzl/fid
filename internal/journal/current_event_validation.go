@@ -98,7 +98,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if !event.IsV2() && event.EventType == "epic.closed" {
 		return fmt.Errorf("epic close requires Event-v2")
 	}
-	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.finished") {
+	if !event.IsV2() && (event.EventType == "task.approved" || event.EventType == "task.waived" || event.EventType == "task.finished") {
 		return fmt.Errorf("approval requires Event-v2")
 	}
 	if err := validateReworkHold(tx, event); err != nil {
@@ -129,6 +129,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "task.finished" {
 		return validateCompletion(tx, event)
+	}
+	if event.EventType == "task.waived" {
+		return validateWaiver(tx, event)
 	}
 	if event.EventType == "task.approved" {
 		return validateApproval(tx, event)

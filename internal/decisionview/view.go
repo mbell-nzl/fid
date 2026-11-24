@@ -21,6 +21,9 @@ type View struct {
 // Text returns uncoloured prose; the renderer escapes and wraps it before
 // applying Role. earlier explains what the stale decision covered.
 func (v View) Text(earlier string) string {
+	if v.State == "not-required" {
+		return string(display.SymbolUnstarted) + " not required · current waiver"
+	}
 	if v.State == "missing" {
 		return string(display.SymbolUnstarted) + " missing"
 	}

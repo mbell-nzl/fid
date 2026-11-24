@@ -1,0 +1,10 @@
+╭ FID-9f13aa ──────────────────────────────────────────────────── task ╮
+
+  ● Harden login rate limiting                               in review
+
+  Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
+  Lane        Assured · waiver to standard · ✓ PDN-<new> human:mark ·
+              2026-11-08T09:00:00Z
+  Approval    ○ not required · current waiver
+  Hand-off    22:00 · PR #63 · no checks required on <head>
+╰──────────────────────────────────────────────────────────────────────╯

@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
 func assertV8Approvals(t *testing.T, root string) {
@@ -31,7 +32,15 @@ func assertV8Approvals(t *testing.T, root string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	waivers, err := waiverrecord.Read(conn, task)
+	if err != nil || len(waivers) != 1 {
+		t.Fatalf("V8 waivers=%v/%v", waivers, err)
+	}
 	b := approvals[1].Binding
+	waiver, err := waiverrecord.Current(conn, task, fingerprint.Result{Algorithm: b.Algorithm, Fingerprint: b.Fingerprint})
+	if err != nil || waiver.State != "stale" || waiver.Decision.ID != waivers[0].ID {
+		t.Fatalf("V8 stale waiver=%v/%v", waiver, err)
+	}
 	if b.HandoffID != h.ID || b.Head != h.Head || b.Base != h.Base {
 		t.Fatal("V8 current approval must cover latest hand-off")
 	}

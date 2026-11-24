@@ -131,7 +131,7 @@ func outOfOrderEventIDError(id string, next int) error {
 // The families that checked their own size before it was shared keep
 // their wording.
 func eventSizeLabel(family string) string {
-	labels := map[string]string{"epic.closed": "epic close", "task.finished": "completion", "task.approved": "approval", "finding.closed": "finding close", "review.round-recorded": "review"}
+	labels := map[string]string{"epic.closed": "epic close", "task.finished": "completion", "task.approved": "approval", "task.waived": "waiver", "finding.closed": "finding close", "review.round-recorded": "review"}
 	if label, found := labels[family]; found {
 		return label
 	}

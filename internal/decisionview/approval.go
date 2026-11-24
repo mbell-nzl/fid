@@ -8,8 +8,9 @@ import (
 )
 
 type Approval struct {
-	Decision           *View `json:"approval"`
-	NoOtherModelReview *bool `json:"no_other_model_review"`
+	Waivers            []Waiver `json:"waivers,omitempty"`
+	Decision           *View    `json:"approval"`
+	NoOtherModelReview *bool    `json:"no_other_model_review"`
 }
 
 // ReadApproval uses the latest hand-off's lane and recorded endpoints, never
@@ -17,7 +18,15 @@ type Approval struct {
 // null; an absence of approvals or reviews is still known without git objects.
 // The caller owns the projection snapshot and refreshes it before reading.
 func ReadApproval(root string, conn reviewrecord.Queryer, h handoffrecord.Record) (Approval, error) {
-	result := Approval{}
+	waivers, err := ReadWaivers(root, conn, h)
+	result := Approval{Waivers: waivers}
+	if err != nil {
+		return result, err
+	}
+	if waiver := LatestWaiver(waivers); waiver != nil && waiver.Current {
+		result.Decision = &View{State: "not-required"}
+		return result, nil
+	}
 	if h.Lane != "assured" {
 		return result, nil
 	}

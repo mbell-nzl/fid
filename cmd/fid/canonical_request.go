@@ -170,6 +170,8 @@ func leafOperation(cmd *cobra.Command) string {
 		return "check.execute"
 	case "done":
 		return "task.done"
+	case "waive":
+		return "task.waive"
 	case "approve":
 		return "task.approve"
 	case "handoff":
