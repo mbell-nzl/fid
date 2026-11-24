@@ -3,10 +3,10 @@ package activity
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
@@ -55,7 +56,7 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testActivityMigrationsDir(t),
+		MigrationsFS:  testActivityMigrationsFS(t),
 	})
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
@@ -146,7 +147,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			name: "on filter",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testActivityMigrationsDir(t),
+				MigrationsFS:  testActivityMigrationsFS(t),
 				On:            "issue/" + primaryIssueID,
 			},
 			wantIDs: []string{firstEntry.activityID, secondEntry.activityID},
@@ -155,7 +156,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			name: "since boundary includes exact match",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testActivityMigrationsDir(t),
+				MigrationsFS:  testActivityMigrationsFS(t),
 				Since:         secondEntry.occurredAt,
 			},
 			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
@@ -164,7 +165,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			name: "since date only",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testActivityMigrationsDir(t),
+				MigrationsFS:  testActivityMigrationsFS(t),
 				Since:         secondOccurredAt.Format("2006-01-02"),
 			},
 			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
@@ -173,7 +174,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			name: "event filter",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testActivityMigrationsDir(t),
+				MigrationsFS:  testActivityMigrationsFS(t),
 				Event:         "issue-updated",
 			},
 			wantIDs: []string{thirdEntry.activityID},
@@ -182,7 +183,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			name: "empty result is non nil slice",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testActivityMigrationsDir(t),
+				MigrationsFS:  testActivityMigrationsFS(t),
 				On:            "issue/FID-missing",
 			},
 			wantIDs: []string{},
@@ -231,7 +232,7 @@ func newActivityWorkspace(t *testing.T) string {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testActivityMigrationsDir(t),
+		MigrationsFS:  testActivityMigrationsFS(t),
 	}); err != nil {
 		t.Fatalf("InitializeWorkspace() error = %v", err)
 	}
@@ -244,7 +245,7 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 
 	result, err := issues.Create(issues.CreateOptions{
 		WorkspaceRoot:  workspace,
-		MigrationsDir:  testActivityMigrationsDir(t),
+		MigrationsFS:   testActivityMigrationsFS(t),
 		Kind:           "task",
 		Title:          title,
 		Actor:          "agent:developer",
@@ -342,15 +343,9 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 	return eventID
 }
 
-func testActivityMigrationsDir(t *testing.T) string {
+func testActivityMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func latestActivityJournalDate(t *testing.T, workspace string) time.Time {

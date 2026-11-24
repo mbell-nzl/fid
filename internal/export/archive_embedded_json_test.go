@@ -22,11 +22,11 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 	t.Parallel()
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
-		issue, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "Round trip", Actor: "human:mark", IdempotencyKey: "create"})
+		issue, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "Round trip", Actor: "human:mark", IdempotencyKey: "create"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), IssueID: issue.ID, Text: "Works", Ordinal: 1, Actor: "human:mark", IdempotencyKey: "ac"}); err != nil {
+		if _, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), IssueID: issue.ID, Text: "Works", Ordinal: 1, Actor: "human:mark", IdempotencyKey: "ac"}); err != nil {
 			t.Fatal(err)
 		}
 		return issue.ID
@@ -68,7 +68,7 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 				if err := os.WriteFile(files[0], prefix, 0o600); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := journal.RebuildWorkspace(root, testMigrationsDir(t)); err != nil {
+				if _, err := journal.RebuildWorkspace(root, testMigrationsFS(t)); err != nil {
 					t.Fatal(err)
 				}
 				row := &e.Effects[len(e.Effects)-1]
@@ -116,7 +116,7 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 					writeTestArchive(t, archive, original)
 					target := gittest.NewWorkspace(t)
 					before := workspaceTreeDigest(t, target)
-					_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "malformed"})
+					_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "malformed"})
 					var refused *InvalidArchiveError
 					if !errors.As(err, &refused) || len(refused.Checks) != 1 || !strings.Contains(refused.Checks[0].Detail, reason) {
 						t.Fatalf("import = %v, checks %#v", err, refused)
@@ -133,14 +133,14 @@ func TestEmbeddedJSONLiveArchiveRoundTrip(t *testing.T) {
 				if _, err := Create(CreateOptions{WorkspaceRoot: root, ArchivePath: archive}); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+				if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 					t.Fatal(err)
 				}
 				target := gittest.NewWorkspace(t)
-				if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "accepted"}); err != nil {
+				if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "accepted"}); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After restore", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+				if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: "After restore", Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
 					t.Fatal(err)
 				}
 			})

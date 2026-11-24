@@ -13,7 +13,7 @@ import (
 func completionArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, m, ci := mergeArchiveFixtureWithLane(t, "routine")
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 34); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 34); err != nil {
 		t.Fatal(err)
 	}
 	var err error

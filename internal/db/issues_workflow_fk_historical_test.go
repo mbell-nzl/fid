@@ -10,7 +10,7 @@ import (
 func TestHistoricalMigration0008PreservesClaimReferenceTriggers(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "fid.sqlite")
-	migrator, conn := newTestMigrator(t, path, testMigrationsDir(t))
+	migrator, conn := newTestMigrator(t, path, testMigrationsFS(t))
 	defer closeMigrator(t, migrator, conn)
 	if err := migrator.Migrate(7); err != nil {
 		t.Fatal(err)

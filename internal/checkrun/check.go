@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"slices"
 	"time"
@@ -21,14 +22,16 @@ import (
 )
 
 type Options struct {
-	WorkspaceRoot, MigrationsDir, HoldID, Actor, IdempotencyKey, Version string
-	Names                                                                []string
-	Clock                                                                func() time.Time
-	Output                                                               io.Writer
-	Before                                                               func(string) error
-	After                                                                func(checkrecord.Record) error
-	Warning                                                              func(string) error
-	RenewInterval                                                        time.Duration
+	WorkspaceRoot                          string
+	MigrationsFS                           fs.FS
+	HoldID, Actor, IdempotencyKey, Version string
+	Names                                  []string
+	Clock                                  func() time.Time
+	Output                                 io.Writer
+	Before                                 func(string) error
+	After                                  func(checkrecord.Record) error
+	Warning                                func(string) error
+	RenewInterval                          time.Duration
 	// beforeWrite lets package tests schedule a competitor between lock acquisitions.
 	beforeWrite func()
 }

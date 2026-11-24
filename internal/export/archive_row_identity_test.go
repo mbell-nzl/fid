@@ -47,7 +47,7 @@ func TestImportRowIdentity(t *testing.T) {
 			} // Import already refuses all Event-v1 history.
 			t.Run(group.name+"/"+p.Name, func(t *testing.T) {
 				t.Parallel()
-				v, err := newSemanticValidator(testMigrationsDir(t), 35)
+				v, err := newSemanticValidator(testMigrationsFS(t), 35)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -146,12 +146,12 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 	fixture := newExportSourceFixture(t, func(t *testing.T, root string) string {
 		t.Helper()
 		for _, label := range []string{"red", "blue"} {
-			if _, err := labels.Add(labels.AddOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Name: label, Actor: "human:mark", IdempotencyKey: label}); err != nil {
+			if _, err := labels.Add(labels.AddOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Name: label, Actor: "human:mark", IdempotencyKey: label}); err != nil {
 				t.Fatal(err)
 			}
 		}
 		for _, title := range []string{"First", "Second"} {
-			created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: title, Actor: "human:mark", IdempotencyKey: title})
+			created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Kind: "task", Title: title, Actor: "human:mark", IdempotencyKey: title})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,13 +161,13 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 				second = created.ID
 			}
 		}
-		if _, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), IssueID: first, Text: "Works", Ordinal: 1, Actor: "human:mark", IdempotencyKey: "ac"}); err != nil {
+		if _, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), IssueID: first, Text: "Works", Ordinal: 1, Actor: "human:mark", IdempotencyKey: "ac"}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := issues.AddLabel(issues.AddLabelOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), IssueID: first, Label: "red", Actor: "human:mark", IdempotencyKey: "add"}); err != nil {
+		if _, err := issues.AddLabel(issues.AddLabelOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), IssueID: first, Label: "red", Actor: "human:mark", IdempotencyKey: "add"}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := links.Add(links.AddOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), FromID: first, ToID: second, Relation: "blocks", Actor: "human:mark", IdempotencyKey: "link"}); err != nil {
+		if _, err := links.Add(links.AddOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), FromID: first, ToID: second, Relation: "blocks", Actor: "human:mark", IdempotencyKey: "link"}); err != nil {
 			t.Fatal(err)
 		}
 		return first
@@ -213,16 +213,16 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "malformed"})
+			_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "malformed"})
 			if tc.name == "case variant structured map" {
 				if err != nil {
 					t.Fatalf("distinct map keys refused: %v", err)
 				}
-				if _, err := journal.RebuildWorkspace(target, testMigrationsDir(t)); err != nil {
+				if _, err := journal.RebuildWorkspace(target, testMigrationsFS(t)); err != nil {
 					t.Fatalf("rebuild admitted map: %v", err)
 				}
 				title := "After distinct map"
-				if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ID: first, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+				if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), ID: first, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
 					t.Fatalf("later valid write: %v", err)
 				}
 				return
@@ -237,11 +237,11 @@ func TestImportMalformedRowsLeavesTargetUnchanged(t *testing.T) {
 			if before != workspaceTreeDigest(t, target) {
 				t.Fatal("refused import changed target")
 			}
-			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "valid"}); err != nil {
+			if _, err := Import(ImportOptions{ArchivePath: fixture.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "valid"}); err != nil {
 				t.Fatal(err)
 			}
 			title := "After refusal"
-			if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ID: first, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
+			if _, err := issues.Update(issues.UpdateOptions{WorkspaceRoot: target, MigrationsFS: testMigrationsFS(t), ID: first, Title: &title, Actor: "human:mark", IdempotencyKey: "later"}); err != nil {
 				t.Fatalf("later valid write: %v", err)
 			}
 		})

@@ -3,10 +3,10 @@ package maintenance
 import (
 	"database/sql"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"testing"
 	"time"
@@ -15,6 +15,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 type structuralFixture struct {
@@ -46,7 +47,7 @@ func newMaintenanceFixture(t *testing.T) structuralFixture {
 
 	root := gittest.NewWorkspace(t)
 	dbPath := filepath.Join(root, "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, maintenanceMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, maintenanceMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	db, err := fiddb.Open(dbPath)
@@ -322,13 +323,9 @@ func assertFindingsOrdered(t *testing.T, findings []Finding) {
 	}
 }
 
-func maintenanceMigrationsDir(t *testing.T) string {
+func maintenanceMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func stringPtr(value string) *string { return &value }

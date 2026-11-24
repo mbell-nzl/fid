@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/reviewpost"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestReviewConcurrentPosting(t *testing.T) {
@@ -41,7 +42,7 @@ func TestReviewConcurrentPosting(t *testing.T) {
 	results := make(chan outcome, 2)
 	for range 2 {
 		go func() {
-			r, err := reviewpost.Round(context.Background(), f.workspace, issueMigrationsDir(), id, run)
+			r, err := reviewpost.Round(context.Background(), f.workspace, fidmigrations.FS, id, run)
 			results <- outcome{r, err}
 		}()
 	}

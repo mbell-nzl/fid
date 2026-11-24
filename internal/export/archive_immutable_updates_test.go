@@ -18,7 +18,7 @@ func TestImmutableUpdatesAcrossOldProfilePaths(t *testing.T) {
 	for _, mode := range []string{"dry-run", "project", "replay", "import"} {
 		t.Run(mode, func(t *testing.T) {
 			t.Parallel()
-			v, err := newSemanticValidator(testMigrationsDir(t), 20)
+			v, err := newSemanticValidator(testMigrationsFS(t), 20)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -80,7 +80,7 @@ func TestTransitionHoldSubjectAcrossOldProfilePaths(t *testing.T) {
 	for _, mode := range []string{"dry-run", "project", "replay", "import"} {
 		t.Run(mode, func(t *testing.T) {
 			t.Parallel()
-			v, err := newSemanticValidator(testMigrationsDir(t), 20)
+			v, err := newSemanticValidator(testMigrationsFS(t), 20)
 			if err != nil {
 				t.Fatal(err)
 			}

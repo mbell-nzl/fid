@@ -63,7 +63,7 @@ func ListIssueSummaries(options ListOptions) ([]IssueSummary, error) {
 	for _, item := range items {
 		detail, err := ReadIssueDetail(GetOptions{
 			WorkspaceRoot: options.WorkspaceRoot,
-			MigrationsDir: options.MigrationsDir,
+			MigrationsFS:  options.MigrationsFS,
 			ID:            item.ID,
 		})
 		if err != nil {

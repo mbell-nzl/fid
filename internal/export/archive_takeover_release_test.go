@@ -29,7 +29,7 @@ func TestTakeoverReplayAndImportValidateEveryReleasedReservation(t *testing.T) {
 		} {
 			t.Run(path+"/"+test.name, func(t *testing.T) {
 				t.Parallel()
-				validator, err := newSemanticValidator(testMigrationsDir(t), 22)
+				validator, err := newSemanticValidator(testMigrationsFS(t), 22)
 				if err != nil {
 					t.Fatal(err)
 				}

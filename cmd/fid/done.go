@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/donework"
 	"github.com/mbell-nzl/fid/internal/github"
 	"github.com/mbell-nzl/fid/internal/persondecision"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -29,9 +30,9 @@ func newDoneCommand(run github.Runner) *cobra.Command {
 			return doneReasonUsage(cmd, reason)
 		}
 		if len(args) == 0 {
-			return reconcileDone(cmd, donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Actor: actor, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
+			return reconcileDone(cmd, donework.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, Actor: actor, Clock: commandDisplayEnvironment(cmd).now, Runner: run})
 		}
-		options := donework.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: args[0], Actor: actor, IdempotencyKey: key, Reason: reason, Clock: commandDisplayEnvironment(cmd).now, Runner: run}
+		options := donework.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: args[0], Actor: actor, IdempotencyKey: key, Reason: reason, Clock: commandDisplayEnvironment(cmd).now, Runner: run}
 		epic, err := donework.EpicTarget(options)
 		if err != nil {
 			return renderCheckOperationFailure(cmd, "task.done", err)

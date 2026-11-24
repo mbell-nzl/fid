@@ -2,13 +2,14 @@ package issuestate
 
 import (
 	"database/sql"
+	"io/fs"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/db"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestRegistryEqualsV01Definitions(t *testing.T) {
@@ -136,7 +137,7 @@ func migratedWorkflowRegistryDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := db.MigrateUp(dbPath, workflowMigrationsDir(t)); err != nil {
+	if err := db.MigrateUp(dbPath, workflowMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	conn, err := db.Open(dbPath)
@@ -153,12 +154,7 @@ func closeRegistryDB(t *testing.T, conn *sql.DB) {
 	}
 }
 
-func workflowMigrationsDir(t *testing.T) string {
+func workflowMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }

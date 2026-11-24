@@ -13,6 +13,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestActivityListAppliesFilters(t *testing.T) {
@@ -158,7 +159,7 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 
 	created, err := issues.Create(issues.CreateOptions{
 		WorkspaceRoot:  workspace,
-		MigrationsDir:  issueMigrationsDir(),
+		MigrationsFS:   fidmigrations.FS,
 		Kind:           "task",
 		Title:          title,
 		Actor:          "agent:developer",

@@ -18,7 +18,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 
 		created, err := Create(CreateOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testIssueMigrationsDir(t),
+			MigrationsFS:  testIssueMigrationsFS(t),
 			Kind:          "task",
 			Title:         "Render empty detail",
 			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -29,7 +29,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 
 		got, err := Get(GetOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testIssueMigrationsDir(t),
+			MigrationsFS:  testIssueMigrationsFS(t),
 			ID:            created.ID,
 		})
 		if err != nil {
@@ -64,7 +64,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 
 		got, err := Get(GetOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testIssueMigrationsDir(t),
+			MigrationsFS:  testIssueMigrationsFS(t),
 			ID:            "FID-a1b2c3",
 		})
 		if err != nil {

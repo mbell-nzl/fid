@@ -9,7 +9,7 @@ import (
 func TestHistoricalTaskCompletionKindGuards(t *testing.T) {
 	t.Parallel()
 
-	conn := openSchema17DB(t, testKindTriggerMigrationsDir(t))
+	conn := openSchema17DB(t, testKindTriggerMigrationsFS(t))
 	defer closeKindTriggerDB(t, conn)
 
 	insertIssueRow(t, conn, issueRow{

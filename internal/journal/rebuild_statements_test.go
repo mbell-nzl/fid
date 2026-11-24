@@ -66,7 +66,7 @@ func TestRebuildFailurePreservesInstalledProjectionAndJournal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	_, err = RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	var conflict *PreconditionConflictError
 	if !errors.As(err, &conflict) || conflict.Line != 2 || conflict.EventID != "EVT-20260605-000002" {
 		t.Fatalf("rebuild error = %v, want located precondition conflict", err)

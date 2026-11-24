@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestShowWaivedCompletionReceipt(t *testing.T) {
@@ -50,7 +51,7 @@ func TestShowWaivedCompletionReceipt(t *testing.T) {
 					hideWaivedCompletionObjects(t, f, completion)
 				}
 				if phase == "rebuilt" {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -200,7 +201,7 @@ func TestShowCompletedWaiverCurrency(t *testing.T) {
 			hideWaivedCompletionObjects(t, f, completion)
 			for _, rebuild := range []bool{false, true} {
 				if rebuild {
-					if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+					if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 				}

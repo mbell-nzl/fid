@@ -10,7 +10,7 @@ import (
 
 func epicCloseArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
-	v, err := newSemanticValidator(testMigrationsDir(t), 35)
+	v, err := newSemanticValidator(testMigrationsFS(t), 35)
 	if err != nil {
 		t.Fatal(err)
 	}

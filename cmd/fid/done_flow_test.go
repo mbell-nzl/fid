@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func runDone(t *testing.T, f *statusFixture, run github.Runner, args ...string) commandExecutionResult {
@@ -119,7 +120,7 @@ func TestDoneCompletesReviewedTasksAndReplays(t *testing.T) {
 			if again.err != nil || again.stdout != first.stdout || startEventCount(t, f.workspace) != before {
 				t.Fatalf("retry=%#v", again)
 			}
-			if _, err := journal.RebuildWorkspace(f.workspace, issueMigrationsDir()); err != nil {
+			if _, err := journal.RebuildWorkspace(f.workspace, fidmigrations.FS); err != nil {
 				t.Fatal(err)
 			}
 			conn, err := reviewwork.OpenProjection(f.workspace)

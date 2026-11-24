@@ -6,6 +6,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,7 @@ func newHandoffCommand() *cobra.Command {
 		if err != nil {
 			return renderCheckOperationFailure(cmd, "task.handoff", err)
 		}
-		result, err := holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, PR: pr, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
+		result, err := holdwork.Handoff(holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, HoldID: hold, Actor: actor, PR: pr, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now})
 		if err != nil {
 			return renderCheckOperationFailure(cmd, "task.handoff", err)
 		}

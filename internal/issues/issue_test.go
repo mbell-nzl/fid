@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -15,6 +15,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestGetReturnsNotFoundErrorForMissingIssue(t *testing.T) {
@@ -24,7 +25,7 @@ func TestGetReturnsNotFoundErrorForMissingIssue(t *testing.T) {
 
 	_, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            "FID-missing",
 	})
 	if err == nil {
@@ -55,10 +56,10 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 			name: "create requires workspace root",
 			call: func() error {
 				_, err := Create(CreateOptions{
-					MigrationsDir: testIssueMigrationsDir(t),
-					Kind:          "task",
-					Title:         "Implement coverage",
-					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					MigrationsFS: testIssueMigrationsFS(t),
+					Kind:         "task",
+					Title:        "Implement coverage",
+					Actor:        testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -83,7 +84,7 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 				workspace := newIssueWorkspace(t)
 				_, err := Create(CreateOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					Kind:          "task",
 					Title:         "  ",
 					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -96,8 +97,8 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 			name: "get requires workspace root",
 			call: func() error {
 				_, err := Get(GetOptions{
-					MigrationsDir: testIssueMigrationsDir(t),
-					ID:            "FID-123456",
+					MigrationsFS: testIssueMigrationsFS(t),
+					ID:           "FID-123456",
 				})
 				return err
 			},
@@ -120,7 +121,7 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 				workspace := newIssueWorkspace(t)
 				_, err := Get(GetOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
+					MigrationsFS:  testIssueMigrationsFS(t),
 					ID:            "   ",
 				})
 				return err
@@ -149,7 +150,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 
 	_, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "bug",
 		Title:         "Unsupported kind",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -178,7 +179,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	epicCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "epic",
 		Title:         "Phase 4 authoring",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -190,7 +191,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	epic, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            epicCreated.ID,
 	})
 	if err != nil {
@@ -217,7 +218,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Implement authoring domain",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -233,7 +234,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	task, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            taskCreated.ID,
 	})
 	if err != nil {
@@ -266,7 +267,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	subtaskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "subtask",
 		Title:         "Cover rebuild parity",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -278,7 +279,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 
 	subtask, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            subtaskCreated.ID,
 	})
 	if err != nil {
@@ -327,7 +328,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 
 	epicCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "epic",
 		Title:         "Parent epic",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -339,7 +340,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Parent task",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -350,7 +351,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 
 	subtaskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "subtask",
 		Title:         "Existing subtask",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -369,7 +370,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "epic cannot have parent",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "epic",
 				Title:         "Invalid epic",
 				Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -382,7 +383,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "subtask requires task parent",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "subtask",
 				Title:         "Missing subtask parent",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -393,7 +394,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "task parent must be epic",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "task",
 				Title:         "Task under subtask",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -405,7 +406,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "subtask parent cannot be epic",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "subtask",
 				Title:         "Subtask under epic",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -417,7 +418,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "non-epic metadata rejected",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "task",
 				Title:         "Task with scheduling",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -429,7 +430,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 			name: "unknown labels rejected",
 			options: CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "task",
 				Title:         "Unknown label",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -459,7 +460,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 
 	epicCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "epic",
 		Title:         "Prioritised parent",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -471,7 +472,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 
 	validTask, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Valid sibling",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -486,7 +487,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 
 	_, err = Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Invalid sequenced task",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -506,7 +507,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            validTask.ID,
 	})
 	if err != nil {
@@ -521,13 +522,13 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsFS(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() after rejected create error = %v", err)
 	}
 
 	rebuilt, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            validTask.ID,
 	})
 	if err != nil {
@@ -546,7 +547,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 
 	epicCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "epic",
 		Title:         "Rebuild parent",
 		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
@@ -558,7 +559,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 
 	taskCreated, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Rebuild task",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -574,7 +575,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 
 	before, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            taskCreated.ID,
 	})
 	if err != nil {
@@ -586,13 +587,13 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsFS(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
 	after, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            taskCreated.ID,
 	})
 	if err != nil {
@@ -622,7 +623,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Implement coverage remediation",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -642,7 +643,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            created.ID,
 	})
 	if err != nil {
@@ -696,7 +697,7 @@ func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Retired field event coverage",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -740,7 +741,7 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 
 	_, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		Kind:          "task",
 		Title:         "Record create activity",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -839,7 +840,7 @@ func TestGetReturnsLatestTriageStatus(t *testing.T) {
 
 			created, err := Create(CreateOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				Kind:          "task",
 				Title:         "Map latest triage verdict",
 				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -914,7 +915,7 @@ func TestGetReturnsLatestTriageStatus(t *testing.T) {
 
 			got, err := Get(GetOptions{
 				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
+				MigrationsFS:  testIssueMigrationsFS(t),
 				ID:            created.ID,
 			})
 			if err != nil {
@@ -987,7 +988,7 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 		ID:            "FID-populated",
 	})
 	if err != nil {
@@ -1064,15 +1065,9 @@ func TestIssueHelpersCoverNullHandlingAndJournalLines(t *testing.T) {
 	})
 }
 
-func testIssueMigrationsDir(t *testing.T) string {
+func testIssueMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func newIssueWorkspace(t *testing.T) string {
@@ -1081,7 +1076,7 @@ func newIssueWorkspace(t *testing.T) string {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
+		MigrationsFS:  testIssueMigrationsFS(t),
 	}); err != nil {
 		t.Fatalf("InitializeWorkspace() error = %v", err)
 	}
@@ -1108,7 +1103,7 @@ func openIssueDB(t *testing.T, dbPath string) *sql.DB {
 // fixtures do.
 func seedIssueStatus(t *testing.T, workspace, issueID, status string) {
 	t.Helper()
-	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsDir(t)); err != nil {
+	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))

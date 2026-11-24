@@ -169,7 +169,7 @@ func TestMalformedCancellationHoldEnd(t *testing.T) {
 					t.Fatal(err)
 				}
 				if mode == "replay" && variant == "task-completed" {
-					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsDir(t)); err != nil {
+					if _, err := EnsureProjectionFresh(w.root, testProjectMigrationsFS(t)); err != nil {
 						t.Fatal(err)
 					}
 				}

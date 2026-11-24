@@ -3,6 +3,7 @@ package issues
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -20,7 +21,7 @@ const (
 
 type OverviewOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 }
 
 // Overview is the project's open epics and tasks, for fid status. Subtasks
@@ -108,7 +109,7 @@ type overviewEpic struct {
 // list, are ordered by sequence, then priority, then creation and ID, with
 // a missing sequence or priority last.
 func ReadOverview(options OverviewOptions) (Overview, error) {
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return Overview{}, err
 	}
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

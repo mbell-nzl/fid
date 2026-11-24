@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -59,7 +60,7 @@ func newHoldCommand(name string) *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, operation, err)
 		}
-		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Question: waiting, Model: model}
+		options := holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Question: waiting, Model: model}
 		action := holdwork.Heartbeat
 		if name == "park" {
 			action = holdwork.Park

@@ -3,22 +3,23 @@ package journal
 import (
 	"database/sql"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestProjectEventAppliesEffectsAndUpdatesProjectionMeta(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -129,7 +130,7 @@ func TestProjectEventValidatesRequiredInputs(t *testing.T) {
 	}
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	conn, err := fiddb.Open(dbPath)
@@ -164,7 +165,7 @@ func TestProjectEventAppliesUpdateDeleteAndReplayStatus(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -267,7 +268,7 @@ func TestProjectEventProjectsActivityEffectIntoActivityLog(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -376,7 +377,7 @@ func TestProjectEventProjectsEachActivityEffectIntoOneRow(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -428,7 +429,7 @@ func TestProjectEventRejectsActivityEffectWithUnresolvedRef(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -521,7 +522,7 @@ func TestProjectEventRejectsGenericWritesToActivityLog(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 				t.Fatalf("MigrateUp() error = %v", err)
 			}
 
@@ -619,7 +620,7 @@ func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -746,7 +747,7 @@ func TestProjectEventHonoursSequenceSchedulingBackstop(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 				t.Fatalf("MigrateUp() error = %v", err)
 			}
 
@@ -796,7 +797,7 @@ func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *t
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -885,7 +886,7 @@ func TestDryRunProjectEventRollsBackOnProjectionFailure(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 
@@ -1078,15 +1079,9 @@ func TestProjectHelpersValidateEffectsAndResults(t *testing.T) {
 	})
 }
 
-func testProjectMigrationsDir(t *testing.T) string {
+func testProjectMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeProjectDB(t *testing.T, conn interface{ Close() error }) {

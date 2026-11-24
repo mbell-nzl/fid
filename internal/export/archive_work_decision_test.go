@@ -9,7 +9,7 @@ import (
 
 func workDecisionFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
-	v, err := newSemanticValidator(testMigrationsDir(t), 37)
+	v, err := newSemanticValidator(testMigrationsFS(t), 37)
 	if err != nil {
 		t.Fatal(err)
 	}

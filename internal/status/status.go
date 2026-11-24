@@ -5,6 +5,7 @@ package status
 
 import (
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/backup"
@@ -23,7 +24,7 @@ const CreateTaskCommand = "fid issue create --kind task --title <title> --actor 
 
 type Options struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	// Environment locates user config, as fid backup's does.
 	Environment []string
 	// Now is when status is judged, in the time zone it shows times in.

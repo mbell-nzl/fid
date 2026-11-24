@@ -157,7 +157,7 @@ func (run *attempt) export(scratch string) (export.Summary, string, error) {
 	if err != nil {
 		return export.Summary{}, "", failure(KindExportFailed, err, "export the ledger")
 	}
-	if _, err := export.Validate(export.ValidateOptions{ArchivePath: archive, MigrationsDir: run.options.MigrationsDir}); err != nil {
+	if _, err := export.Validate(export.ValidateOptions{ArchivePath: archive, MigrationsFS: run.options.MigrationsFS}); err != nil {
 		var invalid *export.InvalidArchiveError
 		if errors.As(err, &invalid) {
 			codes := make([]string, 0, len(invalid.Checks))

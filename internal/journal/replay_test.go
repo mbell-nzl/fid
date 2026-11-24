@@ -230,7 +230,7 @@ func TestRebuildWorkspaceRecreatesIdenticalStateAfterDeletingDatabase(t *testing
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -405,11 +405,11 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -428,7 +428,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -438,7 +438,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		}
 		closeProjectDB(t, conn)
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -457,7 +457,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -476,7 +476,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -486,7 +486,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		}
 		closeProjectDB(t, conn)
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -502,7 +502,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -512,7 +512,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		}
 		closeProjectDB(t, conn)
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -528,7 +528,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -538,7 +538,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		}
 		closeProjectDB(t, conn)
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -554,13 +554,13 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsFS(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
 		appendReplayFixtureLine(t, workspace, "replay-catchup-event.json", "2026-06-05.jsonl")
 
-		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 		if err != nil {
 			t.Fatalf("EnsureProjectionFresh() error = %v", err)
 		}
@@ -592,7 +592,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 		}
 
 		var ensureErr error
-		result, ensureErr = EnsureProjectionFreshWithLock(lock, testProjectMigrationsDir(t))
+		result, ensureErr = EnsureProjectionFreshWithLock(lock, testProjectMigrationsFS(t))
 		return ensureErr
 	})
 	if err != nil {
@@ -711,7 +711,7 @@ func newReplayWorkspace(t *testing.T) string {
 func openReplayDB(t *testing.T, dbPath string) *sql.DB {
 	t.Helper()
 
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 

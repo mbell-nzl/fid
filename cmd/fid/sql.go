@@ -7,6 +7,7 @@ import (
 	"io"
 
 	internalsqlquery "github.com/mbell-nzl/fid/internal/sqlquery"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,7 @@ func newSQLCommand() *cobra.Command {
 
 			result, err := internalsqlquery.Run(internalsqlquery.Options{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				Query:         args[0],
 			})
 			if err != nil {

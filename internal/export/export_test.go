@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
@@ -27,7 +29,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testMigrationsDir(t),
+		MigrationsFS:  testMigrationsFS(t),
 		Prefix:        "FID",
 	}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
@@ -53,7 +55,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	if !bytes.Equal(firstBytes, secondBytes) {
 		t.Fatal("repeated creates from identical facts produced different archive bytes")
 	}
-	validation, err := Validate(ValidateOptions{ArchivePath: first, MigrationsDir: testMigrationsDir(t)})
+	validation, err := Validate(ValidateOptions{ArchivePath: first, MigrationsFS: testMigrationsFS(t)})
 	if err != nil {
 		t.Fatalf("validate deterministic archive: %#v", err)
 	}
@@ -79,7 +81,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 func TestSchema41ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -90,10 +92,10 @@ func TestSchema41ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(41) {
 		t.Fatalf("manifest projection_schema = %v, want 41", got)
 	}
-	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("validate schema-41 archive: %#v", err)
 	}
-	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema41"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsFS: testMigrationsFS(t), IdempotencyKey: "schema41"}); err != nil {
 		t.Fatal(err)
 	}
 	entries := archiveContents(t, archivePath)
@@ -104,7 +106,7 @@ func TestSchema41ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	writeTestArchive(t, invalidArchive, entries)
 	target := gittest.NewWorkspace(t)
 	before := workspaceTreeDigest(t, target)
-	_, err := Import(ImportOptions{ArchivePath: invalidArchive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema18"})
+	_, err := Import(ImportOptions{ArchivePath: invalidArchive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "schema18"})
 	assertArchiveCheck(t, err, "schema-unsupported")
 	invalid, ok := err.(*InvalidArchiveError)
 	if !ok {
@@ -127,7 +129,7 @@ func TestSchema41ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 func TestCheckResultFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	addLeanArtifactExportFacts(t, workspace)
@@ -257,7 +259,7 @@ func mutateIdempotencyEffect(t *testing.T, original map[string][]byte, eventType
 func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	t.Parallel()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
 	addLeanArtifactExportFacts(t, source)
@@ -267,7 +269,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	}
 	target := gittest.NewWorkspace(t)
 	_, err := Import(ImportOptions{
-		ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "import-crash",
+		ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "import-crash",
 		Fault: func(stage ImportStage) error {
 			if stage == ImportBeforePublication {
 				return ErrImportFault
@@ -286,7 +288,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
 	archivePath := filepath.Join(t.TempDir(), "archive.zip")
@@ -303,7 +305,7 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 	writeTestArchive(t, archivePath, entries)
 
 	before := workspaceTreeDigest(t, workspace)
-	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
+	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)})
 	after := workspaceTreeDigest(t, workspace)
 	if before != after {
 		t.Fatal("validate mutated project state")
@@ -335,7 +337,7 @@ func TestArchiveRequiresEmptySourceInventory(t *testing.T) {
 			archive := filepath.Join(t.TempDir(), "sources.zip")
 			writeTestArchive(t, archive, entries)
 			before := workspaceTreeDigest(t, fixture.workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			if tc.valid {
 				if err != nil {
 					t.Fatal(err)
@@ -371,7 +373,7 @@ func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
 			corruptArchiveForCheck(t, corruption, workspace, archivePath)
 
 			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)})
 			after := workspaceTreeDigest(t, workspace)
 			if before != after {
 				t.Fatal("validate mutated project state")
@@ -659,7 +661,7 @@ func archiveEntries(t *testing.T, archivePath string) []string {
 	return entries
 }
 
-func testMigrationsDir(t *testing.T) string {
+func testMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-	return filepath.Join("..", "..", "migrations")
+	return fidmigrations.FS
 }

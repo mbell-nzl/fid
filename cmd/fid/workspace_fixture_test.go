@@ -21,6 +21,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 var pristineWorkspaceRoot string
@@ -117,7 +118,7 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	}
 	_, err = bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: templateRoot,
-		MigrationsDir: filepath.Join(commandRepositoryRoot(), "migrations"),
+		MigrationsFS:  fidmigrations.FS,
 		Prefix:        "FID",
 	})
 	if err != nil {
@@ -501,7 +502,7 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 
 	databasePath := config.WorkspacePathsForRoot(cloneA).DatabasePath
 	beforeRebuild := readWorkspaceFixtureFile(t, databasePath)
-	if _, err := journal.RebuildWorkspace(cloneA, filepath.Join("..", "..", "migrations")); err != nil {
+	if _, err := journal.RebuildWorkspace(cloneA, fidmigrations.FS); err != nil {
 		t.Fatalf("rebuild cloned workspace: %v", err)
 	}
 	afterRebuild := readWorkspaceFixtureFile(t, databasePath)

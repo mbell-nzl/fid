@@ -13,7 +13,7 @@ import (
 func TestValidateHasNoSourceOrDestinationEffects(t *testing.T) {
 	t.Parallel()
 	workspace, destination := gittest.NewWorkspace(t), t.TempDir()
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(destination, "sentinel.txt"), []byte("operator files remain intact"), 0o600); err != nil {
@@ -32,7 +32,7 @@ func TestValidateHasNoSourceOrDestinationEffects(t *testing.T) {
 			writeTestArchive(t, archive, contents)
 		}
 		sourceBefore, destinationBefore := workspaceTreeDigest(t, workspace), workspaceTreeDigest(t, destination)
-		_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+		_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 		if (err != nil) != invalid {
 			t.Fatalf("invalid=%v error=%v", invalid, err)
 		}
@@ -45,7 +45,7 @@ func TestValidateHasNoSourceOrDestinationEffects(t *testing.T) {
 func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
@@ -64,7 +64,7 @@ func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
 	if len(contents["journal/00000001.jsonl"]) == 0 {
 		t.Fatal("canonical ordinal journal chunk is missing")
 	}
-	if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+	if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)}); err != nil {
 		t.Fatalf("validate full v2 control: %v", err)
 	}
 }
@@ -72,7 +72,7 @@ func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
 func TestValidateRefusesPinnedV1Profile(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	archive := filepath.Join(t.TempDir(), "historical.zip")
@@ -91,14 +91,14 @@ func TestValidateRefusesPinnedV1Profile(t *testing.T) {
 	writeTestArchive(t, archive, contents)
 	before := workspaceTreeDigest(t, workspace)
 	archiveBefore := workspaceTreeDigest(t, filepath.Dir(archive))
-	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 	assertArchiveCheck(t, err, "schema-unsupported")
 	if workspaceTreeDigest(t, workspace) != before || workspaceTreeDigest(t, filepath.Dir(archive)) != archiveBefore {
 		t.Fatal("v1 refusal mutated project or archive")
 	}
 	target := gittest.NewWorkspace(t)
 	targetBefore := treeListing(t, target)
-	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "v1-rejected"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "v1-rejected"})
 	var invalid *InvalidArchiveError
 	if !errors.As(err, &invalid) || len(invalid.Checks) != 1 || invalid.Checks[0].Code != "schema-unsupported" {
 		t.Fatalf("v1 import error = %#v, want schema-unsupported archive check", err)
@@ -148,7 +148,7 @@ func TestValidateRecoveryManifestClosedConfigurationAndInventory(t *testing.T) {
 			contents["manifest.json"] = encodeManifestMap(t, m)
 			writeTestArchive(t, archive, contents)
 			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 			assertArchiveCheck(t, err, tc.code)
 			if workspaceTreeDigest(t, workspace) != before {
 				t.Fatal("invalid archive validation changed project")

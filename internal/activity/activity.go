@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ import (
 
 type ListOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	On            string
 	Since         string
 	Event         string
@@ -33,12 +34,12 @@ type Entry struct {
 }
 
 func List(options ListOptions) ([]Entry, error) {
-	workspaceRoot, migrationsDir, on, since, err := validateListOptions(options)
+	workspaceRoot, migrationsFS, on, since, err := validateListOptions(options)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsFS); err != nil {
 		return nil, err
 	}
 
@@ -77,28 +78,28 @@ func List(options ListOptions) ([]Entry, error) {
 	return items, nil
 }
 
-func validateListOptions(options ListOptions) (string, string, onFilter, string, error) {
+func validateListOptions(options ListOptions) (string, fs.FS, onFilter, string, error) {
 	workspaceRoot := strings.TrimSpace(options.WorkspaceRoot)
 	if workspaceRoot == "" {
-		return "", "", onFilter{}, "", fmt.Errorf("activity list: workspace root is required")
+		return "", nil, onFilter{}, "", fmt.Errorf("activity list: workspace root is required")
 	}
 
-	migrationsDir := strings.TrimSpace(options.MigrationsDir)
-	if migrationsDir == "" {
-		return "", "", onFilter{}, "", fmt.Errorf("activity list: migrations dir is required")
+	migrationsFS := options.MigrationsFS
+	if migrationsFS == nil {
+		return "", nil, onFilter{}, "", fmt.Errorf("activity list: migrations dir is required")
 	}
 
 	on, err := parseOnFilter(options.On)
 	if err != nil {
-		return "", "", onFilter{}, "", err
+		return "", nil, onFilter{}, "", err
 	}
 
 	since, err := normalizeSince(options.Since)
 	if err != nil {
-		return "", "", onFilter{}, "", err
+		return "", nil, onFilter{}, "", err
 	}
 
-	return workspaceRoot, migrationsDir, on, since, nil
+	return workspaceRoot, migrationsFS, on, since, nil
 }
 
 type onFilter struct {

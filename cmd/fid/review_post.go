@@ -6,6 +6,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/reviewpost"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ func newReviewPostCommand() *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, "review.post", err, "")
 		}
-		result, err := reviewpost.Round(cmd.Context(), root, issueMigrationsDir(), args[0], nil)
+		result, err := reviewpost.Round(cmd.Context(), root, fidmigrations.FS, args[0], nil)
 		if err != nil {
 			return reviewFailure(cmd, "review.post", err, "")
 		}
@@ -51,12 +52,12 @@ func postFindingResponse(cmd *cobra.Command, root, finding string) {
 	err = conn.QueryRow(`SELECT round_id FROM round_findings WHERE id=?`, finding).Scan(&round)
 	_ = conn.Close()
 	if err == nil {
-		_, _ = reviewpost.Round(cmd.Context(), root, issueMigrationsDir(), round, nil)
+		_, _ = reviewpost.Round(cmd.Context(), root, fidmigrations.FS, round, nil)
 	}
 }
 
 // Recording has already succeeded. A delivery failure stays visible offline
 // in status; it must never turn the canonical write into a failed command.
 func postRecordedRound(cmd *cobra.Command, root, round string) {
-	_, _ = reviewpost.Round(cmd.Context(), root, issueMigrationsDir(), round, nil)
+	_, _ = reviewpost.Round(cmd.Context(), root, fidmigrations.FS, round, nil)
 }

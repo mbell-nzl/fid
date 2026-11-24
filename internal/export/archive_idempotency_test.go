@@ -46,7 +46,7 @@ func assertIdempotencyArchiveAdmission(t *testing.T, binary string, original map
 	entries["manifest.json"] = encodeManifestMap(t, manifest)
 	archive := filepath.Join(t.TempDir(), "guard.zip")
 	writeTestArchive(t, archive, entries)
-	_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+	_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsFS: testMigrationsFS(t)})
 	if valid && err != nil {
 		t.Fatalf("valid check archive=%v", err)
 	}

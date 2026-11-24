@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -31,8 +32,8 @@ type RestoreOptions struct {
 	WorkspaceRoot string
 	// Environment is the process environment. It locates user config and the
 	// git credentials, and git runs with it as it does for a backup.
-	Environment   []string
-	MigrationsDir string
+	Environment  []string
+	MigrationsFS fs.FS
 }
 
 // Restored is the result fid restore reports.
@@ -221,7 +222,7 @@ func folderBlob(repository clone, commit, path string, output io.Writer) (bool, 
 // backup installed, is refused like one that was there to begin with.
 func importArchive(options RestoreOptions, archive, commit, id, ledgerPath string) (export.ImportResult, error) {
 	imported, err := export.Import(export.ImportOptions{ArchivePath: archive, RepositoryRoot: options.WorkspaceRoot,
-		MigrationsDir: options.MigrationsDir, IdempotencyKey: "fid-restore:" + commit})
+		MigrationsFS: options.MigrationsFS, IdempotencyKey: "fid-restore:" + commit})
 	var conflict *export.ImportTargetConflictError
 	var invalid *export.InvalidArchiveError
 	switch {

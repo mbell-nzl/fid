@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/reviewwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +32,7 @@ func newFindingResponseCommand(deferFinding bool) *cobra.Command {
 		if err != nil {
 			return reviewFailure(cmd, operation, err, "")
 		}
-		o.WorkspaceRoot, o.MigrationsDir, o.FindingID, o.Clock = root, issueMigrationsDir(), args[0], commandDisplayEnvironment(cmd).now
+		o.WorkspaceRoot, o.MigrationsFS, o.FindingID, o.Clock = root, fidmigrations.FS, args[0], commandDisplayEnvironment(cmd).now
 		result, err := reviewwork.Respond(o)
 		if err != nil {
 			return reviewFailure(cmd, operation, err, "")

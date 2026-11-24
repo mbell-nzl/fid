@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -23,7 +24,7 @@ type Request struct {
 
 type Options struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	ActorID        string
 	IdempotencyKey string
 	Request        Request
@@ -71,12 +72,12 @@ func Verify(options Options) (Result, error) {
 		return Result{}, &DeniedActorError{Actor: options.ActorID}
 	}
 
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.Request.ArtifactID) == "" {
+	if strings.TrimSpace(options.WorkspaceRoot) == "" || options.MigrationsFS == nil || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.Request.ArtifactID) == "" {
 		return Result{}, fmt.Errorf("verify Artifact: workspace root, migrations directory, actor, and Artifact are required")
 	}
 	var result Result
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid artifact verify"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))

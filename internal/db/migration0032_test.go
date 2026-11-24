@@ -7,7 +7,7 @@ import (
 
 func TestReworkMigrationPreservesHoldHistory(t *testing.T) {
 	t.Parallel()
-	m, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t))
+	m, conn := newTestMigrator(t, filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsFS(t))
 	defer closeMigrator(t, m, conn)
 	if err := m.Migrate(31); err != nil {
 		t.Fatal(err)

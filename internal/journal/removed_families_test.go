@@ -51,9 +51,9 @@ func TestRemovedFamiliesRefusedWithoutMutation(t *testing.T) {
 					case "checkpointed-replay":
 						_, err = ReplayJournal(conn, dir, &ReplayOptions{StartFile: filepath.Base(path), StartOffset: int64(len(beforeBytes))})
 					case "rebuild":
-						_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+						_, err = RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 					case "freshen":
-						_, err = EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+						_, err = EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 					}
 					if err == nil || !strings.Contains(err.Error(), "schema-unsupported") || !strings.Contains(err.Error(), family) {
 						t.Fatalf("%s = %v, want schema-unsupported naming %s", mode, err, family)

@@ -10,7 +10,7 @@ import (
 func postArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, e := responseArchiveFixture(t, false)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 41); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 41); err != nil {
 		t.Fatal(err)
 	}
 	var err error

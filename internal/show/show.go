@@ -5,6 +5,7 @@ package show
 
 import (
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/decisionview"
@@ -17,7 +18,7 @@ import (
 
 type Options struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	ID            string
 	Now           time.Time
 }
@@ -39,7 +40,7 @@ type Result struct {
 
 // Build reads the issue whose ID is exactly options.ID.
 func Build(options Options) (Result, error) {
-	view, err := issues.ReadIssueView(issues.GetOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, ID: options.ID})
+	view, err := issues.ReadIssueView(issues.GetOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsFS: options.MigrationsFS, ID: options.ID})
 	if err != nil {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}

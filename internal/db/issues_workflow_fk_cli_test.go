@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
@@ -25,7 +26,7 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 		t.Fatalf("MkdirAll workspace journal: %v", err)
 	}
 
-	v7Migrations := migration0007Directory(t)
+	v7Migrations := migration0007FS(t)
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, v7Migrations); err != nil {
 		t.Fatalf("MigrateUp(version 7) error = %v", err)
@@ -42,7 +43,7 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	`, "FID-cli-parity", "task", "CLI parity fixture", "task-default", "in_progress", 1, "2026-07-19T03:00:00Z", "2026-07-19T03:01:00Z"); err != nil {
 		t.Fatalf("insert issue fixture: %v", err)
 	}
-	if err := fiddb.MigrateUp(dbPath, sourceMigrationsDirectory(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, sourceMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp(current schema before canonical read): %v", err)
 	}
 	writeMigrationReadCheckpoint(t, conn, workspace)
@@ -50,12 +51,12 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	beforeGet := renderedIssueGet(t, workspace, v7Migrations, "FID-cli-parity")
 	beforeList := renderedIssueList(t, workspace, v7Migrations)
 
-	if err := fiddb.MigrateUp(dbPath, sourceMigrationsDirectory(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, sourceMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp(version 8) error = %v", err)
 	}
 
-	afterGet := renderedIssueGet(t, workspace, sourceMigrationsDirectory(t), "FID-cli-parity")
-	afterList := renderedIssueList(t, workspace, sourceMigrationsDirectory(t))
+	afterGet := renderedIssueGet(t, workspace, sourceMigrationsFS(t), "FID-cli-parity")
+	afterList := renderedIssueList(t, workspace, sourceMigrationsFS(t))
 	if afterGet != beforeGet {
 		t.Fatalf("fid issue get JSON after migration = %q, want byte-identical %q", afterGet, beforeGet)
 	}
@@ -64,20 +65,20 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	}
 }
 
-func renderedIssueGet(t *testing.T, workspace, migrationsDir, issueID string) string {
+func renderedIssueGet(t *testing.T, workspace string, migrationsFS fs.FS, issueID string) string {
 	t.Helper()
 
-	issue, err := issues.Get(issues.GetOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ID: issueID})
+	issue, err := issues.Get(issues.GetOptions{WorkspaceRoot: workspace, MigrationsFS: migrationsFS, ID: issueID})
 	if err != nil {
 		t.Fatalf("fid issue get read: %v", err)
 	}
 	return renderMigrationRead(t, issue)
 }
 
-func renderedIssueList(t *testing.T, workspace, migrationsDir string) string {
+func renderedIssueList(t *testing.T, workspace string, migrationsFS fs.FS) string {
 	t.Helper()
 
-	items, err := issues.List(issues.ListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir})
+	items, err := issues.List(issues.ListOptions{WorkspaceRoot: workspace, MigrationsFS: migrationsFS})
 	if err != nil {
 		t.Fatalf("fid issue list read: %v", err)
 	}
@@ -143,18 +144,18 @@ func writeMigrationReadCheckpoint(t *testing.T, conn *sql.DB, workspace string) 
 	}
 }
 
-func migration0007Directory(t *testing.T) string {
+func migration0007FS(t *testing.T) fs.FS {
 	t.Helper()
 
 	directory := t.TempDir()
 	for version := 1; version <= 7; version++ {
-		pattern := filepath.Join(sourceMigrationsDirectory(t), fmt.Sprintf("%04d_*.sql", version))
-		matches, err := filepath.Glob(pattern)
+		pattern := fmt.Sprintf("%04d_*.sql", version)
+		matches, err := fs.Glob(sourceMigrationsFS(t), pattern)
 		if err != nil || len(matches) != 2 {
 			t.Fatalf("glob migrations for version %d = %#v, %v; want up/down pair", version, matches, err)
 		}
 		for _, source := range matches {
-			contents, err := os.ReadFile(source)
+			contents, err := fs.ReadFile(sourceMigrationsFS(t), source)
 			if err != nil {
 				t.Fatalf("read migration %q: %v", source, err)
 			}
@@ -164,17 +165,12 @@ func migration0007Directory(t *testing.T) string {
 			}
 		}
 	}
-	return directory
+	return os.DirFS(directory)
 }
 
-func sourceMigrationsDirectory(t *testing.T) string {
+func sourceMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func closeMigrationReadDB(t *testing.T, conn *sql.DB) {

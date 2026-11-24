@@ -63,7 +63,7 @@ func prepareLabelAdd(options AddOptions) (string, *string, *string, standaloneAc
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return "", nil, nil, standaloneActor{}, nil, fmt.Errorf("label add: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return "", nil, nil, standaloneActor{}, nil, fmt.Errorf("label add: migrations dir is required")
 	}
 
@@ -91,7 +91,7 @@ func prepareLabelAdd(options AddOptions) (string, *string, *string, standaloneAc
 }
 
 func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standaloneActor, name string, colour, description *string, digest string, fields map[string]string, result *AddResult) error {
-	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 		return err
 	}
 

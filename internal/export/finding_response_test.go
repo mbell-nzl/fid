@@ -22,7 +22,7 @@ import (
 func responseArchiveFixture(t *testing.T, deferred bool) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, initial := reviewArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 40); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 40); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -220,12 +220,12 @@ func addResponseExportFacts(t *testing.T, root string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	claimed, err := next.Claim(next.Options{Clock: time.Now, WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), Actor: "agent:discovery-builder", Model: "codex/gpt-6.1-sol"})
+	claimed, err := next.Claim(next.Options{Clock: time.Now, WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), Actor: "agent:discovery-builder", Model: "codex/gpt-6.1-sol"})
 	if err != nil || claimed.Task == nil || claimed.Task.ID != task {
 		t.Fatalf("build hold=%v/%v", claimed, err)
 	}
 	for i, verb := range []string{"answer", "defer"} {
-		o := reviewwork.ResponseOptions{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), FindingID: rounds[0].Findings[i].ID, Actor: "agent:discovery-builder", Text: "Fixed in the next round", Title: "Follow up", Defer: verb == "defer"}
+		o := reviewwork.ResponseOptions{WorkspaceRoot: root, MigrationsFS: testMigrationsFS(t), FindingID: rounds[0].Findings[i].ID, Actor: "agent:discovery-builder", Text: "Fixed in the next round", Title: "Follow up", Defer: verb == "defer"}
 		if _, err := reviewwork.Respond(o); err != nil {
 			t.Fatal(err)
 		}
@@ -238,7 +238,7 @@ func addResponseExportFacts(t *testing.T, root string) string {
 		n++
 		return github.Result{Stdout: []byte(fmt.Sprintf("https://github.com/owner/repo/issues/63#issuecomment-%d", n))}
 	}
-	posted, err := reviewpost.Round(context.Background(), root, testMigrationsDir(t), rounds[0].ID, run)
+	posted, err := reviewpost.Round(context.Background(), root, testMigrationsFS(t), rounds[0].ID, run)
 	if err != nil || len(posted.Pending) != 0 {
 		t.Fatalf("posts=%v/%v", posted, err)
 	}
@@ -249,14 +249,14 @@ func TestFindingResponseImportAndRebuild(t *testing.T) {
 	t.Parallel()
 	f := newExportSourceFixture(t, addResponseExportFacts)
 	before := responseSnapshot(t, f.workspace)
-	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsDir(t)); err != nil {
+	if _, err := journal.RebuildWorkspace(f.workspace, testMigrationsFS(t)); err != nil {
 		t.Fatal(err)
 	}
 	if responseSnapshot(t, f.workspace) != before {
 		t.Fatal("rebuild changed responses or creators")
 	}
 	target := gittest.NewWorkspace(t)
-	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "responses"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "responses"}); err != nil {
 		t.Fatal(err)
 	}
 	if responseSnapshot(t, target) != before {
@@ -284,13 +284,13 @@ func TestFindingResponseImportAndRebuild(t *testing.T) {
 			writeTestArchive(t, archive, entries)
 			target := gittest.NewWorkspace(t)
 			before := workspaceTreeDigest(t, target)
-			if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "forged"}); err == nil {
+			if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "forged"}); err == nil {
 				t.Fatal("forged import accepted")
 			}
 			if workspaceTreeDigest(t, target) != before {
 				t.Fatal("refused import changed target")
 			}
-			if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "valid"}); err != nil {
+			if _, err := Import(ImportOptions{ArchivePath: f.archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "valid"}); err != nil {
 				t.Fatal(err)
 			}
 		})

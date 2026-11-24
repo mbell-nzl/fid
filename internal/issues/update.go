@@ -3,6 +3,7 @@ package issues
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 type UpdateOptions struct {
 	WorkspaceRoot    string
-	MigrationsDir    string
+	MigrationsFS     fs.FS
 	ID               string
 	Actor            string
 	IdempotencyKey   string
@@ -60,7 +61,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return UpdateResult{}, fmt.Errorf("update issue: migrations dir is required")
 	}
 	if strings.TrimSpace(options.ID) == "" {
@@ -75,7 +76,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		return UpdateResult{}, err
 	}
 
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsFS); err != nil {
 		return UpdateResult{}, err
 	}
 	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))

@@ -1,8 +1,10 @@
 package links
 
+import "io/fs"
+
 type AddOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	FromType       string
 	FromID         string
 	Relation       string
@@ -24,7 +26,7 @@ type AddResult struct {
 
 type RemoveOptions struct {
 	WorkspaceRoot  string
-	MigrationsDir  string
+	MigrationsFS   fs.FS
 	FromType       string
 	FromID         string
 	Relation       string
@@ -46,7 +48,7 @@ type RemoveResult struct {
 
 type ListOptions struct {
 	WorkspaceRoot string
-	MigrationsDir string
+	MigrationsFS  fs.FS
 	EntityType    string
 	EntityID      string
 }

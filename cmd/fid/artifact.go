@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +37,7 @@ func newArtifactVerifyCommand() *cobra.Command {
 		if err != nil {
 			return renderArtifactError(cmd, "artifact.verify", err)
 		}
-		result, err := artifactverify.Verify(artifactverify.Options{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key, Request: request})
+		result, err := artifactverify.Verify(artifactverify.Options{WorkspaceRoot: workspaceRoot, MigrationsFS: fidmigrations.FS, ActorID: actor, IdempotencyKey: key, Request: request})
 		if err != nil {
 			return renderArtifactError(cmd, "artifact.verify", err)
 		}

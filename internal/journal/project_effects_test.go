@@ -14,7 +14,7 @@ import (
 func TestProjectEventFenceRejectsMalformedPhase23EventsWithoutProjectionChange(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsFS(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
 	conn, err := fiddb.Open(dbPath)

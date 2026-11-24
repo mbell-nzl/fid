@@ -54,7 +54,7 @@ func seedOverview(t *testing.T, rows []overviewRow, links [][3]string) string {
 
 func readOverview(t *testing.T, workspace string) Overview {
 	t.Helper()
-	overview, err := ReadOverview(OverviewOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t)})
+	overview, err := ReadOverview(OverviewOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t)})
 	if err != nil {
 		t.Fatalf("ReadOverview() error = %v", err)
 	}

@@ -15,10 +15,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func leanOptions(f *statusFixture, key string) checkrun.Options {
-	return checkrun.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), HoldID: "HLD-aaaaaa", Actor: "agent:claude-builder", IdempotencyKey: key, Names: []string{"lean"}, Clock: func() time.Time { return statusNow }, Version: "test", RenewInterval: 20 * time.Millisecond}
+	return checkrun.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, HoldID: "HLD-aaaaaa", Actor: "agent:claude-builder", IdempotencyKey: key, Names: []string{"lean"}, Clock: func() time.Time { return statusNow }, Version: "test", RenewInterval: 20 * time.Millisecond}
 }
 
 func TestLeanCheckIncompleteKeyAndLiveEarlierStart(t *testing.T) {
@@ -60,7 +61,7 @@ func TestLeanCheckOwnershipLostBetweenChecksReplaysTheOriginalRefusal(t *testing
 	options := leanOptions(f, "between")
 	options.Names = []string{"lean", "zpass"}
 	options.After = func(checkrecord.Record) error {
-		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), TaskID: "FID-9f13aa", Actor: "human:mark", Reason: "Take control", Clock: func() time.Time { return statusNow }})
+		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, TaskID: "FID-9f13aa", Actor: "human:mark", Reason: "Take control", Clock: func() time.Time { return statusNow }})
 		return err
 	}
 	response, err := checkrun.Run(context.Background(), options)
@@ -102,7 +103,7 @@ func TestLeanCheckRenewsHoldAndStopsOnTakeover(t *testing.T) {
 							return
 						}
 						if count > 0 {
-							_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), TaskID: "FID-9f13aa", Actor: "human:mark", Reason: "Take control", Clock: func() time.Time { return statusNow }})
+							_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, TaskID: "FID-9f13aa", Actor: "human:mark", Reason: "Take control", Clock: func() time.Time { return statusNow }})
 							taken <- err
 							return
 						}

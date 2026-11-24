@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,8 +37,10 @@ func (err *ImportTargetConflictError) Error() string {
 }
 
 type ImportOptions struct {
-	ArchivePath, RepositoryRoot, MigrationsDir, IdempotencyKey string
-	Fault                                                      func(ImportStage) error
+	ArchivePath, RepositoryRoot string
+	MigrationsFS                fs.FS
+	IdempotencyKey              string
+	Fault                       func(ImportStage) error
 }
 
 type ImportResult struct {
@@ -58,7 +61,7 @@ type importMarker struct {
 // Import validates, stages, rebuilds and atomically installs a portable archive.
 // Publication is delivery metadata and does not append a domain Event.
 func Import(options ImportOptions) (ImportResult, error) {
-	if strings.TrimSpace(options.ArchivePath) == "" || strings.TrimSpace(options.RepositoryRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.IdempotencyKey) == "" {
+	if strings.TrimSpace(options.ArchivePath) == "" || strings.TrimSpace(options.RepositoryRoot) == "" || options.MigrationsFS == nil || strings.TrimSpace(options.IdempotencyKey) == "" {
 		return ImportResult{}, fmt.Errorf("import: archive, repository, migrations and idempotency key are required")
 	}
 	target, err := safeImportTarget(options.RepositoryRoot)
@@ -74,7 +77,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 		return ImportResult{}, err
 	}
 	defer func() { _ = os.Remove(snapshot) }()
-	validation, err := Validate(ValidateOptions{ArchivePath: snapshot, MigrationsDir: options.MigrationsDir})
+	validation, err := Validate(ValidateOptions{ArchivePath: snapshot, MigrationsFS: options.MigrationsFS})
 	if err != nil {
 		return ImportResult{}, err
 	}
@@ -118,7 +121,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 		if err := stageArchive(stage, projectConfig, manifest, snapshot); err != nil {
 			return err
 		}
-		if _, err := journal.RebuildLedger(stage, options.MigrationsDir); err != nil {
+		if _, err := journal.RebuildLedger(stage, options.MigrationsFS); err != nil {
 			return fmt.Errorf("import: rebuild staged projection: %w", err)
 		}
 		binding := config.ImportBinding{ArchiveDigest: digestBefore, IdempotencyKey: options.IdempotencyKey, ProjectID: result.ProjectID, TargetRoot: target, ImportedEventIDs: importedEventIDs}

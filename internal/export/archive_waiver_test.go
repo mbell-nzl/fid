@@ -15,7 +15,7 @@ import (
 func waiverArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
 	v, h := handoffArchiveFixture(t)
-	if err := migrateSemanticProjection(v.conn, testMigrationsDir(t), 39); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 39); err != nil {
 		t.Fatal(err)
 	}
 	var err error

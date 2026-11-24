@@ -78,9 +78,9 @@ func assertIdentifierRefusalUnchanged(t *testing.T, event Event, reason string) 
 			case "checkpointed-replay":
 				_, err = ReplayJournal(conn, dir, &ReplayOptions{StartFile: filepath.Base(path), StartOffset: int64(len(journalBefore))})
 			case "rebuild":
-				_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+				_, err = RebuildWorkspace(workspace, testProjectMigrationsFS(t))
 			case "freshen":
-				_, err = EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+				_, err = EnsureProjectionFresh(workspace, testProjectMigrationsFS(t))
 			}
 			if err == nil || !strings.Contains(err.Error(), reason) {
 				t.Errorf("%s = %v, want %s", mode, err, reason)

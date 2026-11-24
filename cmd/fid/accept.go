@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/holdwork"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,7 @@ func newAcceptCommand() *cobra.Command {
 		}
 		decisions := []map[string]any{}
 		for _, id := range args {
-			result, err := holdwork.Accept(holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), TaskID: id, Actor: actor, Reason: reason, Clock: commandDisplayEnvironment(cmd).now})
+			result, err := holdwork.Accept(holdwork.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, TaskID: id, Actor: actor, Reason: reason, Clock: commandDisplayEnvironment(cmd).now})
 			if err != nil {
 				return renderHoldFailure(cmd, operation, err)
 			}

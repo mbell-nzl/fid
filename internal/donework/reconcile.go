@@ -27,7 +27,7 @@ func Reconcile(ctx context.Context, o Options) ([]TaskOutcome, error) {
 	if !policy.Allows(o.Actor, policy.WorkSet) {
 		return nil, &persondecision.DeniedError{Actor: o.Actor}
 	}
-	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsDir); err != nil {
+	if _, err := journal.EnsureProjectionFresh(o.WorkspaceRoot, o.MigrationsFS); err != nil {
 		return nil, err
 	}
 	tasks, err := reviewTasks(o.WorkspaceRoot)

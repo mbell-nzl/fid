@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -14,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
@@ -27,7 +28,7 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 
 	result, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 		Name:          "core",
 		Colour:        &colour,
 		Description:   &description,
@@ -76,7 +77,7 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 	duplicateBefore := countLabelJournalEvents(t, workspace)
 	_, err = Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 		Name:          "core",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
@@ -102,7 +103,7 @@ func TestAddAppliesClosedLabelValueBoundariesBeforeAppend(t *testing.T) {
 		workspace := newLabelsWorkspace(t)
 		colour := strings.Repeat("c", 64)
 		description := strings.Repeat("d", 4096)
-		result, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: strings.Repeat("n", 255), Colour: &colour, Description: &description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+		result, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsFS: testLabelsMigrationsFS(t), Name: strings.Repeat("n", 255), Colour: &colour, Description: &description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 		if err != nil || len(result.Label.Name) != 255 || len(*result.Label.Colour) != 64 || len(*result.Label.Description) != 4096 {
 			t.Fatalf("Add() = (%#v, %v), want exact maxima", result, err)
 		}
@@ -130,7 +131,7 @@ func TestAddAppliesClosedLabelValueBoundariesBeforeAppend(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newLabelsWorkspace(t)
 			before := countLabelJournalEvents(t, workspace)
-			_, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: test.label, Colour: test.colour, Description: test.description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
+			_, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsFS: testLabelsMigrationsFS(t), Name: test.label, Colour: test.colour, Description: test.description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err == nil || err.Error() != test.wantErr {
 				t.Fatalf("Add() error = %v, want %q", err, test.wantErr)
 			}
@@ -158,7 +159,7 @@ func TestListRejectsOverTopLevelCollectionLimit(t *testing.T) {
 		t.Fatalf("Commit() error = %v", err)
 	}
 	closeLabelsDB(t, conn)
-	atLimit, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t)})
+	atLimit, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsFS: testLabelsMigrationsFS(t)})
 	if err != nil || len(atLimit) != 10000 {
 		t.Fatalf("List(at limit) = (%d, %v), want (10000, nil)", len(atLimit), err)
 	}
@@ -169,7 +170,7 @@ func TestListRejectsOverTopLevelCollectionLimit(t *testing.T) {
 	}
 	closeLabelsDB(t, conn)
 
-	_, err = List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t)})
+	_, err = List(ListOptions{WorkspaceRoot: workspace, MigrationsFS: testLabelsMigrationsFS(t)})
 	var limit *ResultLimitExceededError
 	if !errors.As(err, &limit) || limit.Collection != "labels" || limit.Limit != 10000 || limit.Observed != 10001 {
 		t.Fatalf("List() error = %#v, want labels 10001/10000 limit", err)
@@ -183,7 +184,7 @@ func TestListReturnsLabelsInNameOrderWithNilOptionalFields(t *testing.T) {
 	description := "Journal subsystem"
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 		Name:          "journal",
 		Description:   &description,
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
@@ -192,7 +193,7 @@ func TestListReturnsLabelsInNameOrderWithNilOptionalFields(t *testing.T) {
 	}
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 		Name:          "core",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
@@ -201,7 +202,7 @@ func TestListReturnsLabelsInNameOrderWithNilOptionalFields(t *testing.T) {
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 	})
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
@@ -228,7 +229,7 @@ func TestListReturnsEmptySliceForWorkspaceWithNoLabels(t *testing.T) {
 
 	got, err := List(ListOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 	})
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
@@ -242,7 +243,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 	t.Parallel()
 
 	workspace := newLabelsWorkspace(t)
-	migrationsDir := testLabelsMigrationsDir(t)
+	migrationsFS := testLabelsMigrationsFS(t)
 
 	tests := []struct {
 		name string
@@ -253,9 +254,9 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 			name: "add missing workspace",
 			run: func() error {
 				_, err := Add(AddOptions{
-					MigrationsDir: migrationsDir,
-					Name:          "core",
-					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					MigrationsFS: migrationsFS,
+					Name:         "core",
+					Actor:        testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -278,7 +279,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 			run: func() error {
 				_, err := Add(AddOptions{
 					WorkspaceRoot: workspace,
-					MigrationsDir: migrationsDir,
+					MigrationsFS:  migrationsFS,
 					Name:          "   ",
 					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
@@ -290,7 +291,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 			name: "list missing workspace",
 			run: func() error {
 				_, err := List(ListOptions{
-					MigrationsDir: migrationsDir,
+					MigrationsFS: migrationsFS,
 				})
 				return err
 			},
@@ -327,21 +328,16 @@ func newLabelsWorkspace(t *testing.T) string {
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLabelsMigrationsDir(t),
+		MigrationsFS:  testLabelsMigrationsFS(t),
 	}); err != nil {
 		t.Fatalf("InitializeWorkspace() error = %v", err)
 	}
 	return workspace
 }
 
-func testLabelsMigrationsDir(t *testing.T) string {
+func testLabelsMigrationsFS(t *testing.T) fs.FS {
 	t.Helper()
-
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+	return fidmigrations.FS
 }
 
 func countLabelJournalEvents(t *testing.T, workspace string) int {

@@ -28,7 +28,7 @@ func TestInitStagesTheLedgerInTheGitCommonDirectory(t *testing.T) {
 		inspected := 0
 		_, err := initializeWorkspaceWithHooks(InitOptions{
 			WorkspaceRoot: start,
-			MigrationsDir: migrationFixtureDir(t),
+			MigrationsFS:  migrationFixtureFS(t),
 			Prefix:        "FID",
 		}, initHooks{before: func(stage initStage) error {
 			if stage == initStageStaged || stage == initStageActivated {

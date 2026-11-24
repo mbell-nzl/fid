@@ -3,6 +3,7 @@ package reviewwork
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,9 +14,11 @@ import (
 )
 
 type ResponseOptions struct {
-	WorkspaceRoot, MigrationsDir, FindingID, Actor, Text, Title, EpicID, Lane string
-	Defer                                                                     bool
-	Clock                                                                     func() time.Time
+	WorkspaceRoot                               string
+	MigrationsFS                                fs.FS
+	FindingID, Actor, Text, Title, EpicID, Lane string
+	Defer                                       bool
+	Clock                                       func() time.Time
 }
 
 type ResponseResult struct {
@@ -26,7 +29,7 @@ type ResponseResult struct {
 func Respond(o ResponseOptions) (ResponseResult, error) {
 	var result ResponseResult
 	err := journal.WithLock(o.WorkspaceRoot, journal.LockOwner{Command: "fid finding response"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, o.MigrationsFS); err != nil {
 			return err
 		}
 		conn, err := OpenProjection(o.WorkspaceRoot)

@@ -14,7 +14,7 @@ import (
 
 func readView(t *testing.T, workspace, id string) IssueView {
 	t.Helper()
-	view, err := ReadIssueView(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: id})
+	view, err := ReadIssueView(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: id})
 	if err != nil {
 		t.Fatalf("ReadIssueView(%s) error = %v", id, err)
 	}
@@ -134,7 +134,7 @@ func TestReadIssueViewReadsAnIssueWithWhatSurroundsIt(t *testing.T) {
 func TestReadIssueViewHoldsIssueGetsIssue(t *testing.T) {
 	t.Parallel()
 	workspace := viewWork(t)
-	options := GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: "S3"}
+	options := GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: "S3"}
 	detail, err := ReadIssueDetail(options)
 	if err != nil {
 		t.Fatal(err)
@@ -159,7 +159,7 @@ func TestReadIssueViewFindsOnlyAnIssuesExactID(t *testing.T) {
 	}
 	closeIssueTestDB(t, conn)
 	for _, id := range []string{"T9", "t1", "T", "AC-1"} {
-		_, err := ReadIssueView(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: id})
+		_, err := ReadIssueView(GetOptions{WorkspaceRoot: workspace, MigrationsFS: testIssueMigrationsFS(t), ID: id})
 		var notFound *NotFoundError
 		if !errors.As(err, &notFound) || notFound.IssueID != id {
 			t.Errorf("ReadIssueView(%q) error = %v, want not found", id, err)

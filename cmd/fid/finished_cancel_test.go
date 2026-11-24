@@ -14,6 +14,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 )
 
 // Both subjects reach done through their owning commands, with receipts.
@@ -40,7 +41,7 @@ func TestFinishedWorkCannotBeCancelled(t *testing.T) {
 			got := f.run("--json", "issue", "transition", subject, "--to", "cancelled", "--actor", "human:mark", "--reason", "Undo merged work")
 			assertJSONFailureCode(t, got.stderr, "issue.transition", "transition-not-permitted")
 			err := func() error {
-				_, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: f.workspace, MigrationsDir: issueMigrationsDir(), ID: subject, ToState: "cancelled", Actor: "human:mark", Reason: "Undo merged work"})
+				_, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: f.workspace, MigrationsFS: fidmigrations.FS, ID: subject, ToState: "cancelled", Actor: "human:mark", Reason: "Undo merged work"})
 				return err
 			}()
 			var refused *issues.CommandTransitionError
@@ -122,7 +123,7 @@ func assertFinishedCancellationAdmission(t *testing.T, f *statusFixture, subject
 				switch mode {
 				case "replay":
 					path := filepath.Join(t.TempDir(), "replay.sqlite")
-					if err := fiddb.MigrateUp(path, issueMigrationsDir()); err != nil {
+					if err := fiddb.MigrateUp(path, fidmigrations.FS); err != nil {
 						t.Fatal(err)
 					}
 					replay, openErr := fiddb.Open(path)
@@ -138,9 +139,9 @@ func assertFinishedCancellationAdmission(t *testing.T, f *statusFixture, subject
 				case "catch-up":
 					_, err = journal.ReplayJournal(conn, dir, &journal.ReplayOptions{StartFile: filepath.Base(file), StartOffset: int64(len(prefix))})
 				case "freshen":
-					_, err = journal.EnsureProjectionFresh(f.workspace, issueMigrationsDir())
+					_, err = journal.EnsureProjectionFresh(f.workspace, fidmigrations.FS)
 				case "rebuild":
-					_, err = journal.RebuildWorkspace(f.workspace, issueMigrationsDir())
+					_, err = journal.RebuildWorkspace(f.workspace, fidmigrations.FS)
 				}
 				stored, readErr := os.ReadFile(file)
 				if readErr != nil || !bytes.Equal(stored, append(append(bytes.Clone(prefix), line...), '\n')) {

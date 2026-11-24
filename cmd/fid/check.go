@@ -17,6 +17,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +39,7 @@ func newCheckCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		options := checkrun.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, IdempotencyKey: key, Names: args, Clock: commandDisplayEnvironment(cmd).now, Version: checkrun.Version()}
+		options := checkrun.Options{WorkspaceRoot: root, MigrationsFS: fidmigrations.FS, HoldID: hold, Actor: actor, IdempotencyKey: key, Names: args, Clock: commandDisplayEnvironment(cmd).now, Version: checkrun.Version()}
 		if !jsonMode {
 			options.Before = func(name string) error {
 				_, err := fmt.Fprintf(cmd.OutOrStdout(), "● Checking %s…\n", cli.EscapeControlText(name))

@@ -17,7 +17,7 @@ func Add(options AddOptions) (AddResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddResult{}, fmt.Errorf("link add: workspace root is required")
 	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
+	if options.MigrationsFS == nil {
 		return AddResult{}, fmt.Errorf("link add: migrations dir is required")
 	}
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
@@ -55,7 +55,7 @@ func Add(options AddOptions) (AddResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsFS); err != nil {
 			return err
 		}
 

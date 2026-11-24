@@ -15,7 +15,7 @@ func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
 	for _, edge := range [][2]string{{firstID, secondID}, {secondID, thirdID}} {
 		_, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
-			MigrationsDir: testLinksMigrationsDir(t),
+			MigrationsFS:  testLinksMigrationsFS(t),
 			FromID:        edge[0],
 			Relation:      "blocks",
 			ToID:          edge[1],
@@ -29,7 +29,7 @@ func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
 	beforeEvents := countLinksJournalEvents(t, workspace)
 	_, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromID:        thirdID,
 		Relation:      "blocks",
 		ToID:          firstID,
@@ -55,7 +55,7 @@ func TestAddRejectsSelfDependencyCycle(t *testing.T) {
 
 	_, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromType:      "issue",
 		FromID:        issueID,
 		Relation:      "blocks",
@@ -129,7 +129,7 @@ func addDependency(t *testing.T, workspace, fromID, relation, toID string) {
 	t.Helper()
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromType:      "issue",
 		FromID:        fromID,
 		Relation:      relation,
@@ -146,7 +146,7 @@ func assertDependencyCycle(t *testing.T, workspace, fromID, relation, toID strin
 	before := countLinksJournalEvents(t, workspace)
 	_, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
+		MigrationsFS:  testLinksMigrationsFS(t),
 		FromType:      "issue",
 		FromID:        fromID,
 		Relation:      relation,

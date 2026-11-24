@@ -22,7 +22,7 @@ func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
 			_, archive := fixture.clone(t)
 			target := gittest.NewWorkspace(t)
 			cmd := exec.Command(os.Args[0], "-test.run=^TestImportAbruptExitHelper$")
-			cmd.Env = append(os.Environ(), "FID_IMPORT_CRASH_ARCHIVE="+archive, "FID_IMPORT_CRASH_TARGET="+target, "FID_IMPORT_CRASH_STAGE="+string(stage), "FID_IMPORT_CRASH_MIGRATIONS="+testMigrationsDir(t))
+			cmd.Env = append(os.Environ(), "FID_IMPORT_CRASH_ARCHIVE="+archive, "FID_IMPORT_CRASH_TARGET="+target, "FID_IMPORT_CRASH_STAGE="+string(stage))
 			output, err := cmd.CombinedOutput()
 			var exited *exec.ExitError
 			if !errors.As(err, &exited) || exited.ExitCode() != 86 {
@@ -33,7 +33,7 @@ func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
 			if published && statErr != nil || !published && !os.IsNotExist(statErr) {
 				t.Fatalf("published=%v, destination stat=%v", published, statErr)
 			}
-			result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "crash"})
+			result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "crash"})
 			if err != nil || result.Replayed != published {
 				t.Fatalf("retry after abrupt process exit: %#v, %v", result, err)
 			}
@@ -50,7 +50,7 @@ func TestImportAbruptExitHelper(t *testing.T) {
 	if archive == "" {
 		return
 	}
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: os.Getenv("FID_IMPORT_CRASH_TARGET"), MigrationsDir: os.Getenv("FID_IMPORT_CRASH_MIGRATIONS"), IdempotencyKey: "crash", Fault: func(stage ImportStage) error {
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: os.Getenv("FID_IMPORT_CRASH_TARGET"), MigrationsFS: testMigrationsFS(t), IdempotencyKey: "crash", Fault: func(stage ImportStage) error {
 		if string(stage) == os.Getenv("FID_IMPORT_CRASH_STAGE") {
 			os.Exit(86)
 		}
@@ -66,7 +66,7 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 		t.Run(corruption, func(t *testing.T) {
 			_, archive := fixture.clone(t)
 			target := gittest.NewWorkspace(t)
-			options := ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "history"}
+			options := ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "history"}
 			if _, err := Import(options); err != nil {
 				t.Fatal(err)
 			}
@@ -151,7 +151,7 @@ func TestImportLockExcludesRepeatedContenders(t *testing.T) {
 func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 	t.Parallel()
 	archive, target := boundaryImportFixture(t)
-	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "binding"}); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(config.LedgerDir(target), config.ImportBindingFileName)
@@ -174,7 +174,7 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 	if _, err := config.ReadImportBinding(target); err == nil {
 		t.Error("altered imported Event identity still qualifies installed binding")
 	}
-	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err == nil {
+	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "binding"}); err == nil {
 		t.Error("altered imported Event identity still replays installation")
 	}
 }
@@ -188,7 +188,7 @@ func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
 	t.Parallel()
 	archive, target := boundaryImportFixture(t)
 	target = gittest.ResolvedPath(t, target)
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"})
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "binding"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestImportProvenanceSurvivesRemovingTheImportWorktree(t *testing.T) {
 	archive, mainWorktree := boundaryImportFixture(t)
 	mainWorktree = gittest.ResolvedPath(t, mainWorktree)
 	linked := gittest.ResolvedPath(t, gittest.AddWorktree(t, mainWorktree))
-	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "provenance"})
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "provenance"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestImportStagesInTheGitCommonDirectory(t *testing.T) {
 	linked := gittest.ResolvedPath(t, gittest.AddWorktree(t, mainWorktree))
 	commonDir := filepath.Join(mainWorktree, ".git")
 	inspected := map[ImportStage]bool{}
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "staging", Fault: func(stage ImportStage) error {
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsFS: testMigrationsFS(t), IdempotencyKey: "staging", Fault: func(stage ImportStage) error {
 		switch stage {
 		case ImportAfterValidation:
 			assertImportStaging(t, commonDir, []string{mainWorktree, linked}, false)
@@ -336,7 +336,7 @@ func assertOnlyGitIn(t *testing.T, worktree string) {
 func boundaryImportFixture(t *testing.T) (string, string) {
 	t.Helper()
 	source := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsFS: testMigrationsFS(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
 	archive := filepath.Join(t.TempDir(), "recovery.zip")

@@ -5,6 +5,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/labels"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,7 @@ func newLabelAddCommand() *cobra.Command {
 
 			result, err := labels.Add(labels.AddOptions{
 				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
+				MigrationsFS:   fidmigrations.FS,
 				Name:           args[0],
 				Colour:         optionalStringFlag(cmd, "colour", colour),
 				Description:    optionalStringFlag(cmd, "description", description),
@@ -96,7 +97,7 @@ func newLabelListCommand() *cobra.Command {
 
 			items, err := labels.List(labels.ListOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 			})
 			if err != nil {
 				return renderLabelError(cmd, "label.list", err)

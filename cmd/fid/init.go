@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fidproject "github.com/mbell-nzl/fid/internal/project"
+	fidmigrations "github.com/mbell-nzl/fid/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +52,7 @@ func newInitCommandWithTerminalCheck(isTerminal func(uintptr) bool) *cobra.Comma
 			}
 			result, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: initMigrationsDir(),
+				MigrationsFS:  fidmigrations.FS,
 				Prefix:        prefix,
 			})
 			if err != nil {
@@ -112,15 +112,6 @@ func initWorkspaceRoot(cmd *cobra.Command) (string, error) {
 		return root, &initArgumentError{argument: "project", value: project, err: err}
 	}
 	return fidproject.Discover(root)
-}
-
-func initMigrationsDir() string {
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		return "migrations"
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
 }
 
 func renderInitSuccess(cmd *cobra.Command, workspaceRoot string, result bootstrap.InitResult) error {
