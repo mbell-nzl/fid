@@ -3467,6 +3467,10 @@ text uses `CI ✓ success · #<id> on <commit>` and retains the CI URL in JSON
 only. This keeps result, identity and commit visible offline without changing
 or weakening the guard. The new text goldens use the same guard.
 
+**Lifted 2026-11-24 (FID-511344):** #107 narrowed the vocabulary guard, so
+text now uses `run <id>` and shows the recorded CI URL on the next
+continuation row, whole. An absent URL adds no row; JSON is unchanged.
+
 - Done tasks get a Completed block after the header rows, before criteria and
   children. It names the completion's time, actor and ID; merged PR number,
   commit and time; every counted CI run's conclusion, ID and commit; the
