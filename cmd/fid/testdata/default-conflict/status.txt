@@ -3,7 +3,7 @@
   NEEDS YOU
   ✗ FID-9f13aa: PR no longer merges into origin/trunk; its builder's
     worktree takes it back
-      → Take the task in its builder’s worktree with fid next
+      → fid next --claim in the builder's worktree
   ✗ No backup for 4 days: none since the ledger began
     2026-11-04 18:00; no backup target is set
       → add [backup] target to

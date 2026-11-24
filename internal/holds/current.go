@@ -31,7 +31,8 @@ func (hold Hold) Release(reason string, at time.Time) journal.Effect {
 
 // CurrentByID includes ended holds: stale commands must distinguish ended
 // from missing without ever substituting another session's hold.
-func CurrentByID(conn *sql.DB, id string) (Hold, error) {
+// The query may use a caller's transaction to keep a read snapshot consistent.
+func CurrentByID(conn interface{ QueryRow(string, ...any) *sql.Row }, id string) (Hold, error) {
 	var hold Hold
 	var ended, reason, replaces, endReason, rework sql.NullString
 	var since, expires, heartbeat string

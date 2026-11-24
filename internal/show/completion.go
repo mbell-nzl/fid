@@ -69,7 +69,7 @@ func (result *Result) readCompletion(root string) error {
 	if err != nil {
 		return err
 	}
-	if err := result.readCompletionWaiver(tx); err != nil {
+	if err := result.readCompletionWaiver(root, tx); err != nil {
 		return err
 	}
 	c.Merge, err = completionRow[mergerecord.Merge](tx, c, "merge", `SELECT record_json FROM merge_observations WHERE id=?`, c.MergeID)

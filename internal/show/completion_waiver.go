@@ -11,7 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
-func (result *Result) readCompletionWaiver(conn reviewrecord.Queryer) error {
+func (result *Result) readCompletionWaiver(root string, conn reviewrecord.Queryer) error {
 	c := result.Completion
 	fp := fingerprint.Result{Algorithm: c.Fingerprint.Algorithm, Fingerprint: c.Fingerprint.Fingerprint}
 	waivers, err := decisionview.ReadRecordedWaivers(conn, c.TaskID, fp)
@@ -23,10 +23,10 @@ func (result *Result) readCompletionWaiver(conn reviewrecord.Queryer) error {
 		c.Waiver = w
 		result.Approval.Decision = &decisionview.View{State: "not-required"}
 	}
-	return c.readCheckRequirements(conn, result.IssueView.Checks)
+	return c.readCheckRequirements(root, conn, result.IssueView.Checks)
 }
 
-func (c *Completion) readCheckRequirements(conn reviewrecord.Queryer, records []checkrecord.Record) error {
+func (c *Completion) readCheckRequirements(root string, conn reviewrecord.Queryer, records []checkrecord.Record) error {
 	h := c.Handoff
 	if h == nil {
 		return nil
@@ -51,7 +51,12 @@ func (c *Completion) readCheckRequirements(conn reviewrecord.Queryer, records []
 	}
 	// Keep the hand-off's named results. A lower lane can also require a check
 	// absent from the higher lane; select that pass on the recorded tree and
-	// definitions, just as done did, without consulting today's policy or git.
+	// definitions, just as done did. Only results recorded before completion
+	// were available to done, even if a later finish reports an earlier time.
+	records, err = c.checksBeforeCompletion(root, records)
+	if err != nil {
+		return err
+	}
 	checks := checkread.Evaluate(c.TaskID, h.Tree, c.requiredChecks, p.Checks, records)
 	for name, id := range checks.LatestResultIDs {
 		if _, named := c.resultIDs[name]; !named {
