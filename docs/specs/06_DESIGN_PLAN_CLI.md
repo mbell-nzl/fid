@@ -1816,7 +1816,9 @@ versions 1 and 2; schema 41 permits only version 1. Posting is
 serialized under the journal lock. A stable record/digest HTML marker lets fid
 recover a comment after a lost local receipt: it reads bounded, paginated PR
 comments before calling `gh pr comment`. An edited matching marker refuses a
-second post. A receipt makes subsequent retries entirely local. `review post`
+second post. Reconciliation checks both supported canonical renderings; a
+recovered comment retains its original render version, digest and URL in the
+receipt. A receipt makes subsequent retries entirely local. `review post`
 retries a round plus all responses to its findings, returning `{posted: [ids],
 pending: [ids]}` without a single Event in the response (each successful post
 has its own receipt Event). Text prints each posted or pending ID. An unknown

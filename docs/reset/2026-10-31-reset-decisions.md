@@ -3334,6 +3334,9 @@ available to verify old receipts. Admission renders with the receipt's recorded
 version and refuses unknown versions. Migration 0042 permits both 1 and 2,
 preserving existing receipts; cache schema 23 upgrades older projections.
 The migration and journal admission place this follow-up in lane Assured.
+Retry reconciliation checks both renderings, recovering an unreceipted version-1
+comment with its original version, digest and URL and refusing edited matches
+(PR #116 round-1 fix, 2026-11-25).
 
 **Left for later:**
 
