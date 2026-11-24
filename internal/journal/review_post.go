@@ -2,6 +2,7 @@ package journal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -17,8 +18,10 @@ func validateReviewPost(conn *sql.Tx, e Event) error {
 	if err := validateCurrentEffect(e, p); err != nil {
 		return err
 	}
-	version, ok := currentIntegerValue(p.Values["render_version"])
-	if !ok {
+	// Producers use Go integers; replay decodes them as json.Number.
+	raw, err := json.Marshal(p.Values["render_version"])
+	var version int64
+	if err != nil || json.Unmarshal(raw, &version) != nil {
 		return fmt.Errorf("invalid review render version")
 	}
 	s, err := reviewcomment.ReadSubjectVersion(conn, e.Aggregate.ID, version)

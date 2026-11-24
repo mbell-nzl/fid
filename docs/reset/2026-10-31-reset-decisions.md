@@ -3327,6 +3327,14 @@ Built the approved review-delivery design in lane Assured, stacked on 1.9d.
   catalogs and V8 retain all three features together; no gate or delivery rule
   changes. Existing decisions blocks and task done marks remain.
 
+**Amended 2026-11-24 (FID-47f764):** Render version 2 bolds comment labels
+and puts identifiers, the lane and finding locations in code spans, preserving
+reviewer-written Markdown. New posts use version 2; version 1 stays byte-for-byte
+available to verify old receipts. Admission renders with the receipt's recorded
+version and refuses unknown versions. Migration 0042 permits both 1 and 2,
+preserving existing receipts; cache schema 23 upgrades older projections.
+The migration and journal admission place this follow-up in lane Assured.
+
 **Left for later:**
 
 - From this PR (2.1c): source inspection shows `review list` still uses the

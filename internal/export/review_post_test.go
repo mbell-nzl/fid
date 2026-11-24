@@ -1,6 +1,8 @@
 package export
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -9,8 +11,13 @@ import (
 
 func postArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	t.Helper()
+	return postVersionFixture(t, 42, 2)
+}
+
+func postVersionFixture(t *testing.T, schema int, version int64) (*semanticValidator, journal.Event) {
+	t.Helper()
 	v, e := responseArchiveFixture(t, false)
-	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), 41); err != nil {
+	if err := migrateSemanticProjection(v.conn, testMigrationsFS(t), schema); err != nil {
 		t.Fatal(err)
 	}
 	var err error
@@ -18,16 +25,43 @@ func postArchiveFixture(t *testing.T) (*semanticValidator, journal.Event) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.profile = 41
-	s, err := reviewcomment.ReadSubject(v.conn, "RND-123456")
+	v.profile = schema
+	s, err := reviewcomment.ReadSubjectVersion(v.conn, "RND-123456", version)
 	if err != nil {
 		t.Fatal(err)
 	}
 	e.EventType, e.CommandName = "review.posted", "review.post"
 	e.ActorV2 = journal.EventActor{ActorType: "service", ActorID: "fid-review-post", Producer: "fid", ProvenanceRef: "fid:review-post"}
 	e.Aggregate = journal.Aggregate{ID: s.ID, Type: "review-post", Sequence: 1}
-	e.Effects = []journal.Effect{{Op: "insert", Table: "review_posts", PK: map[string]any{"id": s.ID}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": "https://github.com/owner/repo/issues/63#issuecomment-123", "render_version": reviewcomment.RenderVersion, "digest": reviewcomment.Digest(s.Body), "posted_at": "2026-11-10T09:07:00Z"}}}
+	e.Effects = []journal.Effect{{Op: "insert", Table: "review_posts", PK: map[string]any{"id": s.ID}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": "https://github.com/owner/repo/issues/63#issuecomment-123", "render_version": version, "digest": reviewcomment.Digest(s.Body), "posted_at": "2026-11-10T09:07:00Z"}}}
 	return v, e
+}
+
+func TestReviewPostRenderVersions(t *testing.T) {
+	t.Parallel()
+	for _, schema := range []int{41, 42} {
+		for _, version := range []int64{1, 2, 3} {
+			t.Run(fmt.Sprintf("schema%d/version%d", schema, version), func(t *testing.T) {
+				t.Parallel()
+				v, e := postVersionFixture(t, schema, min(version, 2))
+				e.Effects[0].Values["render_version"] = version
+				before := handoffProjectionSnapshot(t, v)
+				err := applyLeanEmptyEvent(v, "import", e)
+				want := ""
+				if version == 3 {
+					want = "unknown review render version 3"
+				} else if schema == 41 && version == 2 {
+					want = "CHECK constraint failed"
+				}
+				if want == "" && err != nil || want != "" && (err == nil || !strings.Contains(err.Error(), want)) {
+					t.Fatalf("receipt admission: %v; want %q", err, want)
+				}
+				if want != "" && handoffProjectionSnapshot(t, v) != before {
+					t.Fatal("refused version changed projection")
+				}
+			})
+		}
+	}
 }
 
 func TestReviewPostAdmission(t *testing.T) {
