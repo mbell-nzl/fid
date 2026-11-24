@@ -11,11 +11,19 @@ import (
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
-const RenderVersion = 1
+const RenderVersion = 2
 
 type Subject struct{ ID, TaskID, HandoffID, PR, Body string }
 
 func ReadSubject(conn reviewrecord.Queryer, id string) (Subject, error) {
+	return ReadSubjectVersion(conn, id, RenderVersion)
+}
+
+// ReadSubjectVersion uses the receipt's layout so older digests remain verifiable.
+func ReadSubjectVersion(conn reviewrecord.Queryer, id string, version int64) (Subject, error) {
+	if version != 1 && version != RenderVersion {
+		return Subject{}, fmt.Errorf("unknown review render version %d", version)
+	}
 	var raw, task, handoff string
 	var body string
 	if strings.HasPrefix(id, "RND-") {
@@ -31,6 +39,9 @@ func ReadSubject(conn reviewrecord.Queryer, id string) (Subject, error) {
 			return Subject{}, err
 		}
 		body = RenderRoundV1(r, number)
+		if version == 2 {
+			body = renderRoundV2(r, number)
+		}
 	} else {
 		if err := conn.QueryRow(`SELECT record_json FROM finding_responses WHERE id=?`, id).Scan(&raw); err != nil {
 			return Subject{}, err
@@ -44,6 +55,12 @@ func ReadSubject(conn reviewrecord.Queryer, id string) (Subject, error) {
 		if d := r.DeferredTask; d != nil {
 			body = fmt.Sprintf("## Deferred finding: %s\n\nBy %s · Discovered task %s: %s\n\n%s\n", r.FindingID, r.Actor, d.ID, d.Title, r.Text)
 		}
+		if version == 2 {
+			body = fmt.Sprintf("## Finding answer: %s\n\n**By** %s\n\n%s\n", codeSpan(r.FindingID), codeSpan(r.Actor), r.Text)
+			if d := r.DeferredTask; d != nil {
+				body = fmt.Sprintf("## Deferred finding: %s\n\n**By** %s · **Discovered task** %s: %s\n\n%s\n", codeSpan(r.FindingID), codeSpan(r.Actor), codeSpan(d.ID), d.Title, r.Text)
+			}
+		}
 	}
 	var h struct {
 		PR   string `json:"pr"`
@@ -56,7 +73,11 @@ func ReadSubject(conn reviewrecord.Queryer, id string) (Subject, error) {
 		return Subject{}, err
 	}
 	if strings.HasPrefix(id, "RND-") {
-		body = strings.Replace(body, "\nClaim:", "\nLane: "+h.Lane+"  \nClaim:", 1)
+		if version == 1 {
+			body = strings.Replace(body, "\nClaim:", "\nLane: "+h.Lane+"  \nClaim:", 1)
+		} else {
+			body = strings.Replace(body, "\n**Claim**", "\n**Lane** "+codeSpan(h.Lane)+"  \n**Claim**", 1)
+		}
 	}
 	return Subject{id, task, handoff, h.PR, body}, nil
 }

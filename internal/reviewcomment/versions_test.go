@@ -21,11 +21,25 @@ func TestLegacyCommentBodies(t *testing.T) {
 	}
 }
 
+func TestReadableCommentBodies(t *testing.T) {
+	t.Parallel()
+	for name, id := range commentSubjects {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assertCommentBody(t, commentFixture(t), id, "v2_"+name)
+		})
+	}
+}
+
 var commentSubjects = map[string]string{"round": "RND-current", "none": "RND-empty", "answer": "FRS-answer", "deferral": "FRS-defer"}
 
 func assertCommentBody(t *testing.T, conn *sql.DB, id, golden string) {
 	t.Helper()
-	s, err := ReadSubject(conn, id)
+	version := int64(2)
+	if golden[:2] == "v1" {
+		version = 1
+	}
+	s, err := ReadSubjectVersion(conn, id, version)
 	if err != nil {
 		t.Fatal(err)
 	}

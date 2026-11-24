@@ -54,7 +54,7 @@ func TestReviewPostAdmission(t *testing.T) {
 			case "digest":
 				e.Effects[0].Values["digest"] = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 			case "version":
-				e.Effects[0].Values["render_version"] = 2
+				e.Effects[0].Values["render_version"] = 99
 			case "time":
 				e.Effects[0].Values["posted_at"] = "2026-11-10T09:08:00Z"
 			case "extra":

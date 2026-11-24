@@ -17,7 +17,11 @@ func validateReviewPost(conn *sql.Tx, e Event) error {
 	if err := validateCurrentEffect(e, p); err != nil {
 		return err
 	}
-	s, err := reviewcomment.ReadSubject(conn, e.Aggregate.ID)
+	version, ok := currentIntegerValue(p.Values["render_version"])
+	if !ok {
+		return fmt.Errorf("invalid review render version")
+	}
+	s, err := reviewcomment.ReadSubjectVersion(conn, e.Aggregate.ID, version)
 	if err != nil {
 		return err
 	}
@@ -25,7 +29,7 @@ func validateReviewPost(conn *sql.Tx, e Event) error {
 	if !ok || !github.ValidCommentURL(s.PR, url) {
 		return fmt.Errorf("comment URL differs from recorded PR")
 	}
-	want := Effect{Op: "insert", Table: "review_posts", PK: map[string]any{"id": s.ID}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": url, "render_version": reviewcomment.RenderVersion, "digest": reviewcomment.Digest(s.Body), "posted_at": e.OccurredAt.UTC().Format(time.RFC3339)}}
+	want := Effect{Op: "insert", Table: "review_posts", PK: map[string]any{"id": s.ID}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": url, "render_version": version, "digest": reviewcomment.Digest(s.Body), "posted_at": e.OccurredAt.UTC().Format(time.RFC3339)}}
 	if !currentValuesEqual(p, want) {
 		return fmt.Errorf("review post differs from canonical record")
 	}
