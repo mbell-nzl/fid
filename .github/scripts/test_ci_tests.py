@@ -1,5 +1,6 @@
 """Behavioral checks for complete CI selection and coverage reconciliation."""
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,66 @@ class ShardTests(unittest.TestCase):
         parts = ci.partitions(inventory, 2, durations)
         self.assertIn({("p", "TestA")}, parts)
         self.assertEqual(sorted(map(len, parts)), [1, 10])
+
+    def test_heavy_package_is_balanced_despite_other_packages_loads(self):
+        inventory = {"heavy": [f"TestHeavy{i}" for i in range(8)], "other": ["TestOtherA", "TestOtherB"], "empty": []}
+        durations = {"heavy": {name: 10.0 for name in inventory["heavy"]},
+                     "other": {name: 20.0 for name in inventory["other"]}}
+        parts = ci.partitions(inventory, 4, durations)
+        self.assertEqual([sum(p == "heavy" for p, _ in part) for part in parts], [2, 2, 2, 2])
+        actual = [target for part in parts for target in part]
+        self.assertCountEqual(actual, [(p, t) for p, tests in inventory.items() for t in tests])
+
+    def test_package_load_breaks_ties_when_another_package_sets_wall_time(self):
+        inventory = {"dominant": [f"TestDominant{i}" for i in range(4)], "heavy": [f"TestHeavy{i}" for i in range(8)]}
+        durations = {"dominant": {t: 100.0 for t in inventory["dominant"]},
+                     "heavy": {t: 10.0 for t in inventory["heavy"]}}
+        parts = ci.partitions(inventory, 4, durations)
+        self.assertEqual([sum(p == "heavy" for p, _ in part) for part in parts], [2, 2, 2, 2])
+
+    def test_prediction_sums_sequential_groups_and_parallel_packages(self):
+        loads = {"race/a": 20.0, "race/b": 10.0, "plain/a": 12.0, "plain/b": 12.0, "plain/c": 12.0, "empty": 0.0}
+        prediction = ci.predict_groups(loads, ["race/a", "race/b"], parallelism=2, setup_seconds=3)
+        self.assertEqual(prediction, {
+            "race": {"seconds": 23.0, "total": 30.0, "slowest": "race/a", "slowest_seconds": 20.0},
+            "plain": {"seconds": 21.0, "total": 36.0, "slowest": "plain/a", "slowest_seconds": 12.0}})
+        self.assertEqual(sum(group["seconds"] for group in prediction.values()), 44.0)
+
+    def test_only_present_groups_have_setup_even_without_selected_tests(self):
+        self.assertEqual(ci.predict_groups({"empty": 0.0}, [], parallelism=4, setup_seconds=3), {
+            "plain": {"seconds": 3.0, "total": 0.0, "slowest": "empty", "slowest_seconds": 0.0}})
+
+    def test_groups_influence_assignment_and_shared_names_stay_together(self):
+        inventory = {"race": ["TestA", "TestB", "TestShared"], "plain": ["TestC", "TestD", "TestShared"]}
+        durations = {"race": {"TestA": 10, "TestB": 10, "TestShared": 1},
+                     "plain": {"TestC": 5, "TestD": 20, "TestShared": 10}}
+        parts = ci.partitions(inventory, 2, durations, race=["race"])
+        self.assertEqual(parts, [{("race", "TestB"), ("plain", "TestD")},
+                                 {("race", "TestA"), ("race", "TestShared"), ("plain", "TestC"), ("plain", "TestShared")}])
+        self.assertNotEqual(parts, ci.partitions(inventory, 2, durations))
+
+    def test_free_capacity_in_a_busy_shard_cannot_leave_empty_shards(self):
+        inventory = {"heavy": ["TestHeavy"], **{f"p{i}": [f"TestSmall{i}"] for i in range(3)}}
+        durations = {"heavy": {"TestHeavy": 100.0}}
+        parts = ci.partitions(inventory, 4, durations)
+        self.assertEqual(list(map(len, parts)), [1, 1, 1, 1])
+
+    def test_plan_prints_predictions_groups_totals_and_exhaustive_result(self):
+        inventory = {"r": ["TestA", "TestB", "TestShared"], "p": ["TestC", "TestD", "TestShared"], "empty": []}
+        durations = {"r": {"TestA": 10, "TestB": 10, "TestShared": 1},
+                     "p": {"TestC": 5, "TestD": 20, "TestShared": 10}}
+        with mock.patch.object(ci, "classify", return_value=(sorted(inventory), ["r"])), \
+                mock.patch.object(ci, "discover", return_value=inventory), \
+                mock.patch.object(ci, "load_durations", return_value=durations), \
+                mock.patch.object(sys, "argv", [SCRIPT, "plan", "--count", "2"]), \
+                mock.patch("sys.stdout", new_callable=io.StringIO) as output:
+            ci.main()
+        text = output.getvalue()
+        self.assertIn("Shard 0: 2 targets, predicted 30.0 s wall", text)
+        self.assertIn("Shard 1: 4 targets, predicted 26.0 s wall", text)
+        self.assertRegex(text, r"race:.*slowest r \(10.0 s\).*total 10.0 s")
+        self.assertRegex(text, r"plain:.*slowest p \(20.0 s\).*total 20.0 s")
+        self.assertIn("PASS exhaustive plan: 3 packages, 6 targets", text)
 
     def test_a_name_shared_by_packages_carries_their_combined_weight(self):
         inventory = {"p": ["TestShared", "TestX"], "q": ["TestShared", "TestY", "TestZ"]}
@@ -99,7 +160,7 @@ class ShardTests(unittest.TestCase):
 
     def write_shards(self, root, count=4, flat=False, names=None):
         """Shard evidence as download-artifact leaves it: one artifact flat in root, several in a directory each."""
-        parts = ci.partitions(self.inventory, count)
+        parts = ci.partitions(self.inventory, count, race=["example/b"])
         for i, part in enumerate(parts):
             path = root if flat else root / (names[i] if names else f"shard-{i}")
             path.mkdir(parents=True, exist_ok=True)
@@ -221,6 +282,40 @@ class ShardTests(unittest.TestCase):
 
 
 class ShardTimeoutTests(unittest.TestCase):
+    def test_runner_and_coverage_merge_follow_the_grouped_wall_time_plan(self):
+        inventory = {"r": ["TestA", "TestB", "TestShared"], "p": ["TestC", "TestD", "TestShared"], "empty": []}
+        durations = {"r": {"TestA": 10, "TestB": 10, "TestShared": 1},
+                     "p": {"TestC": 5, "TestD": 20, "TestShared": 10}}
+        expected = [{("r", "TestB"), ("p", "TestD")},
+                    {("r", "TestA"), ("r", "TestShared"), ("p", "TestC"), ("p", "TestShared")}]
+
+        def fake_run_go(arguments, log):
+            pattern = arguments[arguments.index("-run") + 1]
+            packages = [p for p in inventory if p in arguments]
+            profile = Path(next(a.split("=", 1)[1] for a in arguments if a.startswith("-coverprofile=")))
+            profile.write_text("mode: atomic\n" + "".join(f"{p}/x.go:1.1,2.2 1 1\n" for p in packages))
+            events = []
+            for p in packages:
+                for t in inventory[p]:
+                    if ci.re.fullmatch(pattern, t):
+                        events += [{"Package": p, "Test": t, "Action": a} for a in ("run", "pass")]
+                events.append({"Package": p, "Action": "pass"})
+            return events
+
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(ci, "classify", return_value=(sorted(inventory), ["r"])), \
+                mock.patch.object(ci, "discover", return_value=inventory), \
+                mock.patch.object(ci, "load_durations", return_value=durations), \
+                mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
+                mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
+            root = Path(directory)
+            for i, selected in enumerate(expected):
+                ci.run_shard(i, 2, root / f"shard-{i}")
+                manifest = json.loads((root / f"shard-{i}" / "manifest.json").read_text())
+                self.assertEqual(manifest["selected"], sorted(map(list, selected)))
+            ci.merge(root, 2, root / "coverage.out")
+            self.assertEqual(len(ci.coverage_blocks(root / "coverage.out")), 3)
+
     def test_shard_run_gives_go_test_more_than_the_default_ten_minutes(self):
         calls = []
 

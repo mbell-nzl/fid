@@ -28,6 +28,12 @@ TIMEOUT = ["-timeout", "20m"]
 DURATIONS = Path(__file__).with_name("durations.json")
 UNMEASURED_SECONDS = 0.1
 MIN_SECONDS = 0.05
+# Constrained least-squares fit to run 45354196371's four shards: effective
+# parallelism >= 3 ties, so use the smallest integer; setup hits its zero bound.
+# Summed parallel test Elapsed values overpredict package time (RMSE 146 s).
+# These are scheduling estimates, not job deadlines; see FID-57f524's report.
+CI_PARALLELISM = 3
+GROUP_SETUP_SECONDS = 0.0
 TREE = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 WORKFLOW = ".github/workflows/ci.yml"
 
@@ -36,23 +42,59 @@ def load_durations(path=DURATIONS):
     return json.loads(path.read_text())
 
 
-def partitions(inventory, count, durations=None):
+def test_seconds(durations, package, name):
+    return max((durations or {}).get(package, {}).get(name, UNMEASURED_SECONDS), MIN_SECONDS)
+
+
+def predict_groups(loads, race, parallelism=CI_PARALLELISM, setup_seconds=GROUP_SETUP_SECONDS):
+    """Race and plain run sequentially; packages within each group run concurrently."""
+    prediction = {}
+    for flags, packages in package_groups(sorted(loads), race):
+        slowest = min(packages, key=lambda p: (-loads[p], p))
+        total = sum(loads[p] for p in packages)
+        prediction[label(flags)] = {"seconds": max(loads[slowest], total / parallelism) + setup_seconds,
+                                    "total": total, "slowest": slowest, "slowest_seconds": loads[slowest]}
+    return prediction
+
+
+def package_loads(inventory, selected, durations):
+    loads = dict.fromkeys(inventory, 0.0)
+    for package, name in sorted(selected):
+        loads[package] += test_seconds(durations, package, name)
+    return loads
+
+
+def partitions(inventory, count, durations=None, race=()):
     if count < 1 or not inventory:
         raise ValueError("positive shard count and package inventory required")
-    weights = {}
+    names = {}
     for package, tests in sorted(inventory.items()):
         if not package or len(tests) != len(set(tests)) or any(not NAME.fullmatch(t) for t in tests):
             raise ValueError("invalid or duplicate discovered test")
-        measured = (durations or {}).get(package, {})
         for name in tests:
-            weights[name] = weights.get(name, 0.0) + max(measured.get(name, UNMEASURED_SECONDS), MIN_SECONDS)
-    if len(weights) < count:
+            names.setdefault(name, {})[package] = test_seconds(durations, package, name)
+    if len(names) < count:
         raise ValueError("empty shard selection")
-    # -run selects a name in every package, so a name is the unit; heaviest first, each to the lightest shard.
-    loads, owners = [0.0] * count, {}
-    for name in sorted(weights, key=lambda n: (-weights[n], n)):
-        owners[name] = min(range(count), key=lambda i: (loads[i], i))
-        loads[owners[name]] += weights[name]
+    # -run selects a name in every package. Keep those targets together and
+    # assign heaviest names first by marginal wall time, then resulting wall
+    # time, marginal squared package load and index. The package tie-break
+    # spreads work even when another package masks its wall cost.
+    # Reserve enough names to keep every shard nonempty even
+    # when an already busy shard could absorb other packages at no wall cost.
+    loads = [dict.fromkeys(inventory, 0.0) for _ in range(count)]
+    seconds = [sum(g["seconds"] for g in predict_groups(load, race).values()) for load in loads]
+    owners, empty = {}, set(range(count))
+    for name in sorted(names, key=lambda n: (-sum(names[n].values()), n)):
+        candidates = []
+        for i in sorted(empty) if len(names) - len(owners) == len(empty) else range(count):
+            updated = loads[i] | {p: loads[i][p] + s for p, s in names[name].items()}
+            predicted = sum(g["seconds"] for g in predict_groups(updated, race).values())
+            package_growth = sum(updated[p] ** 2 - loads[i][p] ** 2 for p in names[name])
+            candidates.append((round(predicted - seconds[i], 9), round(predicted, 9), round(package_growth, 9), i, updated, predicted))
+        _, _, _, owner, updated, predicted = min(candidates, key=lambda c: c[:4])
+        loads[owner], seconds[owner] = updated, predicted
+        owners[name] = owner
+        empty.discard(owner)
     result = [set() for _ in range(count)]
     for package, tests in inventory.items():
         for name in tests:
@@ -164,7 +206,7 @@ def run_shard(index, count, output):
     packages, race = classify()
     groups = package_groups(packages, race)
     inventory = discover(groups, output)
-    selected = partitions(inventory, count, load_durations())[index]
+    selected = partitions(inventory, count, load_durations(), race)[index]
     pattern = "^(" + "|".join(re.escape(t) for t in sorted({t for _, t in selected})) + ")$"
     print(f"Shard {index + 1}/{count}: {len(selected)} tests, examples and fuzz seed targets", flush=True)
     print(f"Race detector on {', '.join(race) or 'no packages'}: their non-test code starts goroutines", flush=True)
@@ -216,7 +258,7 @@ def merge(root, count, output):
         raise ValueError("missing or duplicate shard indices/source")
     if not isinstance(race, list) or not set(race) <= set(inventory):
         raise ValueError("race packages missing or outside the inventory")
-    plan = partitions(inventory, count, load_durations())
+    plan = partitions(inventory, count, load_durations(), race)
     combined = {}
     for path, manifest in zip(paths, manifests):
         if manifest["inventory"] != inventory or manifest["source"] != source or manifest["count"] != count or manifest.get("race") != race:
@@ -343,11 +385,15 @@ def main():
     else:
         import tempfile
         with tempfile.TemporaryDirectory(prefix="fid-ci-plan-") as scratch:
-            inventory = discover(package_groups(*classify()), Path(scratch))
+            packages, race = classify()
+            inventory = discover(package_groups(packages, race), Path(scratch))
         measured = load_durations()
-        for i, part in enumerate(partitions(inventory, args.count, measured)):
-            seconds = sum(max(measured.get(p, {}).get(t, UNMEASURED_SECONDS), MIN_SECONDS) for p, t in part)
-            print(f"Shard {i}: {len(part)} targets, about {seconds:.0f} s measured")
+        for i, part in enumerate(partitions(inventory, args.count, measured, race)):
+            prediction = predict_groups(package_loads(inventory, part, measured), race)
+            seconds = sum(g["seconds"] for g in prediction.values())
+            print(f"Shard {i}: {len(part)} targets, predicted {seconds:.1f} s wall")
+            for group, data in prediction.items():
+                print(f"  {group}: {data['seconds']:.1f} s wall; slowest {data['slowest']} ({data['slowest_seconds']:.1f} s); total {data['total']:.1f} s")
         print(f"PASS exhaustive plan: {len(inventory)} packages, {sum(map(len, inventory.values()))} targets")
 
 
