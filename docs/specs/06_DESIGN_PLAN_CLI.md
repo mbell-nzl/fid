@@ -1807,12 +1807,18 @@ and discovered task where applicable. No separately supplied comment body is
 accepted. The latest hand-off at **recording** fixes the destination PR so an
 interrupted delivery cannot be redirected by a later hand-off.
 
-`review.posted` retains the comment URL, rendering version (1) and canonical
-body digest. Version 1 remains readable if later versions change the layout. Posting is
+`review.posted` retains the comment URL, rendering version and canonical
+body digest. New posts use version 2: bold labels and code spans for identifiers,
+the lane and finding locations; reviewer-written Markdown passes through.
+Version 1 remains byte-for-byte available to verify old receipts. Admission uses
+the receipt's recorded version and refuses unknown versions. Schema 42 permits
+versions 1 and 2; schema 41 permits only version 1. Posting is
 serialized under the journal lock. A stable record/digest HTML marker lets fid
 recover a comment after a lost local receipt: it reads bounded, paginated PR
 comments before calling `gh pr comment`. An edited matching marker refuses a
-second post. A receipt makes subsequent retries entirely local. `review post`
+second post. Reconciliation checks both supported canonical renderings; a
+recovered comment retains its original render version, digest and URL in the
+receipt. A receipt makes subsequent retries entirely local. `review post`
 retries a round plus all responses to its findings, returning `{posted: [ids],
 pending: [ids]}` without a single Event in the response (each successful post
 has its own receipt Event). Text prints each posted or pending ID. An unknown

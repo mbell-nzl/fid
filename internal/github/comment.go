@@ -13,6 +13,8 @@ import (
 
 var commentFragment = regexp.MustCompile(`^issuecomment-[1-9][0-9]*$`)
 
+type CommentBody struct{ Marker, Body string }
+
 func ValidCommentURL(pr, comment string) bool {
 	p, err := ParsePRURL(pr)
 	if err != nil {
@@ -30,46 +32,57 @@ func ValidCommentURL(pr, comment string) bool {
 // when GitHub accepted a post but the local receipt could not be appended.
 // The caller serializes attempts under the journal lock.
 func (client *Client) PostComment(ctx context.Context, pr, marker, body string) (string, error) {
+	url, _, err := client.PostCommentVariants(ctx, pr, CommentBody{Marker: marker, Body: body})
+	return url, err
+}
+
+// PostCommentVariants reconciles every canonical rendering before writing the
+// primary body. The returned index identifies the matching variant (primary is
+// zero), allowing the caller to retain the recovered body's original metadata.
+func (client *Client) PostCommentVariants(ctx context.Context, pr string, primary CommentBody, alternatives ...CommentBody) (string, int, error) {
 	p, err := ParsePRURL(pr)
 	if err != nil || !p.Repository.Equal(client.repo) {
-		return "", fmt.Errorf("comment PR differs from repository")
+		return "", 0, fmt.Errorf("comment PR differs from repository")
 	}
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
-	full := body + "\n" + marker + "\n"
+	variants := append([]CommentBody{primary}, alternatives...)
 	total := 0
 	for page := 1; page <= maxCIPages; page++ {
 		data, err := client.api(ctx, fmt.Sprintf("issues/%d/comments?per_page=100&page=%d", p.Number, page), "map({body,html_url})")
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 		total += len(data)
 		if total > DefaultOutputLimit {
-			return "", fmt.Errorf("comment listing exceeded size limit")
+			return "", 0, fmt.Errorf("comment listing exceeded size limit")
 		}
 		var comments []struct {
 			Body string `json:"body"`
 			URL  string `json:"html_url"`
 		}
 		if err := validateJSON(data); err != nil {
-			return "", err
+			return "", 0, err
 		}
 		if err := json.Unmarshal(data, &comments); err != nil || comments == nil {
-			return "", fmt.Errorf("invalid comment listing")
+			return "", 0, fmt.Errorf("invalid comment listing")
 		}
 		for _, c := range comments {
-			if strings.Contains(c.Body, marker) {
-				if c.Body != full || !ValidCommentURL(pr, c.URL) {
-					return "", fmt.Errorf("existing comment differs from canonical record")
+			for i, v := range variants {
+				if strings.Contains(c.Body, v.Marker) {
+					if c.Body != v.Body+"\n"+v.Marker+"\n" || !ValidCommentURL(pr, c.URL) {
+						return "", 0, fmt.Errorf("existing comment differs from canonical record")
+					}
+					return c.URL, i, nil
 				}
-				return c.URL, nil
 			}
 		}
 		if len(comments) < pageSize {
-			return client.writeComment(ctx, pr, full)
+			url, err := client.writeComment(ctx, pr, primary.Body+"\n"+primary.Marker+"\n")
+			return url, 0, err
 		}
 	}
-	return "", fmt.Errorf("comment listing exceeded page limit")
+	return "", 0, fmt.Errorf("comment listing exceeded page limit")
 }
 
 func (client *Client) writeComment(ctx context.Context, pr, body string) (string, error) {

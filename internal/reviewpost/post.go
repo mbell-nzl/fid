@@ -90,6 +90,10 @@ func post(ctx context.Context, lock *journal.WriteLock, conn *sql.DB, id string,
 	if err != nil {
 		return err
 	}
+	legacy, err := reviewcomment.ReadSubjectVersion(conn, id, 1)
+	if err != nil {
+		return err
+	}
 	p, err := github.ParsePRURL(s.PR)
 	if err != nil {
 		return err
@@ -98,12 +102,18 @@ func post(ctx context.Context, lock *journal.WriteLock, conn *sql.DB, id string,
 	if err != nil {
 		return err
 	}
-	url, err := client.PostComment(ctx, s.PR, reviewcomment.Marker(s.ID, s.Body), s.Body)
+	url, variant, err := client.PostCommentVariants(ctx, s.PR,
+		github.CommentBody{Marker: reviewcomment.Marker(s.ID, s.Body), Body: s.Body},
+		github.CommentBody{Marker: reviewcomment.Marker(legacy.ID, legacy.Body), Body: legacy.Body})
 	if err != nil {
 		return err
 	}
+	version := reviewcomment.RenderVersion
+	if variant == 1 {
+		s, version = legacy, 1
+	}
 	now := time.Now().UTC().Truncate(time.Second)
-	e := journal.Event{EventSchema: 2, EventType: "review.posted", CommandName: "review.post", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "fid-review-post", ActorType: "service", Producer: "fid", ProvenanceRef: "fid:review-post"}, Aggregate: journal.Aggregate{ID: id, Type: "review-post", Sequence: 1}, Effects: []journal.Effect{{Op: "insert", Table: "review_posts", PK: map[string]any{"id": id}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": url, "render_version": reviewcomment.RenderVersion, "digest": reviewcomment.Digest(s.Body), "posted_at": now.Format(time.RFC3339)}}}}
+	e := journal.Event{EventSchema: 2, EventType: "review.posted", CommandName: "review.post", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "fid-review-post", ActorType: "service", Producer: "fid", ProvenanceRef: "fid:review-post"}, Aggregate: journal.Aggregate{ID: id, Type: "review-post", Sequence: 1}, Effects: []journal.Effect{{Op: "insert", Table: "review_posts", PK: map[string]any{"id": id}, Values: map[string]any{"task_id": s.TaskID, "handoff_id": s.HandoffID, "pr": s.PR, "url": url, "render_version": version, "digest": reviewcomment.Digest(s.Body), "posted_at": now.Format(time.RFC3339)}}}}
 	_, err = journal.CommitEvent(lock, conn, e)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errReceiptCommit, err)
