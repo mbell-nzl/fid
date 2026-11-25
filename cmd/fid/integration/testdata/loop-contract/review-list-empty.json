@@ -1,0 +1,25 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "review.list",
+  "result": {
+    "rounds[].current": [],
+    "rounds[].findings[].evidence": [],
+    "rounds[].findings[].fix": [],
+    "rounds[].findings[].id": [],
+    "rounds[].findings[].location": [],
+    "rounds[].findings[].open": [],
+    "rounds[].findings[].profile": [],
+    "rounds[].findings[].responses?[].actor": [],
+    "rounds[].findings[].responses?[].text": [],
+    "rounds[].findings[].severity": [],
+    "rounds[].findings[].summary": [],
+    "rounds[].handoff_id": [],
+    "rounds[].id": [],
+    "rounds[].profiles": [],
+    "rounds[].stream": [],
+    "rounds[].verdict": [],
+    "task_id": "\u003cFID\u003e"
+  }
+}

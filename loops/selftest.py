@@ -33,7 +33,7 @@ def stub(name):
                  "review": "review.list"}[command]
     result = {}
     if command == "next":
-        kind = "new" if scenario == "heartbeat" else "none"
+        kind = "new" if scenario in ("heartbeat", "missing-nested") else "none"
         result = {"kind": kind, "task": {"id": "FID-123abc"} if kind == "new" else None,
                   "hold": {"id": "HLD-123abc"} if kind == "new" and "--claim" in args else None,
                   "waiting": {"kind": "waiting-for-you"} if kind == "none" else None, "answer": None}
@@ -43,6 +43,8 @@ def stub(name):
             result["waiting"] = {"kind": "future-wait"}
         if scenario == "missing":
             del result["answer"]
+        if scenario == "missing-nested":
+            result["task"] = {}
     if command == "done":
         result = {"outcomes": [{"task_id": "FID-123abc", "status": "waiting", "refusal": {"code": "done-not-merged"}},
                                {"task_id": "FID-456abc", "status": "completed", "completion": {"task_id": "FID-456abc"}},
@@ -70,6 +72,14 @@ def stub(name):
     if command == "next" and scenario in ("empty", "malformed"):
         print("" if scenario == "empty" else "{bad-json")
         return
+    if command == "next" and scenario == "wrong-operation" and "--claim" not in args:
+        operation = "next.claim"
+    if command == "done" and scenario == "empty-done":
+        return
+    if scenario == "nonzero":
+        print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+                          "error": {"code": "internal-error", "retryable": False}}), file=sys.stderr)
+        sys.exit(7)
     print(json.dumps({"contract_version": "fid-cli.future" if scenario == "version" else "fid-cli.v1",
                       "ok": True, "operation": operation, "result": result}))
 
@@ -90,18 +100,22 @@ class Selftest(unittest.TestCase):
                 script.write_text(f'#!/bin/sh\nexec python3 "{Path(__file__).resolve()}" {name} "$@"\n')
                 script.chmod(0o700)
             env = {**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
-                   "STUB_ROOT": tmp, "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
+                   "STUB_ROOT": str(root / ".git"), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
                    "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"),
                    "LOOP_GH_REPO": "test/project", "XDG_CONFIG_HOME": str(root / "config")}
             result = subprocess.run(["python3", str(SOURCE / "loop.py")], cwd=tmp, env=env,
                                     capture_output=True, text=True, timeout=15)
-            calls = [json.loads(line) for line in (root / "calls").read_text().splitlines()] if (root / "calls").exists() else []
+            calls_path = root / ".git" / "calls"
+            calls = [json.loads(line) for line in calls_path.read_text().splitlines()] if calls_path.exists() else []
             return result, calls
 
     def test_guards(self):
         for scenario, diagnostic in (("version", "fid-cli.future"), ("unknown", "future-work"),
                                      ("unknown-wait", "future-wait"), ("empty", "empty"),
                                      ("malformed", "{bad-json"), ("missing", "answer"),
+                                     ("wrong-operation", "operation"),
+                                     ("missing-nested", "id"), ("empty-done", "empty"),
+                                     ("nonzero", "internal-error"),
                                      ("heartbeat", "hold-not-current")):
             with self.subTest(scenario=scenario):
                 result, calls = self.run_loop(scenario)

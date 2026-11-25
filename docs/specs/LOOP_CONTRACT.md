@@ -49,6 +49,9 @@ is exit 0. A nonzero exit never means that there is no work.
 | `handoff` | `task.handoff` | 0, 2, 3, 4, 5, 6, 7 |
 | `review record <task>` | `review.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `done [task]` | `task.done` | 0, 2, 3, 4, 5, 6, 7 |
+| `show <task>` | `issue.show` | 0, 2, 3, 4, 6, 7 |
+| `review list <task>` | `review.list` | 0, 2, 3, 4, 6, 7 |
+| `backup` | `project.backup` | 0, 2, 3, 4, 6, 7 |
 
 Parser failures for `next` name `next.get`; once parsed, a claiming request
 names `next.claim`. Failure codes identify the refusal; their category and
@@ -141,6 +144,19 @@ is restored. Unscoped selection is unchanged.
 
 ## Session commands and completion
 
+- `show`: `issue.id`, `issue.title`, `issue.spec_md_path` (a repo-relative
+  path or null), and `issue.acceptance_criteria[]` with `id`, `ordinal`,
+  `text`. The loop passes these to the agent and reads the brief at the spec
+  path. Briefs use `docs/briefs/<RESET row ID, else fid ID>.md`.
+- `review list`: `task_id` and `rounds[]` with `id`, `handoff_id`, `stream`,
+  `profiles`, `verdict`, `current`, and `findings[]` with `id`, `profile`,
+  `severity`, `summary`, `location`, `evidence`, `fix`, `open`. A finding may
+  include `responses[]` with `actor` and `text`. Pass the declared history
+  to fixers and reviewers, including earlier finding IDs for dispositions.
+  This existing read command makes a restarted loop independent of local
+  agent reports. These and the show fields are additive in `fid-cli.v1`.
+- `backup`: `backup.outcome` (`pushed` or `unchanged` on success). A failed
+  backup is a failure envelope and must be reported.
 - `start`: `task_id`, `hold_id`, `status` (`in_progress`).
 - `heartbeat`: `task_id`, `hold_id`, `last_heartbeat_at`, `expires_at`
   (UTC RFC3339 strings) and `heartbeat_interval_seconds` (300). Renew
@@ -186,6 +202,9 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
   "next_kinds": ["new", "resume", "rework", "review", "none"],
   "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
   "fields": {
+    "issue.show": ["issue.id", "issue.title", "issue.spec_md_path", "issue.acceptance_criteria[].id", "issue.acceptance_criteria[].ordinal", "issue.acceptance_criteria[].text"],
+    "review.list": ["task_id", "rounds[].id", "rounds[].handoff_id", "rounds[].stream", "rounds[].profiles", "rounds[].verdict", "rounds[].current", "rounds[].findings[].id", "rounds[].findings[].profile", "rounds[].findings[].severity", "rounds[].findings[].summary", "rounds[].findings[].location", "rounds[].findings[].evidence", "rounds[].findings[].fix", "rounds[].findings[].open", "rounds[].findings[].responses?[].actor", "rounds[].findings[].responses?[].text"],
+    "project.backup": ["backup.outcome"],
     "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
     "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
     "task.start": ["task_id", "hold_id", "status"],

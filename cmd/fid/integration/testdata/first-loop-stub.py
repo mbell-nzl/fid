@@ -29,8 +29,14 @@ if Path(sys.argv[0]).name == "gh":
         (state / "pr").touch()
         print("https://github.com/mbell-nzl/fid/pull/63")
     elif args[:2] == ["pr", "ready"]:
+        if (state / "ready").exists():
+            print("PR is already ready", file=sys.stderr)
+            sys.exit(1)
         rounds = fid("review", "list", os.environ["FIRST_LOOP_TASK"])["rounds"]
         log(kind="ready", recorded=bool(rounds and rounds[-1]["verdict"] == "APPROVE"))
+        (state / "ready").touch()
+    elif args[:2] == ["pr", "view"] and args[-1] == "isDraft":
+        print(json.dumps({"isDraft": not (state / "ready").exists()}))
     elif args[:2] == ["pr", "comment"]:
         log(kind="comment", body=Path(args[args.index("--body-file") + 1]).read_text())
         print("https://github.com/mbell-nzl/fid/pull/63#issuecomment-123")
@@ -49,7 +55,8 @@ if work["kind"] == "review":
     expected = work["review"]["handoff"]["head"]
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     detached = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True).returncode != 0
-    log(kind="review", actor=os.environ["LOOP_ACTOR"], head=head, expected_head=expected, detached=detached)
+    log(kind="review", actor=os.environ["LOOP_ACTOR"], head=head, expected_head=expected, detached=detached,
+        stream=work["review"]["stream"], prior_streams=[r["stream"] for r in context["reviews"]["rounds"]])
     count = state / "reviews"
     first = not count.exists()
     count.touch()
@@ -66,15 +73,20 @@ if work["kind"] == "review":
                                   for r in context["reviews"]["rounds"] for f in r["findings"] if f["open"]]
     Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps(review))
 else:
-    log(kind="build", context=context, prompt=prompt)
+    merging = subprocess.run(["git", "rev-parse", "--verify", "MERGE_HEAD"], capture_output=True).returncode == 0
+    log(kind="build", context=context, prompt=prompt, merging=merging)
     first = not (state / "built").exists()
     (state / "built").touch()
     if first and scenario == "waiting":
+        Path("unfinished.txt").write_text("Kept until Mark answers.\n")
         fid("park", "--hold", os.environ["LOOP_HOLD"], "--actor", os.environ["LOOP_ACTOR"],
             "--waiting", "Which retries?", "--idempotency-key", "waiting")
         sys.exit(0)
     if first and scenario == "interrupt":
         sys.exit(42)
+    if first and scenario == "ctrl-c":
+        import time
+        time.sleep(30)
     Path("change_test.go").write_text("package example\n")
     Path("change.txt").write_text(os.environ["LOOP_SESSION"] + "\n")
     if first and scenario == "dirty":
