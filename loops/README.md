@@ -45,7 +45,9 @@ A run proceeds as follows:
 5. If the agent parked waiting for a person, leave the task parked and move
    on. Otherwise require a clean tree, run `fid check`, push to origin, open
    a draft PR with the report as its body (or reuse the branch's open PR),
-   and hand off. A successful agent that leaves uncommitted changes stops
+   and hand off. Reused PRs get the latest report as their body. Builds must
+   use a task branch, rather than main, the default branch or a detached head.
+   A successful agent that leaves uncommitted changes stops
    the loop and parks an interruption.
 6. For `review`, check out exactly the handed-off head detached in the
    review worktree, and run a fresh reviewer for the declared stream and

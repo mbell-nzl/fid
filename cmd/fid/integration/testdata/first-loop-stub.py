@@ -28,6 +28,8 @@ if Path(sys.argv[0]).name == "gh":
         log(kind="create", draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text())
         (state / "pr").touch()
         print("https://github.com/mbell-nzl/fid/pull/63")
+    elif args[:2] == ["pr", "edit"]:
+        log(kind="edit", body=Path(args[args.index("--body-file") + 1]).read_text())
     elif args[:2] == ["pr", "ready"]:
         if (state / "ready").exists():
             print("PR is already ready", file=sys.stderr)
@@ -94,4 +96,4 @@ else:
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test",
                     "commit", "-qm", "test: stub implementation"], check=True)
-    Path(os.environ["LOOP_REPORT"]).write_text("Stub completion report\n\n## Rollback\nRevert this change.\n")
+    Path(os.environ["LOOP_REPORT"]).write_text("Stub completion report: " + work["kind"] + "\n\n## Rollback\nRevert this change.\n")

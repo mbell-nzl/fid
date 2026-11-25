@@ -134,7 +134,7 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			t.Parallel()
 			j := newFirstLoop(t, scenario)
 			j.run(t, 0)
-			var builds, reviews, creates, ready, comments int
+			var builds, reviews, creates, ready, comments, edits int
 			for _, call := range j.calls(t) {
 				switch call["kind"] {
 				case "build":
@@ -167,6 +167,11 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					}
 				case "comment":
 					comments++
+				case "edit":
+					edits++
+					if !strings.Contains(call["body"].(string), "rework") {
+						t.Fatalf("PR body did not get the rework report: %v", call)
+					}
 				}
 			}
 			wantBuilds, wantReviews := 1, 1
@@ -175,8 +180,8 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			} else if scenario == "assured" {
 				wantReviews = 2
 			}
-			if builds != wantBuilds || reviews != wantReviews || creates != 1 || ready != 1 || comments != wantReviews {
-				t.Fatalf("builds/reviews/creates/ready = %d/%d/%d/%d", builds, reviews, creates, ready)
+			if builds != wantBuilds || reviews != wantReviews || creates != 1 || ready != 1 || comments != wantReviews || edits != wantBuilds-1 {
+				t.Fatalf("builds/reviews/creates/ready = %d/%d/%d/%d; comments/edits = %d/%d", builds, reviews, creates, ready, comments, edits)
 			}
 			if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != wantBuilds+wantReviews {
 				t.Fatalf("backup after each build/review = %v", outcomes)
@@ -191,6 +196,18 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 				t.Fatal("second review did not close the original major")
 			}
 		})
+	}
+}
+
+func TestFirstLoopRefusesBuildingOnDefaultBranch(t *testing.T) {
+	t.Parallel()
+	j := newFirstLoop(t, "approve")
+	closureRun(t, j.root, "git", "switch", "-c", "trunk", "origin/trunk")
+	w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
+	taken := w.wantNext("", true, "new", j.task)
+	w.call("start", "--hold", p21PathString(t, taken, "result", "hold", "id"), "--actor", w.actor, "--idempotency-key", "start")
+	if out := j.run(t, 1); !strings.Contains(out, "task branch") {
+		t.Fatal(out)
 	}
 }
 

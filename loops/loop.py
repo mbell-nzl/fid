@@ -18,8 +18,7 @@ def required(value, path):
     key, array, tail = path[0].removesuffix("[]"), path[0].endswith("[]"), path[1:]
     if key.endswith("?") and key[:-1] not in value: return
     child = value[key.removesuffix("?")]
-    for item in child if array else [child]:
-        required(item, tail)
+    for item in child if array else [child]: required(item, tail)
 def fid(cwd, *args):
     p = sp.run([os.getenv("LOOP_FID", "fid"), "--json", *args], cwd=cwd, capture_output=True, text=True)
     raw = p.stdout if p.returncode == 0 else p.stderr
@@ -108,8 +107,7 @@ def main():
         output.mkdir(parents=True)
         print(f"{work['kind']}: {work['task']['id']} ({output})", flush=True)
         if is_review:
-            if run(cwd, "git", "status", "--porcelain"):
-                raise RuntimeError("review worktree has uncommitted changes")
+            if run(cwd, "git", "status", "--porcelain"): raise RuntimeError("review worktree has uncommitted changes")
             run(cwd, "git", "checkout", "--detach", work["review"]["handoff"]["head"])
         else:
             fid(cwd, "start", *hold, "--idempotency-key", output.name + "-start")
@@ -118,6 +116,7 @@ def main():
                 task = fid(cwd, "show", work["task"]["id"])["issue"]
                 name = Path(task["spec_md_path"]).stem if task["spec_md_path"] else task["id"]
                 run(cwd, "git", "switch", "-c", "reset-" + name + "-" + re.sub(r"[^a-z0-9]+", "-", task["title"].lower()).strip("-"), run(cwd, "git", "symbolic-ref", "refs/remotes/origin/HEAD"))
+            if run(cwd, "git", "branch", "--show-current") in ("", "main", run(cwd, "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD").removeprefix("origin/")): raise RuntimeError("build requires a task branch")
             if work.get("rework", {}).get("cause") == "default-conflict":
                 run(cwd, "git", "merge", "--no-edit", work["rework"]["default_ref"], allowed=(0, 1))
         agent(cwd, "reviewer" if is_review else "builder", actor, model, work, output)
@@ -134,6 +133,7 @@ def main():
             run(cwd, "git", "push", "-u", "origin", branch)
             prs = json.loads(run(cwd, "gh", "pr", "list", "--repo", REPO, "--head", branch, "--state", "open", "--json", "url"))
             pr = prs[0]["url"] if prs else run(cwd, "gh", "pr", "create", "--repo", REPO, "--draft", "--head", branch, "--title", fid(cwd, "show", work["task"]["id"])["issue"]["title"], "--body-file", str(output / "report.md"))
+            if prs: run(cwd, "gh", "pr", "edit", pr, "--repo", REPO, "--body-file", str(output / "report.md"))
             fid(cwd, "handoff", *hold, "--pr", pr, "--idempotency-key", output.name + "-handoff")
         ACTIVE = None
         print("backup:", json.dumps(fid(cwd, "backup")), flush=True)
