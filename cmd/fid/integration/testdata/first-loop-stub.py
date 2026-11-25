@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Agents and GitHub for the first-loop journeys; never contacts a service."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+state = Path(os.environ["FIRST_LOOP_STATE"])
+scenario = os.environ["FIRST_LOOP_SCENARIO"]
+args = sys.argv[1:]
+
+
+def log(**fields):
+    with (state / "calls.jsonl").open("a") as out:
+        out.write(json.dumps({"cwd": str(Path.cwd()), **fields}) + "\n")
+
+
+def fid(*argv):
+    return json.loads(subprocess.check_output([os.environ["LOOP_FID"], "--json", *argv], text=True))["result"]
+
+
+if Path(sys.argv[0]).name == "gh":
+    assert args[:2] != ["pr", "merge"], "loop must never merge"
+    if args[:2] == ["pr", "list"]:
+        print(json.dumps([{"url": "https://github.com/mbell-nzl/fid/pull/63"}] if (state / "pr").exists() else []))
+    elif args[:2] == ["pr", "create"]:
+        log(kind="create", draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text())
+        (state / "pr").touch()
+        print("https://github.com/mbell-nzl/fid/pull/63")
+    elif args[:2] == ["pr", "ready"]:
+        rounds = fid("review", "list", os.environ["FIRST_LOOP_TASK"])["rounds"]
+        log(kind="ready", recorded=bool(rounds and rounds[-1]["verdict"] == "APPROVE"))
+    elif args[:2] == ["pr", "comment"]:
+        log(kind="comment", body=Path(args[args.index("--body-file") + 1]).read_text())
+        print("https://github.com/mbell-nzl/fid/pull/63#issuecomment-123")
+    elif args[0] == "api" and any("/comments?" in a for a in args):
+        print("[]")
+    else:
+        print("offline fixture", file=sys.stderr)
+        sys.exit(1)
+    sys.exit(0)
+
+assert Path(sys.argv[0]).name == "agent", "real agent invocation is forbidden"
+prompt = sys.stdin.read()
+context = json.loads(Path(os.environ["LOOP_CONTEXT"]).read_text())
+work = context["work"]
+if work["kind"] == "review":
+    expected = work["review"]["handoff"]["head"]
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    detached = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True).returncode != 0
+    log(kind="review", actor=os.environ["LOOP_ACTOR"], head=head, expected_head=expected, detached=detached)
+    count = state / "reviews"
+    first = not count.exists()
+    count.touch()
+    changes = scenario == "changes" and first
+    review = {"reviewer": {"actor": os.environ["LOOP_ACTOR"], "model": os.environ["LOOP_MODEL"],
+                            "session_id": os.environ["LOOP_SESSION"]}, "stream": work["review"]["stream"],
+              "profiles": work["review"]["required_profiles"], "verdict": "CHANGES" if changes else "APPROVE",
+              "purpose": "Review first-loop change", "verification": "Inspected retry coverage", "findings": []}
+    if changes:
+        review["findings"] = [{"profile": "code", "severity": "major", "summary": "Missing retry case",
+                               "location": None, "evidence": "Retry is untested", "fix": "Cover the retry"}]
+    else:
+        review["dispositions"] = [{"finding_id": f["id"], "disposition": "resolved", "reason": "Retry regression passes"}
+                                  for r in context["reviews"]["rounds"] for f in r["findings"] if f["open"]]
+    Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps(review))
+else:
+    log(kind="build", context=context, prompt=prompt)
+    first = not (state / "built").exists()
+    (state / "built").touch()
+    if first and scenario == "waiting":
+        fid("park", "--hold", os.environ["LOOP_HOLD"], "--actor", os.environ["LOOP_ACTOR"],
+            "--waiting", "Which retries?", "--idempotency-key", "waiting")
+        sys.exit(0)
+    if first and scenario == "interrupt":
+        sys.exit(42)
+    Path("change_test.go").write_text("package example\n")
+    Path("change.txt").write_text(os.environ["LOOP_SESSION"] + "\n")
+    if first and scenario == "dirty":
+        sys.exit(0)
+    subprocess.run(["git", "add", "."], check=True)
+    subprocess.run(["git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test",
+                    "commit", "-qm", "test: stub implementation"], check=True)
+    Path(os.environ["LOOP_REPORT"]).write_text("Stub completion report\n\n## Rollback\nRevert this change.\n")
