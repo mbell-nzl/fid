@@ -59,6 +59,9 @@ func TestFirstLoopCtrlCParksBuild(t *testing.T) {
 func newFirstLoop(t *testing.T, scenario string) firstLoop {
 	t.Helper()
 	root, binary := handoffJourneyRepo(t, true)
+	// The loop can make a merge commit; CI has no global git identity.
+	closureRun(t, root, "git", "config", "user.name", "fid test")
+	closureRun(t, root, "git", "config", "user.email", "fid@example.test")
 	p22Write(t, root, "docs/briefs/test.md", "Approved test brief: implement the retry.\n")
 	raw := readP21File(t, filepath.Join(root, ".fid.toml"))
 	policy := strings.Replace(string(raw), "test_adequacy=[]", "test_adequacy=['**/*_test.go']", 1)
@@ -92,6 +95,7 @@ func newFirstLoop(t *testing.T, scenario string) firstLoop {
 		t.Fatal(err)
 	}
 	env := append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
 		"XDG_CONFIG_HOME="+configHome, "XDG_CACHE_HOME="+filepath.Join(state, "cache"),
 		"LOOP_FID="+binary, "LOOP_GH_REPO=mbell-nzl/fid", "LOOP_BUILDER_COMMAND="+filepath.Join(bin, "agent"),
 		"LOOP_REVIEWER_COMMAND="+filepath.Join(bin, "agent"), "FIRST_LOOP_STATE="+state, "FIRST_LOOP_SCENARIO="+scenario, "FIRST_LOOP_TASK="+task)

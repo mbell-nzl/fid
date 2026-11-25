@@ -7,7 +7,7 @@ the kit. `loop.py` must stay under 150 physical lines, including comments
 and blank lines. The test-only Go package runs `selftest.sh` in `make test`
 and CI; `make check-loop-selftest` runs the same guards and budget alone.
 
-Before starting, initialise fid, configure a backup target, authenticate gh,
+Before starting, initialise fid, configure a backup target and git identity, authenticate gh,
 and refresh `origin/<default>` yourself (`git fetch origin`). The loop reads
 that local policy and base; it never fetches. Set `origin/HEAD` to the default
 branch. Briefs must already be on that branch, as described in
