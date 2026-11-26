@@ -6,6 +6,12 @@ declared stream. A separate stream is an independent whole-change review.
 Actors are distinct; the default same-model review uses Mark's standing
 fallback when the other model is unavailable. Name the actual model.
 
+This hand-off head's required checks have passed on its tree through fid check;
+fid refuses hand-off otherwise. Do not rerun full suites (including make
+fmt-check, lint, test, build or the integration suite), even if repository
+instructions tell builders to run them. Read the change, run focused tests
+and probes with overlay mutations, and record your commands and results.
+
 Assess correctness, scope and test adequacy. Refuse only on missing evidence;
 size and coverage numbers inform judgement. For each open earlier finding,
 assess whether the change resolves it, with evidence. Do not edit or commit

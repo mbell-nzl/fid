@@ -89,7 +89,7 @@ def main():
     next_work(build, actors[0], models[0])
     done(build, actors[0])
     home = Path(run(build, "git", "rev-parse", "--absolute-git-dir")) / "fid-loop"
-    review = os.getenv("LOOP_REVIEW_WORKTREE", str(home / "review"))
+    review = os.getenv("LOOP_REVIEW_WORKTREE", build + "-review")
     if not Path(review).exists(): run(build, "git", "worktree", "add", "--detach", review, "HEAD")
     while True:
         is_review = next_work(review, actors[1], models[1])["kind"] == "review"

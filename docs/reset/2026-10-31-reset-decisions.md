@@ -1981,12 +1981,23 @@ Mark approved these decisions for RESET 2.5 (FID-698c0f):
    it. Commands, models, actors and gh repository are environment settings
    with documented defaults. Task 3.3 promotes this copy to the kit. The
    loop uses a detached review worktree and distinct builder/reviewer actors.
-4. **Proof before 2.5's hand-off.** While 2.5 is still held, the
-   orchestrator runs this branch's loop on splitter FID-57f524 through
-   review, Mark's approval and merge. The builder's tests use only temporary
-   repos and stub agents/gh. Bugs found in proof return to this branch; the
-   orchestrator adds 2.5's done mark only after proof. V9's Makefile target
-   makes this PR Assured despite 2.5's planning lane of Standard.
+4. **Proof begins before 2.5's hand-off.** While 2.5 is still held, the
+   orchestrator runs this branch's loop on splitter FID-57f524. The original
+   proof required review, Mark's approval and merge. The builder's tests use
+   only temporary repos and stub agents/gh. Bugs found return to this branch.
+   V9's Makefile target makes this PR Assured despite 2.5's planning lane of
+   Standard.
+
+**Decided 2026-11-26:** the splitter proof reached a recorded CHANGES round,
+rework and a waiting park with backups after each item. Mark answered, then
+cancelled the splitter because its plan made CI slower. 2.5 merges after
+the two loop fixes: reviewers use the passed checks and run focused tests
+and overlay probes without rerunning full suites; the review worktree
+defaults to `<build worktree>-review`, outside git metadata, with the
+environment override retained. Task 2.6 becomes the loop's first full run:
+resume with an answer, a second hand-off, APPROVE making the PR ready,
+Mark's merge, then done. That finish earns 2.5's RESET done mark, added by
+the orchestrator. Row 2.5 stays unmarked in this branch.
 
 ## Products
 

@@ -87,12 +87,13 @@ def stub(name):
 class Selftest(unittest.TestCase):
     def run_loop(self, scenario):
         with tempfile.TemporaryDirectory(prefix="fid-loop-selftest-") as tmp:
-            root = Path(tmp)
-            subprocess.run(["git", "init", "-q", "--template=", "-b", "main", tmp], check=True)
-            subprocess.run(["git", "-C", tmp, "-c", "user.name=fid test", "-c", "user.email=fid@example.test",
+            root = Path(tmp) / "build"
+            root.mkdir()
+            subprocess.run(["git", "init", "-q", "--template=", "-b", "main", str(root)], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=fid test", "-c", "user.email=fid@example.test",
                             "commit", "-qm", "fixture", "--allow-empty"], check=True)
-            subprocess.run(["git", "-C", tmp, "update-ref", "refs/remotes/origin/main", "HEAD"], check=True)
-            subprocess.run(["git", "-C", tmp, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"], check=True)
+            subprocess.run(["git", "-C", str(root), "update-ref", "refs/remotes/origin/main", "HEAD"], check=True)
+            subprocess.run(["git", "-C", str(root), "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"], check=True)
             bin_dir = root / ".git" / "stubs"
             bin_dir.mkdir()
             for name in ("fid", "gh", "agent", "codex", "claude"):
@@ -103,7 +104,7 @@ class Selftest(unittest.TestCase):
                    "STUB_ROOT": str(root / ".git"), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
                    "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"),
                    "LOOP_GH_REPO": "test/project", "XDG_CONFIG_HOME": str(root / "config")}
-            result = subprocess.run(["python3", str(SOURCE / "loop.py")], cwd=tmp, env=env,
+            result = subprocess.run(["python3", str(SOURCE / "loop.py")], cwd=root, env=env,
                                     capture_output=True, text=True, timeout=15)
             calls_path = root / ".git" / "calls"
             calls = [json.loads(line) for line in calls_path.read_text().splitlines()] if calls_path.exists() else []

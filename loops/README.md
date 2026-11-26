@@ -14,6 +14,9 @@ branch. Briefs must already be on that branch, as described in
 [docs/briefs/README.md](../docs/briefs/README.md). Start with a clean build
 worktree for new work; interrupted work may have changes to resume.
 
+Run one loop per machine. The loop does not serialise test suites; two full
+suites at once slow each other, as described in AGENTS.md.
+
 Every fid call uses `--json` and is checked against
 [fid-cli.v1](../docs/specs/LOOP_CONTRACT.md). A contract mismatch, unknown
 kind or waiting kind, missing declared field, invalid/empty JSON or unexpected
@@ -24,8 +27,9 @@ unavailable GitHub observations; a batch's exit 0 does not imply completion.
 A run proceeds as follows:
 
 1. Read `next` to check the contract, then reconcile completed work with
-   batch `done`. Keep a detached review worktree beside the build worktree's
-   git metadata. Each build worktree has its own review worktree and outputs.
+   batch `done`. Keep a detached review worktree beside the build worktree,
+   outside git metadata. Each build worktree has its own review worktree
+   and outputs.
 2. Peek in the review worktree. Claim only review work there as the reviewer;
    claim other work in the build worktree as the builder. `LOOP_EPIC` scopes
    both selections. fid keeps a handed-off task in its build worktree for
@@ -51,7 +55,11 @@ A run proceeds as follows:
    the loop and parks an interruption.
 6. For `review`, check out exactly the handed-off head detached in the
    review worktree, and run a fresh reviewer for the declared stream and
-   every required profile. Require a clean tree and the same head afterwards.
+   every required profile. Its required checks have already passed on the
+   hand-off head's tree; fid refuses hand-off otherwise. The reviewer reads
+   the change, runs focused tests and probes with overlay mutations, and
+   does not rerun full suites. Require a clean tree and the same head
+   afterwards.
    Record its JSON with `fid review record`; fid posts the canonical PR
    comment. On APPROVE, mark a draft PR ready so CI runs; already-ready PRs
    stay ready across further reviews. Further review streams are selected
@@ -80,7 +88,7 @@ and retained outputs before restarting. It does not blindly retry commands.
 | `LOOP_REVIEWER_MODEL` | `openai/gpt-6.1-sol`; same-model fallback, fresh session |
 | `LOOP_BUILDER_COMMAND` | `codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -` |
 | `LOOP_REVIEWER_COMMAND` | Same command; receives the reviewer prompt |
-| `LOOP_REVIEW_WORKTREE` | Absolute path `<build git directory>/fid-loop/review`; retained between runs |
+| `LOOP_REVIEW_WORKTREE` | Absolute path `<build worktree>-review`; retained between runs |
 
 Agent command settings are split with `shlex`, then each argument is
 formatted. They are executed directly, without a shell. `{model}` is the
@@ -89,6 +97,16 @@ are absolute paths. To use another provider, set its command and full model
 attribution together. A wrapper may read the exported context variables;
 stdin contains the prompt, context JSON and approved brief. Any usage-limit
 wrapper must return nonzero. Agent stdout/stderr goes to `agent.log`.
+
+Codex's sandbox writes only to its workspace and the `--add-dir` roots. If
+the repository's `.codex/config.toml` points Go's caches outside the worktree,
+add those configured directories to both command settings. For example, if
+all those caches are under `/path/to/shared-caches`:
+
+```sh
+export LOOP_BUILDER_COMMAND='codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} --add-dir /path/to/shared-caches -'
+export LOOP_REVIEWER_COMMAND="$LOOP_BUILDER_COMMAND"
+```
 
 Each item retains `prompt.md`, `context.json`, `agent.log`, and the agent's
 `report.md` or `review.json` under
