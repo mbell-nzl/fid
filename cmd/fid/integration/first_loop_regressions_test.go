@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,7 +54,10 @@ func TestFirstLoopAgentChangesBranch(t *testing.T) {
 			firstLoopReplaceStub(t, j, "agent", "    merging = subprocess.run",
 				"    subprocess.run("+args+", check=True)\n    merging = subprocess.run")
 			// Check the actual bare remote before asserting the loop's refusal.
-			cmd := exec.CommandContext(t.Context(), "python3", filepath.Join(integrationRepositoryRoot(), "loops/loop.py"))
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, "python3", filepath.Join(integrationRepositoryRoot(), "loops/loop.py"))
+			cmd.WaitDelay = 2 * time.Second
 			cmd.Dir, cmd.Env = j.root, j.env
 			out, err := cmd.CombinedOutput()
 			after, _ := closureRun(t, j.root, "git", "ls-remote", "origin", "refs/heads/*")

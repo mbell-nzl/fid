@@ -57,6 +57,11 @@ if Path(sys.argv[0]).name == "gh":
     sys.exit(0)
 
 assert Path(sys.argv[0]).name == "agent", "real agent invocation is forbidden"
+# Bound omitted-step mutations that would otherwise claim the same work forever.
+calls = state / "calls.jsonl"
+if calls.exists() and sum(json.loads(line)["kind"] in ("build", "review") for line in calls.read_text().splitlines()) >= 6:
+    print("stub agent session limit: loop repeated work without making progress", file=sys.stderr)
+    sys.exit(42)
 prompt = sys.stdin.read()
 context = json.loads(Path(os.environ["LOOP_CONTEXT"]).read_text())
 work = context["work"]
