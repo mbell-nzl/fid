@@ -20,16 +20,23 @@ def fid(*argv):
     return json.loads(subprocess.check_output([os.environ["LOOP_FID"], "--json", *argv], text=True))["result"]
 
 
+def pushed_head():
+    branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
+    refs = subprocess.check_output(["git", "ls-remote", "origin", "refs/heads/" + branch], text=True).split()
+    return {"head": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+            "remote_head": refs[0] if refs else None}
+
+
 if Path(sys.argv[0]).name == "gh":
     assert args[:2] != ["pr", "merge"], "loop must never merge"
     if args[:2] == ["pr", "list"]:
         print(json.dumps([{"url": "https://github.com/mbell-nzl/fid/pull/63"}] if (state / "pr").exists() else []))
     elif args[:2] == ["pr", "create"]:
-        log(kind="create", draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text())
+        log(kind="create", draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text(), **pushed_head())
         (state / "pr").touch()
         print("https://github.com/mbell-nzl/fid/pull/63")
     elif args[:2] == ["pr", "edit"]:
-        log(kind="edit", body=Path(args[args.index("--body-file") + 1]).read_text())
+        log(kind="edit", body=Path(args[args.index("--body-file") + 1]).read_text(), **pushed_head())
     elif args[:2] == ["pr", "ready"]:
         if (state / "ready").exists():
             print("PR is already ready", file=sys.stderr)

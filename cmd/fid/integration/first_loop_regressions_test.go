@@ -151,3 +151,36 @@ func TestFirstLoopDraftReadiness(t *testing.T) {
 		})
 	}
 }
+
+func TestFirstLoopReviewerChangesCode(t *testing.T) {
+	t.Parallel()
+	for _, mode := range []string{"commit", "dirty"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Parallel()
+			j := newFirstLoop(t, "approve")
+			change := `    Path("change.txt").write_text("Reviewer changed the code.\n")` + "\n"
+			if mode == "commit" {
+				change += `    subprocess.run(["git", "add", "change.txt"], check=True)` + "\n" +
+					`    subprocess.run(["git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "test: reviewer change"], check=True)` + "\n"
+			}
+			firstLoopReplaceStub(t, j, "agent", `    Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps(review))`,
+				change+`    Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps(review))`)
+			out := j.run(t, 1)
+			if !strings.Contains(out, "review agent changed the head or left uncommitted changes") {
+				t.Fatalf("missing review integrity refusal: %s", out)
+			}
+			w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
+			if rounds := p21Path(t, w.call("review", "list", j.task), "result", "rounds").([]any); len(rounds) != 0 {
+				t.Fatalf("altered code received a recorded review: %v", rounds)
+			}
+			for _, call := range j.calls(t) {
+				if call["kind"] == "ready" || call["kind"] == "comment" {
+					t.Fatalf("altered review reached GitHub: %v", call)
+				}
+			}
+			if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != 2 {
+				t.Fatalf("backups after build and failed review = %v", outcomes)
+			}
+		})
+	}
+}

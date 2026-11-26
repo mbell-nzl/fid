@@ -139,7 +139,14 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			j := newFirstLoop(t, scenario)
 			j.run(t, 0)
 			var builds, reviews, creates, ready, comments, edits int
+			var pushed string
 			for _, call := range j.calls(t) {
+				if call["kind"] == "create" || call["kind"] == "edit" {
+					pushed = call["head"].(string)
+					if call["remote_head"] != pushed {
+						t.Fatalf("task head was not pushed before PR %s: %v", call["kind"], call)
+					}
+				}
 				switch call["kind"] {
 				case "build":
 					builds++
@@ -153,6 +160,9 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					}
 				case "review":
 					reviews++
+					if call["expected_head"] != pushed {
+						t.Fatalf("handed-off head differs from pushed head: %v", call)
+					}
 					if call["cwd"] == j.root || call["actor"] != "agent:sol-reviewer" || call["head"] != call["expected_head"] || call["detached"] != true {
 						t.Fatalf("review did not use the detached review worktree at the hand-off head: %v", call)
 					}
@@ -192,6 +202,11 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			}
 			if builds != wantBuilds || reviews != wantReviews || creates != 1 || ready != 1 || comments != wantReviews || edits != wantBuilds-1 {
 				t.Fatalf("builds/reviews/creates/ready = %d/%d/%d/%d; comments/edits = %d/%d", builds, reviews, creates, ready, comments, edits)
+			}
+			branch, _ := closureRun(t, j.root, "git", "branch", "--show-current")
+			remote, _ := closureRun(t, j.root, "git", "ls-remote", "origin", "refs/heads/"+strings.TrimSpace(branch))
+			if refs := strings.Fields(remote); len(refs) != 2 || refs[0] != pushed {
+				t.Fatalf("remote task branch after build/rework = %q, want %s", remote, pushed)
 			}
 			if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != wantBuilds+wantReviews {
 				t.Fatalf("backup after each build/review = %v", outcomes)
