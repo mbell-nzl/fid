@@ -50,7 +50,9 @@ A run proceeds as follows:
    on. Otherwise require a clean tree, run `fid check`, push to origin, open
    a draft PR with the report as its body (or reuse the branch's open PR),
    and hand off. Reused PRs get the latest report as their body. Builds must
-   use a task branch, rather than main, the default branch or a detached head.
+   use a task branch. Keep that branch across the agent session and check it
+   again immediately before pushing; main, the default branch, a detached
+   head or an agent switching branches stops the loop.
    A successful agent that leaves uncommitted changes stops
    the loop and parks an interruption.
 6. For `review`, check out exactly the handed-off head detached in the
@@ -61,8 +63,11 @@ A run proceeds as follows:
    does not rerun full suites. Require a clean tree and the same head
    afterwards.
    Record its JSON with `fid review record`; fid posts the canonical PR
-   comment. On APPROVE, mark a draft PR ready so CI runs; already-ready PRs
-   stay ready across further reviews. Further review streams are selected
+   comment. At startup and when idle, read `status` for tasks awaiting a
+   person's approval or merge, then read their latest hand-off PR from `show`.
+   Mark those draft PRs ready so CI runs. This includes tasks requiring no
+   review and retries a failed ready action on restart, after required
+   reviews have been recorded. Already-ready PRs stay ready. Review streams are selected
    by fid. Separate review context excludes primary rounds. Mark reads `fid status`, approves when needed and
    merges; this loop never merges.
 7. Back up after each item, including a waiting park or interruption. At
@@ -71,7 +76,8 @@ A run proceeds as follows:
    for this worktree. Dependencies, caps and acceptance remain fid's rules.
 
 Agent failure (including a usage limit) and Ctrl-C stop the agent's process
-group, park the build hold as interrupted, back up and exit nonzero. The next
+group, even after its leader has exited, park the build hold as interrupted,
+back up and exit nonzero. The next
 run resumes that work in its original worktree. Review holds lapse freely;
 `park` is for build holds. Parking and backup failures are printed separately.
 The loop stops on other command failures as well; inspect the quoted reply

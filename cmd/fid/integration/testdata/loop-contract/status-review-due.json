@@ -1,0 +1,10 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "needs_you[].kind": [],
+    "needs_you[].subject.id": []
+  }
+}

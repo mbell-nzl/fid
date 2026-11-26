@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "issue.show",
   "result": {
+    "handoff.pr": null,
     "issue.acceptance_criteria[].id": [],
     "issue.acceptance_criteria[].ordinal": [],
     "issue.acceptance_criteria[].text": [],

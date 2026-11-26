@@ -159,7 +159,7 @@ func (c *loopContract) sets() {
 func TestLoopContractDeclaration(t *testing.T) {
 	t.Parallel()
 	d := readLoopDeclaration(t)
-	if d.Version != "fid-cli.v1" || len(d.Fields) != 13 {
+	if d.Version != "fid-cli.v1" || len(d.Fields) != 14 {
 		t.Fatalf("incomplete declaration: %+v", d)
 	}
 	for _, operation := range []string{"next.get", "next.claim"} {

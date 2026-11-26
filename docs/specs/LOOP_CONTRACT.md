@@ -50,6 +50,7 @@ is exit 0. A nonzero exit never means that there is no work.
 | `review record <task>` | `review.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `done [task]` | `task.done` | 0, 2, 3, 4, 5, 6, 7 |
 | `show <task>` | `issue.show` | 0, 2, 3, 4, 6, 7 |
+| `status` | `project.status` | 0, 2, 3, 4, 6, 7 |
 | `review list <task>` | `review.list` | 0, 2, 3, 4, 6, 7 |
 | `backup` | `project.backup` | 0, 2, 3, 4, 6, 7 |
 
@@ -148,6 +149,17 @@ is restored. Unscoped selection is unchanged.
   path or null), and `issue.acceptance_criteria[]` with `id`, `ordinal`,
   `text`. The loop passes these to the agent and reads the brief at the spec
   path. Briefs use `docs/briefs/<RESET row ID, else fid ID>.md`.
+  `handoff` is null before hand-off; otherwise `handoff.pr` is the latest
+  recorded hand-off's PR URL.
+- `status`: `needs_you[]` with `kind` and nullable `subject`, whose `id`
+  identifies the task when `kind` is `merge` or `approval`. These two kinds
+  mean fid has satisfied the current hand-off's required reviews and open
+  major findings, including when no review is required. The loop may mark
+  that hand-off's draft PR ready for CI; it never approves or merges it.
+  Reconcile this durable state at startup and when idle so a failed ready
+  action can be retried on restart. Other `needs_you` kinds are informational
+  to the loop and may grow without a version bump. These existing status
+  and show fields are additive in `fid-cli.v1`.
 - `review list`: `task_id` and `rounds[]` with `id`, `handoff_id`, `stream`,
   `profiles`, `verdict`, `current`, and `findings[]` with `id`, `profile`,
   `severity`, `summary`, `location`, `evidence`, `fix`, `open`. A finding may
@@ -202,7 +214,8 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
   "next_kinds": ["new", "resume", "rework", "review", "none"],
   "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
   "fields": {
-    "issue.show": ["issue.id", "issue.title", "issue.spec_md_path", "issue.acceptance_criteria[].id", "issue.acceptance_criteria[].ordinal", "issue.acceptance_criteria[].text"],
+    "issue.show": ["issue.id", "issue.title", "issue.spec_md_path", "issue.acceptance_criteria[].id", "issue.acceptance_criteria[].ordinal", "issue.acceptance_criteria[].text", "handoff.pr"],
+    "project.status": ["needs_you[].kind", "needs_you[].subject.id"],
     "review.list": ["task_id", "rounds[].id", "rounds[].handoff_id", "rounds[].stream", "rounds[].profiles", "rounds[].verdict", "rounds[].current", "rounds[].findings[].id", "rounds[].findings[].profile", "rounds[].findings[].severity", "rounds[].findings[].summary", "rounds[].findings[].location", "rounds[].findings[].evidence", "rounds[].findings[].fix", "rounds[].findings[].open", "rounds[].findings[].responses?[].actor", "rounds[].findings[].responses?[].text"],
     "project.backup": ["backup.outcome"],
     "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],

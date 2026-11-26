@@ -24,6 +24,19 @@ func firstLoopReplaceStub(t *testing.T, j firstLoop, name, old, replacement stri
 	}
 }
 
+func firstLoopRoutine(t *testing.T, j firstLoop) {
+	t.Helper()
+	policy := string(readP21File(t, filepath.Join(j.root, ".fid.toml"))) + "\n[lanes.routine]\npaths=['docs/**']\nchecks=['test']\n"
+	p22Write(t, j.root, ".fid.toml", policy)
+	closureRun(t, j.root, "git", "add", ".")
+	closureRun(t, j.root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Routine docs policy")
+	closureRun(t, j.root, "git", "push", "-q", "origin", "HEAD:trunk")
+	w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
+	w.call("issue", "update", j.task, "--lane", "routine", "--actor", "human:planner", "--idempotency-key", "routine")
+	firstLoopReplaceStub(t, j, "agent", `Path("change_test.go").write_text("package example\n")`, `Path("docs/change.md").write_text("Updated documentation.\n")`)
+	firstLoopReplaceStub(t, j, "agent", `Path("change.txt").write_text(os.environ["LOOP_SESSION"] + "\n")`, "# Documentation only.")
+}
+
 func TestFirstLoopAgentChangesBranch(t *testing.T) {
 	t.Parallel()
 	for _, branch := range []string{"trunk", "main", "other-task", "detached"} {
@@ -105,15 +118,7 @@ func TestFirstLoopDraftReadiness(t *testing.T) {
 			wantExit, wantReviews := 1, 1
 			if scenario == "routine" {
 				wantExit, wantReviews = 0, 0
-				policy := string(readP21File(t, filepath.Join(j.root, ".fid.toml"))) + "\n[lanes.routine]\npaths=['docs/**']\nchecks=['test']\n"
-				p22Write(t, j.root, ".fid.toml", policy)
-				closureRun(t, j.root, "git", "add", ".")
-				closureRun(t, j.root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Routine docs policy")
-				closureRun(t, j.root, "git", "push", "-q", "origin", "HEAD:trunk")
-				w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
-				w.call("issue", "update", j.task, "--lane", "routine", "--actor", "human:planner", "--idempotency-key", "routine")
-				firstLoopReplaceStub(t, j, "agent", `Path("change_test.go").write_text("package example\n")`, `Path("docs/change.md").write_text("Updated documentation.\n")`)
-				firstLoopReplaceStub(t, j, "agent", `Path("change.txt").write_text(os.environ["LOOP_SESSION"] + "\n")`, "# Documentation only.")
+				firstLoopRoutine(t, j)
 			} else {
 				firstLoopReplaceStub(t, j, "gh", `if Path(sys.argv[0]).name == "gh":`, `if Path(sys.argv[0]).name == "gh":
     if args[:2] == ["pr", "ready"] and not (state / "ready-failed-once").exists():

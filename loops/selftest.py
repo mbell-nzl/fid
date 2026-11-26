@@ -29,7 +29,7 @@ def stub(name):
     operation = {"next": "next.claim" if "--claim" in args else "next.get",
                  "done": "task.done", "start": "task.start",
                  "heartbeat": "hold.heartbeat", "park": "hold.park",
-                 "show": "issue.show", "backup": "project.backup",
+                 "show": "issue.show", "status": "project.status", "backup": "project.backup",
                  "review": "review.list"}[command]
     result = {}
     if command == "next":
@@ -51,7 +51,9 @@ def stub(name):
                                {"task_id": "FID-789abc", "status": "refused", "refusal": {"code": "done-open-major"}},
                                {"task_id": "FID-abcdef", "status": "github-unavailable", "refusal": {"code": "github-unavailable"}}]}
     if command == "show":
-        result = {"issue": {"id": "FID-123abc", "title": "Test task", "spec_md_path": None, "acceptance_criteria": []}}
+        result = {"issue": {"id": "FID-123abc", "title": "Test task", "spec_md_path": None, "acceptance_criteria": []}, "handoff": None}
+    if command == "status":
+        result = {"needs_you": []}
     if command == "review":
         result = {"task_id": "FID-123abc", "rounds": []}
     if command == "start":

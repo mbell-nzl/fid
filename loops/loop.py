@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""fid's first loop: agents write; fid owns evidence; Mark merges."""
-import json, os, re, shlex, signal, sys, threading, uuid
+import contextlib, json, os, re, shlex, signal, sys, threading, uuid
 from pathlib import Path
 import subprocess as sp
 
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE.parent / "docs/specs/LOOP_CONTRACT.md").read_text().split("```json loop-contract\n")[1].split("\n```")[0])
-PROMPTS = {name: (HERE / "prompts" / (name + ".md")).read_text() for name in ("builder", "reviewer")}
 ACTIVE, REPO = None, os.getenv("LOOP_GH_REPO", "mbell-nzl/fid")
-OPERATIONS = dict(next="next.get", start="task.start", heartbeat="hold.heartbeat", park="hold.park", show="issue.show", backup="project.backup", done="task.done", check="check.execute", handoff="task.handoff")
+OPERATIONS = dict(next="next.get", start="task.start", heartbeat="hold.heartbeat", park="hold.park", show="issue.show", status="project.status", backup="project.backup", done="task.done", check="check.execute", handoff="task.handoff")
 def run(cwd, *args, allowed=(0,)):
     p = sp.run(args, cwd=cwd, capture_output=True, text=True)
     if p.returncode not in allowed: raise RuntimeError(f"{args}: exit {p.returncode}; stdout={p.stdout!r}; stderr={p.stderr!r}")
@@ -46,24 +44,28 @@ def done(cwd, actor):
     for outcome in fid(cwd, "done", "--actor", actor)["outcomes"]:
         if outcome["status"] not in ("completed", "waiting", "refused", "github-unavailable"): raise RuntimeError(f"unknown done outcome: {outcome!r}")
         print("done:", json.dumps(outcome), flush=True)
+    for item in fid(cwd, "status")["needs_you"]:
+        if item["kind"] in ("merge", "approval"):
+            pr = fid(cwd, "show", item["subject"]["id"])["handoff"]["pr"]
+            if json.loads(run(cwd, "gh", "pr", "view", pr, "--repo", REPO, "--json", "isDraft"))["isDraft"]:
+                run(cwd, "gh", "pr", "ready", pr, "--repo", REPO)
 def agent(cwd, role, actor, model, work, output):
     hold, session = work["hold"]["id"], output.name
     context = {"work": work, "task": fid(cwd, "show", work["task"]["id"])["issue"], "reviews": fid(cwd, "review", "list", work["task"]["id"])}
     if work.get("review", {}).get("stream") == "separate": context["reviews"]["rounds"] = [r for r in context["reviews"]["rounds"] if r["stream"] == "separate"]
     (output / "context.json").write_text(json.dumps(context))
     spec = context["task"]["spec_md_path"]
-    prompt = PROMPTS[role] + "\n" + json.dumps(context) + "\n" + ((Path(cwd) / spec).read_text() if spec else "")
+    prompt = (HERE / "prompts" / (role + ".md")).read_text() + "\n" + json.dumps(context) + "\n" + ((Path(cwd) / spec).read_text() if spec else "")
     (output / "prompt.md").write_text(prompt)
     env = {**os.environ, **{"LOOP_" + k: str(v) for k, v in {"ACTOR": actor, "MODEL": model, "HOLD": hold, "SESSION": session, "CONTEXT": output / "context.json", "REPORT": output / "report.md", "REVIEW": output / "review.json"}.items()}}
     interval = fid(cwd, "heartbeat", "--hold", hold, "--actor", actor)["heartbeat_interval_seconds"]
     stop, errors = threading.Event(), []
     def renew():
-        while not stop.wait(interval):
+        while not stop.wait(interval) and not errors:
             try:
                 fid(cwd, "heartbeat", "--hold", hold, "--actor", actor)
             except Exception as e:
                 errors.append(e)
-                return
     thread = threading.Thread(target=renew, daemon=True)
     command = os.getenv("LOOP_" + role.upper() + "_COMMAND", "codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -")
     command = [s.format(model=model.split("/", 1)[1], git_dir=run(cwd, "git", "rev-parse", "--absolute-git-dir"), common_dir=run(cwd, "git", "rev-parse", "--path-format=absolute", "--git-common-dir"), output_dir=str(output)) for s in shlex.split(command)]
@@ -76,7 +78,7 @@ def agent(cwd, role, actor, model, work, output):
             if errors or child.returncode != 0: raise RuntimeError(f"agent failed: {errors or child.returncode}; see {output / 'agent.log'}")
         finally:
             stop.set()
-            if child.poll() is None:
+            with contextlib.suppress(ProcessLookupError):
                 os.killpg(child.pid, signal.SIGKILL)
             child.wait()
             thread.join()
@@ -88,7 +90,6 @@ def main():
     if actors[0] == actors[1]: raise ValueError("builder and reviewer actors must differ")
     next_work(build, actors[0], models[0])
     done(build, actors[0])
-    home = Path(run(build, "git", "rev-parse", "--absolute-git-dir")) / "fid-loop"
     review = os.getenv("LOOP_REVIEW_WORKTREE", build + "-review")
     if not Path(review).exists(): run(build, "git", "worktree", "add", "--detach", review, "HEAD")
     while True:
@@ -103,7 +104,7 @@ def main():
             raise RuntimeError(f"work selection changed roles: {work!r}")
         hold = ["--hold", work["hold"]["id"], "--actor", actor]
         ACTIVE = (cwd, hold, is_review)
-        output = home / "runs" / uuid.uuid4().hex
+        output = Path(run(build, "git", "rev-parse", "--absolute-git-dir")) / "fid-loop/runs" / uuid.uuid4().hex
         output.mkdir(parents=True)
         print(f"{work['kind']}: {work['task']['id']} ({output})", flush=True)
         if is_review:
@@ -116,20 +117,19 @@ def main():
                 task = fid(cwd, "show", work["task"]["id"])["issue"]
                 name = Path(task["spec_md_path"]).stem if task["spec_md_path"] else task["id"]
                 run(cwd, "git", "switch", "-c", "reset-" + name + "-" + re.sub(r"[^a-z0-9]+", "-", task["title"].lower()).strip("-"), run(cwd, "git", "symbolic-ref", "refs/remotes/origin/HEAD"))
-            if run(cwd, "git", "branch", "--show-current") in ("", "main", run(cwd, "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD").removeprefix("origin/")): raise RuntimeError("build requires a task branch")
+            branch = run(cwd, "git", "branch", "--show-current")
+            if branch in ("", "main", run(cwd, "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD").removeprefix("origin/")): raise RuntimeError("build requires a task branch")
             if work.get("rework", {}).get("cause") == "default-conflict":
                 run(cwd, "git", "merge", "--no-edit", work["rework"]["default_ref"], allowed=(0, 1))
         agent(cwd, "reviewer" if is_review else "builder", actor, model, work, output)
         if is_review:
             if run(cwd, "git", "rev-parse", "HEAD") != work["review"]["handoff"]["head"] or run(cwd, "git", "status", "--porcelain"):
                 raise RuntimeError("review agent changed the head or left uncommitted changes")
-            result = fid(cwd, "review", "record", work["task"]["id"], "--input", str(output / "review.json"), "--actor", actor, "--idempotency-key", output.name)
-            if result["round"]["verdict"] == "APPROVE" and json.loads(run(cwd, "gh", "pr", "view", work["review"]["handoff"]["pr"], "--repo", REPO, "--json", "isDraft"))["isDraft"]:
-                run(cwd, "gh", "pr", "ready", work["review"]["handoff"]["pr"], "--repo", REPO)
+            fid(cwd, "review", "record", work["task"]["id"], "--input", str(output / "review.json"), "--actor", actor, "--idempotency-key", output.name)
         elif next_work(cwd, actor, model)["kind"] != "none":
             if run(cwd, "git", "status", "--porcelain"): raise RuntimeError(f"agent left uncommitted changes; see {output}")
             fid(cwd, "check", *hold, "--idempotency-key", output.name + "-check")
-            branch = run(cwd, "git", "branch", "--show-current")
+            if run(cwd, "git", "branch", "--show-current") != branch: raise RuntimeError("agent changed the task branch")
             run(cwd, "git", "push", "-u", "origin", branch)
             prs = json.loads(run(cwd, "gh", "pr", "list", "--repo", REPO, "--head", branch, "--state", "open", "--json", "url"))
             pr = prs[0]["url"] if prs else run(cwd, "gh", "pr", "create", "--repo", REPO, "--draft", "--head", branch, "--title", fid(cwd, "show", work["task"]["id"])["issue"]["title"], "--body-file", str(output / "report.md"))
