@@ -57,7 +57,7 @@ if work["kind"] == "review":
     expected = work["review"]["handoff"]["head"]
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     detached = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True).returncode != 0
-    log(kind="review", actor=os.environ["LOOP_ACTOR"], head=head, expected_head=expected, detached=detached,
+    log(kind="review", prompt=prompt, actor=os.environ["LOOP_ACTOR"], head=head, expected_head=expected, detached=detached,
         stream=work["review"]["stream"], prior_streams=[r["stream"] for r in context["reviews"]["rounds"]])
     count = state / "reviews"
     first = not count.exists()

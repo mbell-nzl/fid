@@ -156,6 +156,12 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					if call["cwd"] == j.root || call["actor"] != "agent:sol-reviewer" || call["head"] != call["expected_head"] || call["detached"] != true {
 						t.Fatalf("review did not use the detached review worktree at the hand-off head: %v", call)
 					}
+					prompt := strings.Join(strings.Fields(call["prompt"].(string)), " ")
+					for _, instruction := range []string{"required checks have passed", "fid refuses hand-off otherwise", "Do not rerun full suites", "focused tests", "overlay mutations"} {
+						if !strings.Contains(prompt, instruction) {
+							t.Errorf("%s review prompt missing %q", call["stream"], instruction)
+						}
+					}
 					if scenario == "assured" && reviews == 2 && (call["stream"] != "separate" || len(call["prior_streams"].([]any)) != 0) {
 						t.Fatalf("separate review was given primary rounds: %v", call)
 					}
@@ -198,6 +204,52 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			}
 			if scenario == "changes" && rounds[0].(map[string]any)["findings"].([]any)[0].(map[string]any)["open"] != false {
 				t.Fatal("second review did not close the original major")
+			}
+		})
+	}
+}
+
+func TestFirstLoopReviewWorktreeLocation(t *testing.T) {
+	t.Parallel()
+	for _, override := range []bool{false, true} {
+		name := "default"
+		if override {
+			name = "override"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			j := newFirstLoop(t, "approve")
+			p22Write(t, j.root, ".gitignore", ".worktrees/\n")
+			p22Write(t, j.root, "go.mod", "module example.test/loop\n\ngo 1.23\n")
+			p22Write(t, j.root, "cmd/probe/main.go", "package main\n\nfunc main() {}\n")
+			closureRun(t, j.root, "git", "add", ".")
+			closureRun(t, j.root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Go VCS stamping fixture")
+			closureRun(t, j.root, "git", "push", "-q", "origin", "HEAD:trunk")
+			build := filepath.Join(j.root, ".worktrees", "build")
+			closureRun(t, j.root, "git", "worktree", "add", "--detach", build, "HEAD")
+			j.root = build
+			want := j.root + "-review"
+			if override {
+				want = filepath.Join(filepath.Dir(build), "custom-review")
+				j.env = append(j.env, "LOOP_REVIEW_WORKTREE="+want)
+			}
+			j.run(t, 0)
+			var review string
+			for _, call := range j.calls(t) {
+				if call["kind"] == "review" {
+					review = call["cwd"].(string)
+				}
+			}
+			if review == "" {
+				t.Fatal("review agent did not run")
+			}
+			cmd := exec.CommandContext(t.Context(), "go", "build", "-buildvcs=true", "-o", filepath.Join(j.state, "probe"), "./cmd/probe")
+			cmd.Dir, cmd.Env = review, append(j.env, "GOFLAGS=", "GOWORK=off")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("Go VCS stamping in review worktree %s: %v\n%s", review, err, out)
+			}
+			if review != want {
+				t.Fatalf("review worktree = %q, want %q", review, want)
 			}
 		})
 	}
