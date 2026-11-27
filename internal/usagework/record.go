@@ -44,7 +44,7 @@ func Record(o Options) (Result, string, error) {
 	}
 	raw, err := os.ReadFile(o.Input)
 	if err != nil {
-		return Result{}, "", &InputError{"--input", fmt.Sprintf("read usage input: %v", err)}
+		return Result{}, "", &InputError{"--tool-output", fmt.Sprintf("read usage input: %v", err)}
 	}
 	digest := fmt.Sprintf("sha256:%x", sha256.Sum256(raw))
 	var result Result
@@ -83,9 +83,9 @@ func Record(o Options) (Result, string, error) {
 		}
 		parsed, err := usagerecord.Parse(o.Format, raw, session.Model)
 		if err != nil {
-			argument := "--input"
+			argument := "--tool-output"
 			if o.Format != "codex" && o.Format != "claude" {
-				argument = "--format"
+				argument = "--tool"
 			}
 			return &InputError{argument, err.Error()}
 		}
@@ -144,6 +144,6 @@ func requestFor(o Options, digest string) (journal.IdempotencyRequest, error) {
 	if err != nil {
 		return journal.IdempotencyRequest{}, err
 	}
-	value, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": o.Actor, "operation": "usage.record", "project_id": cfg.ProjectID, "request": map[string]any{"hold": o.HoldID, "format": o.Format, "input_digest": digest, "tool_version": o.ToolVersion}}, o.Actor, map[string]string{"hold": "--hold", "format": "--format", "input_digest": "--input", "tool_version": "--tool-version"})
+	value, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": o.Actor, "operation": "usage.record", "project_id": cfg.ProjectID, "request": map[string]any{"hold": o.HoldID, "format": o.Format, "input_digest": digest, "tool_version": o.ToolVersion}}, o.Actor, map[string]string{"hold": "--hold", "format": "--tool", "input_digest": "--tool-output", "tool_version": "--tool-version"})
 	return journal.IdempotencyRequest{OperationScope: "usage.record:" + cfg.ProjectID, IdempotencyKey: o.IdempotencyKey, RequestDigest: value, RequestFieldDigests: fields}, err
 }

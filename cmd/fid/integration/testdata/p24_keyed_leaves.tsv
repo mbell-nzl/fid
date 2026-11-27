@@ -19,3 +19,4 @@ finding close	--reason
 approve	--reason
 done	task
 waive	--reason
+usage record	--tool-version

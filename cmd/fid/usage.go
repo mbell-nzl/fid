@@ -15,7 +15,7 @@ func newUsageCommand() *cobra.Command {
 	var o usagework.Options
 	cmd := &cobra.Command{Use: "usage", Short: "Record agent session token usage."}
 	record := &cobra.Command{Use: "record", Short: "Read tokens from a session's agent output.", RunE: func(cmd *cobra.Command, _ []string) error {
-		for _, flag := range []string{"hold", "actor", "format", "input", "idempotency-key"} {
+		for _, flag := range []string{"hold", "actor", "tool", "tool-output", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "usage.record", flag); err != nil {
 				return err
 			}
@@ -45,8 +45,8 @@ func newUsageCommand() *cobra.Command {
 	}}
 	record.Flags().StringVar(&o.HoldID, "hold", "", "The build or review session ID")
 	record.Flags().StringVar(&o.Actor, "actor", "", "The session's actor")
-	record.Flags().StringVar(&o.Format, "format", "", "Agent output format: codex or claude")
-	record.Flags().StringVar(&o.Input, "input", "", "Agent stdout file")
+	record.Flags().StringVar(&o.Format, "tool", "", "Agent tool parser: codex or claude")
+	record.Flags().StringVar(&o.Input, "tool-output", "", "Agent stdout file")
 	record.Flags().StringVar(&o.ToolVersion, "tool-version", "", "Caller-reported tool version when output has none")
 	record.Flags().StringVar(&o.IdempotencyKey, "idempotency-key", "", "Retry key")
 	cmd.AddCommand(record)

@@ -89,7 +89,7 @@ def stub(name):
         if os.getenv("STUB_USAGE_FAILURE") == "1":
             print(json.dumps({"contract_version":"fid-cli.v1", "operation":operation, "ok":False, "error":{"code":"invalid-argument", "retryable":False}}), file=sys.stderr)
             sys.exit(2)
-        stdout = Path(args[args.index("--input") + 1]).read_text()
+        stdout = Path(args[args.index("--tool-output") + 1]).read_text()
         assert "stderr diagnostic" not in stdout
         assert json.loads(stdout)["type"] == "turn.completed"
         if os.getenv("STUB_VERSION_FAILURE") != "1":
@@ -205,7 +205,7 @@ class Selftest(unittest.TestCase):
         self.assertNotIn("usage record failed", result.stderr)
         self.assertEqual(usage[usage.index("--tool-version") + 1], "codex-cli 0.172.0")
         self.assertEqual(usage[usage.index("--hold") + 1], "HLD-123abc")
-        self.assertEqual(usage[usage.index("--format") + 1], "codex")
+        self.assertEqual(usage[usage.index("--tool") + 1], "codex")
 
     def test_usage_none_version_failure_and_record_failure(self):
         result, calls = self.run_loop("slow-heartbeat", usage="none")

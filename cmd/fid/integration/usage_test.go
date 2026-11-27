@@ -12,6 +12,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
+var p24UsageFields = map[string]string{"usage.record": "--tool-version"}
+
 func TestUsageReplayExportImport(t *testing.T) {
 	t.Parallel()
 	j := newFirstLoop(t, "changes")
@@ -99,8 +101,17 @@ func TestUsageLoopContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := &loopContract{t: t, decl: readLoopDeclaration(t)}
-	args := []string{"usage", "record", "--hold", hold, "--actor", w.actor, "--format", "codex", "--input", path, "--tool-version", "codex-cli 0.172.0", "--idempotency-key", "contract-usage"}
+	args := []string{"usage", "record", "--hold", hold, "--actor", w.actor, "--tool", "codex", "--tool-output", path, "--tool-version", "codex-cli 0.172.0", "--idempotency-key", "contract-usage"}
+	p24StartKeyedCapture(root)
 	reply := w.call(args...)
+	captured := p24EndKeyedCapture(root)
+	for operation, field := range p24UsageFields {
+		entry, ok := captured[operation]
+		if !ok {
+			t.Fatalf("usage command missing from capture: %v", captured)
+		}
+		p24ExerciseCapturedLeaf(t, root, binary, operation, field, entry)
+	}
 	c.observe("usage-record", reply, 0)
 	if p21PathString(t, reply, "result", "usage", "task_id") != task {
 		t.Fatal(reply)
@@ -127,7 +138,7 @@ func TestUsageLargeCountsReplay(t *testing.T) {
 	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
 		t.Fatal(err)
 	}
-	w.call("usage", "record", "--hold", hold, "--actor", w.actor, "--format", "codex", "--input", path, "--idempotency-key", "large")
+	w.call("usage", "record", "--hold", hold, "--actor", w.actor, "--tool", "codex", "--tool-output", path, "--idempotency-key", "large")
 	w.call("rebuild")
 	text, _ := closureRunFID(t, binary, root, "sql", "SELECT total FROM usage_sessions WHERE task_id='"+task+"'")
 	if !strings.Contains(text, "9007199254740993") {

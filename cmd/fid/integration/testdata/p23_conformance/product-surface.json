@@ -34,6 +34,7 @@
     "round_findings",
     "schema_migrations",
     "triage_events",
+    "usage_sessions",
     "workflow_states",
     "workflow_transition_requires",
     "workflow_transitions",
@@ -105,6 +106,8 @@
     "start",
     "status",
     "takeover",
+    "usage",
+    "usage record",
     "waive"
   ]
 }

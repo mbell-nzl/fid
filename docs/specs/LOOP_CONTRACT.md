@@ -186,7 +186,7 @@ is restored. Unscoped selection is unchanged.
 - `handoff`: `task_id`, `status` (`in_review`), `handoff_id`, `pr`, `head`,
   `base`, `required_checks`, `result_ids`. It freezes the evidence and
   returns the task to review; it does not merge.
-- `usage record --hold <id> --actor <actor> --format codex|claude --input <file>
+- `usage record --hold <id> --actor <actor> --tool codex|claude --tool-output <file>
   [--tool-version <text>] --idempotency-key <key>`: `usage` contains the
   immutable session receipt: `id`, `task_id`, `hold_id`, `actor`, `model`,
   `role` (`build`, `fix`, `review`), `stream` (empty, `primary`, `separate`),
@@ -200,6 +200,8 @@ is restored. Unscoped selection is unchanged.
   `invalid-argument` (2), an unknown session `hold-not-current` (4), and a
   different actor `authority-denied` (5). Usage recording failures are printed
   by the loop and it continues; all other calls retain loud failure behavior.
+  `--tool` selects the parser and `--tool-output` is raw agent stdout;
+  this command has no typed request `--input` or `--example`.
 - `review record`: `round` with `id`, `task_id`, `handoff_id`, `stream`,
   `profiles`, `verdict` (`APPROVE` or `CHANGES`) and `findings[]` with
   `id`, `profile`, `severity`, `summary`, `location`, `evidence`, `fix`. Pass

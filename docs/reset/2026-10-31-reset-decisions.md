@@ -2030,6 +2030,13 @@ Mark approved these five decisions for RESET 2.6 (FID-d015a8):
    short. This amends D2's test-enforced line budget and the 2026-11-25
    Python decision above.
 
+**CLI names amended by Mark, 2026-11-27 (PDN-702e34).** Keep the existing
+CLI rules without exceptions: `usage record --tool codex|claude` selects
+the parser, `--tool-output <file>` supplies the agent's raw stdout, and
+`--tool-version <text>` stays. There is no `--input`, request descriptor or
+`--example` for this command. The receipt's `format` and `input_digest`
+fields continue to describe the parsed format and stdout digest.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

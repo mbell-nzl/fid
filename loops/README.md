@@ -48,7 +48,8 @@ A run proceeds as follows:
    (shared objects/refs), and this session's output directory. An agent must
    commit its changes and write a report; the loop never commits for it.
 5. After every agent session, successful or failed, record its clean stdout
-   through `fid usage record` with the session ID and actor, before recording
+   through `fid usage record --tool codex|claude --tool-output <file>` with
+   the session ID and actor, before recording
    a review round or parking a failed build. Before starting the agent, ask
    its executable for `--version` and pass a successful response as
    `--tool-version`; version-probe failure leaves that flag out. fid prefers

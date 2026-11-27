@@ -22,7 +22,7 @@ func TestUsageRecord(t *testing.T) {
 	if err = os.WriteFile(path, raw, 0600); err != nil {
 		t.Fatal(err)
 	}
-	args := []string{"--json", "usage", "record", "--hold", hold, "--actor", "agent:builder", "--format", "codex", "--input", path, "--tool-version", "codex-cli 0.172.0", "--idempotency-key", "usage-1"}
+	args := []string{"--json", "usage", "record", "--hold", hold, "--actor", "agent:builder", "--tool", "codex", "--tool-output", path, "--tool-version", "codex-cli 0.172.0", "--idempotency-key", "usage-1"}
 	usageGolden := func(name string) {
 		for _, format := range []string{"txt", "json"} {
 			args := []string{"show", "FID-aaaaaa"}
@@ -111,7 +111,7 @@ func TestUsageAfterWaitingPark(t *testing.T) {
 	if err = os.WriteFile(path, raw, 0600); err != nil {
 		t.Fatal(err)
 	}
-	lifecycleResult(t, f.run("--json", "usage", "record", "--hold", hold, "--actor", "agent:claude-builder", "--format", "codex", "--input", path, "--idempotency-key", "parked-usage"), "usage.record")
+	lifecycleResult(t, f.run("--json", "usage", "record", "--hold", hold, "--actor", "agent:claude-builder", "--tool", "codex", "--tool-output", path, "--idempotency-key", "parked-usage"), "usage.record")
 }
 
 func TestUsagePreservesLargeIntegerCounts(t *testing.T) {
@@ -124,7 +124,7 @@ func TestUsagePreservesLargeIntegerCounts(t *testing.T) {
 	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
 		t.Fatal(err)
 	}
-	got := f.run("--json", "usage", "record", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--format", "codex", "--input", path, "--idempotency-key", "large")
+	got := f.run("--json", "usage", "record", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--tool", "codex", "--tool-output", path, "--idempotency-key", "large")
 	if got.err != nil || !strings.Contains(got.stdout, `"total":9007199254740993`) {
 		t.Fatalf("large usage: %#v", got)
 	}
@@ -150,7 +150,7 @@ func TestUsageVersionSources(t *testing.T) {
 			if err := os.WriteFile(path, append([]byte(tc.header+"\n"), raw...), 0600); err != nil {
 				t.Fatal(err)
 			}
-			args := []string{"--json", "usage", "record", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--format", "claude", "--input", path, "--idempotency-key", "version"}
+			args := []string{"--json", "usage", "record", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--tool", "claude", "--tool-output", path, "--idempotency-key", "version"}
 			if tc.caller != "" {
 				args = append(args, "--tool-version", tc.caller)
 			}

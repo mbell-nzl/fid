@@ -99,7 +99,7 @@ def agent(cwd, role, actor, model, work, output):
             try:
                 version_flag = ["--tool-version", version] if version else []
                 recorded = fid(cwd, "usage", "record", "--hold", hold, "--actor", actor,
-                               "--format", usage_format, "--input", str(output / "agent.stdout"),
+                               "--tool", usage_format, "--tool-output", str(output / "agent.stdout"),
                                *version_flag, "--idempotency-key", session + "-usage")
                 print("usage:", json.dumps(recorded), flush=True)
             except Exception as error:

@@ -2534,11 +2534,13 @@ typed `artifact_id` give `invalid-argument` with the exact field path.
 ### Session usage (RESET 2.6)
 
 ```text
-fid usage record --hold <id> --actor <actor> --format codex|claude --input <file> [--tool-version <text>] --idempotency-key <key>
+fid usage record --hold <id> --actor <actor> --tool codex|claude --tool-output <file> [--tool-version <text>] --idempotency-key <key>
 ```
 
 Operation `usage.record` reads an agent stdout file and records one immutable
-session receipt. `--hold` accepts either ID returned by `next --claim`,
+session receipt. `--tool` selects the parser; `--tool-output` is the raw
+stdout file. It has no `--input`, request descriptor or `--example` (Mark,
+2026-11-27, PDN-702e34). `--hold` accepts either ID returned by `next --claim`,
 build or review. The actor must match that historical session; it may have
 ended or lapsed. fid derives the task, model, build/fix/review role and review
 stream. The caller cannot assert them. A keyed retry returns the first
