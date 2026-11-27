@@ -3,6 +3,8 @@
 package integration
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -89,6 +91,59 @@ func TestFirstLoopFindingAnswers(t *testing.T) {
 				t.Fatalf("pending response delivery was not printed: %s", out)
 			}
 			firstLoopAssertAnswers(t, j, scenario != "pending")
+		})
+	}
+}
+
+func TestFirstLoopPartialFindingAnswersRestart(t *testing.T) {
+	t.Parallel()
+	for _, first := range []string{"answer", "defer"} {
+		t.Run(first+"-first", func(t *testing.T) {
+			t.Parallel()
+			j := newFirstLoop(t, "answers")
+			second := "defer"
+			if first == "defer" {
+				second = "answer"
+				firstLoopReplaceStub(t, j, "agent", `write_text(json.dumps(answers))`, `write_text(json.dumps(list(reversed(answers))))`)
+			}
+			wrapper := filepath.Join(j.state, "bin", "fid-wrapper")
+			script := `#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+args = sys.argv[1:]
+failed = Path(os.environ["FIRST_LOOP_STATE"]) / "response-refused"
+if args[:3] == ["--json", "finding", os.environ["FIRST_LOOP_REFUSE"]] and not failed.exists():
+    failed.touch()
+    print(json.dumps({"contract_version": "fid-cli.v1", "ok": False,
+                      "operation": "finding." + args[2],
+                      "error": {"code": "invalid-argument", "retryable": False}}), file=sys.stderr)
+    sys.exit(2)
+binary = os.environ["FIRST_LOOP_REAL_FID"]
+os.execv(binary, [binary, *args])
+`
+			if err := os.WriteFile(wrapper, []byte(script), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			j.env = append(j.env, "LOOP_FID="+wrapper, "FIRST_LOOP_REAL_FID="+j.binary, "FIRST_LOOP_REFUSE="+second)
+			if out := j.run(t, 1); !strings.Contains(out, "invalid-argument") {
+				t.Fatalf("response refusal did not stop the loop: %s", out)
+			}
+			w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
+			rounds := p21Path(t, w.call("review", "list", j.task), "result", "rounds").([]any)
+			if len(rounds) != 1 {
+				t.Fatalf("refusal reached another review: %v", rounds)
+			}
+			var recorded int
+			for _, raw := range rounds[0].(map[string]any)["findings"].([]any) {
+				if responses, ok := raw.(map[string]any)["responses"].([]any); ok {
+					recorded += len(responses)
+				}
+			}
+			if recorded != 1 {
+				t.Fatalf("responses before restart = %d, want one", recorded)
+			}
+			j.run(t, 0)
+			firstLoopAssertAnswers(t, j, true)
 		})
 	}
 }
