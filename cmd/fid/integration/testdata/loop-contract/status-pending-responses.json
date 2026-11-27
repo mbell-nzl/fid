@@ -1,0 +1,26 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "needs_you[].kind": [
+      "accept"
+    ],
+    "needs_you[].subject.id": [
+      "\u003cFID\u003e"
+    ],
+    "warnings?[].kind": [
+      "checks-not-configured",
+      "review-post-pending"
+    ],
+    "warnings?[].next_action": [
+      "add checks to [lanes.routine] and [lanes.assured], then merge .fid.toml and git fetch",
+      "fid review post \u003cRND\u003e"
+    ],
+    "warnings?[].summary": [
+      "No checks set for Routine, Assured in .fid.toml",
+      "PR comments pending for review \u003cRND\u003e"
+    ]
+  }
+}

@@ -9,6 +9,15 @@
     ],
     "needs_you[].subject.id": [
       "\u003cFID\u003e"
+    ],
+    "warnings?[].kind": [
+      "checks-not-configured"
+    ],
+    "warnings?[].next_action": [
+      "add checks to [lanes.routine], then merge .fid.toml and git fetch"
+    ],
+    "warnings?[].summary": [
+      "No checks set for Routine in .fid.toml"
     ]
   }
 }

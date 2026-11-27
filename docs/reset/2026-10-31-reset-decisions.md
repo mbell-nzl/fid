@@ -2037,6 +2037,31 @@ the parser, `--tool-output <file>` supplies the agent's raw stdout, and
 `--example` for this command. The receipt's `format` and `input_digest`
 fields continue to describe the parsed format and stdout digest.
 
+## Decided 2026-11-28
+
+Mark approved loop polish (FID-fc1e1a) from his notes after 2.6's first full
+run (#122):
+
+1. **Conventional PR titles and shorter branches.** A new PR uses the
+   branch's oldest `feat` commit subject, otherwise its oldest subject, plus
+   ` (RESET <brief stem, else fid ID>)`. Drop a leading stem from the task
+   title when making the branch slug. Rework keeps the PR title.
+2. **Readable review Markdown.** Tell reviewers that fid posts every text
+   field as GitHub Markdown for a person. Commands, paths, test names, flags,
+   identifiers and literal output use backticks; verification is a concise
+   list of commands and results.
+3. **Visible finding answers.** Fixers write `LOOP_ANSWERS`; the loop records
+   answers and minor/nit deferrals as the builder before checking the fix.
+   fid posts the responses and files deferred work for Mark to accept.
+   Restart skips a finding already answered by that builder, using declared
+   `review list` responses. Malformed files and refusals stop loudly;
+   pending posts are printed and do not stop the loop. The added finding
+   commands retain contract version `fid-cli.v1`. Minor findings after
+   APPROVE remain left over because fid serves no fixer work for them.
+
+This Standard task has no RESET row; leave `RESET.md` unchanged and use
+`Refs: RESET FID-fc1e1a` in commits.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

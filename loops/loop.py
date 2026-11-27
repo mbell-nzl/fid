@@ -23,7 +23,7 @@ def fid(cwd, *args):
     try:
         if not raw.strip(): raise ValueError("empty output")
         reply = json.loads(raw)
-        expected = "review." + args[1] if args[0] == "review" else "next.claim" if args[0] == "next" and "--claim" in args else OPERATIONS[args[0]]
+        expected = args[0] + "." + args[1] if args[0] in ("review", "finding") else "next.claim" if args[0] == "next" and "--claim" in args else OPERATIONS[args[0]]
         if reply["operation"] != expected: raise ValueError("unexpected operation")
         if reply["contract_version"] != "fid-cli.v1" or p.returncode != 0 or reply["ok"] is not True:
             raise ValueError(f"unsupported contract or command failure (exit {p.returncode})")
@@ -40,11 +40,57 @@ def fid(cwd, *args):
 def next_work(cwd, actor, model, claim=False):
     scope = ["--epic", os.environ["LOOP_EPIC"]] if os.getenv("LOOP_EPIC") else []
     return fid(cwd, "next", *scope, *(["--claim", "--actor", actor, "--model", model] if claim else []))
+def task_stem(task):
+    return Path(task["spec_md_path"]).stem if task["spec_md_path"] else task["id"]
+def task_branch(task):
+    stem = task_stem(task)
+    title = task["title"].removeprefix(stem)
+    return "reset-" + stem + "-" + re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+def pr_title(cwd, task):
+    base = run(cwd, "git", "symbolic-ref", "refs/remotes/origin/HEAD")
+    subjects = run(cwd, "git", "log", "--reverse", "--format=%s", base + "..HEAD").splitlines()
+    if not subjects: raise RuntimeError("PR title requires a commit on the task branch")
+    subject = next((s for s in subjects if re.match(r"^feat(?:\([^)]+\))?!?:", s)), subjects[0])
+    return subject + " (RESET " + task_stem(task) + ")"
+def print_pending(cwd):
+    status = fid(cwd, "status")
+    for warning in status.get("warnings", []):
+        if warning["kind"] == "review-post-pending":
+            print(f"review-post-pending: {warning['summary']}; {warning['next_action']}", flush=True)
+    return status
+def record_answers(cwd, actor, task_id, path):
+    try:
+        entries = json.loads(path.read_text())
+        if not isinstance(entries, list): raise ValueError("expected a JSON list")
+        findings = {f["id"]: f for r in fid(cwd, "review", "list", task_id)["rounds"] for f in r["findings"]}
+        seen, pending = set(), []
+        # Validate the entire file before recording any entry.
+        for entry in entries:
+            if not isinstance(entry, dict) or set(entry) not in ({"finding_id", "answer"}, {"finding_id", "defer"}):
+                raise ValueError("each entry needs finding_id and exactly one of answer or defer")
+            verb = "answer" if "answer" in entry else "defer"
+            finding_id, text = entry["finding_id"], entry[verb]
+            if not isinstance(finding_id, str) or finding_id not in findings or finding_id in seen:
+                raise ValueError(f"unknown or repeated finding_id: {finding_id!r}")
+            if not isinstance(text, str) or not text.strip(): raise ValueError(f"blank or invalid {verb} for {finding_id}")
+            seen.add(finding_id)
+            finding = findings[finding_id]
+            if any(r["actor"] == actor for r in finding.get("responses", [])): continue
+            if not finding["open"]: raise ValueError(f"finding is closed: {finding_id}")
+            if verb == "defer" and finding["severity"] not in ("minor", "nit"):
+                raise ValueError(f"only a minor or nit can be deferred: {finding_id}")
+            pending.append((verb, finding_id, text))
+    except (OSError, ValueError) as error:
+        raise RuntimeError(f"invalid answers file {path}: {error}") from error
+    for verb, finding_id, text in pending:
+        response = fid(cwd, "finding", verb, finding_id, "--actor", actor, "--text" if verb == "answer" else "--title", text)
+        print("finding:", json.dumps(response), flush=True)
+    print_pending(cwd)
 def done(cwd, actor):
     for outcome in fid(cwd, "done", "--actor", actor)["outcomes"]:
         if outcome["status"] not in ("completed", "waiting", "refused", "github-unavailable"): raise RuntimeError(f"unknown done outcome: {outcome!r}")
         print("done:", json.dumps(outcome), flush=True)
-    for item in fid(cwd, "status")["needs_you"]:
+    for item in print_pending(cwd)["needs_you"]:
         if item["kind"] in ("merge", "approval"):
             pr = fid(cwd, "show", item["subject"]["id"])["handoff"]["pr"]
             if json.loads(run(cwd, "gh", "pr", "view", pr, "--repo", REPO, "--json", "isDraft"))["isDraft"]:
@@ -57,7 +103,7 @@ def agent(cwd, role, actor, model, work, output):
     spec = context["task"]["spec_md_path"]
     prompt = (HERE / "prompts" / (role + ".md")).read_text() + "\n" + json.dumps(context) + "\n" + ((Path(cwd) / spec).read_text() if spec else "")
     (output / "prompt.md").write_text(prompt)
-    env = {**os.environ, **{"LOOP_" + k: str(v) for k, v in {"ACTOR": actor, "MODEL": model, "HOLD": hold, "SESSION": session, "CONTEXT": output / "context.json", "REPORT": output / "report.md", "REVIEW": output / "review.json"}.items()}}
+    env = {**os.environ, **{"LOOP_" + k: str(v) for k, v in {"ACTOR": actor, "MODEL": model, "HOLD": hold, "SESSION": session, "CONTEXT": output / "context.json", "REPORT": output / "report.md", "REVIEW": output / "review.json", "ANSWERS": output / "answers.json"}.items()}}
     interval = fid(cwd, "heartbeat", "--hold", hold, "--actor", actor)["heartbeat_interval_seconds"]
     stop, errors = threading.Event(), []
     def renew():
@@ -104,6 +150,7 @@ def agent(cwd, role, actor, model, work, output):
                 print("usage:", json.dumps(recorded), flush=True)
             except Exception as error:
                 print(f"usage record failed: {error}", file=sys.stderr, flush=True)
+    return context
 
 def main():
     global ACTIVE
@@ -138,24 +185,25 @@ def main():
             if work["kind"] == "new":
                 if run(cwd, "git", "status", "--porcelain"): raise RuntimeError("new work needs a clean worktree")
                 task = fid(cwd, "show", work["task"]["id"])["issue"]
-                name = Path(task["spec_md_path"]).stem if task["spec_md_path"] else task["id"]
-                run(cwd, "git", "switch", "-c", "reset-" + name + "-" + re.sub(r"[^a-z0-9]+", "-", task["title"].lower()).strip("-"), run(cwd, "git", "symbolic-ref", "refs/remotes/origin/HEAD"))
+                run(cwd, "git", "switch", "-c", task_branch(task), run(cwd, "git", "symbolic-ref", "refs/remotes/origin/HEAD"))
             branch = run(cwd, "git", "branch", "--show-current")
             if branch in ("", "main", run(cwd, "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD").removeprefix("origin/")): raise RuntimeError("build requires a task branch")
             if work.get("rework", {}).get("cause") == "default-conflict":
                 run(cwd, "git", "merge", "--no-edit", work["rework"]["default_ref"], allowed=(0, 1))
-        agent(cwd, "reviewer" if is_review else "builder", actor, model, work, output)
+        context = agent(cwd, "reviewer" if is_review else "builder", actor, model, work, output)
         if is_review:
             if run(cwd, "git", "rev-parse", "HEAD") != work["review"]["handoff"]["head"] or run(cwd, "git", "status", "--porcelain"):
                 raise RuntimeError("review agent changed the head or left uncommitted changes")
             fid(cwd, "review", "record", work["task"]["id"], "--input", str(output / "review.json"), "--actor", actor, "--idempotency-key", output.name)
         elif next_work(cwd, actor, model)["kind"] != "none":
             if run(cwd, "git", "status", "--porcelain"): raise RuntimeError(f"agent left uncommitted changes; see {output}")
+            if work["kind"] == "rework" or any(f["open"] for r in context["reviews"]["rounds"] for f in r["findings"]):
+                record_answers(cwd, actor, work["task"]["id"], output / "answers.json")
             fid(cwd, "check", *hold, "--idempotency-key", output.name + "-check")
             if run(cwd, "git", "branch", "--show-current") != branch: raise RuntimeError("agent changed the task branch")
             run(cwd, "git", "push", "-u", "origin", branch)
             prs = json.loads(run(cwd, "gh", "pr", "list", "--repo", REPO, "--head", branch, "--state", "open", "--json", "url"))
-            pr = prs[0]["url"] if prs else run(cwd, "gh", "pr", "create", "--repo", REPO, "--draft", "--head", branch, "--title", fid(cwd, "show", work["task"]["id"])["issue"]["title"], "--body-file", str(output / "report.md"))
+            pr = prs[0]["url"] if prs else run(cwd, "gh", "pr", "create", "--repo", REPO, "--draft", "--head", branch, "--title", pr_title(cwd, context["task"]), "--body-file", str(output / "report.md"))
             if prs: run(cwd, "gh", "pr", "edit", pr, "--repo", REPO, "--body-file", str(output / "report.md"))
             fid(cwd, "handoff", *hold, "--pr", pr, "--idempotency-key", output.name + "-handoff")
         ACTIVE = None

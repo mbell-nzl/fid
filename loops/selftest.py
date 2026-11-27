@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 SOURCE = Path(__file__).resolve().parent
+ANSWER_SCENARIOS = ("answers-missing", "answers-invalid", "answer-refused", "answer-wrong-operation", "answer-missing-field", "answer-before-check", "answer-other-actor")
 
 
 def stub(name):
@@ -33,6 +34,9 @@ def stub(name):
             sys.exit(42)
         time.sleep(0.2)
         Path(os.environ["LOOP_REPORT"]).write_text("Report\n")
+        if scenario in ANSWER_SCENARIOS and scenario != "answers-missing":
+            Path(os.environ["LOOP_ANSWERS"]).write_text("{bad-json" if scenario == "answers-invalid" else
+                json.dumps([{"finding_id": "RND-123abc-1", "answer": "Fixed in `abc123`."}]))
         return
     if name == "gh":
         print("https://github.com/test/project/pull/1")
@@ -43,14 +47,16 @@ def stub(name):
                  "done": "task.done", "start": "task.start",
                  "heartbeat": "hold.heartbeat", "park": "hold.park",
                  "show": "issue.show", "status": "project.status", "backup": "project.backup",
-                 "review": "review.list", "usage": "usage.record"}[command]
+                 "review": "review.list", "usage": "usage.record", "finding": "finding." + (args[1] if command == "finding" else ""), "check": "check.execute"}[command]
     result = {}
     if command == "next":
         kind = "new" if scenario in ("heartbeat", "missing-nested", "slow-heartbeat", "claim-no-hold", "work-no-task", "park-failure", "backup-failure", "initial-heartbeat") else "none"
+        if scenario in ANSWER_SCENARIOS and Path.cwd().name == "build":
+            kind = "rework"
         if scenario == "role-change":
             kind = "new" if "--claim" in args or Path.cwd().name == "build" else "review"
-        result = {"kind": kind, "task": {"id": "FID-123abc"} if kind == "new" else None,
-                  "hold": {"id": "HLD-123abc"} if kind == "new" and "--claim" in args else None,
+        result = {"kind": kind, "task": {"id": "FID-123abc"} if kind in ("new", "rework") else None,
+                  "hold": {"id": "HLD-123abc"} if kind in ("new", "rework") and "--claim" in args else None,
                   "waiting": {"kind": "waiting-for-you"} if kind == "none" else None, "answer": None}
         if kind == "review":
             result["task"] = {"id": "FID-123abc"}
@@ -85,6 +91,24 @@ def stub(name):
         result = {"needs_you": []}
     if command == "review":
         result = {"task_id": "FID-123abc", "rounds": []}
+        if scenario in ANSWER_SCENARIOS:
+            finding = {"id": "RND-123abc-1", "profile": "code", "severity": "major", "summary": "Retry", "location": None,
+                       "evidence": "Missing retry", "fix": "Cover retry", "open": True}
+            if scenario == "answer-other-actor":
+                finding["responses"] = [{"actor": "human:mark", "text": "Please fix this."}]
+            result["rounds"] = [{"id": "RND-123abc", "handoff_id": "HOF-123abc", "stream": "primary", "profiles": ["code"],
+                                 "verdict": "CHANGES", "current": True, "findings": [finding]}]
+    if command == "finding":
+        result = {"response": {"id": "FRS-123abc", "finding_id": "RND-123abc-1", "task_id": "FID-123abc", "handoff_id": "HOF-123abc",
+                               "actor": "agent:sol-builder", "text": "Fixed in `abc123`.", "at": "2026-11-28T00:00:00Z"}}
+        if scenario == "answer-wrong-operation":
+            operation = "finding.defer"
+        if scenario == "answer-missing-field":
+            del result["response"]["text"]
+    if command == "check" or command == "finding" and scenario == "answer-refused":
+        print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+                          "error": {"code": "check-probe-stopped" if command == "check" else "invalid-argument", "retryable": False}}), file=sys.stderr)
+        sys.exit(4)
     if command == "usage":
         if os.getenv("STUB_USAGE_FAILURE") == "1":
             print(json.dumps({"contract_version":"fid-cli.v1", "operation":operation, "ok":False, "error":{"code":"invalid-argument", "retryable":False}}), file=sys.stderr)
@@ -121,7 +145,7 @@ def stub(name):
             sys.exit(4)
         count.touch()
         result = {"task_id": "FID-123abc", "hold_id": "HLD-123abc", "last_heartbeat_at": "2026-11-25T00:00:00Z",
-                  "expires_at": "2026-11-25T01:00:00Z", "heartbeat_interval_seconds": 0.01}
+                  "expires_at": "2026-11-25T01:00:00Z", "heartbeat_interval_seconds": 300 if scenario in ANSWER_SCENARIOS else 0.01}
     if command == "next" and scenario in ("empty", "malformed"):
         print("" if scenario == "empty" else "{bad-json")
         return
@@ -143,6 +167,13 @@ def stub(name):
 
 
 class Selftest(unittest.TestCase):
+    def test_reviewer_markdown_guidance(self):
+        prompt = " ".join((SOURCE / "prompts/reviewer.md").read_text().split())
+        for instruction in ("GitHub Markdown", "in every text field", "commands, file paths, test names, flags, identifiers and literal output",
+                            "`backticks`", "short Markdown list", "one command per item with its result", "concise evidence"):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, prompt)
+
     def run_loop(self, scenario, usage="codex", version_failure=False, usage_failure=False):
         with tempfile.TemporaryDirectory(prefix="fid-loop-selftest-") as tmp:
             root = Path(tmp) / "build"
@@ -152,6 +183,8 @@ class Selftest(unittest.TestCase):
                             "commit", "-qm", "fixture", "--allow-empty"], check=True)
             subprocess.run(["git", "-C", str(root), "update-ref", "refs/remotes/origin/main", "HEAD"], check=True)
             subprocess.run(["git", "-C", str(root), "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"], check=True)
+            if scenario in ANSWER_SCENARIOS:
+                subprocess.run(["git", "-C", str(root), "switch", "-qc", "reset-test-task"], check=True)
             bin_dir = root / ".git" / "stubs"
             bin_dir.mkdir()
             for name in ("fid", "gh", "agent", "codex", "claude"):
@@ -164,6 +197,7 @@ class Selftest(unittest.TestCase):
                    "STUB_VERSION_FAILURE": str(int(version_failure)), "STUB_USAGE_FAILURE": str(int(usage_failure)), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
                    "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"),
                    "LOOP_GH_REPO": "test/project", "XDG_CONFIG_HOME": str(root / "config")}
+            env["LOOP_EPIC"] = ""
             if scenario == "same-actors":
                 env["LOOP_REVIEWER_ACTOR"] = env["LOOP_BUILDER_ACTOR"] = "agent:same"
             if scenario == "epic":
@@ -173,6 +207,22 @@ class Selftest(unittest.TestCase):
             calls_path = root / ".git" / "calls"
             calls = [json.loads(line) for line in calls_path.read_text().splitlines()] if calls_path.exists() else []
             return result, calls
+
+    def test_finding_recording_guards(self):
+        for scenario, diagnostic in (("answers-missing", "answers.json"), ("answers-invalid", "answers.json"),
+                                     ("answer-refused", "invalid-argument"), ("answer-wrong-operation", "unexpected operation"),
+                                     ("answer-missing-field", "text"), ("answer-before-check", "check-probe-stopped"),
+                                     ("answer-other-actor", "check-probe-stopped")):
+            with self.subTest(scenario=scenario):
+                result, calls = self.run_loop(scenario, usage="none")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(diagnostic, result.stderr)
+                commands = [c[2][1] for c in calls if c[0] == "fid"]
+                if scenario in ("answer-before-check", "answer-other-actor"):
+                    self.assertLess(commands.index("finding"), commands.index("check"))
+                else:
+                    self.assertNotIn("check", commands)
+                self.assertEqual(commands[-2:], ["park", "backup"])
 
     def test_guards(self):
         for scenario, diagnostic in (("version", "fid-cli.future"), ("unknown", "future-work"),

@@ -32,7 +32,7 @@ if Path(sys.argv[0]).name == "gh":
     if args[:2] == ["pr", "list"]:
         print(json.dumps([{"url": "https://github.com/mbell-nzl/fid/pull/63"}] if (state / "pr").exists() else []))
     elif args[:2] == ["pr", "create"]:
-        log(kind="create", draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text(), **pushed_head())
+        log(kind="create", title=args[args.index("--title") + 1], draft="--draft" in args, body=Path(args[args.index("--body-file") + 1]).read_text(), **pushed_head())
         (state / "pr").touch()
         print("https://github.com/mbell-nzl/fid/pull/63")
     elif args[:2] == ["pr", "edit"]:
@@ -48,7 +48,8 @@ if Path(sys.argv[0]).name == "gh":
         print(json.dumps({"isDraft": not (state / "ready").exists()}))
     elif args[:2] == ["pr", "comment"]:
         log(kind="comment", body=Path(args[args.index("--body-file") + 1]).read_text(), usage=fid("show", os.environ["FIRST_LOOP_TASK"]).get("usage"))
-        print("https://github.com/mbell-nzl/fid/pull/63#issuecomment-123")
+        number = sum(json.loads(line)["kind"] == "comment" for line in (state / "calls.jsonl").read_text().splitlines())
+        print("https://github.com/mbell-nzl/fid/pull/63#issuecomment-" + str(number))
     elif args[0] == "api" and any("/comments?" in a for a in args):
         print("[]")
     else:
@@ -80,7 +81,7 @@ if work["kind"] == "review":
     count = state / "reviews"
     first = not count.exists()
     count.touch()
-    changes = scenario == "changes" and first
+    changes = scenario in ("changes", "answers") and first
     review = {"reviewer": {"actor": os.environ["LOOP_ACTOR"], "model": os.environ["LOOP_MODEL"],
                             "session_id": os.environ["LOOP_SESSION"]}, "stream": work["review"]["stream"],
               "profiles": work["review"]["required_profiles"], "verdict": "CHANGES" if changes else "APPROVE",
@@ -88,6 +89,9 @@ if work["kind"] == "review":
     if changes:
         review["findings"] = [{"profile": "code", "severity": "major", "summary": "Missing retry case",
                                "location": None, "evidence": "Retry is untested", "fix": "Cover the retry"}]
+        if scenario == "answers":
+            review["findings"].append({"profile": "code", "severity": "minor", "summary": "Retry explanation",
+                                       "location": None, "evidence": "Retry needs an example", "fix": "Document the retry"})
     else:
         review["dispositions"] = [{"finding_id": f["id"], "disposition": "resolved", "reason": "Retry regression passes"}
                                   for r in context["reviews"]["rounds"] for f in r["findings"] if f["open"]]
@@ -114,4 +118,10 @@ else:
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test",
                     "commit", "-qm", "test: stub implementation"], check=True)
+    if work["kind"] == "rework" or context["reviews"]["rounds"]:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        answers = [{"finding_id": f["id"], **({"defer": "Document the retry example"} if f["severity"] == "minor" else
+                    {"answer": "Covered the retry in `" + commit + "` with `change_test.go`."})}
+                   for r in context["reviews"]["rounds"] for f in r["findings"]]
+        Path(os.environ["LOOP_ANSWERS"]).write_text(json.dumps(answers))
     Path(os.environ["LOOP_REPORT"]).write_text("Stub completion report: " + work["kind"] + "\n\n## Rollback\nRevert this change.\n")

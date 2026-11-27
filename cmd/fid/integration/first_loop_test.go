@@ -77,7 +77,11 @@ func newFirstLoop(t *testing.T, scenario string) firstLoop {
 	closureRun(t, root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Brief and review paths")
 	closureRun(t, root, "git", "push", "-q", "origin", "HEAD:trunk")
 	w := loopWorker{t, binary, root, "agent:sol-builder"}
-	task := w.create("task", "First loop task", "", "--spec-md", "docs/briefs/test.md")
+	var brief []string
+	if scenario != "no-brief" {
+		brief = []string{"--spec-md", "docs/briefs/test.md"}
+	}
+	task := w.create("task", "First loop task", "", brief...)
 	if scenario == "assured" {
 		w.call("issue", "update", task, "--lane", "assured", "--actor", "human:planner", "--idempotency-key", "assured")
 	}
@@ -102,7 +106,7 @@ func newFirstLoop(t *testing.T, scenario string) firstLoop {
 		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
 		"XDG_CONFIG_HOME="+configHome, "XDG_CACHE_HOME="+filepath.Join(state, "cache"),
 		"LOOP_FID="+binary, "LOOP_GH_REPO=mbell-nzl/fid", "LOOP_BUILDER_COMMAND="+filepath.Join(bin, "agent"),
-		"LOOP_REVIEWER_COMMAND="+filepath.Join(bin, "agent"), "FIRST_LOOP_STATE="+state, "FIRST_LOOP_SCENARIO="+scenario, "FIRST_LOOP_TASK="+task)
+		"LOOP_REVIEWER_COMMAND="+filepath.Join(bin, "agent"), "LOOP_EPIC=", "FIRST_LOOP_STATE="+state, "FIRST_LOOP_SCENARIO="+scenario, "FIRST_LOOP_TASK="+task)
 	return firstLoop{root, binary, task, state, env}
 }
 
@@ -165,6 +169,9 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					if builds == 2 && !strings.Contains(call["prompt"].(string), "Missing retry case") {
 						t.Fatal("fixer was not given open findings")
 					}
+					if builds == 2 && (!strings.Contains(call["prompt"].(string), "LOOP_ANSWERS") || !strings.Contains(call["prompt"].(string), "GitHub Markdown")) {
+						t.Fatal("fixer was not told how to supply finding answers")
+					}
 				case "review":
 					reviews++
 					if call["expected_head"] != pushed {
@@ -174,7 +181,7 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 						t.Fatalf("review did not use the detached review worktree at the hand-off head: %v", call)
 					}
 					prompt := strings.Join(strings.Fields(call["prompt"].(string)), " ")
-					for _, instruction := range []string{"required checks have passed", "fid refuses hand-off otherwise", "Do not rerun full suites", "focused tests", "overlay mutations"} {
+					for _, instruction := range []string{"required checks have passed", "fid refuses hand-off otherwise", "Do not rerun full suites", "focused tests", "overlay mutations", "GitHub Markdown", "`backticks`", "short Markdown list", "one command per item with its result"} {
 						if !strings.Contains(prompt, instruction) {
 							t.Errorf("%s review prompt missing %q", call["stream"], instruction)
 						}
@@ -204,13 +211,15 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					}
 				}
 			}
-			wantBuilds, wantReviews := 1, 1
+			wantBuilds, wantReviews, wantComments := 1, 1, 1
 			if scenario == "changes" {
 				wantBuilds, wantReviews = 2, 2
+				wantComments = 3 // Two rounds and the fixer's answer.
 			} else if scenario == "assured" {
 				wantReviews = 2
+				wantComments = 2
 			}
-			if builds != wantBuilds || reviews != wantReviews || creates != 1 || ready != 1 || comments != wantReviews || edits != wantBuilds-1 {
+			if builds != wantBuilds || reviews != wantReviews || creates != 1 || ready != 1 || comments != wantComments || edits != wantBuilds-1 {
 				t.Fatalf("builds/reviews/creates/ready = %d/%d/%d/%d; comments/edits = %d/%d", builds, reviews, creates, ready, comments, edits)
 			}
 			branch, _ := closureRun(t, j.root, "git", "branch", "--show-current")

@@ -5,6 +5,15 @@
   "operation": "project.status",
   "result": {
     "needs_you[].kind": [],
-    "needs_you[].subject.id": []
+    "needs_you[].subject.id": [],
+    "warnings?[].kind": [
+      "checks-not-configured"
+    ],
+    "warnings?[].next_action": [
+      "add checks to [lanes.routine], then merge .fid.toml and git fetch"
+    ],
+    "warnings?[].summary": [
+      "No checks set for Routine in .fid.toml"
+    ]
   }
 }

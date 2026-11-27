@@ -1,0 +1,98 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "review.list",
+  "result": {
+    "rounds[].current": [
+      true
+    ],
+    "rounds[].findings[].evidence": [
+      [
+        "Retry is untested",
+        "Retry needs an example"
+      ]
+    ],
+    "rounds[].findings[].fix": [
+      [
+        "Cover the retry",
+        "Document the retry"
+      ]
+    ],
+    "rounds[].findings[].id": [
+      [
+        "\u003cRND\u003e",
+        "\u003cRND\u003e"
+      ]
+    ],
+    "rounds[].findings[].location": [
+      [
+        null,
+        null
+      ]
+    ],
+    "rounds[].findings[].open": [
+      [
+        true,
+        false
+      ]
+    ],
+    "rounds[].findings[].profile": [
+      [
+        "code",
+        "code"
+      ]
+    ],
+    "rounds[].findings[].responses?[].actor": [
+      [
+        [
+          "agent:sol-builder"
+        ],
+        [
+          "agent:sol-builder"
+        ]
+      ]
+    ],
+    "rounds[].findings[].responses?[].text": [
+      [
+        [
+          "Follow up the retry"
+        ],
+        [
+          "Address \u003cRND\u003e: Retry explanation\nEvidence: Retry needs an example\nFix: Document the retry"
+        ]
+      ]
+    ],
+    "rounds[].findings[].severity": [
+      [
+        "major",
+        "minor"
+      ]
+    ],
+    "rounds[].findings[].summary": [
+      [
+        "Missing retry case",
+        "Retry explanation"
+      ]
+    ],
+    "rounds[].handoff_id": [
+      "\u003cHOF\u003e"
+    ],
+    "rounds[].id": [
+      "\u003cRND\u003e"
+    ],
+    "rounds[].profiles": [
+      [
+        "code",
+        "test-adequacy"
+      ]
+    ],
+    "rounds[].stream": [
+      "primary"
+    ],
+    "rounds[].verdict": [
+      "CHANGES"
+    ],
+    "task_id": "\u003cFID\u003e"
+  }
+}

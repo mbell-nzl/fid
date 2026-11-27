@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "finding.defer",
+  "result": {
+    "response.actor": "agent:sol-builder",
+    "response.at": "\u003ctime\u003e",
+    "response.deferred_task.epic_id": null,
+    "response.deferred_task.id": "\u003cFID\u003e",
+    "response.deferred_task.lane": "standard",
+    "response.deferred_task.title": "Follow up the retry",
+    "response.finding_id": "\u003cRND\u003e",
+    "response.handoff_id": "\u003cHOF\u003e",
+    "response.id": "\u003cFRS\u003e",
+    "response.task_id": "\u003cFID\u003e",
+    "response.text": "Address \u003cRND\u003e: Retry explanation\nEvidence: Retry needs an example\nFix: Document the retry"
+  }
+}
