@@ -103,7 +103,7 @@ func TestReviewPostVersionsSurviveRebuild(t *testing.T) {
 		}
 	}
 	var migration int
-	if err := rebuilt.QueryRow(`SELECT version FROM schema_migrations`).Scan(&migration); err != nil || migration != 42 {
+	if err := rebuilt.QueryRow(`SELECT version FROM schema_migrations`).Scan(&migration); err != nil || migration != 43 {
 		t.Fatalf("upgraded migration=%d / %v", migration, err)
 	}
 	archive := filepath.Join(t.TempDir(), "mixed.zip")

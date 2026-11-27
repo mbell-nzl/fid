@@ -20,7 +20,6 @@ criteria below.
       (1.5b–1.5d), which cuts about 18–20k lines. The cap applies again
       from then, before the trial. On 2026-11-14, after 1.5a2, product Go
       was 54,547 lines (non-test `.go` files under `cmd/` and `internal/`).
-  - The loop stays under 150 lines.
   - The kit install script stays under 80 lines.
 - **One task = one PR = one session.** Use TDD; `make test` must pass. The PR
   description is the completion report, and small decisions go there too.
@@ -123,7 +122,7 @@ criteria below.
 | **2.4** | Loop contract (fields, exit codes, version) with golden tests, the version checked through the `contract_version` every JSON reply carries, since 1.5c removes `fid capabilities` (decisions record, 11 November 2026, item 6); scenario tests for rework, rework cap, interruption and parallel claims; `fid next --epic <epic>` scopes a worker to one epic (decisions record, 2026-11-17, item 2) | Standard | V4; the contract V9 checks; a scenario test where a worker scoped to a side epic builds it while an unscoped worker works the main line (done 2026-11-22) |
 | **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task; runs the review work `next` hands out as kind `review`, and passes the agent Mark's answer when a task that waited for him resumes (decisions record, 11 November 2026, items 5 and 11) | Standard | It runs a reset task end to end |
 | **2.5b** | Merge judge in shadow: Mark records his call first; the judge's call (MERGE or HOLD, hold-only) is a round with profile `merge`, kept from him until his is recorded | Assured | Both calls are recorded for a reset task, Mark's first |
-| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output; `next` skips a task over its token budget, with the over-budget scenario test | Assured | Every reset task has a token count |
+| **2.6** | Usage capture: `fid usage record` reads each agent session's tokens from `codex` and `claude` JSON output; the loop records every session; `fid show` totals a task's usage | Assured | Every task the loop runs has a token count |
 | **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest; `fid done <epic>` also checks the epic's validations (decisions record, 11 November 2026, item 9) | Standard | V1's fixture recipe runs from `fid brief` |
 | **3.2** | Squash the 42 migrations into a baseline; tidy `go.mod`, unless an earlier Assured task already has; release v0.2.0; create the permanent ledger; run a restore drill; restore rebuilds the projection from the archive's journal with the running fid, so an older archive restores and one from a newer fid is refused (decisions record, 11 November 2026, item 10) | Assured | A fresh clone restores the ledger from backup; `go mod tidy -diff` reports nothing |
 | **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |

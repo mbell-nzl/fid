@@ -1078,3 +1078,56 @@ latest hand-off/head, completed review gates, exact state/reservation
 Effects and evidence shape without local git. No review round is created.
 The following `hold.taken` preserves the existing linked-rework semantics.
 The down migration drops the receipt table; journal history is unchanged.
+
+### Reset 2.6 — session usage
+
+Migration `0043_usage_sessions` adds `usage_sessions`, one immutable row per
+recorded agent session output. Cache version 24 rebuilds older projections;
+the active migration/export profile is 43. Its down path drops the table and
+its task index, leaving canonical journal history unchanged.
+
+| Column | Meaning |
+|---|---|
+| `id` | PK, `USG-<six-hex>` |
+| `task_id` | Issue FK |
+| `hold_id` | Build hold or review reservation ID; shared admission checks the appropriate table, including ended sessions |
+| `actor`, `model` | Immutable session attribution |
+| `role`, `stream` | Derived from session history: build, fix, or review; review stream primary/separate, otherwise empty |
+| `format`, `parser_revision` | `codex`/`claude` and frozen rules (`codex/1`, `claude/1`) |
+| `input_digest` | sha256 of the exact agent stdout file; `(hold_id,input_digest)` is unique |
+| `tool_version`, `version_source` | Output's version if present; otherwise caller's optional version. Source is output/caller, or both fields empty when unavailable |
+| `uncached_input`, `cache_read`, `cache_write`, `output`, `reasoning`, `total` | Nonnegative signed 64-bit token counts; reasoning is part of output, excluded from the sum; total is input + cache read + cache write + output |
+| `record_json` | Complete typed receipt, including counts by model and retained original usage objects |
+| `recorded_at` | Event time, UTC RFC 3339 |
+
+`usage.recorded` / `usage.record`, aggregate `usage/<id>` sequence 1,
+contains exactly one complete session insert and one keyed retry-result
+insert. Shared admission binds the actor, task, hold model and derived role
+to the historical session, and re-derives counts from the retained reports
+with the recorded parser revision. A fix descends from a returned hand-off
+hold; interrupted fixes retain this ancestry on resume. No live-hold or
+current-worktree requirement applies: a waiting park ends its hold before
+recording. Other families, updates, legacy Events, identifier aliases,
+extra effects and mismatched retries refuse. Replay, rebuild and archive
+validation use those same rules offline. Export/import preserve the receipt.
+
+Codex sums every `turn.completed.usage`, ignoring other event types. Its
+uncached input is `input_tokens - cached_input_tokens`; cache writes are a
+separate category. Claude uses `modelUsage` when present, otherwise `usage`
+attributed to the hold model; its input already excludes cache reads/writes.
+Reported usage objects retain all their supplied numbers. Both parsers refuse
+missing required counts, malformed JSON, absent usage, invalid count domains
+and overflow. Tool-version capture does not replace parser revisioning.
+
+Examples for `fid sql`:
+
+```sql
+SELECT task_id, role, stream, model, total FROM usage_sessions ORDER BY rowid;
+SELECT task_id, SUM(total) AS tokens, COUNT(*) AS sessions
+FROM usage_sessions GROUP BY task_id;
+SELECT id, json_extract(record_json, '$.models') AS models FROM usage_sessions;
+```
+
+No budget is enforced by this data. `token_budget` is still parsed and
+validated; enforcement is Later FID-fb8271, and cross-task reporting is
+Later FID-ca9367. Capture begins with tasks run after 2.6 merges; no backfill.

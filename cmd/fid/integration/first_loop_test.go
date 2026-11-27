@@ -194,6 +194,9 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 					}
 				case "comment":
 					comments++
+					if call["usage"].(map[string]any)["sessions"] != float64(builds+reviews) {
+						t.Fatal("review posted before its usage was recorded")
+					}
 				case "edit":
 					edits++
 					if !strings.Contains(call["body"].(string), "rework") {
@@ -219,6 +222,15 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 				t.Fatalf("backup after each build/review = %v", outcomes)
 			}
 			w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
+			shown := w.call("show", j.task)
+			usage := p21Path(t, shown, "result", "usage").(map[string]any)
+			if usage["sessions"] != float64(wantBuilds+wantReviews) || usage["total"] != float64((wantBuilds+wantReviews)*15752) {
+				t.Fatalf("session usage = %v", usage)
+			}
+			roles := usage["by_role"].(map[string]any)
+			if roles["build"] != float64(15752) || roles["review.primary"] == nil || scenario == "changes" && roles["fix"] != float64(15752) || scenario == "assured" && roles["review.separate"] != float64(15752) {
+				t.Fatalf("usage roles = %v", roles)
+			}
 			listed := w.call("review", "list", j.task)
 			rounds := p21Path(t, listed, "result", "rounds").([]any)
 			if len(rounds) != wantReviews || rounds[wantReviews-1].(map[string]any)["verdict"] != "APPROVE" {

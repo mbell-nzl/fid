@@ -17,6 +17,13 @@ def stub(name):
     with (root / "calls").open("a") as log:
         log.write(json.dumps([name, str(Path.cwd()), args]) + "\n")
     if name == "agent":
+        if args == ["--version"]:
+            if os.getenv("STUB_VERSION_FAILURE") == "1":
+                sys.exit(2)
+            print("codex-cli 0.172.0")
+            return
+        print(json.dumps({"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":2,"reasoning_output_tokens":0}}), flush=True)
+        print("stderr diagnostic", file=sys.stderr)
         import time
         if scenario == "slow-heartbeat":
             deadline = time.monotonic() + 3
@@ -36,7 +43,7 @@ def stub(name):
                  "done": "task.done", "start": "task.start",
                  "heartbeat": "hold.heartbeat", "park": "hold.park",
                  "show": "issue.show", "status": "project.status", "backup": "project.backup",
-                 "review": "review.list"}[command]
+                 "review": "review.list", "usage": "usage.record"}[command]
     result = {}
     if command == "next":
         kind = "new" if scenario in ("heartbeat", "missing-nested", "slow-heartbeat", "claim-no-hold", "work-no-task", "park-failure", "backup-failure", "initial-heartbeat") else "none"
@@ -78,6 +85,16 @@ def stub(name):
         result = {"needs_you": []}
     if command == "review":
         result = {"task_id": "FID-123abc", "rounds": []}
+    if command == "usage":
+        if os.getenv("STUB_USAGE_FAILURE") == "1":
+            print(json.dumps({"contract_version":"fid-cli.v1", "operation":operation, "ok":False, "error":{"code":"invalid-argument", "retryable":False}}), file=sys.stderr)
+            sys.exit(2)
+        stdout = Path(args[args.index("--tool-output") + 1]).read_text()
+        assert "stderr diagnostic" not in stdout
+        assert json.loads(stdout)["type"] == "turn.completed"
+        if os.getenv("STUB_VERSION_FAILURE") != "1":
+            assert args[args.index("--tool-version") + 1] == "codex-cli 0.172.0"
+        result = {"usage": {"id":"USG-123abc", "task_id":"FID-123abc", "hold_id":"HLD-123abc", "actor":"agent:sol-builder", "model":"openai/sol", "role":"build", "stream":"", "format":"codex", "counts":{"uncached_input":10,"cache_read":0,"cache_write":0,"output":2,"reasoning":0,"total":12}, "models":{}, "reported":[], "input_digest":"sha256:"+"a"*64, "parser_revision":"codex/1", "tool_version":"codex-cli 0.172.0", "version_source":"caller", "recorded_at":"2026-11-25T00:00:00Z"}}
     if command == "start":
         result = {"task_id": "FID-123abc", "hold_id": "HLD-123abc", "status": "in_progress"}
     if command == "park":
@@ -126,7 +143,7 @@ def stub(name):
 
 
 class Selftest(unittest.TestCase):
-    def run_loop(self, scenario):
+    def run_loop(self, scenario, usage="codex", version_failure=False, usage_failure=False):
         with tempfile.TemporaryDirectory(prefix="fid-loop-selftest-") as tmp:
             root = Path(tmp) / "build"
             root.mkdir()
@@ -142,7 +159,9 @@ class Selftest(unittest.TestCase):
                 script.write_text(f'#!/bin/sh\nexec python3 "{Path(__file__).resolve()}" {name} "$@"\n')
                 script.chmod(0o700)
             env = {**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
-                   "STUB_ROOT": str(root / ".git"), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
+                   "STUB_ROOT": str(root / ".git"),
+                   "LOOP_BUILDER_USAGE": usage, "LOOP_REVIEWER_USAGE": usage,
+                   "STUB_VERSION_FAILURE": str(int(version_failure)), "STUB_USAGE_FAILURE": str(int(usage_failure)), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
                    "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"),
                    "LOOP_GH_REPO": "test/project", "XDG_CONFIG_HOME": str(root / "config")}
             if scenario == "same-actors":
@@ -173,6 +192,34 @@ class Selftest(unittest.TestCase):
                     self.assertFalse(any(c[0] == "agent" for c in calls))
                     if scenario != "empty-done":
                         self.assertEqual([c[2][1] for c in calls if c[0] == "fid"], ["next"])
+
+    def test_usage_is_attempted_after_failed_agent_before_park(self):
+        result, calls = self.run_loop("slow-heartbeat")
+        self.assertNotEqual(result.returncode, 0)
+        commands = [c[2][1] for c in calls if c[0] == "fid"]
+        self.assertIn("usage", commands)
+        self.assertLess(commands.index("usage"), commands.index("park"))
+        usage = next(c[2] for c in calls if c[0] == "fid" and c[2][1] == "usage")
+        self.assertEqual(usage[2], "record")
+        self.assertIn("usage:", result.stdout)
+        self.assertNotIn("usage record failed", result.stderr)
+        self.assertEqual(usage[usage.index("--tool-version") + 1], "codex-cli 0.172.0")
+        self.assertEqual(usage[usage.index("--hold") + 1], "HLD-123abc")
+        self.assertEqual(usage[usage.index("--tool") + 1], "codex")
+
+    def test_usage_none_version_failure_and_record_failure(self):
+        result, calls = self.run_loop("slow-heartbeat", usage="none")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(any(c[0] == "fid" and c[2][1] == "usage" for c in calls))
+        result, calls = self.run_loop("slow-heartbeat", version_failure=True)
+        usage = next(c[2] for c in calls if c[0] == "fid" and c[2][1] == "usage")
+        self.assertNotIn("--tool-version", usage)
+        self.assertIn("usage:", result.stdout)
+        result, calls = self.run_loop("slow-heartbeat", usage_failure=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("usage record failed", result.stderr)
+        self.assertIn("agent failed", result.stderr)
+        self.assertEqual([c[2][1] for c in calls if c[0] == "fid"][-2:], ["park", "backup"])
 
     def test_none_and_every_done_outcome(self):
         result, calls = self.run_loop("none")

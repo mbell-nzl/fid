@@ -47,7 +47,7 @@ if Path(sys.argv[0]).name == "gh":
     elif args[:2] == ["pr", "view"] and args[-1] == "isDraft":
         print(json.dumps({"isDraft": not (state / "ready").exists()}))
     elif args[:2] == ["pr", "comment"]:
-        log(kind="comment", body=Path(args[args.index("--body-file") + 1]).read_text())
+        log(kind="comment", body=Path(args[args.index("--body-file") + 1]).read_text(), usage=fid("show", os.environ["FIRST_LOOP_TASK"]).get("usage"))
         print("https://github.com/mbell-nzl/fid/pull/63#issuecomment-123")
     elif args[0] == "api" and any("/comments?" in a for a in args):
         print("[]")
@@ -56,12 +56,18 @@ if Path(sys.argv[0]).name == "gh":
         sys.exit(1)
     sys.exit(0)
 
+if args == ["--version"]:
+    print("codex-cli 0.172.0")
+    sys.exit(0)
+
 assert Path(sys.argv[0]).name == "agent", "real agent invocation is forbidden"
 # Bound omitted-step mutations that would otherwise claim the same work forever.
 calls = state / "calls.jsonl"
 if calls.exists() and sum(json.loads(line)["kind"] in ("build", "review") for line in calls.read_text().splitlines()) >= 6:
     print("stub agent session limit: loop repeated work without making progress", file=sys.stderr)
     sys.exit(42)
+print(json.dumps({"type":"turn.completed","usage":{"input_tokens":15747,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":5,"reasoning_output_tokens":0}}), flush=True)
+print("agent diagnostic on stderr",file=sys.stderr)
 prompt = sys.stdin.read()
 context = json.loads(Path(os.environ["LOOP_CONTEXT"]).read_text())
 work = context["work"]

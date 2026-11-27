@@ -105,6 +105,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 		return err
 	}
 	if !event.IsV2() {
+		if event.EventType == "usage.recorded" {
+			return fmt.Errorf("usage records require Event-v2")
+		}
 		if event.EventType == "finding.answered" || event.EventType == "finding.deferred" || event.EventType == "review.posted" {
 			return fmt.Errorf("review delivery requires Event-v2")
 		}
@@ -112,6 +115,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("artifact availability requires Event-v2")
 		}
 		return nil
+	}
+	if event.EventType == "usage.recorded" {
+		return validateUsage(tx, event)
 	}
 	if event.EventType == "review.posted" {
 		return validateReviewPost(tx, event)

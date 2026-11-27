@@ -36,6 +36,7 @@ type Result struct {
 	Warnings   []status.Warning
 	Approval   decisionview.Approval
 	Completion *Completion
+	Usage      *Usage
 }
 
 // Build reads the issue whose ID is exactly options.ID.
@@ -45,6 +46,9 @@ func Build(options Options) (Result, error) {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}
 	result := Result{IssueView: view, Now: options.Now}
+	if err := result.readUsage(options.WorkspaceRoot); err != nil {
+		return Result{}, fmt.Errorf("read show usage: %w", err)
+	}
 	if err := result.readCompletion(options.WorkspaceRoot); err != nil {
 		return Result{}, fmt.Errorf("read show completion: %w", err)
 	}
@@ -85,6 +89,9 @@ func (result Result) Fields() map[string]any {
 		"working":               result.Working,
 		"kept":                  result.Kept,
 		"scheduling":            result.Scheduling,
+	}
+	if result.Usage != nil {
+		fields["usage"] = result.Usage
 	}
 	if result.Approval.Waivers != nil {
 		fields["waivers"] = result.Approval.Waivers

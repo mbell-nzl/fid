@@ -47,7 +47,7 @@ rework_cap = 5
 checks = ["fmt", "lint", "test", "build", "integration"]
 rework_cap = 5
 
-# No token_budget until 2.6 has usage data to set it from (ADR-0014).
+# token_budget is parsed and validated, but not enforced until FID-fb8271.
 [lanes.assured]
 # The trust boundary: code that decides what an agent may do, or makes the
 # receipts Mark relies on at approval and done (Mark, 2026-11-21; D5).

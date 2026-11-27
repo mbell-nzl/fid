@@ -1,0 +1,46 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "usage.record",
+  "result": {
+    "usage.actor": "agent:builder",
+    "usage.counts.cache_read": 0,
+    "usage.counts.cache_write": 0,
+    "usage.counts.output": 5,
+    "usage.counts.reasoning": 0,
+    "usage.counts.total": 15752,
+    "usage.counts.uncached_input": 15747,
+    "usage.format": "codex",
+    "usage.hold_id": "\u003cHLD\u003e",
+    "usage.id": "\u003cUSG\u003e",
+    "usage.input_digest": "sha256:c8aa632311278014c5ce927a49564ae2344c6e00975ad51a874be7b9f972dc5d",
+    "usage.model": "openai/sol",
+    "usage.models": {
+      "openai/sol": {
+        "cache_read": 0,
+        "cache_write": 0,
+        "output": 5,
+        "reasoning": 0,
+        "total": 15752,
+        "uncached_input": 15747
+      }
+    },
+    "usage.parser_revision": "codex/1",
+    "usage.recorded_at": "\u003ctime\u003e",
+    "usage.reported": [
+      {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 15747,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    ],
+    "usage.role": "build",
+    "usage.stream": "",
+    "usage.task_id": "\u003cFID\u003e",
+    "usage.tool_version": "codex-cli 0.172.0",
+    "usage.version_source": "caller"
+  }
+}

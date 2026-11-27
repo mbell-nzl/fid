@@ -95,6 +95,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newHandoffCommand())
 	cmd.AddCommand(newDoneCommand(nil))
 	cmd.AddCommand(newCheckCommand())
+	cmd.AddCommand(newUsageCommand())
 
 	installCommandGroups(cmd)
 	installLeafGrammar(cmd)

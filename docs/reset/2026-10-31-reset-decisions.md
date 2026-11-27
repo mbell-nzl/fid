@@ -1977,8 +1977,9 @@ Mark approved these decisions for RESET 2.5 (FID-698c0f):
    The loop passes ID, title, acceptance criteria and spec path from `show`.
    An unsettled design is a waiting park and a person's answer, not a guess.
 3. **Python for fid's own loop.** `loops/loop.py` uses Python 3's standard
-   library, stays under 150 lines (test enforced), and keeps prompts beside
-   it. Commands, models, actors and gh repository are environment settings
+   library and keeps prompts beside it. The 150-line limit was removed
+   on 2026-11-27, as recorded below. Commands, models, actors and gh
+   repository are environment settings
    with documented defaults. Task 3.3 promotes this copy to the kit. The
    loop uses a detached review worktree and distinct builder/reviewer actors.
 4. **Proof begins before 2.5's hand-off.** While 2.5 is still held, the
@@ -1999,6 +2000,43 @@ resume with an answer, a second hand-off, APPROVE making the PR ready,
 Mark's merge, then done. That finish earns 2.5's RESET done mark, added by
 the orchestrator. Row 2.5 stays unmarked in this branch.
 
+## Decided 2026-11-27
+
+Mark approved these five decisions for RESET 2.6 (FID-d015a8):
+
+1. **Track usage without enforcing budgets.** Mark: "I don't think I really
+   care about token limits right now on tasks. I think it is interesting to
+   track the token usage for tasks though...that would be quite insightful
+   data over time." Budget enforcement, its over-budget scenario, waiting
+   kind, NEEDS YOU item and person's allowance move to FID-fb8271. 2.2a's
+   `token_budget` remains parsed and validated, without enforcement.
+2. **fid reads agent output.** The loop hands each session's stdout to
+   `fid usage record`; fid owns parsing and the definition of a token.
+   Immutable usage Events name the task, session, actor, hold model, derived
+   build/fix/review role and stream, format, reported and normalised counts,
+   input sha256, tool version and parser revision. Duplicate output for the
+   same session refuses, with keyed retries returning the original receipt.
+3. **Report through show and sql.** `fid show` totals sessions by role and
+   model; `fid sql` queries the projection. Comparing tasks by type, lane,
+   model and role moves to the report task FID-ca9367.
+4. **Forward only.** No backfill. Done means every task the loop runs has
+   a token count. 2.6's own sessions predate the capturing loop and do not
+   count. The next task run after this merges earns the done mark, which the
+   orchestrator adds; row 2.6 stays unmarked here.
+5. **Remove the loop's 150-line limit.** Mark: "fairly arbitrary. The point
+   was not to have pages of prose like my old orchestrator agent pattern.
+   I'd rather remove or relax the limit and ensure we have the right logic
+   in the loop than compromise it." The loop is code; its prompts stay
+   short. This amends D2's test-enforced line budget and the 2026-11-25
+   Python decision above.
+
+**CLI names amended by Mark, 2026-11-27 (PDN-702e34).** Keep the existing
+CLI rules without exceptions: `usage record --tool codex|claude` selects
+the parser, `--tool-output <file>` supplies the agent's raw stdout, and
+`--tool-version <text>` stays. There is no `--input`, request descriptor or
+`--example` for this command. The receipt's `format` and `input_digest`
+fields continue to describe the parsed format and stdout digest.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2015,23 +2053,23 @@ and validations.
 - **The loop lives in the kit; fid owns the loop contract.** fid declares,
   versions and golden-tests the fields and exit codes loops read
   (`next --claim` exit codes, `.result.task.id`, `next.kind` values, the
-  required review profiles). Scenario tests (rework, budget exhausted, rework
-  cap, interruption, parallel claims) are fid integration tests. The rework
-  cap and the token budget live in fid, set per lane in `.fid.toml` (amended
-  10 November 2026, ADR-0014). The rework cap counts a task's review rounds
-  that asked for changes, 3 by default; the token budget sums 2.6's usage and
-  is off until 2.6 has data. Past either, `next` skips the task
-  (`rework-cap-reached`, `over-budget`) and `fid status` shows a NEEDS YOU
-  item. 2.2a parses the settings, 2.1 and 2.6 enforce them. 2.4's scenario
-  tests cover the rework cap; the over-budget scenario test lands in 2.6,
-  with the code it tests, since 2.4 runs first (Mark, 11 November 2026). The
-  kit ships one default loop; variants only when a project needs one. The
+  required review profiles). Scenario tests (rework, rework cap, interruption,
+  parallel claims) are fid integration tests. The rework cap lives in fid,
+  set per lane in `.fid.toml` (amended 10 November 2026, ADR-0014). It counts
+  a task's review rounds that asked for changes, 3 by default; past the cap,
+  `next` skips the task (`rework-cap-reached`) and status shows a NEEDS YOU
+  item. 2.2a parses the settings, 2.1 enforces the cap and 2.4 tests it.
+  **Amended 2026-11-27:** 2.6 captures usage only. `token_budget` is parsed
+  and validated but not enforced; enforcement and the over-budget scenario
+  move to Later (FID-fb8271), with no over-budget waiting kind or allowance.
+  The kit ships one default loop; variants only when a project needs one. The
   first loop is written in fid's repo as fid's own copy, then promoted to the
   kit.
 - Loop guard-rails: check fid's contract version at startup (replaces a fid
   version pin); fail loudly on an unknown `next.kind`; never treat empty output
-  as "no work"; `loops/selftest.sh` against stub agents; a line budget enforced
-  by a test.
+  as "no work"; `loops/selftest.sh` against stub agents. **Amended
+  2026-11-27:** the line budget and its test are removed, per Mark's quoted
+  decision above; correct loop logic takes precedence and prompts stay short.
 - **Install is a plain copy** (amended). A kit script of about 50 lines
   overwrites managed files (whole skill folders in `.agents/skills/`, relative
   symlinks from `.claude/skills/`), renders the reviewer to
@@ -3844,6 +3882,14 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- **FID-fb8271 — Token budget enforcement.** Make `next` skip a task over
+  its lane's `token_budget`, with the over-budget waiting kind, NEEDS YOU
+  item, a person's allowance and the scenario test. Deferred from 2.6 by
+  Mark, 2026-11-27; configuration remains parsed and validated.
+- **FID-ca9367 — Usage report.** Compare tasks by type, lane, model and
+  build/fix/review role using recorded session usage. Deferred from 2.6 by
+  Mark, 2026-11-27; `fid show` and `fid sql` supply the initial reporting.
 
 1.8 imported this list into fid on 2026-11-21, as 43 tasks in the epic
 "Later list (after the trial)", which waits for 3.2. Items marked

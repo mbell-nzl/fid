@@ -47,6 +47,7 @@ is exit 0. A nonzero exit never means that there is no work.
 | `answer` (person only) | `task.answer` | 0, 2, 3, 4, 5, 6, 7 |
 | `check [name]...` | `check.execute` | 0, 2, 3, 4, 5, 6, 7, 8 |
 | `handoff` | `task.handoff` | 0, 2, 3, 4, 5, 6, 7 |
+| `usage record` | `usage.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `review record <task>` | `review.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `done [task]` | `task.done` | 0, 2, 3, 4, 5, 6, 7 |
 | `show <task>` | `issue.show` | 0, 2, 3, 4, 6, 7 |
@@ -185,6 +186,22 @@ is restored. Unscoped selection is unchanged.
 - `handoff`: `task_id`, `status` (`in_review`), `handoff_id`, `pr`, `head`,
   `base`, `required_checks`, `result_ids`. It freezes the evidence and
   returns the task to review; it does not merge.
+- `usage record --hold <id> --actor <actor> --tool codex|claude --tool-output <file>
+  [--tool-version <text>] --idempotency-key <key>`: `usage` contains the
+  immutable session receipt: `id`, `task_id`, `hold_id`, `actor`, `model`,
+  `role` (`build`, `fix`, `review`), `stream` (empty, `primary`, `separate`),
+  `format`, `counts` (`uncached_input`, `cache_read`, `cache_write`, `output`,
+  `reasoning`, `total`), `models` (counts by reported model), `reported`
+  (original usage objects), `input_digest` (sha256), `parser_revision`,
+  `tool_version`, `version_source` (empty, `output`, `caller`), `recorded_at`.
+  The actor must own the session; ended sessions remain recordable. The same
+  digest for that session is `duplicate-entity` (4); the same keyed request
+  returns its first receipt. Invalid format, malformed or missing usage is
+  `invalid-argument` (2), an unknown session `hold-not-current` (4), and a
+  different actor `authority-denied` (5). Usage recording failures are printed
+  by the loop and it continues; all other calls retain loud failure behavior.
+  `--tool` selects the parser and `--tool-output` is raw agent stdout;
+  this command has no typed request `--input` or `--example`.
 - `review record`: `round` with `id`, `task_id`, `handoff_id`, `stream`,
   `profiles`, `verdict` (`APPROVE` or `CHANGES`) and `findings[]` with
   `id`, `profile`, `severity`, `summary`, `location`, `evidence`, `fix`. Pass
@@ -226,6 +243,7 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
     "task.answer": ["task_id", "question_id", "decision_id", "answer"],
     "check.execute": ["task_id", "checks[].id", "checks[].name", "checks[].outcome", "checks[].exit_code", "checks[].counts"],
     "task.handoff": ["task_id", "status", "handoff_id", "pr", "head", "base", "required_checks", "result_ids"],
+    "usage.record": ["usage.id", "usage.task_id", "usage.hold_id", "usage.actor", "usage.model", "usage.role", "usage.stream", "usage.format", "usage.counts.uncached_input", "usage.counts.cache_read", "usage.counts.cache_write", "usage.counts.output", "usage.counts.reasoning", "usage.counts.total", "usage.models", "usage.reported", "usage.input_digest", "usage.parser_revision", "usage.tool_version", "usage.version_source", "usage.recorded_at"],
     "review.record": ["round.id", "round.task_id", "round.handoff_id", "round.stream", "round.profiles", "round.verdict", "round.findings[].id", "round.findings[].profile", "round.findings[].severity", "round.findings[].summary", "round.findings[].location", "round.findings[].evidence", "round.findings[].fix"],
     "task.done": ["status?", "completion?.task_id", "outcomes?[].task_id", "outcomes?[].status", "outcomes?[].refusal?.code", "outcomes?[].completion?.task_id"]
   }

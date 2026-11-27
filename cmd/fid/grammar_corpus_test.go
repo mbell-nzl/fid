@@ -124,7 +124,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 46 || len(groups) != 14 {
+	if len(leaves) != 47 || len(groups) != 15 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -189,6 +189,8 @@ func grammarClassRows(t *testing.T) []grammarRow {
 			}
 		} else {
 			switch strings.Join(parts, " ") {
+			case "usage record":
+				required = []string{"hold", "actor", "tool", "tool-output", "idempotency-key"}
 			case "done":
 				required = []string{"actor"}
 			case "finding answer":

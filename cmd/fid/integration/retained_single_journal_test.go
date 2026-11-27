@@ -4,6 +4,7 @@ package integration
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -32,6 +33,11 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 	call("link", "remove", issue, "blocks", peerID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:developer", "--idempotency-key", "single-link-remove")
 	task := p24LifecycleCommands(t, binary, workspace)
 	done := completeRetainedLifecycle(t, binary, workspace, task)
+	output := filepath.Join(t.TempDir(), "agent.stdout")
+	if err := os.WriteFile(output, readP21File(t, "../../../internal/usagerecord/testdata/codex.jsonl"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	call("usage", "record", "--hold", done.hold, "--actor", "human:mark", "--tool", "codex", "--tool-output", output, "--tool-version", "codex-cli 0.172.0", "--idempotency-key", "single-usage")
 	connArtifact := p22FaultDB(t, workspace)
 	var artifactID string
 	p22FaultOK(t, connArtifact.QueryRow("SELECT id FROM referenced_artifacts ORDER BY id LIMIT 1").Scan(&artifactID))
@@ -53,6 +59,9 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 		field := p24FlagFields[operation]
 		if field == "" {
 			field = p24LifecycleFields[operation]
+		}
+		if field == "" {
+			field = p24UsageFields[operation]
 		}
 		if operation == "artifact.verify" {
 			field = "artifact_id"
@@ -106,8 +115,8 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 21 {
-		t.Fatalf("retained keyed leaves=%v, want all 21 remaining keyed leaves", want)
+	if len(want) != 22 {
+		t.Fatalf("retained keyed leaves=%v, want all 22 remaining keyed leaves", want)
 	}
 	return want
 }
