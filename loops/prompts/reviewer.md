@@ -18,6 +18,11 @@ assess whether the change resolves it, with evidence. Do not edit or commit
 files, post a comment, push, merge, approve as a person or record the review.
 fid records your result and posts its canonical PR comment.
 
+fid posts these fields to the PR as GitHub Markdown for a person to read: in
+every text field, put commands, file paths, test names, flags, identifiers and
+literal output in `backticks`. Write verification as a short Markdown list,
+one command per item with its result. Use concise evidence.
+
 Write only the review input JSON to LOOP_REVIEW, with this schema:
 {"reviewer":{"actor":"<LOOP_ACTOR>","model":"<LOOP_MODEL>",
 "session_id":"<LOOP_SESSION>"},"stream":"<requested stream>",

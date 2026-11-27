@@ -49,6 +49,8 @@ is exit 0. A nonzero exit never means that there is no work.
 | `handoff` | `task.handoff` | 0, 2, 3, 4, 5, 6, 7 |
 | `usage record` | `usage.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `review record <task>` | `review.record` | 0, 2, 3, 4, 5, 6, 7 |
+| `finding answer <finding>` | `finding.answer` | 0, 2, 3, 4, 5, 6, 7 |
+| `finding defer <finding>` | `finding.defer` | 0, 2, 3, 4, 5, 6, 7 |
 | `done [task]` | `task.done` | 0, 2, 3, 4, 5, 6, 7 |
 | `show <task>` | `issue.show` | 0, 2, 3, 4, 6, 7 |
 | `status` | `project.status` | 0, 2, 3, 4, 6, 7 |
@@ -160,7 +162,10 @@ is restored. Unscoped selection is unchanged.
   Reconcile this durable state at startup and when idle so a failed ready
   action can be retried on restart. Other `needs_you` kinds are informational
   to the loop and may grow without a version bump. These existing status
-  and show fields are additive in `fid-cli.v1`.
+  and show fields are additive in `fid-cli.v1`. Its optional `warnings[]`
+  includes `kind`, `summary` and `next_action`. Print `review-post-pending`
+  warnings after recording finding responses and during reconciliation;
+  pending GitHub delivery does not stop the loop. Other warning kinds may grow.
 - `review list`: `task_id` and `rounds[]` with `id`, `handoff_id`, `stream`,
   `profiles`, `verdict`, `current`, and `findings[]` with `id`, `profile`,
   `severity`, `summary`, `location`, `evidence`, `fix`, `open`. A finding may
@@ -168,6 +173,17 @@ is restored. Unscoped selection is unchanged.
   to fixers and reviewers, including earlier finding IDs for dispositions.
   This existing read command makes a restarted loop independent of local
   agent reports. These and the show fields are additive in `fid-cli.v1`.
+- `finding answer <finding> --actor <builder> --text <text>` and
+  `finding defer <finding> --actor <builder> --title <title>`: `response`
+  contains `id`, `finding_id`, `task_id`, `handoff_id`, `actor`, `text`, `at`
+  and, for a deferral, `deferred_task` with `id`, `title`, `epic_id`, `lane`.
+  Answers leave findings open; a minor/nit deferral closes the finding and
+  files discovered work awaiting a person's acceptance. After a fixer session,
+  record its answers before `check`. These commands have no retry key: skip
+  a finding when `review list` already has this builder's actor in `responses`,
+  including after a partial recording followed by interruption. A refused
+  response stops the loop; a successful record with pending delivery does not.
+  These additive commands retain `fid-cli.v1`.
 - `backup`: `backup.outcome` (`pushed` or `unchanged` on success). A failed
   backup is a failure envelope and must be reported.
 - `start`: `task_id`, `hold_id`, `status` (`in_progress`).
@@ -232,7 +248,7 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
   "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
   "fields": {
     "issue.show": ["issue.id", "issue.title", "issue.spec_md_path", "issue.acceptance_criteria[].id", "issue.acceptance_criteria[].ordinal", "issue.acceptance_criteria[].text", "handoff.pr"],
-    "project.status": ["needs_you[].kind", "needs_you[].subject.id"],
+    "project.status": ["needs_you[].kind", "needs_you[].subject.id", "warnings?[].kind", "warnings?[].summary", "warnings?[].next_action"],
     "review.list": ["task_id", "rounds[].id", "rounds[].handoff_id", "rounds[].stream", "rounds[].profiles", "rounds[].verdict", "rounds[].current", "rounds[].findings[].id", "rounds[].findings[].profile", "rounds[].findings[].severity", "rounds[].findings[].summary", "rounds[].findings[].location", "rounds[].findings[].evidence", "rounds[].findings[].fix", "rounds[].findings[].open", "rounds[].findings[].responses?[].actor", "rounds[].findings[].responses?[].text"],
     "project.backup": ["backup.outcome"],
     "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
@@ -245,6 +261,8 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
     "task.handoff": ["task_id", "status", "handoff_id", "pr", "head", "base", "required_checks", "result_ids"],
     "usage.record": ["usage.id", "usage.task_id", "usage.hold_id", "usage.actor", "usage.model", "usage.role", "usage.stream", "usage.format", "usage.counts.uncached_input", "usage.counts.cache_read", "usage.counts.cache_write", "usage.counts.output", "usage.counts.reasoning", "usage.counts.total", "usage.models", "usage.reported", "usage.input_digest", "usage.parser_revision", "usage.tool_version", "usage.version_source", "usage.recorded_at"],
     "review.record": ["round.id", "round.task_id", "round.handoff_id", "round.stream", "round.profiles", "round.verdict", "round.findings[].id", "round.findings[].profile", "round.findings[].severity", "round.findings[].summary", "round.findings[].location", "round.findings[].evidence", "round.findings[].fix"],
+    "finding.answer": ["response.id", "response.finding_id", "response.task_id", "response.handoff_id", "response.actor", "response.text", "response.at"],
+    "finding.defer": ["response.id", "response.finding_id", "response.task_id", "response.handoff_id", "response.actor", "response.text", "response.at", "response.deferred_task.id", "response.deferred_task.title", "response.deferred_task.epic_id", "response.deferred_task.lane"],
     "task.done": ["status?", "completion?.task_id", "outcomes?[].task_id", "outcomes?[].status", "outcomes?[].refusal?.code", "outcomes?[].completion?.task_id"]
   }
 }

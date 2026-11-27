@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "finding.answer",
+  "result": {
+    "response.actor": "agent:sol-builder",
+    "response.at": "\u003ctime\u003e",
+    "response.finding_id": "\u003cRND\u003e",
+    "response.handoff_id": "\u003cHOF\u003e",
+    "response.id": "\u003cFRS\u003e",
+    "response.task_id": "\u003cFID\u003e",
+    "response.text": "Follow up the retry"
+  }
+}

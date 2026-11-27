@@ -71,7 +71,8 @@ func loopField(t *testing.T, value any, path []string) any {
 	return loopField(t, item, path[1:])
 }
 
-var loopVolatile = regexp.MustCompile(`^(?:(?:FID|HLD|RCL|USG|HOF|CHK|RND|FND|QST|PDN|CMP|AC)-[0-9a-f]{6}(?:-[0-9]+)?|[0-9a-f]{40}|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)$`)
+var loopVolatile = regexp.MustCompile(`^(?:(?:FID|HLD|RCL|USG|HOF|CHK|RND|FND|FRS|QST|PDN|CMP|AC)-[0-9a-f]{6}(?:-[0-9]+)?|[0-9a-f]{40}|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)$`)
+var loopEmbeddedFinding = regexp.MustCompile(`RND-[0-9a-f]{6}(?:-[0-9]+)?`)
 
 func loopStable(value any) any {
 	switch v := value.(type) {
@@ -85,6 +86,7 @@ func loopStable(value any) any {
 			}
 			return "<commit>"
 		}
+		return loopEmbeddedFinding.ReplaceAllString(v, "<RND>")
 	case []any:
 		stable := make([]any, len(v))
 		for i := range v {
@@ -159,7 +161,7 @@ func (c *loopContract) sets() {
 func TestLoopContractDeclaration(t *testing.T) {
 	t.Parallel()
 	d := readLoopDeclaration(t)
-	if d.Version != "fid-cli.v1" || len(d.Fields) != 15 {
+	if d.Version != "fid-cli.v1" || len(d.Fields) != 17 {
 		t.Fatalf("incomplete declaration: %+v", d)
 	}
 	for _, operation := range []string{"next.get", "next.claim"} {

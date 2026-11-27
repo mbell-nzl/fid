@@ -11,6 +11,15 @@ Commit your changes using its commit convention; leave the worktree clean.
 Never weaken a check or test to pass. Never merge, push, create a PR, hand
 off, record a review or complete the task: the loop owns those steps.
 
+For rework (also resume with open findings), write a JSON list to LOOP_ANSWERS,
+one entry per open finding you addressed: {"finding_id":"...","answer":"..."}
+explaining what changed with the commit, or why not; for a minor or nit left
+for later use {"finding_id":"...","defer":"<task title>"}. Write [] if none.
+fid posts these responses to the PR as GitHub Markdown for a person to read:
+in every text field, put commands, file paths, test names, flags, identifiers
+and literal output in `backticks`. The loop records the file through fid and
+posts the responses; do not call finding answer or defer yourself.
+
 If an unsettled product, architecture, data-model or public-interface decision
 blocks you, park instead of guessing. Run the binary in LOOP_FID (default
 fid) with --json park --hold "$LOOP_HOLD" --actor "$LOOP_ACTOR" --waiting

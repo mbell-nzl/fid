@@ -36,7 +36,9 @@ A run proceeds as follows:
    both selections. fid keeps a handed-off task in its build worktree for
    rework, so the second worktree is necessary.
 3. For `new`, start the task and create `reset-<brief stem, else fid ID>-<title
-   slug>` from `origin/HEAD`. For `resume`, continue the kept work. For
+   slug>` from `origin/HEAD`, dropping a leading stem from the title before
+   making the slug (`2.6 Usage capture` becomes `reset-2.6-usage-capture`).
+   For `resume`, continue the kept work. For
    `rework` caused by `default-conflict`, merge the declared default ref
    first; the fixer resolves any merge conflicts. Pass the task's ID, title,
    acceptance criteria and spec path from `show`, the brief's contents,
@@ -56,9 +58,20 @@ A run proceeds as follows:
    a version embedded in Claude stream output. Usage refusals and failures
    are printed without stopping the loop.
 6. If the agent parked waiting for a person, leave the task parked and move
-   on. Otherwise require a clean tree, run `fid check`, push to origin, open
+   on. Otherwise require a clean tree. After rework, including a resumed fix
+   with open findings, read the fixer's `LOOP_ANSWERS` JSON list and record
+   each answer or minor/nit deferral through fid as the builder. Validate the
+   whole file first; malformed or missing files and refused responses stop
+   loudly. Commands have no retry key, so skip findings whose `review list`
+   responses already include this builder, even after a partial recording
+   and restart. fid posts the comments; print pending delivery warnings and
+   continue. Deferrals create tasks awaiting Mark's `fid accept`.
+   Run `fid check`, push to origin, open
    a draft PR with the report as its body (or reuse the branch's open PR),
-   and hand off. Reused PRs get the latest report as their body. Builds must
+   and hand off. A new PR's title uses the oldest `feat` commit subject in
+   `origin/<default>..HEAD`, or the oldest commit subject when there is no
+   `feat`, plus ` (RESET <brief stem, else fid ID>)`. Reused PRs keep their
+   title and get the latest report as their body. Builds must
    use a task branch. Keep that branch across the agent session and check it
    again immediately before pushing; main, the default branch, a detached
    head or an agent switching branches stops the loop.
@@ -72,7 +85,10 @@ A run proceeds as follows:
    does not rerun full suites. Require a clean tree and the same head
    afterwards.
    Record its JSON with `fid review record`; fid posts the canonical PR
-   comment. At startup and when idle, read `status` for tasks awaiting a
+   comment. The reviewer's text fields are GitHub Markdown, with backticks
+   around commands, paths, test names, flags, identifiers and literal output;
+   verification is a short list of commands and results.
+   At startup and when idle, read `status` for tasks awaiting a
    person's approval or merge, then read their latest hand-off PR from `show`.
    Mark those draft PRs ready so CI runs. This includes tasks requiring no
    review and retries a failed ready action on restart, after required
@@ -129,7 +145,7 @@ export LOOP_REVIEWER_COMMAND="$LOOP_BUILDER_COMMAND"
 ```
 
 Each item retains `prompt.md`, `context.json`, `agent.stdout`, `agent.stderr`, and the agent's
-`report.md` or `review.json` under
+`report.md`, `answers.json` or `review.json` under
 `<build git directory>/fid-loop/runs/<session UUID>/`, outside tracked files.
 The loop prints this directory before launching the agent. Agent environment
 variables name the exact session and output files:
@@ -140,10 +156,13 @@ variables name the exact session and output files:
 | `LOOP_HOLD`, `LOOP_SESSION` | Opaque fid hold and fresh session UUID |
 | `LOOP_CONTEXT` | JSON containing `work`, `task`, `reviews` |
 | `LOOP_REPORT` | Builder/fixer's completion report path |
+| `LOOP_ANSWERS` | Fixer's JSON list: `{"finding_id":"...","answer":"..."}` or `{"finding_id":"...","defer":"<task title>"}` per addressed finding; `[]` when none |
 | `LOOP_REVIEW` | Reviewer's `fid review record --input` JSON path |
 
 Reports and prompts are retained for diagnosis, not used as a second task
 database. A restart reads fid's current state and recorded reviews again.
+Minor findings left open after APPROVE receive no fixer session yet and
+therefore no automatic answer.
 
 For tests or probes, isolate `XDG_CONFIG_HOME` and `XDG_CACHE_HOME`, provide
 stub agents and gh on PATH, and use only temporary git and backup remotes.
