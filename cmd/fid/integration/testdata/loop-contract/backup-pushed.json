@@ -1,0 +1,9 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "project.backup",
+  "result": {
+    "backup.outcome": "pushed"
+  }
+}

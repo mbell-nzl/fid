@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "handoff.pr": null,
+    "issue.acceptance_criteria[].id": [],
+    "issue.acceptance_criteria[].ordinal": [],
+    "issue.acceptance_criteria[].text": [],
+    "issue.id": "\u003cFID\u003e",
+    "issue.spec_md_path": null,
+    "issue.title": "Task with no brief or criteria"
+  }
+}

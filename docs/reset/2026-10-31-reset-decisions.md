@@ -1961,6 +1961,44 @@ checkout disappears, with `-trimpath`, and after the checkout changes branches.
 - This task has no RESET row; the approved brief leaves `RESET.md` unchanged
   and uses `Refs: RESET 3.2` for the work preparing that release.
 
+## Decided 2026-11-25
+
+Mark approved these decisions for RESET 2.5 (FID-698c0f):
+
+1. **Split the merge judge into 2.5b (FID-69a2cc).** The first loop builds,
+   checks, hands off and runs the reviews `next` serves; it never merges.
+   The separate Assured task records the hold-only judge's MERGE or HOLD as
+   a round with profile `merge`, kept from Mark until his own call is
+   recorded. Its proof records both calls for a reset task, Mark's first.
+2. **Briefs live in the repo.** Use `docs/briefs/<RESET row ID, else fid
+   ID>.md`, named by the task's `spec_md_path`, and land the brief on main
+   before the loop builds it. The orchestrator role writes briefs with Mark
+   during planning, or itself for agent-filed tasks with settled designs.
+   The loop passes ID, title, acceptance criteria and spec path from `show`.
+   An unsettled design is a waiting park and a person's answer, not a guess.
+3. **Python for fid's own loop.** `loops/loop.py` uses Python 3's standard
+   library, stays under 150 lines (test enforced), and keeps prompts beside
+   it. Commands, models, actors and gh repository are environment settings
+   with documented defaults. Task 3.3 promotes this copy to the kit. The
+   loop uses a detached review worktree and distinct builder/reviewer actors.
+4. **Proof begins before 2.5's hand-off.** While 2.5 is still held, the
+   orchestrator runs this branch's loop on splitter FID-57f524. The original
+   proof required review, Mark's approval and merge. The builder's tests use
+   only temporary repos and stub agents/gh. Bugs found return to this branch.
+   V9's Makefile target makes this PR Assured despite 2.5's planning lane of
+   Standard.
+
+**Decided 2026-11-26:** the splitter proof reached a recorded CHANGES round,
+rework and a waiting park with backups after each item. Mark answered, then
+cancelled the splitter because its plan made CI slower. 2.5 merges after
+the two loop fixes: reviewers use the passed checks and run focused tests
+and overlay probes without rerunning full suites; the review worktree
+defaults to `<build worktree>-review`, outside git metadata, with the
+environment override retained. Task 2.6 becomes the loop's first full run:
+resume with an answer, a second hand-off, APPROVE making the PR ready,
+Mark's merge, then done. That finish earns 2.5's RESET done mark, added by
+the orchestrator. Row 2.5 stays unmarked in this branch.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

@@ -1,6 +1,6 @@
-.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test check-approval-binding check-done-refusals
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main check-leak-test check-approval-binding check-done-refusals check-loop-selftest
 
-FMT_DIRS = cmd internal .github/scripts
+FMT_DIRS = cmd internal loops .github/scripts
 
 # gofmt -l exits 0 even when it lists files, so any listed file fails the check.
 fmt-check:
@@ -50,6 +50,11 @@ coverage:
 
 build:
 	go build -o /tmp/fid ./cmd/fid
+
+# V9 (RESET.md): stub-process guards and the loop's line budget. make test
+# runs these too, through the test-only Go package.
+check-loop-selftest:
+	go test -count=1 ./loops
 
 # V6 (RESET.md), check:approval-binding: a real-terminal approval survives a
 # clean rebase, becomes stale on an edit, and is renewed by a new decision.

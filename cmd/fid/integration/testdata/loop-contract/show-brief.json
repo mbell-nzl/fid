@@ -1,0 +1,21 @@
+{
+  "contract_version": "fid-cli.v1",
+  "exit": 0,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "handoff.pr": null,
+    "issue.acceptance_criteria[].id": [
+      "\u003cAC\u003e"
+    ],
+    "issue.acceptance_criteria[].ordinal": [
+      1
+    ],
+    "issue.acceptance_criteria[].text": [
+      "The first loop runs"
+    ],
+    "issue.id": "\u003cFID\u003e",
+    "issue.spec_md_path": "docs/briefs/2.5.md",
+    "issue.title": "Build from the approved brief"
+  }
+}
