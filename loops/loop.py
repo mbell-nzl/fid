@@ -6,7 +6,7 @@ import subprocess as sp
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE.parent / "docs/specs/LOOP_CONTRACT.md").read_text().split("```json loop-contract\n")[1].split("\n```")[0])
 ACTIVE, REPO = None, os.getenv("LOOP_GH_REPO", "mbell-nzl/fid")
-OPERATIONS = dict(next="next.get", start="task.start", heartbeat="hold.heartbeat", park="hold.park", show="issue.show", status="project.status", backup="project.backup", done="task.done", check="check.execute", handoff="task.handoff")
+OPERATIONS = dict(next="next.get", start="task.start", heartbeat="hold.heartbeat", park="hold.park", show="issue.show", status="project.status", backup="project.backup", done="task.done", check="check.execute", handoff="task.handoff", usage="usage.record")
 def run(cwd, *args, allowed=(0,)):
     p = sp.run(args, cwd=cwd, capture_output=True, text=True)
     if p.returncode not in allowed: raise RuntimeError(f"{args}: exit {p.returncode}; stdout={p.stdout!r}; stderr={p.stderr!r}")
@@ -67,21 +67,44 @@ def agent(cwd, role, actor, model, work, output):
             except Exception as e:
                 errors.append(e)
     thread = threading.Thread(target=renew, daemon=True)
-    command = os.getenv("LOOP_" + role.upper() + "_COMMAND", "codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -")
+    command = os.getenv("LOOP_" + role.upper() + "_COMMAND", "codex exec --json -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -")
     command = [s.format(model=model.split("/", 1)[1], git_dir=run(cwd, "git", "rev-parse", "--absolute-git-dir"), common_dir=run(cwd, "git", "rev-parse", "--path-format=absolute", "--git-common-dir"), output_dir=str(output)) for s in shlex.split(command)]
-    with (output / "prompt.md").open() as inp, (output / "agent.log").open("w") as log:
-        child = sp.Popen(command, cwd=cwd, env=env, stdin=inp, stdout=log, stderr=sp.STDOUT, start_new_session=True)
-        thread.start()
-        try:
-            while child.poll() is None and not errors:
-                stop.wait(0.05)
-            if errors or child.returncode != 0: raise RuntimeError(f"agent failed: {errors or child.returncode}; see {output / 'agent.log'}")
-        finally:
-            stop.set()
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(child.pid, signal.SIGKILL)
-            child.wait()
-            thread.join()
+    usage_format = os.getenv("LOOP_" + role.upper() + "_USAGE", "codex")
+    if usage_format not in ("codex", "claude", "none"):
+        raise ValueError(f"invalid {role} usage format: {usage_format}")
+    version = ""
+    try:
+        probe = sp.run([command[0], "--version"], cwd=cwd, env=env, capture_output=True, text=True, timeout=5)
+        if probe.returncode == 0:
+            version = probe.stdout.strip()
+    except (OSError, sp.TimeoutExpired):
+        pass
+    try:
+        with (output / "prompt.md").open() as inp, (output / "agent.stdout").open("w") as stdout, (output / "agent.stderr").open("w") as stderr:
+            child = sp.Popen(command, cwd=cwd, env=env, stdin=inp, stdout=stdout, stderr=stderr, start_new_session=True)
+            thread.start()
+            try:
+                while child.poll() is None and not errors:
+                    stop.wait(0.05)
+                if errors or child.returncode != 0:
+                    raise RuntimeError(f"agent failed: {errors or child.returncode}; see {output / 'agent.stderr'}")
+            finally:
+                stop.set()
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(child.pid, signal.SIGKILL)
+                child.wait()
+                thread.join()
+    finally:
+        if usage_format != "none":
+            try:
+                version_flag = ["--tool-version", version] if version else []
+                recorded = fid(cwd, "usage", "record", "--hold", hold, "--actor", actor,
+                               "--format", usage_format, "--input", str(output / "agent.stdout"),
+                               *version_flag, "--idempotency-key", session + "-usage")
+                print("usage:", json.dumps(recorded), flush=True)
+            except Exception as error:
+                print(f"usage record failed: {error}", file=sys.stderr, flush=True)
+
 def main():
     global ACTIVE
     build = run(Path.cwd(), "git", "rev-parse", "--show-toplevel")

@@ -3,9 +3,8 @@
 `python3 /path/to/fid/loops/loop.py` runs in the build worktree. Use Python
 3.9 or later, git, fid, gh and the configured agent executable. Python uses
 only the standard library. This is fid's own copy; RESET 3.3 promotes it to
-the kit. `loop.py` must stay under 150 physical lines, including comments
-and blank lines. The test-only Go package runs `selftest.sh` in `make test`
-and CI; `make check-loop-selftest` runs the same guards and budget alone.
+the kit. The loop has no physical line limit; its prompts stay short. The test-only Go package runs `selftest.sh` in `make test`
+and CI; `make check-loop-selftest` runs the same guards alone.
 
 Before starting, initialise fid, configure a backup target and git identity, authenticate gh,
 and refresh `origin/<default>` yourself (`git fetch origin`). The loop reads
@@ -23,6 +22,8 @@ kind or waiting kind, missing declared field, invalid/empty JSON or unexpected
 nonzero exit stops the loop with the reply quoted. Empty output never means
 no work. Every batch `done` outcome is printed, including refusals and
 unavailable GitHub observations; a batch's exit 0 does not imply completion.
+`usage record` is the one non-gating call: its failures are printed and the
+loop continues, because usage is insight rather than an evidence gate.
 
 A run proceeds as follows:
 
@@ -46,7 +47,14 @@ A run proceeds as follows:
    writable roots for the worktree git directory, the common git directory
    (shared objects/refs), and this session's output directory. An agent must
    commit its changes and write a report; the loop never commits for it.
-5. If the agent parked waiting for a person, leave the task parked and move
+5. After every agent session, successful or failed, record its clean stdout
+   through `fid usage record` with the session ID and actor, before recording
+   a review round or parking a failed build. Before starting the agent, ask
+   its executable for `--version` and pass a successful response as
+   `--tool-version`; version-probe failure leaves that flag out. fid prefers
+   a version embedded in Claude stream output. Usage refusals and failures
+   are printed without stopping the loop.
+6. If the agent parked waiting for a person, leave the task parked and move
    on. Otherwise require a clean tree, run `fid check`, push to origin, open
    a draft PR with the report as its body (or reuse the branch's open PR),
    and hand off. Reused PRs get the latest report as their body. Builds must
@@ -55,7 +63,7 @@ A run proceeds as follows:
    head or an agent switching branches stops the loop.
    A successful agent that leaves uncommitted changes stops
    the loop and parks an interruption.
-6. For `review`, check out exactly the handed-off head detached in the
+7. For `review`, check out exactly the handed-off head detached in the
    review worktree, and run a fresh reviewer for the declared stream and
    every required profile. Its required checks have already passed on the
    hand-off head's tree; fid refuses hand-off otherwise. The reviewer reads
@@ -70,7 +78,7 @@ A run proceeds as follows:
    reviews have been recorded. Already-ready PRs stay ready. Review streams are selected
    by fid. Separate review context excludes primary rounds. Mark reads `fid status`, approves when needed and
    merges; this loop never merges.
-7. Back up after each item, including a waiting park or interruption. At
+8. Back up after each item, including a waiting park or interruption. At
    `none`, print the `waiting` object as the reason, reconcile with batch
    `done` again and exit 0. `waiting: null` means there is no declared wait
    for this worktree. Dependencies, caps and acceptance remain fid's rules.
@@ -92,17 +100,22 @@ and retained outputs before restarting. It does not blindly retry commands.
 | `LOOP_REVIEWER_ACTOR` | `agent:sol-reviewer`; must differ from the builder |
 | `LOOP_BUILDER_MODEL` | `openai/gpt-6.1-sol`; attribution as family/model |
 | `LOOP_REVIEWER_MODEL` | `openai/gpt-6.1-sol`; same-model fallback, fresh session |
-| `LOOP_BUILDER_COMMAND` | `codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -` |
+| `LOOP_BUILDER_COMMAND` | `codex exec --json -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} -` |
 | `LOOP_REVIEWER_COMMAND` | Same command; receives the reviewer prompt |
+| `LOOP_BUILDER_USAGE` | `codex`; `claude` or `none` also accepted |
+| `LOOP_REVIEWER_USAGE` | `codex`; independent of the builder format |
 | `LOOP_REVIEW_WORKTREE` | Absolute path `<build worktree>-review`; retained between runs |
 
 Agent command settings are split with `shlex`, then each argument is
 formatted. They are executed directly, without a shell. `{model}` is the
 model portion after the family; `{git_dir}`, `{common_dir}` and `{output_dir}`
 are absolute paths. To use another provider, set its command and full model
-attribution together. A wrapper may read the exported context variables;
+attribution and usage format together. For Claude use
+`claude -p --output-format json` or
+`claude -p --output-format stream-json --verbose`, with `LOOP_*_USAGE=claude`. A wrapper may read the exported context variables;
 stdin contains the prompt, context JSON and approved brief. Any usage-limit
-wrapper must return nonzero. Agent stdout/stderr goes to `agent.log`.
+wrapper must return nonzero. Agent stdout goes to `agent.stdout` and stderr to `agent.stderr`, so
+diagnostics cannot contaminate usage JSON.
 
 Codex's sandbox writes only to its workspace and the `--add-dir` roots. If
 the repository's `.codex/config.toml` points Go's caches outside the worktree,
@@ -110,11 +123,11 @@ add those configured directories to both command settings. For example, if
 all those caches are under `/path/to/shared-caches`:
 
 ```sh
-export LOOP_BUILDER_COMMAND='codex exec -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} --add-dir /path/to/shared-caches -'
+export LOOP_BUILDER_COMMAND='codex exec --json -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} --add-dir /path/to/shared-caches -'
 export LOOP_REVIEWER_COMMAND="$LOOP_BUILDER_COMMAND"
 ```
 
-Each item retains `prompt.md`, `context.json`, `agent.log`, and the agent's
+Each item retains `prompt.md`, `context.json`, `agent.stdout`, `agent.stderr`, and the agent's
 `report.md` or `review.json` under
 `<build git directory>/fid-loop/runs/<session UUID>/`, outside tracked files.
 The loop prints this directory before launching the agent. Agent environment

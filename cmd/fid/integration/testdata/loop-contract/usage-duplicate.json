@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error.code": "duplicate-entity",
+  "error.retryable": false,
+  "exit": 4,
+  "ok": false,
+  "operation": "usage.record"
+}

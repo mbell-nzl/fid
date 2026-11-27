@@ -143,7 +143,7 @@ test_adequacy = ["**/*_test.go", "**/testdata/**"]
 | `lanes.<lane>.paths` | Optional glob list for `routine` and `assured`; refused even when empty under `standard` |
 | `lanes.<lane>.checks` | Defined check names; missing means not set up, explicit `[]` means no checks required |
 | `lanes.<lane>.rework_cap` | Non-negative integer; default 3 |
-| `lanes.<lane>.token_budget` | Non-negative integer token count; zero/default means off |
+| `lanes.<lane>.token_budget` | Non-negative integer token count; zero/default means off. Parsed and validated, not enforced until FID-fb8271 |
 | `lanes.<lane>.auto_merge` | Boolean, default false; the key is refused even when false under `assured` |
 | `review.test_adequacy` | Glob list requiring a test-adequacy review in every lane; missing means not set up, explicit `[]` means none needed |
 
@@ -214,7 +214,8 @@ about missing checks or test paths, but explicit empty lists do not warn
 (1.5a1). A missing lane's checks will refuse check (1.5a5), hand-off
 (1.5a7) and done (1.6), naming the fix; missing test paths do not stop check, but refuse
 hand-off and done too. Those refusals are not part of 1.5a1. 2.1 enforces
-the rework cap and 2.6 the token budget.
+the rework cap. 2.6 captures usage only; token-budget enforcement is deferred
+to FID-fb8271.
 
 Lean checks (1.5a5) inherit only set `CI`, `GOCACHE`, `GOMODCACHE`, `GOPATH`,
 `HOME`, `LANG`, `LC_ALL`, `PATH`, `TMPDIR` and `XDG_CACHE_HOME`. There are no

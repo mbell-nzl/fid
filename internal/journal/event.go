@@ -124,9 +124,9 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		decoded = Event{wire.EventID, wire.EventSchema, wire.EventType, wire.OccurredAt, wire.Actor, wire.Command, wire.Effects, EventActor{}, Aggregate{}, nil, "", nil, nil, nil}
 	case EventSchemaV2:
 		decoder := json.NewDecoder(bytes.NewReader(data))
-		// CI identities live in numeric Effect columns as well as the typed
-		// payload. Preserve their full int64 values through journal replay.
-		if header.EventType == "ci.result-recorded" {
+		// CI identities and token counts live in numeric Effect columns as well
+		// as typed payloads. Preserve their full int64 values through replay.
+		if header.EventType == "ci.result-recorded" || header.EventType == "usage.recorded" {
 			decoder.UseNumber()
 		}
 		decoder.DisallowUnknownFields()

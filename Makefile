@@ -51,7 +51,7 @@ coverage:
 build:
 	go build -o /tmp/fid ./cmd/fid
 
-# V9 (RESET.md): stub-process guards and the loop's line budget. make test
+# V9 (RESET.md): stub-process contract and session guards. make test
 # runs these too, through the test-only Go package.
 check-loop-selftest:
 	go test -count=1 ./loops

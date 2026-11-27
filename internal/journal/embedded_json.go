@@ -15,6 +15,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/reviewrecord"
+	"github.com/mbell-nzl/fid/internal/usagerecord"
 	"github.com/mbell-nzl/fid/internal/waiverrecord"
 )
 
@@ -52,6 +53,7 @@ func validateEmbeddedJSON(event Event) error {
 // still check their complete records. Structs fold keys like encoding/json;
 // map/interface destinations keep exact keys at every nested map boundary.
 var embeddedJSONTypes = map[string]reflect.Type{
+	"usage_sessions.record_json":                     reflect.TypeFor[usagerecord.Record](),
 	"finding_responses.record_json":                  reflect.TypeFor[reviewrecord.Response](),
 	"default_conflicts.record_json":                  reflect.TypeFor[defaultconflict.Record](),
 	"review_claims.binding_json":                     reflect.TypeFor[fingerprint.Result](),
@@ -81,6 +83,10 @@ func embeddedJSONType(event Event, table, column string) reflect.Type {
 		return embeddedJSONTypes[table+"."+column]
 	}
 	switch event.EventType {
+	case "usage.recorded":
+		return reflect.TypeFor[struct {
+			Usage usagerecord.Record `json:"usage"`
+		}]()
 	case "task.finished":
 		return reflect.TypeFor[completionrecord.Result]()
 	case "task.waived":

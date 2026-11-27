@@ -144,6 +144,7 @@ func (text textWriter) rows(result Result) []string {
 			lines = append(lines, text.approval(result)...)
 		}
 	}
+	lines = append(lines, text.usage(result.Usage)...)
 	lines = append(lines, text.checks(result)...)
 	if handoff := result.Handoff; handoff != nil && !result.doneTask() {
 		checks := "no checks required"

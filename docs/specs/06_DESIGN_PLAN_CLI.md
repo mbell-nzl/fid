@@ -2530,3 +2530,40 @@ arguments. Unknown or duplicate input fields and missing, null or wrongly
 typed `artifact_id` give `invalid-argument` with the exact field path.
 
 *Last updated: 2026-11-22 (RESET 2.1b: accepted work and rework allowances)*
+
+### Session usage (RESET 2.6)
+
+```text
+fid usage record --hold <id> --actor <actor> --format codex|claude --input <file> [--tool-version <text>] --idempotency-key <key>
+```
+
+Operation `usage.record` reads an agent stdout file and records one immutable
+session receipt. `--hold` accepts either ID returned by `next --claim`,
+build or review. The actor must match that historical session; it may have
+ended or lapsed. fid derives the task, model, build/fix/review role and review
+stream. The caller cannot assert them. A keyed retry returns the first
+receipt; a new key with the same digest for the same session refuses with
+`duplicate-entity`. Invalid formats, malformed JSON, missing usage or missing
+required counts refuse with `invalid-argument`, without an Event. An unknown
+session is `hold-not-current`; a different actor is `authority-denied`.
+The success JSON's `usage` object is declared in `LOOP_CONTRACT.md`.
+
+Codex format is `codex exec --json` JSONL. Every completed turn counts.
+Claude accepts `claude -p --output-format json`, or stream-json with
+`--verbose`, and prefers `modelUsage` over aggregate `usage`. The headline
+total includes uncached input, cache reads, cache writes and output.
+Reasoning is retained as part of output and never counted twice. The input's
+sha256, reported categories and models, normalised counts and parser revision
+are kept so another total can be derived later. Claude's stream version has
+precedence over `--tool-version`; otherwise that flag is recorded as the
+caller's report. Unknown versions remain empty, with a known parser revision.
+
+`fid show <task>` includes a Usage row when records exist: total tokens,
+session count, totals by build/fix/review stream and by model. JSON adds
+optional `usage: {total, sessions, by_role, by_model}`, absent with no usage.
+Role keys are `build`, `fix`, `review.primary`, `review.separate`; model keys
+come from Claude when reported, otherwise from the session's hold. A missing
+historical model has the empty key and text says "unknown model". This row
+also appears on finished tasks. `fid sql` can query `usage_sessions` for
+categories and per-model details; there is no report command or budget gate.
+The CLI contract stays `fid-cli.v1`, since the additions are additive.
