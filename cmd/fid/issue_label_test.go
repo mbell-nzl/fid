@@ -245,8 +245,8 @@ func assertIssueLabelMutationEnvelope(t *testing.T, result commandExecutionResul
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
 	assertExactKeys(t, envelope.Result, []string{"idempotency_key", "issue_id", "issue_revision", "label", "replayed"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
-		t.Fatalf("envelope = %#v, want fid-cli.v1 %s success", envelope, operation)
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != operation {
+		t.Fatalf("envelope = %#v, want fid-cli.v2 %s success", envelope, operation)
 	}
 	if envelope.Result["issue_id"] != issueID || envelope.Result["label"] != label || envelope.Result["issue_revision"] != float64(revision) {
 		t.Fatalf("result = %#v, want issue %q label %q revision %d", envelope.Result, issueID, label, revision)

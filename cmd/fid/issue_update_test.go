@@ -327,7 +327,7 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 			if err := json.Unmarshal([]byte(result.stderr), &failure); err != nil {
 				t.Fatalf("Unmarshal(stderr) error = %v; stderr = %q", err, result.stderr)
 			}
-			if failure.Version != "fid-cli.v1" || failure.OK || failure.Operation != "issue."+tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message != "unknown flag: --"+tt.flag || failure.Error.Subject != nil {
+			if failure.Version != "fid-cli.v2" || failure.OK || failure.Operation != "issue."+tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message != "unknown flag: --"+tt.flag || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical invalid-argument envelope", failure)
 			}
 			root := newRootCommandAt(workspace)

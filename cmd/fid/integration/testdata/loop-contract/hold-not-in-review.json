@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v2",
+  "error.code": "invalid-argument",
+  "error.retryable": false,
+  "exit": 2,
+  "ok": false,
+  "operation": "task.hold"
+}

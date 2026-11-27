@@ -197,7 +197,7 @@ func assertAdoptedJSONFailure(t *testing.T, stderr, operation, argument string, 
 		wantAllowed[i] = item
 	}
 	want := map[string]any{"argument": argument, "value": value, "allowed": wantAllowed}
-	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != operation || envelope.Event != nil || envelope.Error.Category != "invalid-input" || envelope.Error.Code != "invalid-argument" || !reflect.DeepEqual(envelope.Error.Details, want) {
+	if envelope.ContractVersion != "fid-cli.v2" || envelope.OK || envelope.Operation != operation || envelope.Event != nil || envelope.Error.Category != "invalid-input" || envelope.Error.Code != "invalid-argument" || !reflect.DeepEqual(envelope.Error.Details, want) {
 		t.Fatalf("failure = %s; want operation %s details %#v", stderr, operation, want)
 	}
 }
@@ -728,7 +728,7 @@ func TestAdoptedInputHelpAndExamples(t *testing.T) {
 				t.Fatalf("help for %s = %#v", key, help)
 			}
 			if key == "artifact verify" {
-				const fullHelpSHA256 = "376533fe7cd72619fbeb82543252772c4ddbea326d7cd2cbfb19d7ccd338b0e9"
+				const fullHelpSHA256 = "3610096eac0d72d7a106a0f0299ab3e51561b3c58ca72b4c2160b629a664b240"
 				if got := fmt.Sprintf("%x", sha256.Sum256([]byte(help.stdout))); got != fullHelpSHA256 {
 					t.Fatalf("full artifact verify help changed: SHA-256 %s, want %s; help=%s", got, fullHelpSHA256, help.stdout)
 				}

@@ -1,9 +1,10 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "exit": 0,
   "ok": true,
   "operation": "review.record",
   "result": {
+    "round.agrees?": null,
     "round.findings[].evidence": [
       "Retry case reproduced"
     ],
@@ -27,9 +28,16 @@
     ],
     "round.handoff_id": "\u003cHOF\u003e",
     "round.id": "\u003cRND\u003e",
+    "round.lane_raise?.lane": null,
+    "round.lane_raise?.reason": null,
+    "round.person_call?.actor": null,
+    "round.person_call?.reason": null,
+    "round.person_call?.verdict": null,
     "round.profiles": [
       "code"
     ],
+    "round.reason?": null,
+    "round.sealed?": null,
     "round.stream": "primary",
     "round.task_id": "\u003cFID\u003e",
     "round.verdict": "CHANGES"

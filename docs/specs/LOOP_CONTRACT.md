@@ -1,15 +1,15 @@
-# Loop contract: fid-cli.v1
+# Loop contract: fid-cli.v2
 
 fid owns this interface; the kit owns the loop. This is the first declaration
-of `fid-cli.v1`, already carried by every JSON reply. Use `--json` on every
+of `fid-cli.v2`, already carried by every JSON reply. Use `--json` on every
 call. Only the fields, values and process exits declared here are contract.
 Other output remains available to people and tools, but a loop must not
 rely on it. JSON examples and the fuller command interface live in
 [the CLI spec](06_DESIGN_PLAN_CLI.md).
 
-This initial declaration now includes RESET 2.1b's acceptance and rework
-allowances. No loop consumes the contract yet, so the version remains
-`fid-cli.v1` while this first declaration is completed.
+RESET 2.5b bumps the contract from `fid-cli.v1` to `fid-cli.v2`: the new
+`judge` work kind must never be dispatched by an older loop as build work.
+It also declares the sealed shadow round and the person-only `hold` call.
 
 A loop checks `contract_version` at startup and refuses an unsupported
 version. It stops loudly on an unknown `next.kind` or `waiting.kind`, malformed
@@ -40,7 +40,7 @@ is exit 0. A nonzero exit never means that there is no work.
 
 | Command | Operation | Exits |
 |---|---|---|
-| `next [--claim] [--epic <epic>]` | `next.get` / `next.claim` | 0, 2, 3, 4, 5 (claim only), 6, 7 |
+| `next [--claim] [--epic <epic>]` | `next.get` / `next.claim` | 0, 2, 3, 4, 5 (actor preview or claim), 6, 7 |
 | `start` | `task.start` | 0, 2, 3, 4, 5, 6, 7 |
 | `heartbeat` | `hold.heartbeat` | 0, 2, 3, 4, 5, 6, 7 |
 | `park --interrupted` / `park --waiting` | `hold.park` | 0, 2, 3, 4, 5, 6, 7 |
@@ -48,6 +48,7 @@ is exit 0. A nonzero exit never means that there is no work.
 | `check [name]...` | `check.execute` | 0, 2, 3, 4, 5, 6, 7, 8 |
 | `handoff` | `task.handoff` | 0, 2, 3, 4, 5, 6, 7 |
 | `usage record` | `usage.record` | 0, 2, 3, 4, 5, 6, 7 |
+| `hold <task> --actor human:<name> --reason <why>` | `task.hold` | 0, 2, 3, 4, 5, 6, 7 |
 | `review record <task>` | `review.record` | 0, 2, 3, 4, 5, 6, 7 |
 | `finding answer <finding>` | `finding.answer` | 0, 2, 3, 4, 5, 6, 7 |
 | `finding defer <finding>` | `finding.defer` | 0, 2, 3, 4, 5, 6, 7 |
@@ -66,7 +67,9 @@ when its external condition changes; it does not authorize blind retries.
 
 ## Work selection
 
-`next.get` reads without taking work. `next.claim` takes or returns the
+`next.get` reads without taking work. Optional `--actor` previews that
+actor's eligible work, so reviewer and judge role peeks apply independence
+before claiming. `--model` remains exclusive to `--claim`. `next.claim` takes or returns the
 worktree's hold atomically. Both have exactly these kinds:
 
 - `new`: build the task, beginning with `start`.
@@ -75,6 +78,10 @@ worktree's hold atomically. Both have exactly these kinds:
   PR that conflicts with the local default branch, check and hand off
   again; it is already started.
 - `review`: review the declared stream and all required profiles.
+- `judge`: judge merge readiness after required reviews approve, once per
+  hand-off, as an actor who neither built nor reviewed the task. The `review`
+  object has `stream: judge` and `required_profiles: ["merge"]`. It uses a
+  review reservation and heartbeat, ends on recording, and never blocks merge.
 - `none`: no work can be served here. `task` and `hold` are null. This is
   the sole successful no-work signal.
 
@@ -110,7 +117,7 @@ against the cap. A clean merge, review still due, or missing local comparison
 never produces this return. `rework_unavailable`, when present, explains a
 missing local comparison; `--explain` shows that problem in text. Reads never
 fetch. Review and person-approval currency still follows the new hand-off's
-fingerprint. The added fields are optional; the version stays `fid-cli.v1`.
+fingerprint. The added fields are optional; the version stays `fid-cli.v2`.
 
 When a served task has any rework allowance, both forms of `next` include
 the optional object `rework_allowance: {decision_id, rounds, reason, actor,
@@ -162,7 +169,7 @@ is restored. Unscoped selection is unchanged.
   Reconcile this durable state at startup and when idle so a failed ready
   action can be retried on restart. Other `needs_you` kinds are informational
   to the loop and may grow without a version bump. These existing status
-  and show fields are additive in `fid-cli.v1`. Its optional `warnings[]`
+  and show fields are additive in `fid-cli.v2`. Its optional `warnings[]`
   includes `kind`, `summary` and `next_action`. Print `review-post-pending`
   warnings after recording finding responses and during reconciliation;
   pending GitHub delivery does not stop the loop. Other warning kinds may grow.
@@ -172,7 +179,7 @@ is restored. Unscoped selection is unchanged.
   include `responses[]` with `actor` and `text`. Pass the declared history
   to fixers and reviewers, including earlier finding IDs for dispositions.
   This existing read command makes a restarted loop independent of local
-  agent reports. These and the show fields are additive in `fid-cli.v1`.
+  agent reports. These and the show fields are additive in `fid-cli.v2`.
 - `finding answer <finding> --actor <builder> --text <text>` and
   `finding defer <finding> --actor <builder> --title <title>`: `response`
   contains `id`, `finding_id`, `task_id`, `handoff_id`, `actor`, `text`, `at`
@@ -183,7 +190,7 @@ is restored. Unscoped selection is unchanged.
   a finding when `review list` already has this builder's actor in `responses`,
   including after a partial recording followed by interruption. A refused
   response stops the loop; a successful record with pending delivery does not.
-  These additive commands retain `fid-cli.v1`.
+  These additive commands retain `fid-cli.v2`.
 - `backup`: `backup.outcome` (`pushed` or `unchanged` on success). A failed
   backup is a failure envelope and must be reported.
 - `start`: `task_id`, `hold_id`, `status` (`in_progress`).
@@ -219,7 +226,7 @@ is restored. Unscoped selection is unchanged.
   `--tool` selects the parser and `--tool-output` is raw agent stdout;
   this command has no typed request `--input` or `--example`.
 - `review record`: `round` with `id`, `task_id`, `handoff_id`, `stream`,
-  `profiles`, `verdict` (`APPROVE` or `CHANGES`) and `findings[]` with
+  `profiles`, `verdict` (`APPROVE` or `CHANGES`, or `MERGE`/`HOLD` for `judge`) and `findings[]` with
   `id`, `profile`, `severity`, `summary`, `location`, `evidence`, `fix`. Pass
   findings to the fixing agent and resolved finding IDs to the next review. CHANGES returns the task
   to the builder. Rework is served at the cap, stopped past it, with
@@ -233,6 +240,44 @@ is restored. Unscoped selection is unchanged.
   an individual task waits or is refused; an empty array means no tasks
   needed reconciliation. The loop must inspect every outcome.
 
+## Shadow merge judge (RESET 2.5b)
+
+A judge records `stream: judge`, `profiles: ["merge"]`, a `MERGE` or `HOLD`
+verdict and a required nonblank `reason`, alongside the ordinary reviewer,
+purpose, verification and empty findings array. Optional `lane_raise` has
+`lane` and `reason`; it must recommend a higher lane. No findings or
+dispositions are allowed. The call never satisfies or blocks a review gate,
+returns rework, counts against its cap or changes the lane in shadow.
+
+Until the person's first call on that hand-off, all read surfaces and the
+`review.record` response expose only round identity, `stream: judge`,
+`profiles: ["merge"]`, `sealed: true` and empty fields for the round payload.
+Reasons, verdict, reviewer, verification, provenance and lane recommendation
+remain sealed. `show` adds optional `judge_rounds`; `status` says only that a
+judge call is recorded and sealed. The loop passes these redacted reads to
+agents. `review post` makes no GitHub call for a sealed round, nor is it
+listed as a failed pending delivery. Raw journal, export and SQL remain raw.
+
+`approve` records MERGE; an observed merge records MERGE when this hand-off
+has no earlier call. That includes an Assured hand-off whose approval
+survived from an earlier hand-off of the same change.
+`hold <task> --actor human:<name> --reason <why> [--idempotency-key <key>]`
+records HOLD for a task in review. It needs no terminal confirmation, moves
+no task state and creates no rework. It returns `decision_id`, `task_id`,
+`handoff_id`, `actor`, `reason`, `at` and `verdict: HOLD`. Agent and service
+actors are refused, the reason must be nonblank, and a keyed retry returns
+the original decision. A task held by a person appears as `needs_you` kind
+`held`, with their reason.
+
+The first call is determined by journal order, even within one second.
+A later approval or merge is allowed but preserves that comparison. After
+the person's call the round shows `person_call` and `agrees` with its full
+judge payload, and delivery posts its canonical comment with a receipt.
+Replay, rebuild and export/import derive the same first call and reveal.
+A new hand-off can receive another judge call, even for an unchanged diff;
+completed tasks receive none. No CI wait or judge call is required by `done`.
+Judge usage has `role: judge` and `stream: judge`.
+
 ## Executable declaration
 
 The integration goldens select only these result paths. `?` denotes an
@@ -243,27 +288,256 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
 
 ```json loop-contract
 {
-  "contract_version": "fid-cli.v1",
-  "next_kinds": ["new", "resume", "rework", "review", "none"],
-  "waiting_kinds": ["waiting-for-you", "review", "rework-cap"],
+  "contract_version": "fid-cli.v2",
+  "next_kinds": [
+    "new",
+    "resume",
+    "rework",
+    "review",
+    "judge",
+    "none"
+  ],
+  "waiting_kinds": [
+    "waiting-for-you",
+    "review",
+    "rework-cap"
+  ],
   "fields": {
-    "issue.show": ["issue.id", "issue.title", "issue.spec_md_path", "issue.acceptance_criteria[].id", "issue.acceptance_criteria[].ordinal", "issue.acceptance_criteria[].text", "handoff.pr"],
-    "project.status": ["needs_you[].kind", "needs_you[].subject.id", "warnings?[].kind", "warnings?[].summary", "warnings?[].next_action"],
-    "review.list": ["task_id", "rounds[].id", "rounds[].handoff_id", "rounds[].stream", "rounds[].profiles", "rounds[].verdict", "rounds[].current", "rounds[].findings[].id", "rounds[].findings[].profile", "rounds[].findings[].severity", "rounds[].findings[].summary", "rounds[].findings[].location", "rounds[].findings[].evidence", "rounds[].findings[].fix", "rounds[].findings[].open", "rounds[].findings[].responses?[].actor", "rounds[].findings[].responses?[].text"],
-    "project.backup": ["backup.outcome"],
-    "next.get": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
-    "next.claim": ["kind", "task.id", "hold.id", "waiting.kind", "answer.question_id", "answer.question", "answer.text", "answer.decision_id", "rework?.cause", "rework?.default_ref", "rework?.default_commit", "rework?.handoff_id", "rework?.head", "rework?.conflicting_paths", "rework_allowance?.decision_id", "rework_allowance?.rounds", "rework_allowance?.reason", "rework_allowance?.actor", "rework_allowance?.at", "review?.handoff.id", "review?.handoff.pr", "review?.handoff.head", "review?.handoff.base", "review?.stream", "review?.required_profiles"],
-    "task.start": ["task_id", "hold_id", "status"],
-    "hold.heartbeat": ["task_id", "hold_id", "last_heartbeat_at", "expires_at", "heartbeat_interval_seconds"],
-    "hold.park": ["task_id", "hold_id", "mode", "kept_for_worktree", "reason?", "question_id?", "question?"],
-    "task.answer": ["task_id", "question_id", "decision_id", "answer"],
-    "check.execute": ["task_id", "checks[].id", "checks[].name", "checks[].outcome", "checks[].exit_code", "checks[].counts"],
-    "task.handoff": ["task_id", "status", "handoff_id", "pr", "head", "base", "required_checks", "result_ids"],
-    "usage.record": ["usage.id", "usage.task_id", "usage.hold_id", "usage.actor", "usage.model", "usage.role", "usage.stream", "usage.format", "usage.counts.uncached_input", "usage.counts.cache_read", "usage.counts.cache_write", "usage.counts.output", "usage.counts.reasoning", "usage.counts.total", "usage.models", "usage.reported", "usage.input_digest", "usage.parser_revision", "usage.tool_version", "usage.version_source", "usage.recorded_at"],
-    "review.record": ["round.id", "round.task_id", "round.handoff_id", "round.stream", "round.profiles", "round.verdict", "round.findings[].id", "round.findings[].profile", "round.findings[].severity", "round.findings[].summary", "round.findings[].location", "round.findings[].evidence", "round.findings[].fix"],
-    "finding.answer": ["response.id", "response.finding_id", "response.task_id", "response.handoff_id", "response.actor", "response.text", "response.at"],
-    "finding.defer": ["response.id", "response.finding_id", "response.task_id", "response.handoff_id", "response.actor", "response.text", "response.at", "response.deferred_task.id", "response.deferred_task.title", "response.deferred_task.epic_id", "response.deferred_task.lane"],
-    "task.done": ["status?", "completion?.task_id", "outcomes?[].task_id", "outcomes?[].status", "outcomes?[].refusal?.code", "outcomes?[].completion?.task_id"]
+    "issue.show": [
+      "issue.id",
+      "issue.title",
+      "issue.spec_md_path",
+      "issue.acceptance_criteria[].id",
+      "issue.acceptance_criteria[].ordinal",
+      "issue.acceptance_criteria[].text",
+      "handoff.pr",
+      "judge_rounds?[].sealed?",
+      "judge_rounds?[].verdict",
+      "judge_rounds?[].reason?",
+      "judge_rounds?[].person_call?.verdict",
+      "judge_rounds?[].agrees?"
+    ],
+    "project.status": [
+      "needs_you[].kind",
+      "needs_you[].subject.id",
+      "warnings?[].kind",
+      "warnings?[].summary",
+      "warnings?[].next_action"
+    ],
+    "review.list": [
+      "task_id",
+      "rounds[].id",
+      "rounds[].handoff_id",
+      "rounds[].stream",
+      "rounds[].profiles",
+      "rounds[].verdict",
+      "rounds[].current",
+      "rounds[].findings[].id",
+      "rounds[].findings[].profile",
+      "rounds[].findings[].severity",
+      "rounds[].findings[].summary",
+      "rounds[].findings[].location",
+      "rounds[].findings[].evidence",
+      "rounds[].findings[].fix",
+      "rounds[].findings[].open",
+      "rounds[].findings[].responses?[].actor",
+      "rounds[].findings[].responses?[].text",
+      "rounds[].sealed?",
+      "rounds[].reason?",
+      "rounds[].lane_raise?.lane",
+      "rounds[].lane_raise?.reason",
+      "rounds[].person_call?.verdict",
+      "rounds[].person_call?.actor",
+      "rounds[].person_call?.reason",
+      "rounds[].agrees?"
+    ],
+    "project.backup": [
+      "backup.outcome"
+    ],
+    "next.get": [
+      "kind",
+      "task.id",
+      "hold.id",
+      "waiting.kind",
+      "answer.question_id",
+      "answer.question",
+      "answer.text",
+      "answer.decision_id",
+      "rework?.cause",
+      "rework?.default_ref",
+      "rework?.default_commit",
+      "rework?.handoff_id",
+      "rework?.head",
+      "rework?.conflicting_paths",
+      "rework_allowance?.decision_id",
+      "rework_allowance?.rounds",
+      "rework_allowance?.reason",
+      "rework_allowance?.actor",
+      "rework_allowance?.at",
+      "review?.handoff.id",
+      "review?.handoff.pr",
+      "review?.handoff.head",
+      "review?.handoff.base",
+      "review?.stream",
+      "review?.required_profiles"
+    ],
+    "next.claim": [
+      "kind",
+      "task.id",
+      "hold.id",
+      "waiting.kind",
+      "answer.question_id",
+      "answer.question",
+      "answer.text",
+      "answer.decision_id",
+      "rework?.cause",
+      "rework?.default_ref",
+      "rework?.default_commit",
+      "rework?.handoff_id",
+      "rework?.head",
+      "rework?.conflicting_paths",
+      "rework_allowance?.decision_id",
+      "rework_allowance?.rounds",
+      "rework_allowance?.reason",
+      "rework_allowance?.actor",
+      "rework_allowance?.at",
+      "review?.handoff.id",
+      "review?.handoff.pr",
+      "review?.handoff.head",
+      "review?.handoff.base",
+      "review?.stream",
+      "review?.required_profiles"
+    ],
+    "task.start": [
+      "task_id",
+      "hold_id",
+      "status"
+    ],
+    "hold.heartbeat": [
+      "task_id",
+      "hold_id",
+      "last_heartbeat_at",
+      "expires_at",
+      "heartbeat_interval_seconds"
+    ],
+    "hold.park": [
+      "task_id",
+      "hold_id",
+      "mode",
+      "kept_for_worktree",
+      "reason?",
+      "question_id?",
+      "question?"
+    ],
+    "task.answer": [
+      "task_id",
+      "question_id",
+      "decision_id",
+      "answer"
+    ],
+    "check.execute": [
+      "task_id",
+      "checks[].id",
+      "checks[].name",
+      "checks[].outcome",
+      "checks[].exit_code",
+      "checks[].counts"
+    ],
+    "task.handoff": [
+      "task_id",
+      "status",
+      "handoff_id",
+      "pr",
+      "head",
+      "base",
+      "required_checks",
+      "result_ids"
+    ],
+    "usage.record": [
+      "usage.id",
+      "usage.task_id",
+      "usage.hold_id",
+      "usage.actor",
+      "usage.model",
+      "usage.role",
+      "usage.stream",
+      "usage.format",
+      "usage.counts.uncached_input",
+      "usage.counts.cache_read",
+      "usage.counts.cache_write",
+      "usage.counts.output",
+      "usage.counts.reasoning",
+      "usage.counts.total",
+      "usage.models",
+      "usage.reported",
+      "usage.input_digest",
+      "usage.parser_revision",
+      "usage.tool_version",
+      "usage.version_source",
+      "usage.recorded_at"
+    ],
+    "review.record": [
+      "round.id",
+      "round.task_id",
+      "round.handoff_id",
+      "round.stream",
+      "round.profiles",
+      "round.verdict",
+      "round.findings[].id",
+      "round.findings[].profile",
+      "round.findings[].severity",
+      "round.findings[].summary",
+      "round.findings[].location",
+      "round.findings[].evidence",
+      "round.findings[].fix",
+      "round.sealed?",
+      "round.reason?",
+      "round.lane_raise?.lane",
+      "round.lane_raise?.reason",
+      "round.person_call?.verdict",
+      "round.person_call?.actor",
+      "round.person_call?.reason",
+      "round.agrees?"
+    ],
+    "finding.answer": [
+      "response.id",
+      "response.finding_id",
+      "response.task_id",
+      "response.handoff_id",
+      "response.actor",
+      "response.text",
+      "response.at"
+    ],
+    "finding.defer": [
+      "response.id",
+      "response.finding_id",
+      "response.task_id",
+      "response.handoff_id",
+      "response.actor",
+      "response.text",
+      "response.at",
+      "response.deferred_task.id",
+      "response.deferred_task.title",
+      "response.deferred_task.epic_id",
+      "response.deferred_task.lane"
+    ],
+    "task.done": [
+      "status?",
+      "completion?.task_id",
+      "outcomes?[].task_id",
+      "outcomes?[].status",
+      "outcomes?[].refusal?.code",
+      "outcomes?[].completion?.task_id"
+    ],
+    "task.hold": [
+      "decision_id",
+      "task_id",
+      "handoff_id",
+      "actor",
+      "reason",
+      "at",
+      "verdict"
+    ]
   }
 }
 ```

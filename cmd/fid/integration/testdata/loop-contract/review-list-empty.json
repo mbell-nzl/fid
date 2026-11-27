@@ -1,9 +1,10 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "exit": 0,
   "ok": true,
   "operation": "review.list",
   "result": {
+    "rounds[].agrees?": [],
     "rounds[].current": [],
     "rounds[].findings[].evidence": [],
     "rounds[].findings[].fix": [],
@@ -17,7 +18,14 @@
     "rounds[].findings[].summary": [],
     "rounds[].handoff_id": [],
     "rounds[].id": [],
+    "rounds[].lane_raise?.lane": [],
+    "rounds[].lane_raise?.reason": [],
+    "rounds[].person_call?.actor": [],
+    "rounds[].person_call?.reason": [],
+    "rounds[].person_call?.verdict": [],
     "rounds[].profiles": [],
+    "rounds[].reason?": [],
+    "rounds[].sealed?": [],
     "rounds[].stream": [],
     "rounds[].verdict": [],
     "task_id": "\u003cFID\u003e"

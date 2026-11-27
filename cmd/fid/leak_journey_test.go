@@ -79,7 +79,7 @@ func TestV2HumanRefusalsNameNoKernelWords(t *testing.T) {
 		exit int
 	}{
 		{"taking without actor", []string{"next", "--claim"}, 2},
-		{"actor without taking", []string{"next", "--actor", "agent:builder"}, 2},
+		{"malformed preview actor", []string{"next", "--actor", "builder"}, 2},
 		{"service taking", []string{"next", "--claim", "--actor", "service:ci"}, 5},
 		{"missing hold", []string{"start", "--hold", "HLD-abcdef", "--actor", "agent:builder", "--idempotency-key", "start"}, 4},
 		{"missing issue", []string{"show", "FID-abcdef"}, 3},

@@ -25,7 +25,7 @@ def fid(cwd, *args):
         reply = json.loads(raw)
         expected = args[0] + "." + args[1] if args[0] in ("review", "finding") else "next.claim" if args[0] == "next" and "--claim" in args else OPERATIONS[args[0]]
         if reply["operation"] != expected: raise ValueError("unexpected operation")
-        if reply["contract_version"] != "fid-cli.v1" or p.returncode != 0 or reply["ok"] is not True:
+        if reply["contract_version"] != "fid-cli.v2" or p.returncode != 0 or reply["ok"] is not True:
             raise ValueError(f"unsupported contract or command failure (exit {p.returncode})")
         result = reply["result"]
         if not isinstance(result, dict): raise ValueError("result must be an object")
@@ -39,7 +39,7 @@ def fid(cwd, *args):
         raise RuntimeError(f"fid {args}: {e}; reply={raw!r}; stdout={p.stdout!r}; stderr={p.stderr!r}") from e
 def next_work(cwd, actor, model, claim=False):
     scope = ["--epic", os.environ["LOOP_EPIC"]] if os.getenv("LOOP_EPIC") else []
-    return fid(cwd, "next", *scope, *(["--claim", "--actor", actor, "--model", model] if claim else []))
+    return fid(cwd, "next", *scope, "--actor", actor, *(["--claim", "--model", model] if claim else []))
 def task_stem(task):
     return Path(task["spec_md_path"]).stem if task["spec_md_path"] else task["id"]
 def task_branch(task):
@@ -97,7 +97,9 @@ def done(cwd, actor):
                 run(cwd, "gh", "pr", "ready", pr, "--repo", REPO)
 def agent(cwd, role, actor, model, work, output):
     hold, session = work["hold"]["id"], output.name
-    context = {"work": work, "task": fid(cwd, "show", work["task"]["id"])["issue"], "reviews": fid(cwd, "review", "list", work["task"]["id"])}
+    shown = fid(cwd, "show", work["task"]["id"])
+    context = {"work": work, "task": shown["issue"], "reviews": fid(cwd, "review", "list", work["task"]["id"])}
+    if role == "judge": context["receipts"] = shown
     if work.get("review", {}).get("stream") == "separate": context["reviews"]["rounds"] = [r for r in context["reviews"]["rounds"] if r["stream"] == "separate"]
     (output / "context.json").write_text(json.dumps(context))
     spec = context["task"]["spec_md_path"]
@@ -155,22 +157,28 @@ def agent(cwd, role, actor, model, work, output):
 def main():
     global ACTIVE
     build = run(Path.cwd(), "git", "rev-parse", "--show-toplevel")
-    actors = [os.getenv("LOOP_" + r + "_ACTOR", "agent:sol-" + r.lower()) for r in ("BUILDER", "REVIEWER")]
-    models = [os.getenv("LOOP_" + r + "_MODEL", "openai/gpt-6.1-sol") for r in ("BUILDER", "REVIEWER")]
-    if actors[0] == actors[1]: raise ValueError("builder and reviewer actors must differ")
+    actors = [os.getenv("LOOP_" + r + "_ACTOR", "agent:sol-" + r.lower()) for r in ("BUILDER", "REVIEWER", "JUDGE")]
+    models = [os.getenv("LOOP_" + r + "_MODEL", "openai/gpt-6.1-sol") for r in ("BUILDER", "REVIEWER", "JUDGE")]
+    if len(set(actors)) != 3: raise ValueError("builder, reviewer and judge actors must differ")
     next_work(build, actors[0], models[0])
     done(build, actors[0])
     review = os.getenv("LOOP_REVIEW_WORKTREE", build + "-review")
     if not Path(review).exists(): run(build, "git", "worktree", "add", "--detach", review, "HEAD")
     while True:
-        is_review = next_work(review, actors[1], models[1])["kind"] == "review"
-        cwd, actor, model = (review, actors[1], models[1]) if is_review else (build, actors[0], models[0])
+        peek = next_work(review, actors[1], models[1])
+        if peek["kind"] != "review":
+            judge_peek = next_work(review, actors[2], models[2])
+            if judge_peek["kind"] == "judge": peek = judge_peek
+        is_review = peek["kind"] in ("review", "judge")
+        role_index = 2 if peek["kind"] == "judge" else 1 if is_review else 0
+        role = ("builder", "reviewer", "judge")[role_index]
+        cwd, actor, model = review if is_review else build, actors[role_index], models[role_index]
         work = next_work(cwd, actor, model, True)
         if work["kind"] == "none":
             print("none:", json.dumps(work["waiting"]), flush=True)
             done(build, actors[0])
             return
-        if (work["kind"] == "review") != is_review:
+        if (work["kind"] in ("review", "judge")) != is_review or is_review and work["kind"] != peek["kind"]:
             raise RuntimeError(f"work selection changed roles: {work!r}")
         hold = ["--hold", work["hold"]["id"], "--actor", actor]
         ACTIVE = (cwd, hold, is_review)
@@ -190,10 +198,13 @@ def main():
             if branch in ("", "main", run(cwd, "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD").removeprefix("origin/")): raise RuntimeError("build requires a task branch")
             if work.get("rework", {}).get("cause") == "default-conflict":
                 run(cwd, "git", "merge", "--no-edit", work["rework"]["default_ref"], allowed=(0, 1))
-        context = agent(cwd, "reviewer" if is_review else "builder", actor, model, work, output)
+        context = agent(cwd, role, actor, model, work, output)
         if is_review:
             if run(cwd, "git", "rev-parse", "HEAD") != work["review"]["handoff"]["head"] or run(cwd, "git", "status", "--porcelain"):
                 raise RuntimeError("review agent changed the head or left uncommitted changes")
+            review_input = json.loads((output / "review.json").read_text())
+            if review_input.get("stream") != work["review"]["stream"]:
+                raise RuntimeError("review output stream differs from requested work")
             fid(cwd, "review", "record", work["task"]["id"], "--input", str(output / "review.json"), "--actor", actor, "--idempotency-key", output.name)
         elif next_work(cwd, actor, model)["kind"] != "none":
             if run(cwd, "git", "status", "--porcelain"): raise RuntimeError(f"agent left uncommitted changes; see {output}")

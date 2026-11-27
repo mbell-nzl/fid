@@ -40,6 +40,9 @@ func Round(ctx context.Context, root string, migrations fs.FS, round string, run
 		}
 		defer func() { _ = conn.Close() }()
 		if _, err := reviewcomment.ReadSubject(conn, round); err != nil {
+			if errors.Is(err, reviewcomment.ErrSealed) {
+				return nil
+			}
 			return err
 		}
 		ids := []string{round}
@@ -128,9 +131,24 @@ func Pending(conn reviewrecord.Queryer) (map[string][]string, error) {
 		return nil, fmt.Errorf("read pending reviews: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
+	type pendingItem struct{ round, id string }
+	items := []pendingItem{}
 	for rows.Next() {
 		var round, id string
 		if err := rows.Scan(&round, &id); err != nil {
+			return nil, err
+		}
+		items = append(items, pendingItem{round, id})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	_ = rows.Close()
+	for _, item := range items {
+		round, id := item.round, item.id
+		if sealed, err := reviewrecord.RoundSealed(conn, round); err == nil && sealed {
+			continue
+		} else if err != nil {
 			return nil, err
 		}
 		result[round] = append(result[round], id)

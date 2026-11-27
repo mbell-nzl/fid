@@ -83,6 +83,8 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "task.done"
 	case "fid waive":
 		return "task.waive"
+	case "fid hold":
+		return "task.hold"
 	case "fid approve":
 		return "task.approve"
 	case "fid handoff":
@@ -124,7 +126,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 47 || len(groups) != 15 {
+	if len(leaves) != 48 || len(groups) != 15 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -287,7 +289,7 @@ func grammarCheck(t *testing.T, row grammarRow, jsonMode bool, result commandExe
 	if err := json.Unmarshal([]byte(result.stderr), &envelope); err != nil {
 		t.Fatalf("%s: %v: %q", row.name, err, result.stderr)
 	}
-	if len(envelope) != 4 || string(envelope["contract_version"]) != `"fid-cli.v1"` || string(envelope["ok"]) != "false" || string(envelope["operation"]) != fmt.Sprintf("%q", row.operation) {
+	if len(envelope) != 4 || string(envelope["contract_version"]) != `"fid-cli.v2"` || string(envelope["ok"]) != "false" || string(envelope["operation"]) != fmt.Sprintf("%q", row.operation) {
 		t.Fatalf("%s envelope %s", row.name, result.stderr)
 	}
 	var failure cli.Failure

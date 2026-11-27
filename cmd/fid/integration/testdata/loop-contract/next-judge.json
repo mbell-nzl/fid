@@ -1,0 +1,35 @@
+{
+  "contract_version": "fid-cli.v2",
+  "exit": 0,
+  "ok": true,
+  "operation": "next.get",
+  "result": {
+    "answer.decision_id": "\u003cPDN\u003e",
+    "answer.question": "Include retries?",
+    "answer.question_id": "\u003cQST\u003e",
+    "answer.text": "Include them.",
+    "hold.id": null,
+    "kind": "judge",
+    "review?.handoff.base": "\u003ccommit\u003e",
+    "review?.handoff.head": "\u003ccommit\u003e",
+    "review?.handoff.id": "\u003cHOF\u003e",
+    "review?.handoff.pr": "https://github.com/mbell-nzl/fid/pull/63",
+    "review?.required_profiles": [
+      "merge"
+    ],
+    "review?.stream": "judge",
+    "rework?.cause": null,
+    "rework?.conflicting_paths": null,
+    "rework?.default_commit": null,
+    "rework?.default_ref": null,
+    "rework?.handoff_id": null,
+    "rework?.head": null,
+    "rework_allowance?.actor": null,
+    "rework_allowance?.at": null,
+    "rework_allowance?.decision_id": null,
+    "rework_allowance?.reason": null,
+    "rework_allowance?.rounds": null,
+    "task.id": "\u003cFID\u003e",
+    "waiting.kind": null
+  }
+}

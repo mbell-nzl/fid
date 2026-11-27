@@ -64,6 +64,25 @@ func readReviews(conn reviewrecord.Queryer, options Options, work issues.Work, n
 			return nil, err
 		}
 		candidate.work = doneeval.DueReview(s)
+		if candidate.work == nil && s.Handoff != nil {
+			fp := s.Fingerprint
+			if fp.Algorithm == "" {
+				fp, err = fingerprint.Compute(options.WorkspaceRoot, s.Handoff.Base, s.Handoff.Head)
+				if err != nil {
+					candidate.unavailable = err.Error()
+					reviews[task.ID] = candidate
+					continue
+				}
+			}
+			due, err := reviewrecord.JudgeDue(conn, *s.Handoff, reviewrecord.Bind(fp))
+			if err != nil {
+				return nil, err
+			}
+			if due {
+				candidate.work = &doneeval.ReviewWork{Stream: "judge", RequiredProfiles: []string{"merge"}}
+				candidate.work.Handoff.ID, candidate.work.Handoff.PR, candidate.work.Handoff.Head, candidate.work.Handoff.Base = s.Handoff.ID, s.Handoff.PR, s.Handoff.Head, s.Handoff.Base
+			}
+		}
 		awaiting, err := doneeval.AwaitingMerge(conn, s)
 		if err != nil {
 			return nil, err
@@ -87,13 +106,24 @@ func readReviews(conn reviewrecord.Queryer, options Options, work issues.Work, n
 				}
 			}
 		}
+		if candidate.work != nil && candidate.work.Stream == "judge" && candidate.conflict != nil {
+			candidate.work = nil
+		}
 		if options.Actor != "" {
 			candidate.built, err = reviewrecord.BuiltBy(conn, task.ID, options.Actor)
+			if err == nil && candidate.work != nil && candidate.work.Stream == "judge" {
+				var independent bool
+				independent, err = reviewrecord.JudgeIndependent(conn, task.ID, options.Actor, "")
+				candidate.built = !independent
+			}
 			if err != nil {
 				return nil, err
 			}
 		}
 
+		if candidate.claim != nil && options.Actor != "" && candidate.claim.Actor != options.Actor && candidate.claim.WorktreeID == project.WorktreeID(options.WorkspaceRoot) {
+			candidate.work = nil
+		}
 		reviews[task.ID] = candidate
 	}
 	return reviews, nil

@@ -77,6 +77,9 @@ func Admit(conn Queryer, r Round) error {
 	if err := json.Unmarshal([]byte(raw), &p); err != nil {
 		return err
 	}
+	if r.Stream == "judge" {
+		return admitJudge(conn, r, h, p)
+	}
 	assured := h.Lane == "assured"
 	waiver, err := waiverrecord.Current(conn, r.TaskID, fingerprint.Result{Algorithm: r.Binding.Algorithm, Fingerprint: r.Binding.Fingerprint})
 	if err != nil {
@@ -103,7 +106,7 @@ func Admit(conn Queryer, r Round) error {
 	}
 	major := false
 	for _, prior := range rounds {
-		if r.Stream != prior.Stream && r.Reviewer.SessionID == prior.Reviewer.SessionID {
+		if prior.Stream != "judge" && r.Stream != prior.Stream && r.Reviewer.SessionID == prior.Reviewer.SessionID {
 			return fmt.Errorf("separate review must use a different session from every primary round")
 		}
 	}

@@ -15,15 +15,17 @@ func reviewDescriptor() cli.InputDescriptor {
 	profile := reviewText("profile", "required", "Profile that raised the finding.", "code")
 	severity := reviewText("severity", "required", "major blocks; minor requires an answer; nit is optional.", "major")
 	severity.Members = []string{"major", "minor", "nit"}
-	stream := reviewText("stream", "required", "Assured work may also record a separate session.", "primary")
-	stream.Members = []string{"primary", "separate"}
-	verdict := reviewText("verdict", "required", "CHANGES exactly when a major remains open.", "APPROVE")
-	verdict.Members = []string{"APPROVE", "CHANGES"}
+	stream := reviewText("stream", "required", "Primary review, separate Assured review, or shadow merge judge.", "primary")
+	stream.Members = []string{"primary", "separate", "judge"}
+	verdict := reviewText("verdict", "required", "Reviews use CHANGES exactly when a major remains open; the judge uses MERGE or HOLD.", "APPROVE")
+	verdict.Members = []string{"APPROVE", "CHANGES", "MERGE", "HOLD"}
 	line := int64(1)
 	return cli.InputDescriptor{Operation: "review.record", Purpose: "Record one attributed review session with every required profile.", Type: reflect.TypeFor[reviewrecord.Input](), Fields: []cli.InputField{
 		{Name: "reviewer", Type: "object", Requirement: "required", Meaning: "Reviewer attribution, independent of the recorder.", Children: []cli.InputField{
 			reviewText("actor", "required", "Typed reviewer actor.", "agent:reviewer"), reviewText("model", "optional", "Model as <family>/<model>; omitted means unknown.", "claude/opus-5.5"), reviewText("effort", "optional", "Declared reviewer effort.", "high"), reviewText("session_id", "required", "Attributed fresh session ID.", "review-session-1"),
 		}}, stream,
+		reviewText("reason", "optional", "Required for the shadow judge call.", "The receipts support merging."),
+		{Name: "lane_raise", Type: "object", Requirement: "optional", Meaning: "Shadow recommendation only; never applied.", Children: []cli.InputField{reviewText("lane", "required", "Higher lane.", "assured"), reviewText("reason", "required", "Why raise it.", "Trust boundary changed.")}},
 		{Name: "profiles", Type: "array", Requirement: "required", Meaning: "Every profile this session reviewed.", Element: &cli.InputField{Type: "string", Placeholder: "code"}}, verdict,
 		reviewText("purpose", "required", "What the change sets out to do, as the review read it.", "Persist confirmed merges and completed CI attempts."),
 		{Name: "findings", Type: "array", Requirement: "required", Meaning: "Findings; use [] for none. fid assigns IDs.", Element: &cli.InputField{Type: "object", Children: []cli.InputField{profile, severity, reviewText("summary", "required", "Problem found.", "Conflicting merge retries have no regression coverage."), {Name: "location", Type: "object", Requirement: "nullable", Meaning: "File and positive line, or null.", Children: []cli.InputField{reviewText("file", "required", "Repository-relative file.", "cmd/fid/merge_records_test.go"), {Name: "line", Type: "integer", Requirement: "required", Meaning: "Line number.", MinInt: &line}}}, reviewText("evidence", "required", "Evidence supporting the finding.", "Disabling the conflict guard left the focused tests green."), reviewText("fix", "required", "Requested action.", "Retry the same key with changed task and PR; assert refusal and unchanged state.")}}},

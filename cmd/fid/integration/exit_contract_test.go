@@ -83,7 +83,7 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 	switch group {
 	case "policy", "concern", "requirement", "run":
 		group, word = "fid", args[0]
-		allowed = []string{"accept", "activity", "answer", "approve", "artifact", "backup", "check", "completion", "done", "export", "finding", "handoff", "heartbeat", "help", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "rebuild", "restore", "review", "rework", "show", "sql", "start", "status", "takeover", "usage", "waive"}
+		allowed = []string{"accept", "activity", "answer", "approve", "artifact", "backup", "check", "completion", "done", "export", "finding", "handoff", "heartbeat", "help", "hold", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "rebuild", "restore", "review", "rework", "show", "sql", "start", "status", "takeover", "usage", "waive"}
 	case "issue":
 		group, word, allowed = "issue.ac", args[2], []string{"add", "list"}
 	}
@@ -118,7 +118,7 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 		return
 	}
 	want := map[string]any{
-		"contract_version": "fid-cli.v1", "operation": group, "ok": false,
+		"contract_version": "fid-cli.v2", "operation": group, "ok": false,
 		"error": map[string]any{
 			"code": code, "category": "invalid-input", "retryable": false, "subject": nil,
 			"message": message, "details": map[string]any{"argument": argument, "value": value, "allowed": allowed},

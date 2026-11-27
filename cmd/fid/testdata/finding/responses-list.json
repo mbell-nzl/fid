@@ -1,5 +1,5 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "event": null,
   "ok": true,
   "operation": "review.list",

@@ -30,6 +30,9 @@ func ReadSession(conn Queryer, id string) (Session, error) {
 	err := conn.QueryRow(`SELECT task_id,actor,model,stream FROM review_claims WHERE id=?`, id).Scan(&s.TaskID, &s.Actor, &s.Model, &s.Stream)
 	if err == nil {
 		s.Role = "review"
+		if s.Stream == "judge" {
+			s.Role = "judge"
+		}
 		return s, nil
 	}
 	if err != sql.ErrNoRows {
@@ -68,7 +71,7 @@ func (r Record) Validate() error {
 	if r.ParserRevision != r.Format+"/1" {
 		return fmt.Errorf("unknown usage parser revision")
 	}
-	if r.Role != "build" && r.Role != "fix" && r.Role != "review" || r.Role == "review" && r.Stream != "primary" && r.Stream != "separate" || r.Role != "review" && r.Stream != "" {
+	if r.Role != "build" && r.Role != "fix" && r.Role != "review" && r.Role != "judge" || r.Role == "judge" && r.Stream != "judge" || r.Role == "review" && r.Stream != "primary" && r.Stream != "separate" || r.Role != "review" && r.Role != "judge" && r.Stream != "" {
 		return fmt.Errorf("invalid usage role or stream")
 	}
 	if r.ToolVersion == "" && r.VersionSource != "" || r.ToolVersion != "" && r.VersionSource != "output" && r.VersionSource != "caller" || r.VersionSource == "output" && r.Format != "claude" {

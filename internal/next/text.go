@@ -99,7 +99,7 @@ func (text textWriter) rows(result Result, served Entry) []string {
 func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
-	case result.Kind == KindReview:
+	case result.Kind == KindReview || result.Kind == KindJudge:
 		review := result.Review
 		lines := text.prose(indent, "Review "+review.Stream+": "+strings.Join(review.RequiredProfiles, ", "))
 		lines = append(lines, text.prose(indent, "Hand-off "+review.Handoff.ID+" · head "+review.Handoff.Head+" · base "+review.Handoff.Base)...)

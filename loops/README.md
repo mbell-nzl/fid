@@ -17,7 +17,7 @@ Run one loop per machine. The loop does not serialise test suites; two full
 suites at once slow each other, as described in AGENTS.md.
 
 Every fid call uses `--json` and is checked against
-[fid-cli.v1](../docs/specs/LOOP_CONTRACT.md). A contract mismatch, unknown
+[fid-cli.v2](../docs/specs/LOOP_CONTRACT.md). A contract mismatch, unknown
 kind or waiting kind, missing declared field, invalid/empty JSON or unexpected
 nonzero exit stops the loop with the reply quoted. Empty output never means
 no work. Every batch `done` outcome is printed, including refusals and
@@ -31,9 +31,9 @@ A run proceeds as follows:
    batch `done`. Keep a detached review worktree beside the build worktree,
    outside git metadata. Each build worktree has its own review worktree
    and outputs.
-2. Peek in the review worktree. Claim only review work there as the reviewer;
+2. Peek in the review worktree. Claim review work there as the reviewer and judge work as the judge;
    claim other work in the build worktree as the builder. `LOOP_EPIC` scopes
-   both selections. fid keeps a handed-off task in its build worktree for
+   all selections. fid keeps a handed-off task in its build worktree for
    rework, so the second worktree is necessary.
 3. For `new`, start the task and create `reset-<brief stem, else fid ID>-<title
    slug>` from `origin/HEAD`, dropping a leading stem from the title before
@@ -95,7 +95,14 @@ A run proceeds as follows:
    reviews have been recorded. Already-ready PRs stay ready. Review streams are selected
    by fid. Separate review context excludes primary rounds. Mark reads `fid status`, approves when needed and
    merges; this loop never merges.
-8. Back up after each item, including a waiting park or interruption. At
+8. For `judge`, check out the hand-off head in the review worktree and run
+   a fresh judge with the whole diff, brief, PR and fid receipts. Record its
+   `merge` profile round with MERGE or HOLD and reasons. fid seals the call
+   until Mark approves, merges (when observed), or records `fid hold`; then
+   it reveals the comparison and delivers the comment. The shadow judge
+   never creates rework, changes a lane, waits for CI or merges. Readiness
+   still follows approval/merge status independently of its call.
+9. Back up after each item, including a waiting park or interruption. At
    `none`, print the `waiting` object as the reason, reconcile with batch
    `done` again and exit 0. `waiting: null` means there is no declared wait
    for this worktree. Dependencies, caps and acceptance remain fid's rules.
@@ -114,6 +121,10 @@ and retained outputs before restarting. It does not blindly retry commands.
 | `LOOP_GH_REPO` | `mbell-nzl/fid`; the explicit owner/repository passed to gh |
 | `LOOP_EPIC` | Unset; scope both worktrees' `next` calls to this epic when set |
 | `LOOP_BUILDER_ACTOR` | `agent:sol-builder` |
+| `LOOP_JUDGE_ACTOR` | `agent:sol-judge`; all three role actors must differ |
+| `LOOP_JUDGE_MODEL` | `openai/gpt-6.1-sol` |
+| `LOOP_JUDGE_COMMAND` | Same default Codex command, with the judge prompt |
+| `LOOP_JUDGE_USAGE` | `codex`; `claude` or `none` also accepted |
 | `LOOP_REVIEWER_ACTOR` | `agent:sol-reviewer`; must differ from the builder |
 | `LOOP_BUILDER_MODEL` | `openai/gpt-6.1-sol`; attribution as family/model |
 | `LOOP_REVIEWER_MODEL` | `openai/gpt-6.1-sol`; same-model fallback, fresh session |
@@ -136,12 +147,13 @@ diagnostics cannot contaminate usage JSON.
 
 Codex's sandbox writes only to its workspace and the `--add-dir` roots. If
 the repository's `.codex/config.toml` points Go's caches outside the worktree,
-add those configured directories to both command settings. For example, if
+add those configured directories to all command settings. For example, if
 all those caches are under `/path/to/shared-caches`:
 
 ```sh
 export LOOP_BUILDER_COMMAND='codex exec --json -m {model} --add-dir {git_dir} --add-dir {common_dir} --add-dir {output_dir} --add-dir /path/to/shared-caches -'
 export LOOP_REVIEWER_COMMAND="$LOOP_BUILDER_COMMAND"
+export LOOP_JUDGE_COMMAND="$LOOP_BUILDER_COMMAND"
 ```
 
 Each item retains `prompt.md`, `context.json`, `agent.stdout`, `agent.stderr`, and the agent's
@@ -170,3 +182,16 @@ Never run the installed fid, a built fid, or this loop against fid's own
 checkout during builder tests: every worktree shares its live ledger in the
 git common directory. `selftest.sh` and the integration journeys create their
 own repositories; no real agent, gh or network service is invoked.
+
+To use Claude Opus as the judge while keeping the builder and reviewer:
+
+```sh
+export LOOP_JUDGE_COMMAND='claude -p --model {model} --output-format json'
+export LOOP_JUDGE_MODEL='claude/opus-4-6'
+export LOOP_JUDGE_ACTOR='agent:opus-judge'
+export LOOP_JUDGE_USAGE='claude'
+```
+
+The judge context adds `receipts` (the full `fid show` result) to `work`,
+`task` and `reviews`. Only redacted review reads enter agent context. The
+judge uses `LOOP_REVIEW` for its JSON and records usage with role `judge`.

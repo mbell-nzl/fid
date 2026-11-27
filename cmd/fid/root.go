@@ -16,7 +16,7 @@ type rootFlagCapability struct {
 	JSON    bool
 }
 
-// rootFlagCapabilities is the sole registry for leaves whose fid-cli.v1
+// rootFlagCapabilities is the sole registry for leaves whose fid-cli.v2
 // transport has migrated. Task 3 registers project.init after its transport is
 // available; until then both global flags fail closed for every leaf.
 var rootFlagCapabilities = map[string]rootFlagCapability{}
@@ -53,7 +53,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.SetContext(context.WithValue(context.Background(), commandWorkingDirectoryKey{}, workingDirectory))
 	cmd.PersistentPreRunE = rejectUnavailableRootFlags(cmd)
 	cmd.PersistentFlags().String("project", "", "fid project root")
-	cmd.PersistentFlags().Bool("json", false, "emit fid-cli.v1 JSON")
+	cmd.PersistentFlags().Bool("json", false, "emit fid-cli.v2 JSON")
 
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
@@ -77,6 +77,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newReviewCommand())
 	cmd.AddCommand(newFindingCommand())
 	cmd.AddCommand(newApproveCommandWithTerminal(nil))
+	cmd.AddCommand(newMergeHoldCommand())
 	cmd.AddCommand(newWaiveCommandWithTerminal(nil))
 	cmd.AddCommand(newAnswerCommand())
 	cmd.AddCommand(newAcceptCommand())
@@ -126,7 +127,7 @@ func rejectUnavailableRootFlags(root *cobra.Command) func(*cobra.Command, []stri
 		} {
 			if root.PersistentFlags().Changed(flag.name) && !flag.enabled {
 				if diagnosticLeaf(command) {
-					err := fmt.Errorf("--%s is not available for %s until its fid-cli.v1 transport is migrated", flag.name, rootCommandKey(command))
+					err := fmt.Errorf("--%s is not available for %s until its fid-cli.v2 transport is migrated", flag.name, rootCommandKey(command))
 					if _, writeErr := fmt.Fprintf(command.ErrOrStderr(), "error: %v\n", err); writeErr != nil {
 						return fmt.Errorf("write root-flag rejection: %w", writeErr)
 					}

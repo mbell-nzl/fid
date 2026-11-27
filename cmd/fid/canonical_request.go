@@ -172,6 +172,8 @@ func leafOperation(cmd *cobra.Command) string {
 		return "task.done"
 	case "waive":
 		return "task.waive"
+	case "hold":
+		return "task.hold"
 	case "approve":
 		return "task.approve"
 	case "handoff":

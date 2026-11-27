@@ -204,8 +204,8 @@ func p20JourneyJSON(t *testing.T, workspace string, args ...string) p20JourneyRe
 	if err := json.Unmarshal([]byte(stdout), &decoded); err != nil {
 		t.Fatalf("decode fid --json %v: %v", args, err)
 	}
-	if decoded.ContractVersion != "fid-cli.v1" || !decoded.OK || decoded.Operation == "" || len(decoded.Result) == 0 {
-		t.Fatalf("fid --json %v response = %s, want successful fid-cli.v1 envelope", args, stdout)
+	if decoded.ContractVersion != "fid-cli.v2" || !decoded.OK || decoded.Operation == "" || len(decoded.Result) == 0 {
+		t.Fatalf("fid --json %v response = %s, want successful fid-cli.v2 envelope", args, stdout)
 	}
 	eventID := ""
 	if decoded.Event != nil {
@@ -297,7 +297,7 @@ func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expe
 	if err := json.Unmarshal([]byte(stderr), &failure); err != nil {
 		t.Fatalf("decode stale state-conflict: %v", err)
 	}
-	if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != "issue.update" || failure.Error.Code != "state-conflict" {
+	if failure.ContractVersion != "fid-cli.v2" || failure.OK || failure.Operation != "issue.update" || failure.Error.Code != "state-conflict" {
 		t.Fatalf("stale failure = %#v, want issue.update state-conflict envelope", failure)
 	}
 	if failure.Error.Details.Expected != expected || failure.Error.Details.Actual != actual {

@@ -60,7 +60,19 @@ func (result *Result) addReviewAction(root string, conn reviewrecord.Queryer, ta
 	if err != nil {
 		return err
 	}
-	if !doneeval.ReviewsDone(s) || result.merges[task] != nil {
+	if s.Handoff == nil {
+		return nil
+	}
+	call, err := reviewrecord.LatestHold(conn, s.Handoff.ID)
+	if err != nil {
+		return err
+	}
+	if call != nil && call.Verdict == "HOLD" {
+		summary := task + ": held by " + call.Actor + ": " + call.Reason
+		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: "held", Summary: summary, Subject: &Subject{Type: "task", ID: task}})
+		return nil
+	}
+	if result.merges[task] != nil || !doneeval.ReviewsDone(s) {
 		return nil
 	}
 	// A takeover releases this reservation, so next no longer returns the

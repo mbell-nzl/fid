@@ -8,7 +8,7 @@ import (
 
 const CategoryGateUnsuccessful Category = "gate-unsuccessful"
 
-// ExitCodeForCategory returns the process status reserved by fid-cli.v1.
+// ExitCodeForCategory returns the process status reserved by fid-cli.v2.
 func ExitCodeForCategory(category Category) int {
 	switch category {
 	case CategoryInvalidInput:

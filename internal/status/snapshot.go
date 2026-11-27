@@ -12,6 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 // readWork keeps status's grouping and next's queue on one projection snapshot.
@@ -42,7 +43,7 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 	if err != nil {
 		return issues.Overview{}, next.Result{}, nil, err
 	}
-	result := &Result{NeedsYou: []NeedsYouItem{}, Warnings: []Warning{}, merges: map[string]*mergerecord.ReviewState{}, approvals: map[string]decisionview.Approval{}}
+	result := &Result{NeedsYou: []NeedsYouItem{}, Warnings: []Warning{}, merges: map[string]*mergerecord.ReviewState{}, approvals: map[string]decisionview.Approval{}, judges: map[string][]reviewrecord.RoundView{}}
 	if err := result.addUnaccepted(tx); err != nil {
 		return issues.Overview{}, next.Result{}, nil, err
 	}
@@ -51,6 +52,10 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 		tasks = append(tasks, epic.Tasks...)
 	}
 	for _, task := range tasks {
+		result.judges[task.ID], err = reviewrecord.JudgeViews(tx, task.ID)
+		if err != nil {
+			return issues.Overview{}, next.Result{}, nil, err
+		}
 		state, err := mergerecord.ReadReviewState(tx, task.ID)
 		if err != nil {
 			return issues.Overview{}, next.Result{}, nil, err

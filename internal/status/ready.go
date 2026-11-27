@@ -9,9 +9,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 type workingTask struct {
+	JudgeRounds []reviewrecord.RoundView `json:"judge_rounds,omitempty"`
 	issues.OverviewTask
 	Working *holds.Working           `json:"working"`
 	Kept    *holds.Kept              `json:"kept"`

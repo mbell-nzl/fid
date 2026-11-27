@@ -1,5 +1,5 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "error": {
     "category": "precondition",
     "code": "checks-not-configured",

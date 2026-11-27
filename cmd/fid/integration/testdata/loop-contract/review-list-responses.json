@@ -1,9 +1,12 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "exit": 0,
   "ok": true,
   "operation": "review.list",
   "result": {
+    "rounds[].agrees?": [
+      null
+    ],
     "rounds[].current": [
       true
     ],
@@ -81,11 +84,32 @@
     "rounds[].id": [
       "\u003cRND\u003e"
     ],
+    "rounds[].lane_raise?.lane": [
+      null
+    ],
+    "rounds[].lane_raise?.reason": [
+      null
+    ],
+    "rounds[].person_call?.actor": [
+      null
+    ],
+    "rounds[].person_call?.reason": [
+      null
+    ],
+    "rounds[].person_call?.verdict": [
+      null
+    ],
     "rounds[].profiles": [
       [
         "code",
         "test-adequacy"
       ]
+    ],
+    "rounds[].reason?": [
+      null
+    ],
+    "rounds[].sealed?": [
+      null
     ],
     "rounds[].stream": [
       "primary"

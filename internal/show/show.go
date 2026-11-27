@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 	"github.com/mbell-nzl/fid/internal/status"
 )
 
@@ -27,16 +28,17 @@ type Options struct {
 // person, and what's next.
 type Result struct {
 	issues.IssueView
-	Working    *holds.Working
-	Kept       *holds.Kept
-	Now        time.Time
-	Checks     []Check
-	Floor      *policy.Floor
-	ChecksBase *string
-	Warnings   []status.Warning
-	Approval   decisionview.Approval
-	Completion *Completion
-	Usage      *Usage
+	Working     *holds.Working
+	Kept        *holds.Kept
+	Now         time.Time
+	Checks      []Check
+	Floor       *policy.Floor
+	ChecksBase  *string
+	Warnings    []status.Warning
+	Approval    decisionview.Approval
+	Completion  *Completion
+	JudgeRounds []reviewrecord.RoundView
+	Usage       *Usage
 }
 
 // Build reads the issue whose ID is exactly options.ID.
@@ -51,6 +53,9 @@ func Build(options Options) (Result, error) {
 	}
 	if err := result.readCompletion(options.WorkspaceRoot); err != nil {
 		return Result{}, fmt.Errorf("read show completion: %w", err)
+	}
+	if err := result.readJudges(options.WorkspaceRoot); err != nil {
+		return Result{}, fmt.Errorf("read show judge: %w", err)
 	}
 	result.readChecks(options.WorkspaceRoot)
 	if err := result.readApproval(options.WorkspaceRoot); err != nil {
@@ -89,6 +94,9 @@ func (result Result) Fields() map[string]any {
 		"working":               result.Working,
 		"kept":                  result.Kept,
 		"scheduling":            result.Scheduling,
+	}
+	if len(result.JudgeRounds) > 0 {
+		fields["judge_rounds"] = result.JudgeRounds
 	}
 	if result.Usage != nil {
 		fields["usage"] = result.Usage

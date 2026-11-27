@@ -55,7 +55,7 @@ func TestFirstLoopCtrlCParksBuild(t *testing.T) {
 	w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
 	w.wantNext("", false, "resume", j.task)
 	j.run(t, 0)
-	if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != 3 {
+	if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != 4 {
 		t.Fatalf("backups after interrupt, resumed build and review = %v", outcomes)
 	}
 }
@@ -106,7 +106,7 @@ func newFirstLoop(t *testing.T, scenario string) firstLoop {
 		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
 		"XDG_CONFIG_HOME="+configHome, "XDG_CACHE_HOME="+filepath.Join(state, "cache"),
 		"LOOP_FID="+binary, "LOOP_GH_REPO=mbell-nzl/fid", "LOOP_BUILDER_COMMAND="+filepath.Join(bin, "agent"),
-		"LOOP_REVIEWER_COMMAND="+filepath.Join(bin, "agent"), "LOOP_EPIC=", "FIRST_LOOP_STATE="+state, "FIRST_LOOP_SCENARIO="+scenario, "FIRST_LOOP_TASK="+task)
+		"LOOP_REVIEWER_COMMAND="+filepath.Join(bin, "agent"), "LOOP_JUDGE_COMMAND="+filepath.Join(bin, "agent"), "LOOP_JUDGE_ACTOR=agent:sol-judge", "LOOP_JUDGE_MODEL=openai/gpt-6.1-sol", "LOOP_JUDGE_USAGE=codex", "LOOP_EPIC=", "FIRST_LOOP_STATE="+state, "FIRST_LOOP_SCENARIO="+scenario, "FIRST_LOOP_TASK="+task)
 	return firstLoop{root, binary, task, state, env}
 }
 
@@ -227,22 +227,22 @@ func TestFirstLoopBuildReviewRework(t *testing.T) {
 			if refs := strings.Fields(remote); len(refs) != 2 || refs[0] != pushed {
 				t.Fatalf("remote task branch after build/rework = %q, want %s", remote, pushed)
 			}
-			if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != wantBuilds+wantReviews {
+			if outcomes := backupJourneyOutcomes(t, j.root); len(outcomes) != wantBuilds+wantReviews+1 {
 				t.Fatalf("backup after each build/review = %v", outcomes)
 			}
 			w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
 			shown := w.call("show", j.task)
 			usage := p21Path(t, shown, "result", "usage").(map[string]any)
-			if usage["sessions"] != float64(wantBuilds+wantReviews) || usage["total"] != float64((wantBuilds+wantReviews)*15752) {
+			if usage["sessions"] != float64(wantBuilds+wantReviews+1) || usage["total"] != float64((wantBuilds+wantReviews+1)*15752) {
 				t.Fatalf("session usage = %v", usage)
 			}
 			roles := usage["by_role"].(map[string]any)
-			if roles["build"] != float64(15752) || roles["review.primary"] == nil || scenario == "changes" && roles["fix"] != float64(15752) || scenario == "assured" && roles["review.separate"] != float64(15752) {
+			if roles["judge.judge"] != float64(15752) || roles["build"] != float64(15752) || roles["review.primary"] == nil || scenario == "changes" && roles["fix"] != float64(15752) || scenario == "assured" && roles["review.separate"] != float64(15752) {
 				t.Fatalf("usage roles = %v", roles)
 			}
 			listed := w.call("review", "list", j.task)
 			rounds := p21Path(t, listed, "result", "rounds").([]any)
-			if len(rounds) != wantReviews || rounds[wantReviews-1].(map[string]any)["verdict"] != "APPROVE" {
+			if len(rounds) != wantReviews+1 || rounds[wantReviews].(map[string]any)["stream"] != "judge" || rounds[wantReviews].(map[string]any)["sealed"] != true || rounds[wantReviews-1].(map[string]any)["verdict"] != "APPROVE" {
 				t.Fatalf("recorded reviews = %v", rounds)
 			}
 			if scenario == "changes" && rounds[0].(map[string]any)["findings"].([]any)[0].(map[string]any)["open"] != false {
@@ -332,7 +332,7 @@ func TestFirstLoopDefaultConflict(t *testing.T) {
 			}
 		}
 	}
-	if builds != 2 || len(backupJourneyOutcomes(t, j.root)) != 4 {
+	if builds != 2 || len(backupJourneyOutcomes(t, j.root)) != 6 {
 		t.Fatalf("builds/backups = %d/%v", builds, backupJourneyOutcomes(t, j.root))
 	}
 }
@@ -378,7 +378,7 @@ func TestFirstLoopParkAndResume(t *testing.T) {
 					}
 				}
 			}
-			if builds != 2 || len(backupJourneyOutcomes(t, j.root)) != 3 {
+			if builds != 2 || len(backupJourneyOutcomes(t, j.root)) != 4 {
 				t.Fatalf("builds/backups = %d/%v", builds, backupJourneyOutcomes(t, j.root))
 			}
 		})

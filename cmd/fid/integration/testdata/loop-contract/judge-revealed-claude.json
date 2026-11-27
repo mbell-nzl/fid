@@ -1,0 +1,110 @@
+{
+  "contract_version": "fid-cli.v2",
+  "exit": 0,
+  "ok": true,
+  "operation": "review.list",
+  "result": {
+    "rounds[].agrees?": [
+      null,
+      true
+    ],
+    "rounds[].current": [
+      true,
+      true
+    ],
+    "rounds[].findings[].evidence": [
+      [],
+      []
+    ],
+    "rounds[].findings[].fix": [
+      [],
+      []
+    ],
+    "rounds[].findings[].id": [
+      [],
+      []
+    ],
+    "rounds[].findings[].location": [
+      [],
+      []
+    ],
+    "rounds[].findings[].open": [
+      [],
+      []
+    ],
+    "rounds[].findings[].profile": [
+      [],
+      []
+    ],
+    "rounds[].findings[].responses?[].actor": [
+      [],
+      []
+    ],
+    "rounds[].findings[].responses?[].text": [
+      [],
+      []
+    ],
+    "rounds[].findings[].severity": [
+      [],
+      []
+    ],
+    "rounds[].findings[].summary": [
+      [],
+      []
+    ],
+    "rounds[].handoff_id": [
+      "\u003cHOF\u003e",
+      "\u003cHOF\u003e"
+    ],
+    "rounds[].id": [
+      "\u003cRND\u003e",
+      "\u003cRND\u003e"
+    ],
+    "rounds[].lane_raise?.lane": [
+      null,
+      null
+    ],
+    "rounds[].lane_raise?.reason": [
+      null,
+      null
+    ],
+    "rounds[].person_call?.actor": [
+      null,
+      "human:mark"
+    ],
+    "rounds[].person_call?.reason": [
+      null,
+      "Wait for a closer look"
+    ],
+    "rounds[].person_call?.verdict": [
+      null,
+      "HOLD"
+    ],
+    "rounds[].profiles": [
+      [
+        "code",
+        "test-adequacy"
+      ],
+      [
+        "merge"
+      ]
+    ],
+    "rounds[].reason?": [
+      null,
+      "judge sentinel: inspect the edge case"
+    ],
+    "rounds[].sealed?": [
+      null,
+      null
+    ],
+    "rounds[].stream": [
+      "primary",
+      "judge"
+    ],
+    "rounds[].verdict": [
+      "APPROVE",
+      "HOLD"
+    ],
+    "task_id": "\u003cFID\u003e"
+  }
+}

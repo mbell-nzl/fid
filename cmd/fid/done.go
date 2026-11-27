@@ -44,6 +44,7 @@ func newDoneCommand(run github.Runner) *cobra.Command {
 			return doneReasonUsage(cmd, reason)
 		}
 		result, err := donework.Finish(cmd.Context(), options)
+		postRevealedJudges(cmd, root, args[0])
 		if err != nil {
 			return renderDoneFailure(cmd, args[0], err)
 		}
@@ -98,6 +99,9 @@ func doneArgs(cmd *cobra.Command, args []string) error {
 
 func reconcileDone(cmd *cobra.Command, options donework.Options) error {
 	outcomes, err := donework.Reconcile(cmd.Context(), options)
+	for _, outcome := range outcomes {
+		postRevealedJudges(cmd, options.WorkspaceRoot, outcome.TaskID)
+	}
 	if err != nil {
 		return renderCheckOperationFailure(cmd, "task.done", err)
 	}

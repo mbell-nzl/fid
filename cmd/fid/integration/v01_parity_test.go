@@ -25,7 +25,7 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 	migrateParityFixture(t, workspace)
 	for _, args := range [][]string{{"--json", "issue", "get", "FID-a10001"}, {"--json", "issue", "get", "FID-b20002"}, {"--json", "issue", "get", "FID-c30003"}, {"--json", "issue", "list", "--kind", "epic"}, {"--json", "issue", "list", "--kind", "task"}, {"--json", "issue", "list", "--kind", "subtask"}} {
 		got, _ := closureRunFID(t, binary, workspace, args...)
-		if !strings.Contains(got, `"contract_version":"fid-cli.v1"`) || !strings.Contains(got, `"event":null`) {
+		if !strings.Contains(got, `"contract_version":"fid-cli.v2"`) || !strings.Contains(got, `"event":null`) {
 			t.Fatalf("canonical read = %q", got)
 		}
 	}

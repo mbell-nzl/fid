@@ -32,7 +32,7 @@ func decodeReadEnvelope(t *testing.T, output, operation string) readEnvelope {
 	if err := json.Unmarshal([]byte(output), &envelope); err != nil {
 		t.Fatalf("Unmarshal(envelope) error = %v", err)
 	}
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation || envelope.Event != nil {
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != operation || envelope.Event != nil {
 		t.Fatalf("envelope = %#v, want successful %s read with event:null", envelope, operation)
 	}
 	return envelope
@@ -53,7 +53,7 @@ func assertJSONFailureCode(t *testing.T, output, operation, code string) {
 	}
 	assertEnvelopeKeySet(t, []byte(output), []string{"contract_version", "error", "ok", "operation"})
 	assertNestedEnvelopeKeySet(t, []byte(output), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
-	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != operation || envelope.Error.Code != code {
+	if envelope.ContractVersion != "fid-cli.v2" || envelope.OK || envelope.Operation != operation || envelope.Error.Code != code {
 		t.Fatalf("failure envelope = %#v, want %s failure code %q", envelope, operation, code)
 	}
 }

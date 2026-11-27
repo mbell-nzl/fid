@@ -2062,6 +2062,60 @@ run (#122):
 This Standard task has no RESET row; leave `RESET.md` unchanged and use
 `Refs: RESET FID-fc1e1a` in commits.
 
+### Merge judge in shadow (RESET 2.5b)
+
+Mark approved RESET 2.5b's Assured brief (`docs/briefs/2.5b.md`):
+
+1. **His existing actions are his call.** `fid approve` records MERGE for
+   Assured work; a confirmed merge observed by fid records MERGE for other
+   lanes. The new person-only `fid hold <task> --reason <why> --actor
+   human:<name>` records HOLD for a task in review. Only the first call per
+   hand-off is compared, in journal order. A later approval or merge is allowed.
+2. **Codex Sol judges by default**, in a fresh session as `agent:sol-judge`,
+   attributed `openai/gpt-6.1-sol`. The loop has independent
+   `LOOP_JUDGE_COMMAND`, `LOOP_JUDGE_MODEL`, `LOOP_JUDGE_ACTOR` and
+   `LOOP_JUDGE_USAGE` settings; Claude Opus can be substituted.
+3. **The call stays sealed until his call.** Journal and SQL may read it;
+   `show`, `review list`, `status`, loop context and PR delivery cannot
+   expose its verdict or reasons beforehand. They say only that it is
+   recorded and sealed. His approval, observed merge or hold reveals both
+   calls, their agreement and the judge's reasons, and posts the judge's
+   canonical PR comment through the existing receipt and retry mechanism.
+4. **A hold only records his call.** It creates no rework or state transition.
+   The task waits, shown as held with his reason. Mark decides the next
+   action; a must-fix send-back is separate Later task FID-d74924.
+
+**Approved design.** `next` serves kind `judge` once per hand-off after
+required reviews and open-major gates are satisfied, to an actor who neither
+built nor reviewed the task. A new hand-off earns another item; completed
+tasks receive none. The judge uses a review reservation and heartbeat in
+the detached review worktree and reads the brief, whole diff, PR and fid's
+checks, review rounds, findings and lane. CI is a separate `done` gate.
+It records `review record` stream `judge`, profile `merge`, verdict MERGE or
+HOLD, reasons, and an optional higher-lane recommendation with its reason.
+It never satisfies or blocks review requirements, counts toward the rework
+cap, creates rework, applies the lane recommendation, or merges in shadow.
+It stays optional through the trial; `auto_merge` remains off.
+
+The new work kind requires `fid-cli.v2`, rejected by older loops. Contract
+goldens declare judge work, round fields, sealing and `hold`. Loop usage
+records the judge like every other session; its prompt requires GitHub
+Markdown with commands, paths, flags, identifiers and literal output in
+backticks. PR readiness reconciliation still follows `status` approval/merge
+items regardless of the judge. Both calls for the next reset task after
+2.5b merges earn its done mark: Mark's call must precede his ability to see
+the judge's, though the sealed judge round may have been recorded earlier.
+
+**Representation.** Migration 44 adds canonical `merge_holds` and derived
+`merge_calls`, and admits judge reservations and usage. Like issue-creator
+attribution, first-call projection derives from the source Events during
+replay in journal order, with one row per hand-off. It never depends on
+cross-table timestamp sorting. Rebuild and export/import preserve both
+sealing and reveal; source Events remain canonical. A confirmed merge fills
+a hand-off with no earlier call, including Assured work whose approval
+survived from an earlier hand-off of the same change; earlier calls are
+never replaced. No dependency is added.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

@@ -4,6 +4,9 @@ import "github.com/mbell-nzl/fid/internal/fingerprint"
 
 type RoundView struct {
 	Round
+	Sealed     bool          `json:"sealed,omitempty"`
+	PersonCall *PersonCall   `json:"person_call,omitempty"`
+	Agrees     *bool         `json:"agrees,omitempty"`
 	OtherModel bool          `json:"other_model"`
 	Current    bool          `json:"current"`
 	Findings   []FindingView `json:"findings"`
@@ -54,6 +57,14 @@ func currentViews(conn Queryer, rounds []Round, fp Binding) ([]RoundView, error)
 				return nil, err
 			}
 			v.Findings = append(v.Findings, FindingView{Finding: f, Open: c == nil, Closure: c, Responses: responses})
+		}
+		if r.Stream == "judge" {
+			visible, err := VisibleRound(conn, r)
+			if err != nil {
+				return nil, err
+			}
+			visible.Current = v.Current
+			v = visible
 		}
 		views = append(views, v)
 	}

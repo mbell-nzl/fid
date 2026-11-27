@@ -41,7 +41,7 @@ if Path(sys.argv[0]).name == "gh":
         if (state / "ready").exists():
             print("PR is already ready", file=sys.stderr)
             sys.exit(1)
-        rounds = fid("review", "list", os.environ["FIRST_LOOP_TASK"])["rounds"]
+        rounds = [r for r in fid("review", "list", os.environ["FIRST_LOOP_TASK"])["rounds"] if r["stream"] != "judge"]
         log(kind="ready", recorded=bool(rounds and rounds[-1]["verdict"] == "APPROVE"))
         (state / "ready").touch()
     elif args[:2] == ["pr", "view"] and args[-1] == "isDraft":
@@ -67,12 +67,19 @@ calls = state / "calls.jsonl"
 if calls.exists() and sum(json.loads(line)["kind"] in ("build", "review") for line in calls.read_text().splitlines()) >= 6:
     print("stub agent session limit: loop repeated work without making progress", file=sys.stderr)
     sys.exit(42)
-print(json.dumps({"type":"turn.completed","usage":{"input_tokens":15747,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":5,"reasoning_output_tokens":0}}), flush=True)
+if os.getenv("FIRST_LOOP_JUDGE_CLAUDE") == "1" and os.environ["LOOP_ACTOR"].endswith("judge"):
+    print(json.dumps({"type":"result","usage":{"input_tokens":10,"cache_read_input_tokens":2,"cache_creation_input_tokens":3,"output_tokens":5}}), flush=True)
+else:
+    print(json.dumps({"type":"turn.completed","usage":{"input_tokens":15747,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":5,"reasoning_output_tokens":0}}), flush=True)
 print("agent diagnostic on stderr",file=sys.stderr)
 prompt = sys.stdin.read()
 context = json.loads(Path(os.environ["LOOP_CONTEXT"]).read_text())
 work = context["work"]
-if work["kind"] == "review":
+if work["kind"] == "judge":
+    log(kind="judge", context=context, prompt=prompt, actor=os.environ["LOOP_ACTOR"])
+    review={"reviewer":{"actor":os.environ["LOOP_ACTOR"],"model":os.environ["LOOP_MODEL"],"session_id":os.environ["LOOP_SESSION"]},"stream":"judge","profiles":["merge"],"verdict":"HOLD","reason":"judge sentinel: inspect the edge case","purpose":"Assess merge readiness","verification":"- `git diff` inspected","findings":[]}
+    Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps(review, indent=2))
+elif work["kind"] == "review":
     expected = work["review"]["handoff"]["head"]
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     detached = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True).returncode != 0

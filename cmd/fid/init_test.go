@@ -150,8 +150,8 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
 		t.Fatalf("Unmarshal(stdout) error = %v\nstdout=%q", err, stdout.String())
 	}
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "project.init" {
-		t.Fatalf("envelope header = %+v, want fid-cli.v1 successful project.init", envelope)
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != "project.init" {
+		t.Fatalf("envelope header = %+v, want fid-cli.v2 successful project.init", envelope)
 	}
 	root := gittest.ResolvedPath(t, workspace)
 	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != root {
@@ -207,7 +207,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
 	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"path"})
 	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.subject", []string{"id", "type"})
-	if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != "project.init" ||
+	if failure.ContractVersion != "fid-cli.v2" || failure.OK || failure.Operation != "project.init" ||
 		failure.Error.Code != "project-already-initialized" || failure.Error.Category != "conflict" || failure.Error.Details.Path != root {
 		t.Fatalf("failure = %+v, want typed project-already-initialized envelope for %q", failure, root)
 	}

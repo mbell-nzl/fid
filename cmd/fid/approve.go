@@ -60,6 +60,7 @@ func newApproveCommandWithTerminal(terminal func(any) bool) *cobra.Command {
 		if err != nil {
 			return approveFailure(cmd, err)
 		}
+		postRevealedJudges(cmd, root, args[0])
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
 			return err

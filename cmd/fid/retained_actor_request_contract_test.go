@@ -66,7 +66,7 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 			assertEnvelopeKeySet(t, []byte(result.stderr), []string{"contract_version", "error", "ok", "operation"})
 			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
 			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error.details", []string{"allowed", "argument", "value"})
-			if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
+			if failure.ContractVersion != "fid-cli.v2" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical %s invalid-argument", failure, tt.operation)
 			}
 			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
@@ -127,7 +127,7 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 			assertEnvelopeKeySet(t, []byte(result.stderr), []string{"contract_version", "error", "ok", "operation"})
 			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
 			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error.details", []string{"allowed", "argument", "value"})
-			if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
+			if failure.ContractVersion != "fid-cli.v2" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical %s invalid-argument", failure, tt.operation)
 			}
 			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
@@ -232,7 +232,7 @@ func assertRetainedInventoryProjectOperation(t *testing.T, result commandExecuti
 	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
 		t.Fatalf("Unmarshal(%s) error = %v", operation, err)
 	}
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != operation {
 		t.Fatalf("%s envelope = %#v, want selected-project success", operation, envelope)
 	}
 }

@@ -25,6 +25,10 @@ func WriteText(w io.Writer, task string, views []RoundView, renderer display.Ren
 		if i > 0 {
 			lines = append(lines, "")
 		}
+		if v.Stream == "judge" {
+			prose("  ", v.JudgeText())
+			continue
+		}
 		state, model := "stale", v.Reviewer.Model
 		if v.Current {
 			state = "current"

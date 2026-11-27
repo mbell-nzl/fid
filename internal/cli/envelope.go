@@ -1,4 +1,4 @@
-// Package cli provides the domain-neutral fid-cli.v1 response transport.
+// Package cli provides the domain-neutral fid-cli.v2 response transport.
 package cli
 
 import (
@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-const ContractVersion = "fid-cli.v1"
+const ContractVersion = "fid-cli.v2"
 
 type Event struct {
 	ID         string `json:"id"`

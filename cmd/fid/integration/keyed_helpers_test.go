@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "usage.record" || operation == "task.done" || (operation == "task.approve" || operation == "task.waive") || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "task.hold" || operation == "usage.record" || operation == "task.done" || (operation == "task.approve" || operation == "task.waive") || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -129,6 +129,7 @@ var p24PositionalNames = map[string][]string{"check.execute": {"names"},
 	"review.record": {"task"},
 	"task.done":     {"task"},
 	"task.approve":  {"task"},
+	"task.hold":     {"task"},
 	"task.waive":    {"task"},
 	"finding.close": {"finding"},
 	"task.answer":   {"task", "text"},

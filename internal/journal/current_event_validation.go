@@ -55,6 +55,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 				}
 			}
 		}
+		if strings.EqualFold(effect.Table, "merge_calls") || strings.EqualFold(effect.Table, "merge_holds") && (!event.IsV2() || event.EventType != "task.held" || effect.Op != "insert") {
+			return fmt.Errorf("merge calls are derived; holds require their immutable Event-v2 family")
+		}
 		if strings.EqualFold(effect.Table, "completions") && (!event.IsV2() || event.EventType != "task.finished" || effect.Op != "insert") {
 			return fmt.Errorf("completion records require their immutable Event-v2 family")
 		}
@@ -147,6 +150,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	if event.EventType == "task.waived" {
 		return validateWaiver(tx, event)
+	}
+	if event.EventType == "task.held" {
+		return validateMergeHold(tx, event)
 	}
 	if event.EventType == "task.approved" {
 		return validateApproval(tx, event)

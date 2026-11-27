@@ -61,7 +61,7 @@ type archiveSemanticFacts struct {
 }
 
 func newSemanticValidator(migrationsFS fs.FS, projectionSchema int) (*semanticValidator, error) {
-	if projectionSchema != 19 && projectionSchema != 20 && projectionSchema != 21 && projectionSchema != 22 && projectionSchema != 23 && projectionSchema != 24 && projectionSchema != 25 && projectionSchema != 26 && projectionSchema != 27 && projectionSchema != 28 && projectionSchema != 29 && projectionSchema != 30 && projectionSchema != 31 && projectionSchema != 32 && projectionSchema != 33 && projectionSchema != 34 && projectionSchema != 35 && projectionSchema != 36 && projectionSchema != 37 && projectionSchema != 38 && projectionSchema != 39 && projectionSchema != 40 && projectionSchema != 41 && projectionSchema != 42 && projectionSchema != 43 {
+	if projectionSchema != 19 && projectionSchema != 20 && projectionSchema != 21 && projectionSchema != 22 && projectionSchema != 23 && projectionSchema != 24 && projectionSchema != 25 && projectionSchema != 26 && projectionSchema != 27 && projectionSchema != 28 && projectionSchema != 29 && projectionSchema != 30 && projectionSchema != 31 && projectionSchema != 32 && projectionSchema != 33 && projectionSchema != 34 && projectionSchema != 35 && projectionSchema != 36 && projectionSchema != 37 && projectionSchema != 38 && projectionSchema != 39 && projectionSchema != 40 && projectionSchema != 41 && projectionSchema != 42 && projectionSchema != 43 && projectionSchema != 44 {
 		return nil, fmt.Errorf("semantic archive validation: unsupported projection schema %d", projectionSchema)
 	}
 	if migrationsFS == nil {

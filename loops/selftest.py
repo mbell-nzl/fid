@@ -25,6 +25,13 @@ def stub(name):
             return
         print(json.dumps({"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":2,"reasoning_output_tokens":0}}), flush=True)
         print("stderr diagnostic", file=sys.stderr)
+        if scenario == "judge":
+            context=json.loads(Path(os.environ["LOOP_CONTEXT"]).read_text())
+            assert os.environ["LOOP_ACTOR"]=="agent:sol-judge"
+            assert context["receipts"]["issue"]["id"]=="FID-123abc"
+            assert "judge sentinel" not in Path(os.environ["LOOP_CONTEXT"]).read_text()
+            Path(os.environ["LOOP_REVIEW"]).write_text(json.dumps({"stream":"judge","verdict":"HOLD"}))
+            return
         import time
         if scenario == "slow-heartbeat":
             deadline = time.monotonic() + 3
@@ -47,21 +54,26 @@ def stub(name):
                  "done": "task.done", "start": "task.start",
                  "heartbeat": "hold.heartbeat", "park": "hold.park",
                  "show": "issue.show", "status": "project.status", "backup": "project.backup",
-                 "review": "review.list", "usage": "usage.record", "finding": "finding." + (args[1] if command == "finding" else ""), "check": "check.execute"}[command]
+                 "review": "review." + (args[1] if command == "review" else ""), "usage": "usage.record", "finding": "finding." + (args[1] if command == "finding" else ""), "check": "check.execute"}[command]
     result = {}
     if command == "next":
         kind = "new" if scenario in ("heartbeat", "missing-nested", "slow-heartbeat", "claim-no-hold", "work-no-task", "park-failure", "backup-failure", "initial-heartbeat") else "none"
         if scenario in ANSWER_SCENARIOS and Path.cwd().name == "build":
             kind = "rework"
+        if scenario == "judge" and Path.cwd().name != "build" and not (root / "judged").exists():
+            kind="judge"
         if scenario == "role-change":
             kind = "new" if "--claim" in args or Path.cwd().name == "build" else "review"
         result = {"kind": kind, "task": {"id": "FID-123abc"} if kind in ("new", "rework") else None,
                   "hold": {"id": "HLD-123abc"} if kind in ("new", "rework") and "--claim" in args else None,
                   "waiting": {"kind": "waiting-for-you"} if kind == "none" else None, "answer": None}
-        if kind == "review":
+        if kind in ("review", "judge"):
             result["task"] = {"id": "FID-123abc"}
             result["review"] = {"handoff": {"id": "HOF-123abc", "head": "unused", "base": "unused", "pr": "unused"},
-                                "stream": "primary", "required_profiles": ["code"]}
+                                "stream": "judge" if kind=="judge" else "primary", "required_profiles": ["merge"] if kind=="judge" else ["code"]}
+            if kind=="judge":
+                result["review"]["handoff"]["head"]=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
+                if "--claim" in args:result["hold"]={"id":"RCL-123abc"}
         if scenario == "none-task":
             result["task"] = {"id": "FID-123abc"}
         if scenario == "none-hold":
@@ -98,6 +110,10 @@ def stub(name):
                 finding["responses"] = [{"actor": "human:mark", "text": "Please fix this."}]
             result["rounds"] = [{"id": "RND-123abc", "handoff_id": "HOF-123abc", "stream": "primary", "profiles": ["code"],
                                  "verdict": "CHANGES", "current": True, "findings": [finding]}]
+        if args[1]=="record":
+            assert scenario=="judge"
+            (root / "judged").touch()
+            result={"round":{"id":"RND-123abc","task_id":"FID-123abc","handoff_id":"HOF-123abc","stream":"judge","profiles":["merge"],"verdict":"","findings":[],"sealed":True}}
     if command == "finding":
         result = {"response": {"id": "FRS-123abc", "finding_id": "RND-123abc-1", "task_id": "FID-123abc", "handoff_id": "HOF-123abc",
                                "actor": "agent:sol-builder", "text": "Fixed in `abc123`.", "at": "2026-11-28T00:00:00Z"}}
@@ -106,12 +122,12 @@ def stub(name):
         if scenario == "answer-missing-field":
             del result["response"]["text"]
     if command == "check" or command == "finding" and scenario == "answer-refused":
-        print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+        print(json.dumps({"contract_version": "fid-cli.v2", "ok": False, "operation": operation,
                           "error": {"code": "check-probe-stopped" if command == "check" else "invalid-argument", "retryable": False}}), file=sys.stderr)
         sys.exit(4)
     if command == "usage":
         if os.getenv("STUB_USAGE_FAILURE") == "1":
-            print(json.dumps({"contract_version":"fid-cli.v1", "operation":operation, "ok":False, "error":{"code":"invalid-argument", "retryable":False}}), file=sys.stderr)
+            print(json.dumps({"contract_version":"fid-cli.v2", "operation":operation, "ok":False, "error":{"code":"invalid-argument", "retryable":False}}), file=sys.stderr)
             sys.exit(2)
         stdout = Path(args[args.index("--tool-output") + 1]).read_text()
         assert "stderr diagnostic" not in stdout
@@ -128,7 +144,7 @@ def stub(name):
     if (scenario in ("park-failure", "backup-failure") and command == "heartbeat" or
             scenario == "park-failure" and command == "park" or
             scenario == "backup-failure" and command == "backup"):
-        print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+        print(json.dumps({"contract_version": "fid-cli.v2", "ok": False, "operation": operation,
                           "error": {"code": command + "-probe-failed", "retryable": False}}), file=sys.stderr)
         sys.exit(4)
     if command == "heartbeat":
@@ -140,12 +156,12 @@ def stub(name):
             with (root / "calls").open("a") as log:
                 log.write(json.dumps(["heartbeat-finished", str(Path.cwd()), []]) + "\n")
         elif count.exists():
-            print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+            print(json.dumps({"contract_version": "fid-cli.v2", "ok": False, "operation": operation,
                               "error": {"code": "hold-not-current", "retryable": False}}), file=sys.stderr)
             sys.exit(4)
         count.touch()
         result = {"task_id": "FID-123abc", "hold_id": "HLD-123abc", "last_heartbeat_at": "2026-11-25T00:00:00Z",
-                  "expires_at": "2026-11-25T01:00:00Z", "heartbeat_interval_seconds": 300 if scenario in ANSWER_SCENARIOS else 0.01}
+                  "expires_at": "2026-11-25T01:00:00Z", "heartbeat_interval_seconds": 300 if scenario in ANSWER_SCENARIOS or scenario=="judge" else 0.01}
     if command == "next" and scenario in ("empty", "malformed"):
         print("" if scenario == "empty" else "{bad-json")
         return
@@ -154,12 +170,12 @@ def stub(name):
     if command == "done" and scenario == "empty-done":
         return
     if scenario == "nonzero":
-        print(json.dumps({"contract_version": "fid-cli.v1", "ok": False, "operation": operation,
+        print(json.dumps({"contract_version": "fid-cli.v2", "ok": False, "operation": operation,
                           "error": {"code": "internal-error", "retryable": False}}), file=sys.stderr)
         sys.exit(7)
     if command == "next" and scenario == "result-null":
         result = None
-    reply = {"contract_version": "fid-cli.future" if scenario == "version" else "fid-cli.v1",
+    reply = {"contract_version": "fid-cli.future" if scenario == "version" else "fid-cli.v2",
              "ok": scenario != "false-ok", "operation": operation, "result": result}
     print(json.dumps(reply), file=sys.stderr if scenario == "nonzero-success" else sys.stdout)
     if scenario == "nonzero-success":
@@ -167,6 +183,20 @@ def stub(name):
 
 
 class Selftest(unittest.TestCase):
+    def test_judge_role(self):
+        result,calls=self.run_loop("judge",usage="none")
+        self.assertEqual(result.returncode,0,result.stderr)
+        claims=[c[2] for c in calls if c[0]=="fid" and "--claim" in c[2]]
+        self.assertIn("agent:sol-judge",claims[0])
+        self.assertTrue(any(c[0]=="fid" and c[2][1:3]==["review","record"] for c in calls))
+        self.assertFalse(any(c[0]=="fid" and c[2][1] in ("check","handoff","start","park") for c in calls))
+
+    def test_judge_markdown_guidance(self):
+        prompt = " ".join((SOURCE / "prompts/judge.md").read_text().split())
+        for instruction in ("GitHub Markdown", "in every text field", "`backticks`", "whole diff", "MERGE", "HOLD", "shadow", "LOOP_REVIEW"):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, prompt)
+
     def test_reviewer_markdown_guidance(self):
         prompt = " ".join((SOURCE / "prompts/reviewer.md").read_text().split())
         for instruction in ("GitHub Markdown", "in every text field", "commands, file paths, test names, flags, identifiers and literal output",
@@ -193,9 +223,10 @@ class Selftest(unittest.TestCase):
                 script.chmod(0o700)
             env = {**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
                    "STUB_ROOT": str(root / ".git"),
-                   "LOOP_BUILDER_USAGE": usage, "LOOP_REVIEWER_USAGE": usage,
+                   "LOOP_JUDGE_ACTOR": "agent:sol-judge", "LOOP_JUDGE_MODEL": "openai/gpt-6.1-sol",
+                   "LOOP_BUILDER_USAGE": usage, "LOOP_REVIEWER_USAGE": usage, "LOOP_JUDGE_USAGE": "none",
                    "STUB_VERSION_FAILURE": str(int(version_failure)), "STUB_USAGE_FAILURE": str(int(usage_failure)), "STUB_SCENARIO": scenario, "LOOP_FID": str(bin_dir / "fid"),
-                   "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"),
+                   "LOOP_BUILDER_COMMAND": str(bin_dir / "agent"), "LOOP_REVIEWER_COMMAND": str(bin_dir / "agent"), "LOOP_JUDGE_COMMAND": str(bin_dir / "agent"),
                    "LOOP_GH_REPO": "test/project", "XDG_CONFIG_HOME": str(root / "config")}
             env["LOOP_EPIC"] = ""
             if scenario == "same-actors":
@@ -299,7 +330,7 @@ class Selftest(unittest.TestCase):
         result, calls = self.run_loop("epic")
         self.assertEqual(result.returncode, 0, result.stderr)
         selections = [c for c in calls if c[0] == "fid" and c[2][1] == "next"]
-        self.assertEqual(len(selections), 3)
+        self.assertEqual(len(selections), 4)
         self.assertEqual(len({c[1] for c in selections}), 2)
         for _, _, args in selections:
             self.assertIn("--epic", args)

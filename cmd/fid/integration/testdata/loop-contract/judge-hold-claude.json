@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v2",
+  "exit": 0,
+  "ok": true,
+  "operation": "task.hold",
+  "result": {
+    "actor": "human:mark",
+    "at": "\u003ctime\u003e",
+    "decision_id": "\u003cPDN\u003e",
+    "handoff_id": "\u003cHOF\u003e",
+    "reason": "Wait for a closer look",
+    "task_id": "\u003cFID\u003e",
+    "verdict": "HOLD"
+  }
+}

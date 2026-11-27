@@ -15,6 +15,7 @@ const (
 	KindResume = "resume"
 	KindRework = "rework"
 	KindReview = "review"
+	KindJudge  = "judge"
 	KindNone   = "none"
 )
 
@@ -190,6 +191,9 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 		planned.kind = KindResume
 	case planned.served >= 0 && planned.reviews[planned.queue[planned.served].ID].work != nil:
 		planned.kind = KindReview
+		if planned.reviews[planned.queue[planned.served].ID].work.Stream == "judge" {
+			planned.kind = KindJudge
+		}
 	case planned.served >= 0:
 		planned.kind = KindNew
 	default:

@@ -27,8 +27,8 @@ func TestMaintenanceCheckJSONMatchesContract(t *testing.T) {
 	}
 	healthyEnvelope := decodeMaintenanceEnvelope(t, healthy.stdout)
 	assertExactMaintenanceEnvelopeKeys(t, healthyEnvelope, []string{"contract_version", "ok", "operation", "result", "event"})
-	if healthyEnvelope["contract_version"] != "fid-cli.v1" || healthyEnvelope["ok"] != true || healthyEnvelope["operation"] != "maintenance.check" || healthyEnvelope["event"] != nil {
-		t.Fatalf("healthy maintenance.check envelope = %#v, want fid-cli.v1 read success", healthyEnvelope)
+	if healthyEnvelope["contract_version"] != "fid-cli.v2" || healthyEnvelope["ok"] != true || healthyEnvelope["operation"] != "maintenance.check" || healthyEnvelope["event"] != nil {
+		t.Fatalf("healthy maintenance.check envelope = %#v, want fid-cli.v2 read success", healthyEnvelope)
 	}
 	healthyResult := maintenanceResultFromEnvelope(t, healthyEnvelope, "result")
 	assertExactMaintenanceEnvelopeKeys(t, healthyResult["info"].(map[string]any), []string{"issue_count", "recent_activity_7d"})
@@ -49,8 +49,8 @@ func TestMaintenanceCheckJSONMatchesContract(t *testing.T) {
 	}
 	failingEnvelope := decodeMaintenanceEnvelope(t, failing.stderr)
 	assertExactMaintenanceEnvelopeKeys(t, failingEnvelope, []string{"contract_version", "ok", "operation", "error"})
-	if failingEnvelope["contract_version"] != "fid-cli.v1" || failingEnvelope["ok"] != false || failingEnvelope["operation"] != "maintenance.check" {
-		t.Fatalf("failing maintenance.check envelope = %#v, want fid-cli.v1 failure", failingEnvelope)
+	if failingEnvelope["contract_version"] != "fid-cli.v2" || failingEnvelope["ok"] != false || failingEnvelope["operation"] != "maintenance.check" {
+		t.Fatalf("failing maintenance.check envelope = %#v, want fid-cli.v2 failure", failingEnvelope)
 	}
 	errorObject, ok := failingEnvelope["error"].(map[string]any)
 	if !ok {
