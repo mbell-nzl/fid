@@ -123,7 +123,9 @@ criteria below.
 | **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task; runs the review work `next` hands out as kind `review`, and passes the agent Mark's answer when a task that waited for him resumes (decisions record, 11 November 2026, items 5 and 11) | Standard | It runs a reset task end to end (done 2026-11-28) |
 | **2.5b** | Merge judge in shadow: Mark records his call first; the judge's call (MERGE or HOLD, hold-only) is a round with profile `merge`, kept from him until his is recorded | Assured | Both calls are recorded for a reset task, Mark's before he could see the judge's |
 | **2.6** | Usage capture: `fid usage record` reads each agent session's tokens from `codex` and `claude` JSON output; the loop records every session; `fid show` totals a task's usage | Assured | Every task the loop runs has a token count (done 2026-11-28) |
-| **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest; `fid done <epic>` also checks the epic's validations (decisions record, 11 November 2026, item 9) | Standard | V1's fixture recipe runs from `fid brief` |
+| **3.1a** | Epic validations and `fid epic approve`: `next` serves an epic's unstarted tasks only while its approval, bound to the validation list, is current; approving accepts the plan's agent-created tasks; `fid done <epic>` also needs a current pass for every validation (decisions record, 11 November 2026, item 9, and 2026-11-28) | Assured | An epic's unstarted tasks wait for its approval, and `fid done <epic>` refuses until every validation has a current pass |
+| **3.1b** | `fid brief`: the merged digest (one line per merged task, holds on top) and an epic's validations with their recipes | Standard | The digest lists merged tasks with holds on top and shows an epic's validations with their recipes, offline |
+| **3.1c** | V1's fixture recipe: a stuck-task fixture and the steps Mark follows | Standard | V1's fixture recipe runs from `fid brief` |
 | **3.2** | Squash the 42 migrations into a baseline; tidy `go.mod`, unless an earlier Assured task already has; release v0.2.0; create the permanent ledger; run a restore drill; restore rebuilds the projection from the archive's journal with the running fid, so an older archive restores and one from a newer fid is refused (decisions record, 11 November 2026, item 10) | Assured | A fresh clone restores the ledger from backup; `go mod tidy -diff` reports nothing |
 | **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |
 | **3.4** | kauri: archive its V1 docs, one-page AGENTS.md, `.fid.toml`, install the kit, pre-register and randomly assign 10 trial tasks | Mark | Ready for the trial |
@@ -145,6 +147,8 @@ On 2026-11-15 Mark added 1.5f after a local CI run that crossed UTC midnight fai
 On 2026-11-16 Mark added 1.9 after review caught four admission gaps in 1.6.
 On 2026-11-17 Mark added 1.9b and 1.9c from 1.9's audit, both Assured. 1.9b runs before 2.1;
 1.9c runs alongside phase 2. The same day he added the scoped `next` to 2.4.
+On 2026-11-28 Mark chose to build all of 3.1 before the trial; the orchestrator split it into
+3.1a-3.1c. 3.1a is Assured: it adds a migration and person decisions.
 
 Weeks 4–6 run the trial; it may slip to week 7.
 
