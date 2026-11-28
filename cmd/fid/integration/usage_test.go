@@ -71,7 +71,7 @@ func TestLoopUsageNoneAndRefusalContinue(t *testing.T) {
 		t.Run(format, func(t *testing.T) {
 			t.Parallel()
 			j := newFirstLoop(t, "approve")
-			j.env = append(j.env, "LOOP_BUILDER_USAGE="+format, "LOOP_REVIEWER_USAGE="+format)
+			j.env = append(j.env, "LOOP_BUILDER_USAGE="+format, "LOOP_REVIEWER_USAGE="+format, "LOOP_JUDGE_USAGE="+format)
 			out := j.run(t, 0)
 			if format == "claude" && !strings.Contains(out, "usage record failed:") {
 				t.Fatal("usage refusal was not printed")
@@ -81,7 +81,7 @@ func TestLoopUsageNoneAndRefusalContinue(t *testing.T) {
 			if p21Path(t, shown, "result").(map[string]any)["usage"] != nil {
 				t.Fatal("recorded disabled or refused usage")
 			}
-			if len(w.call("review", "list", j.task)["result"].(map[string]any)["rounds"].([]any)) != 1 {
+			if len(w.call("review", "list", j.task)["result"].(map[string]any)["rounds"].([]any)) != 2 {
 				t.Fatal("usage failure stopped review")
 			}
 		})

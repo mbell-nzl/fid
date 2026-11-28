@@ -27,6 +27,9 @@ func applyEventEffects(tx *sql.Tx, input ProjectionInput, executor fiddb.Project
 	if err := projectIssueCreator(tx, input.Event); err != nil {
 		return err
 	}
+	if err := projectMergeCall(tx, input.Event); err != nil {
+		return err
+	}
 	return validateCurrentAppliedResults(tx, input.Event)
 }
 func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect, executor fiddb.ProjectionMetaExecutor) error {

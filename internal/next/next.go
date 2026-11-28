@@ -209,7 +209,7 @@ func assemble(conn reviewrecord.Queryer, options Options, now time.Time) (Result
 				return Result{}, order{}, err
 			}
 		}
-		if planned.kind == KindReview {
+		if planned.kind == KindReview || planned.kind == KindJudge {
 			result.Review = reviews[task.ID].work
 		}
 		history, err := questions.Read(conn, task.ID)
@@ -252,7 +252,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	if planned.kind == KindNone {
 		return nil
 	}
-	if planned.kind == KindReview {
+	if planned.kind == KindReview || planned.kind == KindJudge {
 		return takeReview(lock, conn, options, result, planned.reviews[result.Task.ID])
 	}
 	if planned.kind == KindResume && planned.own.Live(result.Now) {

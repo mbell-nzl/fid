@@ -36,6 +36,9 @@ func WriteText(w io.Writer, result Result, renderer display.Renderer) error {
 	if rows := text.rows(result); len(rows) > 0 {
 		blocks = append(blocks, rows)
 	}
+	for _, r := range result.JudgeRounds {
+		blocks = append(blocks, text.value("Judge", r.JudgeText()))
+	}
 	if result.Completion != nil {
 		blocks = append(blocks, text.completion(result))
 	}

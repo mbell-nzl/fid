@@ -1,5 +1,5 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "exit": 0,
   "ok": true,
   "operation": "issue.show",
@@ -10,6 +10,11 @@
     "issue.acceptance_criteria[].text": [],
     "issue.id": "\u003cFID\u003e",
     "issue.spec_md_path": null,
-    "issue.title": "Task with no brief or criteria"
+    "issue.title": "Task with no brief or criteria",
+    "judge_rounds?[].agrees?": null,
+    "judge_rounds?[].person_call?.verdict": null,
+    "judge_rounds?[].reason?": null,
+    "judge_rounds?[].sealed?": null,
+    "judge_rounds?[].verdict": null
   }
 }

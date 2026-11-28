@@ -103,7 +103,7 @@ func p24FailureFilesystem(t *testing.T, root string) map[string]string {
 // DEC-286: refusal precedes all workspace and archive access.
 func TestP24UnavailableImportRootFlagFailurePair(t *testing.T) {
 	t.Parallel()
-	const jsonFailure = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
+	const jsonFailure = `{"contract_version":"fid-cli.v2","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
 	const humanFailure = "error: --project is not available for export import\nreason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository\n"
 	for _, missing := range []bool{false, true} {
 		t.Run(fmt.Sprintf("missing-project=%t", missing), func(t *testing.T) {

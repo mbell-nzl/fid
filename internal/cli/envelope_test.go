@@ -25,7 +25,7 @@ func TestWriteSuccessUsesExactContractKeys(t *testing.T) {
 	}
 
 	assertExactKeys(t, envelope, "contract_version", "ok", "operation", "result", "event")
-	assertJSONValue(t, envelope["contract_version"], `"fid-cli.v1"`)
+	assertJSONValue(t, envelope["contract_version"], `"fid-cli.v2"`)
 	assertJSONValue(t, envelope["ok"], `true`)
 	assertJSONValue(t, envelope["operation"], `"issue.get"`)
 	assertJSONValue(t, envelope["event"], `null`)
@@ -58,7 +58,7 @@ func TestWriteFailureUsesExactContractKeys(t *testing.T) {
 	}
 
 	assertExactKeys(t, envelope, "contract_version", "ok", "operation", "error")
-	assertJSONValue(t, envelope["contract_version"], `"fid-cli.v1"`)
+	assertJSONValue(t, envelope["contract_version"], `"fid-cli.v2"`)
 	assertJSONValue(t, envelope["ok"], `false`)
 	assertJSONValue(t, envelope["operation"], `"issue.get"`)
 

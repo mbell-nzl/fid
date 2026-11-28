@@ -51,7 +51,14 @@ func (d Disposition) Closes() bool {
 	return d.Disposition == "resolved" || d.Disposition == "not-applicable"
 }
 
+type LaneRaise struct {
+	Lane   string `json:"lane"`
+	Reason string `json:"reason"`
+}
+
 type Input struct {
+	Reason       string         `json:"reason,omitempty"`
+	LaneRaise    *LaneRaise     `json:"lane_raise,omitempty"`
 	Reviewer     Reviewer       `json:"reviewer"`
 	Stream       string         `json:"stream"`
 	Profiles     []string       `json:"profiles"`
@@ -78,6 +85,8 @@ type Finding struct {
 }
 
 type Round struct {
+	Reason       string        `json:"reason,omitempty"`
+	LaneRaise    *LaneRaise    `json:"lane_raise,omitempty"`
 	ID           string        `json:"id"`
 	TaskID       string        `json:"task_id"`
 	HandoffID    string        `json:"handoff_id"`
@@ -113,10 +122,20 @@ func (in Input) Validate() error {
 	if in.Reviewer.Effort != "" && !token.MatchString(in.Reviewer.Effort) {
 		return fmt.Errorf("invalid reviewer effort")
 	}
-	if in.Stream != "primary" && in.Stream != "separate" {
-		return fmt.Errorf("review stream must be primary or separate")
+	if in.Stream == "judge" {
+		if (in.Verdict != "MERGE" && in.Verdict != "HOLD") || !slices.Equal(in.Profiles, []string{"merge"}) || !text(in.Reason) || len(in.Findings) != 0 || len(in.Dispositions) != 0 {
+			return fmt.Errorf("judge requires merge profile, MERGE or HOLD, reason, and no findings or dispositions")
+		}
+		if in.LaneRaise != nil && (!text(in.LaneRaise.Reason) || (in.LaneRaise.Lane != "standard" && in.LaneRaise.Lane != "assured")) {
+			return fmt.Errorf("judge lane raise requires a higher lane and reason")
+		}
+	} else if in.Reason != "" || in.LaneRaise != nil {
+		return fmt.Errorf("judge fields require judge stream")
 	}
-	if in.Verdict != "APPROVE" && in.Verdict != "CHANGES" {
+	if in.Stream != "primary" && in.Stream != "separate" && in.Stream != "judge" {
+		return fmt.Errorf("review stream must be primary, separate or judge")
+	}
+	if in.Stream != "judge" && in.Verdict != "APPROVE" && in.Verdict != "CHANGES" {
 		return fmt.Errorf("review verdict must be APPROVE or CHANGES")
 	}
 	if in.Profiles == nil || in.Findings == nil || !text(in.Purpose) || !text(in.Verification) {
@@ -154,7 +173,7 @@ func (r Round) Input() Input {
 	for i, f := range r.Findings {
 		findings[i] = f.FindingInput
 	}
-	return Input{r.Reviewer, r.Stream, r.Profiles, r.Verdict, r.Purpose, findings, r.Dispositions, r.Verification, r.Provenance}
+	return Input{Reviewer: r.Reviewer, Stream: r.Stream, Profiles: r.Profiles, Verdict: r.Verdict, Purpose: r.Purpose, Findings: findings, Dispositions: r.Dispositions, Verification: r.Verification, Provenance: r.Provenance, Reason: r.Reason, LaneRaise: r.LaneRaise}
 }
 
 func (r Round) Validate() error {

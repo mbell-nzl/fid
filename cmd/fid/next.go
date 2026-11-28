@@ -79,7 +79,7 @@ func newNextCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&claim, "claim", false, "Take the task as a hold for this worktree")
-	cmd.Flags().StringVar(&actor, "actor", "", "Who takes the task, agent:<id> or human:<id>; only with --claim")
+	cmd.Flags().StringVar(&actor, "actor", "", "Whose eligible work to preview or take, agent:<id> or human:<id>")
 	cmd.Flags().StringVar(&model, "model", "", "Builder model as <family>/<model>; required for agents taking work")
 	cmd.Flags().BoolVar(&explain, "explain", false, "List the whole order with a verdict for each task")
 	cmd.Flags().StringVar(&epic, "epic", "", "Serve only this epic's tasks, including review work")
@@ -91,21 +91,21 @@ func newNextCommand() *cobra.Command {
 // is never accepted and ignored.
 func refuseNextRequest(cmd *cobra.Command, claim bool, actor, model string) error {
 	switch {
-	case !claim && (cmd.Flags().Changed("actor") || cmd.Flags().Changed("model")):
-		return writeGrammarFailure(cmd, "next.get", cli.CodeInvalidArgument, "--actor and --model are accepted only when taking the task",
+	case !claim && cmd.Flags().Changed("model"):
+		return writeGrammarFailure(cmd, "next.get", cli.CodeInvalidArgument, "--model is accepted only when taking the task",
 			map[string]any{"argument": flagCombinationArgument, "value": nil, "allowed": []string{"accepted next.get input"}})
-	case !claim:
+	case !claim && !cmd.Flags().Changed("actor"):
 		return nil
 	case !cmd.Flags().Changed("actor"):
 		return requireCanonicalFlag(cmd, "next.claim", "actor")
 	case !nextActor.MatchString(actor):
-		return writeGrammarFailure(cmd, "next.claim", cli.CodeInvalidArgument, fmt.Sprintf("invalid argument %q for %q flag", actor, "--actor"),
+		return writeGrammarFailure(cmd, leafOperation(cmd), cli.CodeInvalidArgument, fmt.Sprintf("invalid argument %q for %q flag", actor, "--actor"),
 			map[string]any{"argument": "--actor", "value": actor, "allowed": []string{nextActorPattern}})
 	}
 	if err := next.CheckActor(actor); err != nil {
 		return refuseNextActor(cmd, actor)
 	}
-	if strings.HasPrefix(actor, "agent:") && !cmd.Flags().Changed("model") {
+	if claim && strings.HasPrefix(actor, "agent:") && !cmd.Flags().Changed("model") {
 		return requireCanonicalFlag(cmd, "next.claim", "model")
 	}
 	if cmd.Flags().Changed("model") && !modelid.Valid(model) {
@@ -120,7 +120,7 @@ func refuseNextRequest(cmd *cobra.Command, claim bool, actor, model string) erro
 func refuseNextActor(cmd *cobra.Command, actor string) error {
 	const message = "service actors can't take tasks"
 	failure, err := cli.NewFailure(cli.CodeAuthorityDenied, message, nil,
-		map[string]any{"actor_id": actor, "operation": "next.claim", "required_actions": []string{"next.claim"}, "required_capabilities": []string{"next.claim"}})
+		map[string]any{"actor_id": actor, "operation": leafOperation(cmd), "required_actions": []string{leafOperation(cmd)}, "required_capabilities": []string{leafOperation(cmd)}})
 	if err != nil {
 		return err
 	}
@@ -130,11 +130,11 @@ func refuseNextActor(cmd *cobra.Command, actor string) error {
 	}
 	cause := errors.New(message)
 	if jsonMode {
-		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "next.claim", failure, cause)
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), leafOperation(cmd), failure, cause)
 	}
 	human := failure
 	human.Details = map[string]any{"actor_id": actor}
-	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), "next.claim", cmd.CommandPath(), human, false); err != nil {
+	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), leafOperation(cmd), cmd.CommandPath(), human, false); err != nil {
 		return err
 	}
 	return cli.NewFailureError(failure, cause)

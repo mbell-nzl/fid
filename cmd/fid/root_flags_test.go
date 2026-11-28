@@ -13,7 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-const p24UnavailableProjectJSON = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
+const p24UnavailableProjectJSON = `{"contract_version":"fid-cli.v2","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
 
 func TestP24UnavailableRootFlagMapping(t *testing.T) {
 	t.Parallel()
@@ -52,7 +52,7 @@ func TestP24DiagnosticRootFlagBytesPreserved(t *testing.T) {
 			}
 			result := executeCommandForTest(t.TempDir(), append(args, leaf...)...)
 			path := strings.Join(leaf[:len(leaf)-1], " ")
-			want := "error: " + flag + " is not available for " + path + " until its fid-cli.v1 transport is migrated\n"
+			want := "error: " + flag + " is not available for " + path + " until its fid-cli.v2 transport is migrated\n"
 			if result.err == nil || cli.ExitCode(result.err) != 7 || result.stdout != "" || result.stderr != want {
 				t.Fatalf("diagnostic refusal: %#v want %q", result, want)
 			}

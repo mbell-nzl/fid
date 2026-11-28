@@ -684,7 +684,7 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, wor
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
 	link := envelope.Result["link"].(map[string]any)
 	assertExactKeys(t, link, []string{"from_id", "from_type", "relation", "to_id", "to_type"})
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation ||
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != operation ||
 		link["from_type"] != "issue" || link["from_id"] != fromID || link["relation"] != relation || link["to_type"] != "issue" || link["to_id"] != toID {
 		t.Fatalf("%s envelope = %#v, want exact typed link result", operation, envelope)
 	}
@@ -734,7 +734,7 @@ func assertLinkFailure(t *testing.T, output, operation, code string, wantSubject
 	assertExactKeys(t, envelope, []string{"contract_version", "error", "ok", "operation"})
 	errorObject := envelope["error"].(map[string]any)
 	assertExactKeys(t, errorObject, []string{"category", "code", "details", "message", "retryable", "subject"})
-	if envelope["contract_version"] != "fid-cli.v1" || envelope["ok"] != false || envelope["operation"] != operation || errorObject["code"] != code || errorObject["retryable"] != false {
+	if envelope["contract_version"] != "fid-cli.v2" || envelope["ok"] != false || envelope["operation"] != operation || errorObject["code"] != code || errorObject["retryable"] != false {
 		t.Fatalf("failure envelope = %#v, want %s %s", envelope, operation, code)
 	}
 	if wantSubject == nil {

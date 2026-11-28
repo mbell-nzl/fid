@@ -42,8 +42,8 @@ func TestReviewWorkSelection(t *testing.T) {
 				if item := selectionItem(t, f, "merge"); item == nil {
 					t.Fatal("Routine without required reviews needs merge item")
 				}
-				if got["kind"] != "none" {
-					t.Fatalf("Routine with no required profiles: %v", got)
+				if got["kind"] != "judge" {
+					t.Fatalf("Routine with satisfied reviews needs shadow judge: %v", got)
 				}
 				return
 			}
@@ -67,8 +67,8 @@ func TestReviewWorkSelection(t *testing.T) {
 				lifecycleResult(t, recordReviewTask(t, f, in, "separate", "human:courier", task), "review.record")
 				got = selectionNext(t, f, "")
 			}
-			if got["kind"] != "none" {
-				t.Fatalf("approved task still needs review: %v", got)
+			if got["kind"] != "judge" {
+				t.Fatalf("approved task needs shadow judge: %v", got)
 			}
 			f.workspace = builder
 			if got := selectionNext(t, f, ""); got["kind"] != "none" || got["waiting"].(map[string]any)["kind"] != "review" {

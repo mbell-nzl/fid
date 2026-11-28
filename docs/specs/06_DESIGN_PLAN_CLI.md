@@ -89,7 +89,7 @@ Success:
 
 ```json
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "ok": true,
   "operation": "issue.get",
   "result": {"issue": {"id": "FID-123", "kind": "task", "title": "Example", "status": "todo", "status_category": "unstarted", "workflow_id": "task-default", "parent_id": null, "priority": null, "sequence": null, "spec_md_path": null, "revision": 1, "labels": [], "lane": null, "created_at": "2026-08-22T00:00:00Z", "updated_at": "2026-08-22T00:00:00Z", "acceptance_criteria": []}},
@@ -101,7 +101,7 @@ Failure is written to stderr with non-zero process status:
 
 ```json
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "ok": false,
   "operation": "issue.get",
   "error": {
@@ -881,7 +881,7 @@ why the local comparison is unavailable. Other worktrees cannot take it.
 Optional `rework` JSON names `{cause: "default-conflict", default_ref,
 default_commit, handoff_id, head, conflicting_paths}`; non-UTF-8 paths also
 include base64 `conflicting_path_bytes`. `rework_unavailable`, when present,
-explains missing local evidence. The `fid-cli.v1` contract is unchanged.
+explains missing local evidence. The `fid-cli.v2` contract is unchanged.
 The builder merges the default branch, checks and hands off again. This
 return adds no review round or cap charge. Earlier rounds and approval stay
 current exactly while the new hand-off's fingerprint matches. A clean
@@ -1143,7 +1143,7 @@ snapshot, requires no clean tree, and neither changes git nor records a
 Text: `✓ Started FID-9f13aa · Standard`. JSON:
 
 ```json
-{"contract_version":"fid-cli.v1","ok":true,"operation":"task.start","result":{"task_id":"FID-9f13aa","status":"in_progress","hold_id":"HLD-4c1e9a","lane":"standard"},"event":{"id":"EVT-100001","occurred_at":"2026-11-14T09:00:00Z"}}
+{"contract_version":"fid-cli.v2","ok":true,"operation":"task.start","result":{"task_id":"FID-9f13aa","status":"in_progress","hold_id":"HLD-4c1e9a","lane":"standard"},"event":{"id":"EVT-100001","occurred_at":"2026-11-14T09:00:00Z"}}
 ```
 
 With a current hold on a task already `in_progress`, start succeeds without
@@ -1540,9 +1540,11 @@ outside the nullable location are refused before project access.
 | `reviewer.model` | Optional string | `<family>/<model>`, as on build holds; omission or an empty value means unknown |
 | `reviewer.effort` | Optional short token | The declared reviewer effort |
 | `reviewer.session_id` | Required short token | Attributed session identity; an assertion, not authentication |
-| `stream` | Required string | `primary`, or `separate` for an Assured hand-off |
+| `stream` | Required string | `primary`, `separate` for an Assured hand-off, or shadow `judge` |
 | `profiles` | Required array of unique short tokens | Every profile this session reviewed; `[]` is possible for Routine work without a test trigger |
-| `verdict` | Required string | `APPROVE` or `CHANGES` |
+| `verdict` | Required string | `APPROVE` or `CHANGES`; shadow `judge` uses MERGE or HOLD |
+| `reason` | Required for `judge`, omitted for other streams | Reasons for the shadow merge call |
+| `lane_raise` | Optional judge object | A higher `lane` and its nonblank `reason`; recorded without applying it |
 | `purpose` | Required nonblank string | What the change sets out to do, as the review read it (jig's "Claim" line; fid's human text never says "claim") |
 | `findings` | Required array | `[]` for no findings; the caller supplies no finding IDs |
 | `findings[].profile` | Required string | One of the session's profiles |
@@ -1572,7 +1574,7 @@ Admission examines **every** build hold of the task, including ended,
 lapsed and replaced holds. A reviewer who ever held it is refused. There
 must be a latest hand-off; the round binds to its recorded base and head
 using the local `patch-id-verbatim-per-file-v1` fingerprint, never fetching missing
-objects. Every round must include the required profiles selected from that
+objects. Each primary or separate round must include the required profiles selected from that
 hand-off's lane, changed paths and policy snapshot: `code` for Standard and
 Assured, plus `test-adequacy` in any lane whose paths match the frozen test
 paths. Unsupported changed paths conservatively trigger test adequacy.
@@ -1907,6 +1909,41 @@ original response and Event without prompting or needing git objects; a
 changed task, actor, reason or target lane conflicts in the project-scoped
 `task.waive` idempotency scope.
 
+### Shadow merge judge and person hold (RESET 2.5b)
+
+The `fid-cli.v2` [loop contract](LOOP_CONTRACT.md#shadow-merge-judge-reset-25b)
+declares `next` kind `judge`, served after required reviews, once per
+hand-off, to an actor who neither built nor reviewed the task. The ordinary
+`review` work object carries stream `judge`, required profile `merge`, and
+the hand-off's PR/base/head. Reservations use the review heartbeat lifecycle.
+
+`fid review record` additionally accepts stream `judge`, profiles `["merge"]`,
+verdict MERGE or HOLD and required `reason`, with the usual reviewer,
+purpose, verification and empty findings. Optional `lane_raise` contains
+`lane` and `reason` and must recommend a higher lane. No findings or
+dispositions are allowed. Shadow calls never change review requirements,
+rework, its cap or the task lane. The call remains optional.
+
+`fid hold <task> --actor human:<name> --reason <why> [--idempotency-key <key>]`
+records HOLD on a task in review, without a terminal prompt or task state
+change. Person authority and a nonblank reason are required. An identical
+keyed retry returns the original call; changed input conflicts. Its operation
+is `task.hold` and its response contains `decision_id`, `task_id`, `handoff_id`,
+`actor`, `reason`, `at`, `verdict: HOLD`. `status` shows it as held with the
+person's reason. A later approval or merge remains allowed.
+
+Approval records MERGE for Assured work; an observed confirmed merge records
+MERGE when no earlier call exists for that hand-off. This also reveals an
+Assured judge after a new hand-off retaining an earlier fingerprint-bound
+approval. The first call per hand-off in journal order is used
+for comparison. Before it exists, `show`, `review list`, `status`, loop
+context, `review record` output and PR delivery keep the judge payload
+sealed. Reads say only that the judge call was recorded and sealed; raw SQL,
+journal and archives remain raw. After the person's call, those surfaces
+reveal both calls and `agrees`, and fid posts the judge round through its
+existing delivery receipts. Rebuild, replay and export/import derive the
+same result. A new hand-off can earn another judge round.
+
 ### Approval (RESET 1.6g)
 
 ```text
@@ -2198,7 +2235,7 @@ On a terminal, output streams with controls escaped (line feeds retained).
 `--json` captures output and emits exactly one final envelope:
 
 ```json
-{"contract_version":"fid-cli.v1","ok":true,"operation":"check.execute","result":{"task_id":"FID-9f13aa","checks":[{"id":"CHK-100001","name":"test","outcome":"passed","exit_code":0,"counts":true,"reasons":[],"artifact_ids":[]}]},"event":{"id":"EVT-100004","occurred_at":"2026-11-14T09:05:00Z"}}
+{"contract_version":"fid-cli.v2","ok":true,"operation":"check.execute","result":{"task_id":"FID-9f13aa","checks":[{"id":"CHK-100001","name":"test","outcome":"passed","exit_code":0,"counts":true,"reasons":[],"artifact_ids":[]}]},"event":{"id":"EVT-100004","occurred_at":"2026-11-14T09:05:00Z"}}
 ```
 
 Human output announces `● Checking test…`, then `✓ test passed · counts for
@@ -2568,4 +2605,4 @@ come from Claude when reported, otherwise from the session's hold. A missing
 historical model has the empty key and text says "unknown model". This row
 also appears on finished tasks. `fid sql` can query `usage_sessions` for
 categories and per-model details; there is no report command or budget gate.
-The CLI contract stays `fid-cli.v1`, since the additions are additive.
+The CLI contract stays `fid-cli.v2`, since the additions are additive.

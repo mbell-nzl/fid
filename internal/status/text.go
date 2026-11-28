@@ -128,10 +128,12 @@ func (text textWriter) inProgress(result Result) []string {
 		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, bar, display.RoleNormal)...)
 		for _, task := range epic.Tasks {
 			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, result.startedVerdict(task), display.RoleMuted)...)
+			lines = append(lines, text.judgeLines(result, task.ID)...)
 		}
 	}
 	for _, task := range section.Tasks {
 		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, result.startedVerdict(task), display.RoleMuted)...)
+		lines = append(lines, text.judgeLines(result, task.ID)...)
 	}
 	return lines
 }
@@ -221,4 +223,17 @@ func epicCount(epic issues.OverviewEpic) string {
 		return "1 task"
 	}
 	return fmt.Sprintf("%d tasks", count)
+}
+
+func (text textWriter) judgeLines(result Result, task string) []string {
+	lines := []string{}
+	for _, r := range result.judges[task] {
+		if !r.Current {
+			continue
+		}
+		for _, line := range display.Wrap(cli.EscapeControlText(r.JudgeText()), rowWidth-len(taskIndent), rowWidth-len(taskIndent)) {
+			lines = append(lines, taskIndent+line)
+		}
+	}
+	return lines
 }

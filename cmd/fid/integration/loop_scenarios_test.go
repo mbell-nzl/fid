@@ -97,6 +97,11 @@ func TestLoopContractScenarios(t *testing.T) {
 	}
 	reviewer.wantNext("", true, "review", task)
 	c.observe("review-approve", loopRound(reviewer, task, "APPROVE", "approve", []string{"code"}, finding), 0)
+
+	judge := loopWorker{t, binary, gittest.AddWorktree(t, root), "agent:sol-judge"}
+	c.observe("next-judge", judge.wantNext("", false, "judge", task), 0)
+	c.observe("next-claim-judge", judge.wantNext("", true, "judge", task), 0)
+	c.observe("judge-record-sealed", loopJudgeRound(judge, task, "shadow-judge"), 0)
 	loopDoneContract(t, c, w, task, hold, h2)
 	loopCapContract(t, c)
 	loopUnacceptedContract(t, c)
@@ -251,4 +256,11 @@ func loopCapContract(t *testing.T, c *loopContract) {
 	w.wantNext("", true, "none", "")
 	reviewer.wantNext("", true, "new", unrelated)
 	loopAllowanceContract(t, c, w, task)
+}
+
+func loopJudgeRound(w loopWorker, task, key string) map[string]any {
+	w.t.Helper()
+	in := map[string]any{"reviewer": map[string]any{"actor": w.actor, "model": "openai/gpt-6.1-sol", "session_id": key}, "stream": "judge", "profiles": []string{"merge"}, "verdict": "HOLD", "reason": "Inspect `retry` evidence", "purpose": "Judge the merge", "verification": "- `git diff` inspected", "findings": []any{}}
+	input := p21Input(w.t, w.t.TempDir(), "judge", in)
+	return w.call("review", "record", task, "--input", input, "--actor", w.actor, "--idempotency-key", key)
 }

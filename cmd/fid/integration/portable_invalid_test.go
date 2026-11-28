@@ -45,7 +45,7 @@ func TestPortableRejectsUnknownEffectsWithoutMutation(t *testing.T) {
 				t.Fatalf("malformed portable archive=%v/%q/%q", err, stdout, stderr)
 			}
 			envelope := p23Envelope(t, stderr)
-			if envelope["contract_version"] != "fid-cli.v1" || envelope["ok"] != false || envelope["operation"] != "export.validate" || p21PathString(t, envelope, "error", "code") != "archive-invalid" {
+			if envelope["contract_version"] != "fid-cli.v2" || envelope["ok"] != false || envelope["operation"] != "export.validate" || p21PathString(t, envelope, "error", "code") != "archive-invalid" {
 				t.Fatalf("archive refusal=%v", envelope)
 			}
 

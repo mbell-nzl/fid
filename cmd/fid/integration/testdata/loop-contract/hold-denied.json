@@ -1,0 +1,8 @@
+{
+  "contract_version": "fid-cli.v2",
+  "error.code": "authority-denied",
+  "error.retryable": false,
+  "exit": 5,
+  "ok": false,
+  "operation": "task.hold"
+}

@@ -114,7 +114,7 @@ args = sys.argv[1:]
 failed = Path(os.environ["FIRST_LOOP_STATE"]) / "response-refused"
 if args[:3] == ["--json", "finding", os.environ["FIRST_LOOP_REFUSE"]] and not failed.exists():
     failed.touch()
-    print(json.dumps({"contract_version": "fid-cli.v1", "ok": False,
+    print(json.dumps({"contract_version": "fid-cli.v2", "ok": False,
                       "operation": "finding." + args[2],
                       "error": {"code": "invalid-argument", "retryable": False}}), file=sys.stderr)
     sys.exit(2)
@@ -153,8 +153,8 @@ func firstLoopAssertAnswers(t *testing.T, j firstLoop, delivered bool) {
 	w := loopWorker{t, j.binary, j.root, "agent:sol-builder"}
 	rounds := p21Path(t, w.call("review", "list", j.task), "result", "rounds").([]any)
 	findings := rounds[0].(map[string]any)["findings"].([]any)
-	if len(rounds) != 2 || len(findings) != 2 {
-		t.Fatalf("expected CHANGES and APPROVE with two findings: %v", rounds)
+	if len(rounds) != 3 || rounds[2].(map[string]any)["stream"] != "judge" || rounds[2].(map[string]any)["sealed"] != true || len(findings) != 2 {
+		t.Fatalf("expected CHANGES, APPROVE and a sealed judge with two findings: %v", rounds)
 	}
 	for _, raw := range findings {
 		finding := raw.(map[string]any)

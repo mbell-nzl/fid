@@ -101,7 +101,21 @@ func validateReviewClaim(tx *sql.Tx, event Event) error {
 	if fp.Base != s.Handoff.Base || fp.Head != s.Handoff.Head {
 		return fmt.Errorf("review reservation fingerprint differs from hand-off")
 	}
-	if due := doneeval.DueReview(s); due == nil || due.Stream != stream {
+	due := doneeval.DueReview(s)
+	if stream == "judge" {
+		eligible, err := reviewrecord.JudgeDue(tx, *s.Handoff, reviewrecord.Bind(fp))
+		if err != nil {
+			return err
+		}
+		independent, err := reviewrecord.JudgeIndependent(tx, task, actor, "")
+		if err != nil {
+			return err
+		}
+		if eligible && independent {
+			due = &doneeval.ReviewWork{Stream: "judge"}
+		}
+	}
+	if due == nil || due.Stream != stream {
 		return fmt.Errorf("review reservation stream is not due")
 	}
 	var busy int

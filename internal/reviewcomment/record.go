@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 )
 
 const RenderVersion = 2
+
+var ErrSealed = errors.New("judge call recorded and sealed")
 
 type Subject struct{ ID, TaskID, HandoffID, PR, Body string }
 
@@ -34,6 +37,15 @@ func ReadSubjectVersion(conn reviewrecord.Queryer, id string, version int64) (Su
 		if err := json.Unmarshal([]byte(raw), &r); err != nil {
 			return Subject{}, err
 		}
+		if r.Stream == "judge" {
+			v, err := reviewrecord.VisibleRound(conn, r)
+			if err != nil {
+				return Subject{}, err
+			}
+			if v.Sealed {
+				return Subject{}, ErrSealed
+			}
+		}
 		var number int
 		if err := conn.QueryRow(`SELECT count(*) FROM review_rounds WHERE task_id=? AND rowid<=(SELECT rowid FROM review_rounds WHERE id=?)`, task, id).Scan(&number); err != nil {
 			return Subject{}, err
@@ -41,6 +53,13 @@ func ReadSubjectVersion(conn reviewrecord.Queryer, id string, version int64) (Su
 		body = RenderRoundV1(r, number)
 		if version == 2 {
 			body = renderRoundV2(r, number)
+		}
+		if r.Stream == "judge" {
+			v, err := reviewrecord.VisibleRound(conn, r)
+			if err != nil {
+				return Subject{}, err
+			}
+			body = renderJudge(v, body)
 		}
 	} else {
 		if err := conn.QueryRow(`SELECT record_json FROM finding_responses WHERE id=?`, id).Scan(&raw); err != nil {
@@ -115,4 +134,20 @@ func RenderRoundV1(r reviewrecord.Round, number int) string {
 	}
 	fmt.Fprintf(&b, "\n### Verification\n\n%s\n", r.Verification)
 	return b.String()
+}
+
+func renderJudge(v reviewrecord.RoundView, body string) string {
+	r, c := v.Round, v.PersonCall
+	agreement := "disagree"
+	if v.Agrees != nil && *v.Agrees {
+		agreement = "agree"
+	}
+
+	body = strings.Replace(body, "## Review:", "## Shadow merge judge:", 1)
+	body += fmt.Sprintf("\n### Shadow comparison\n\n**Judge's reason** %s\n\n**Person's first call** %s by %s: %s\n\n**Comparison** Calls %s.\n", r.Reason, codeSpan(c.Verdict), codeSpan(c.Actor), c.Reason, agreement)
+
+	if r.LaneRaise != nil {
+		body += fmt.Sprintf("\nRecommended lane: %s (shadow only): %s\n", codeSpan(r.LaneRaise.Lane), r.LaneRaise.Reason)
+	}
+	return body
 }

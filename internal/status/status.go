@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/mergerecord"
 	"github.com/mbell-nzl/fid/internal/next"
+	"github.com/mbell-nzl/fid/internal/reviewrecord"
 )
 
 // NeedsYouBackup is the kind of item that says the backup needs a person.
@@ -43,6 +44,7 @@ type Result struct {
 	entries     map[string]next.Entry
 	merges      map[string]*mergerecord.ReviewState
 	approvals   map[string]decisionview.Approval
+	judges      map[string][]reviewrecord.RoundView
 	// Hint is set only when the project has no epics or tasks at all.
 	Hint *Hint
 }
@@ -109,7 +111,7 @@ func (result Result) Fields() map[string]any {
 		"needs_you":    result.NeedsYou,
 		"warnings":     result.Warnings,
 		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
-			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept, Merge: result.merges[task.ID], Approval: result.approvals[task.ID]}
+			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept, Merge: result.merges[task.ID], Approval: result.approvals[task.ID], JudgeRounds: result.judges[task.ID]}
 		}),
 		"ready": result.readyFields(),
 		"hint":  result.Hint,

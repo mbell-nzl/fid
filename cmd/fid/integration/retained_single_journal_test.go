@@ -63,6 +63,9 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 		if field == "" {
 			field = p24UsageFields[operation]
 		}
+		if field == "" {
+			field = p24HoldFields[operation]
+		}
 		if operation == "artifact.verify" {
 			field = "artifact_id"
 		}
@@ -109,14 +112,14 @@ func retainedKeyedLeaves(t *testing.T) []string {
 			t.Fatalf("invalid keyed row %q", row)
 		}
 		operation := strings.ReplaceAll(name, " ", ".")
-		if mapped := map[string]string{"done": "task.done", "approve": "task.approve", "waive": "task.waive", "check": "check.execute", "handoff": "task.handoff", "start": "task.start", "park": "hold.park", "answer": "task.answer", "takeover": "task.takeover"}[name]; mapped != "" {
+		if mapped := map[string]string{"done": "task.done", "approve": "task.approve", "hold": "task.hold", "waive": "task.waive", "check": "check.execute", "handoff": "task.handoff", "start": "task.start", "park": "hold.park", "answer": "task.answer", "takeover": "task.takeover"}[name]; mapped != "" {
 			operation = mapped
 		}
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 22 {
-		t.Fatalf("retained keyed leaves=%v, want all 22 remaining keyed leaves", want)
+	if len(want) != 23 {
+		t.Fatalf("retained keyed leaves=%v, want all 23 retained keyed leaves", want)
 	}
 	return want
 }
@@ -131,6 +134,7 @@ func completeRetainedLifecycle(t *testing.T, binary, workspace, task string) *do
 	h := p21Run(t, binary, workspace, "--json", "handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "single-done-handoff")
 	j := newDoneObservation(t, workspace, binary, task, hold, h)
 	j.review(t, "primary", "APPROVE", "single-done-review")
+	p21Run(t, binary, workspace, "--json", "hold", task, "--actor", "human:mark", "--reason", "Wait for a final look", "--idempotency-key", "single-hold")
 	out, stderr, err := j.run(t, "--json", "done", task, "--actor", "agent:finisher", "--idempotency-key", "single-done")
 	if err != nil || stderr != "" {
 		t.Fatalf("done=%v %s %s", err, out, stderr)

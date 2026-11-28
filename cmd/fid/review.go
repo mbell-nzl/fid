@@ -55,8 +55,25 @@ func newReviewRecordCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
+		var round any = result.Round
+		if result.Round.Stream == "judge" {
+			conn, err := reviewwork.OpenProjection(root)
+			if err != nil {
+				return err
+			}
+			visible, err := reviewrecord.VisibleRound(conn, result.Round)
+			_ = conn.Close()
+			if err != nil {
+				return err
+			}
+			round = visible
+			if !jsonMode {
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), visible.JudgeText())
+				return err
+			}
+		}
 		if jsonMode {
-			return cli.WriteSuccess(cmd.OutOrStdout(), "review.record", map[string]any{"round": result.Round}, &cli.Event{ID: result.EventID, OccurredAt: result.At})
+			return cli.WriteSuccess(cmd.OutOrStdout(), "review.record", map[string]any{"round": round}, &cli.Event{ID: result.EventID, OccurredAt: result.At})
 		}
 		_, err = fmt.Fprintf(cmd.OutOrStdout(), "✓ Recorded review %s · %s · %s\n", cli.EscapeControlText(result.Round.ID), result.Round.Stream, result.Round.Verdict)
 		return err
@@ -139,6 +156,8 @@ func reviewFailure(cmd *cobra.Command, operation string, cause error, actor stri
 	}
 	argument, allowed := "input", "an independent review of the latest hand-off"
 	switch operation {
+	case "task.hold":
+		argument, allowed = "task", "a person holding a task in review with a reason"
 	case "task.approve":
 		argument, allowed = "task", "an interactive person approving a task in review with local hand-off objects"
 	case "task.waive":

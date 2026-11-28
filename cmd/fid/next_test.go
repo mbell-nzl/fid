@@ -277,7 +277,7 @@ func TestNextRefusals(t *testing.T) {
 		operation string
 		code      string
 	}{
-		{"--actor without --claim", []string{"next", "--actor", "agent:one"}, 2, "next.get", "invalid-argument"},
+		{"malformed preview actor", []string{"next", "--actor", "one"}, 2, "next.get", "invalid-argument"},
 		{"--claim without --actor", []string{"next", "--claim"}, 2, "next.claim", "invalid-argument"},
 		{"a malformed actor", []string{"next", "--claim", "--actor", "builder"}, 2, "next.claim", "invalid-argument"},
 		{"an empty actor", []string{"next", "--claim", "--actor="}, 2, "next.claim", "invalid-argument"},

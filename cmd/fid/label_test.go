@@ -106,8 +106,8 @@ func TestLabelAddJSONMatchesContract(t *testing.T) {
 	label := requireObject(t, envelope.Result, "label")
 	assertExactKeys(t, label, []string{"name", "colour", "description"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "label.add" {
-		t.Fatalf("envelope = %#v, want fid-cli.v1 label.add success", envelope)
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != "label.add" {
+		t.Fatalf("envelope = %#v, want fid-cli.v2 label.add success", envelope)
 	}
 	if label["name"] != "core" || label["colour"] != "#4A90D9" || label["description"] != "Core infrastructure" {
 		t.Fatalf("label = %#v, want exact contract values", label)

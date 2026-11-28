@@ -61,3 +61,16 @@ func postFindingResponse(cmd *cobra.Command, root, finding string) {
 func postRecordedRound(cmd *cobra.Command, root, round string) {
 	_, _ = reviewpost.Round(cmd.Context(), root, fidmigrations.FS, round, nil)
 }
+
+// Reveal delivery is best effort, just like the initial round delivery.
+func postRevealedJudges(cmd *cobra.Command, root, task string) {
+	rounds, err := reviewwork.List(root, task)
+	if err != nil {
+		return
+	}
+	for _, r := range rounds {
+		if r.Stream == "judge" && !r.Sealed {
+			postRecordedRound(cmd, root, r.ID)
+		}
+	}
+}

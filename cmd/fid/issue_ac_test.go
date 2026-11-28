@@ -73,8 +73,8 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result", []string{"acceptance_criterion", "idempotency_key", "issue_revision", "replayed"})
 	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result.acceptance_criterion", []string{"id", "issue_id", "ordinal", "text"})
 	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "event", []string{"id", "occurred_at"})
-	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "issue.ac.add" {
-		t.Fatalf("envelope = %+v, want fid-cli.v1 issue.ac.add success", envelope)
+	if envelope.ContractVersion != "fid-cli.v2" || !envelope.OK || envelope.Operation != "issue.ac.add" {
+		t.Fatalf("envelope = %+v, want fid-cli.v2 issue.ac.add success", envelope)
 	}
 	if envelope.Result.AcceptanceCriterion.IssueID != createEnvelope.Result.Issue.ID || envelope.Result.AcceptanceCriterion.Ordinal != 1 || envelope.Result.AcceptanceCriterion.Text != "Response envelope has the exact AC result" || !strings.HasPrefix(envelope.Result.AcceptanceCriterion.ID, "AC-") {
 		t.Fatalf("acceptance criterion = %+v, want exact contract values", envelope.Result.AcceptanceCriterion)

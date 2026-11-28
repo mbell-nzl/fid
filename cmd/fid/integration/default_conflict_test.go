@@ -16,6 +16,13 @@ func TestApprovedPRDefaultConflictJourney(t *testing.T) {
 	t.Parallel()
 	first := newDoneJourney(t, "standard")
 	first.review(t, "primary", "APPROVE", "approve-first")
+	judge := loopWorker{t, first.binary, first.root, "agent:judge"}
+	input := p21Input(t, t.TempDir(), "judge-first", map[string]any{
+		"reviewer": map[string]any{"actor": "agent:judge", "model": "openai/gpt-6.1-sol", "session_id": "judge-first"},
+		"stream":   "judge", "profiles": []string{"merge"}, "verdict": "MERGE", "reason": "Ready to merge",
+		"purpose": "Assess merge readiness", "verification": "Inspected the change and receipts", "findings": []any{},
+	})
+	judge.call("review", "record", first.task, "--input", input, "--actor", judge.actor, "--idempotency-key", "judge-first")
 	root := gittest.AddWorktree(t, first.root)
 	closureRun(t, root, "git", "checkout", "-b", "task-two", "origin/trunk")
 	call := func(args ...string) map[string]any {

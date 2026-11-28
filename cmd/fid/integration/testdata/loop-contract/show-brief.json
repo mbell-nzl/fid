@@ -1,5 +1,5 @@
 {
-  "contract_version": "fid-cli.v1",
+  "contract_version": "fid-cli.v2",
   "exit": 0,
   "ok": true,
   "operation": "issue.show",
@@ -16,6 +16,11 @@
     ],
     "issue.id": "\u003cFID\u003e",
     "issue.spec_md_path": "docs/briefs/2.5.md",
-    "issue.title": "Build from the approved brief"
+    "issue.title": "Build from the approved brief",
+    "judge_rounds?[].agrees?": null,
+    "judge_rounds?[].person_call?.verdict": null,
+    "judge_rounds?[].reason?": null,
+    "judge_rounds?[].sealed?": null,
+    "judge_rounds?[].verdict": null
   }
 }

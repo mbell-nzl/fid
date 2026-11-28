@@ -36,6 +36,9 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		if operation == "task.waive" {
 			name = "waive"
 		}
+		if operation == "task.hold" {
+			name = "hold"
+		}
 		if operation == "task.approve" {
 			name = "approve"
 		}
@@ -47,7 +50,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		rows[name] = field
 	}
-	for _, group := range []map[string]string{p24LifecycleFields, {"task.done": "task"}, p24FlagFields, {"issue.create": "--title"}, p24ArtifactFields, p24UsageFields} {
+	for _, group := range []map[string]string{p24LifecycleFields, {"task.done": "task"}, p24FlagFields, {"issue.create": "--title"}, p24ArtifactFields, p24UsageFields, p24HoldFields} {
 		for operation, field := range group {
 			add(operation, field)
 		}
@@ -64,7 +67,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 22 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 23 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }
