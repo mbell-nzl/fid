@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/epicplan"
 	"github.com/mbell-nzl/fid/internal/epicrecord"
 )
 
@@ -14,7 +15,7 @@ func validateEpicCloseOwnership(tx *sql.Tx, event Event, e Effect) error {
 	if strings.EqualFold(e.Table, "person_decisions") {
 		for _, row := range []map[string]any{e.PK, e.Values, e.Prior, e.Preconditions} {
 			for column, value := range row {
-				if strings.EqualFold(column, "kind") && value == "close-epic" && (!event.IsV2() || event.EventType != "epic.closed" || e.Op != "insert") {
+				if strings.EqualFold(column, "kind") && value == "close-epic" && (!event.IsV2() || event.EventType != "epic.closed" && event.EventType != "epic.validated-close" || e.Op != "insert") {
 					return fmt.Errorf("epic close decisions require their immutable Event-v2 family")
 				}
 			}
@@ -40,7 +41,7 @@ func validateEpicCloseOwnership(tx *sql.Tx, event Event, e Effect) error {
 		if err != nil {
 			return err
 		}
-		if found && values["kind"] == "epic" && (!event.IsV2() || event.EventType != "epic.closed") {
+		if found && values["kind"] == "epic" && (!event.IsV2() || event.EventType != "epic.closed" && event.EventType != "epic.validated-close") {
 			return fmt.Errorf("epic completion requires its person's decision Event")
 		}
 	}
@@ -70,7 +71,11 @@ func validateEpicClose(tx *sql.Tx, event Event) error {
 	if err := validateCurrentEffect(event, decision); err != nil {
 		return err
 	}
-	if !currentKeys(decision.Values, "kind actor subject_type subject_id reason binding_id decided_at") {
+	keys := "kind actor subject_type subject_id reason binding_id decided_at"
+	if event.EventType == "epic.validated-close" {
+		keys += " binding_json"
+	}
+	if !currentKeys(decision.Values, keys) {
 		return fmt.Errorf("epic close requires a complete decision")
 	}
 	d := decision.Values
@@ -85,6 +90,15 @@ func validateEpicClose(tx *sql.Tx, event Event) error {
 	eligible, err := epicrecord.ReadEligibility(tx, event.Aggregate.ID)
 	if err != nil {
 		return err
+	}
+	if event.EventType == "epic.validated-close" {
+		var binding epicplan.CloseBinding
+		if err := decodeCheckJSON(d["binding_json"], &binding); err != nil {
+			return err
+		}
+		if err := epicplan.ValidateCloseEvidence(tx, event.Aggregate.ID, binding); err != nil {
+			return err
+		}
 	}
 	if !eligible.CanClose() {
 		return fmt.Errorf("epic close requires an open epic with no open task")

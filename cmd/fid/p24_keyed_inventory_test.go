@@ -30,8 +30,8 @@ func TestP24KeyedLeafCorpusMatchesLiveTree(t *testing.T) {
 		rows[parts[0]] = parts[1]
 		families[strings.Fields(parts[0])[0]] = true
 	}
-	if len(rows) != 23 || len(families) != 17 {
-		t.Fatalf("keyed-leaf corpus has %d rows in %d families; want 23/17", len(rows), len(families))
+	if len(rows) != 29 || len(families) != 18 {
+		t.Fatalf("keyed-leaf corpus has %d rows in %d families; want 29/18", len(rows), len(families))
 	}
 	// done remains one keyed leaf: only its explicit-Issue form accepts a key;
 	// TestReconcileEmptyAndCommandFailures covers rejection in the no-ID form.

@@ -4468,3 +4468,76 @@ import them. Dates are merge or decision dates, in New Zealand time.
 
 1. ~~Mark reviews and accepts ADR-0013 and approves `RESET.md`.~~ Done 31 October 2026.
 2. Week 0 tasks from `RESET.md`.
+
+
+## Decided 2026-11-28 (3.1)
+
+Approved by Mark in `docs/briefs/3.1a.md`. Build all of 3.1 before the trial,
+split as 3.1a (epic validations and approval, Assured), 3.1b (`fid brief`,
+merged digest and validation recipes, Standard), and 3.1c (V1's fixture
+recipe, Standard).
+
+1. Approval gates the epic's unstarted tasks and signs off its plan. It
+   accepts the plan's agent-created tasks and subtasks. Editing validations
+   makes approval stale; started resume, rework, review and judge work
+   continues. A later person's task is accepted immediately; a later agent
+   task needs acceptance unless it blocks an open task in that epic.
+2. Validations belong to epics, with commands under `fid epic`; tasks retain
+   acceptance criteria. IDs increase without reuse, with a soft cap of 10.
+   Each claim names `check:<name>`, `review:<profile>` or `human`; a human
+   claim requires a project-relative fixture recipe. The recipe need not
+   exist when planning. Check names come from default-branch policy (V7);
+   review profiles must be known to fid.
+3. fid executes check claims on a clean default-branch commit containing all
+   completed-task merges. Any actor in the work set can invoke verification:
+   `agent:*` or `human:*`, never `service:*`. Mark confirmed in answer
+   `PDN-112703` that the brief's "any actor" meant any work actor, per
+   ADR-0014. Open tasks refuse. Checks use the existing executor, timeouts,
+   environment and Artifacts, even when no lane names them. People record
+   review and human passes, with profile rounds or recipe evidence; a recipe must exist
+   in the recorded default-branch commit. A validation edit or an epic merge
+   outside the pass commit makes it stale; delayed completion recording for
+   a merge already in that commit does not. Closing an epic requires current approval and
+   a current pass for every validation, listing each unmet claim.
+
+Approval is interactive and person-only, showing tasks, lanes, states,
+validations and proposed acceptances, then requiring the exact epic ID.
+No write lock is held during confirmation. Afterward, lock, refresh and
+compare the preview; refuse any changed plan with a retry message. One
+person decision binds only to the validation list, not tasks, briefs or
+specs, with all plan acceptances in the same Event. Empty lists can be
+approved. Any later validation change invalidates approval; a fresh approval
+restores it. The CLI and JSON remain `fid-cli.v2`.
+
+D6's discovered-blocker exception applies only in a currently approved epic
+and only for an open task in the same epic. Once the blocker task has started,
+validation edits making approval stale do not revoke its exception; resume,
+rework, review and judge selection continue. Unstarted blockers still require
+current approval. The work keeps its lane and
+`discovered_from` link. Mark clarified in answer `PDN-8fdd14` that subtasks
+use their parent task's epic for acceptance only. They get no lane and are
+never served; `next`, `start` and `check` stay task-only.
+
+`show` presents Approval, Plan and VALIDATIONS after Spec, with current,
+stale or missing evidence and its commit. NEEDS YOU presents plans awaiting
+approval and, after all tasks finish, verification/person-pass actions before
+closing. JSON fields are additive. The loop checks eligible epics in scope
+at its done/none batches, verifies check claims once per epic per invocation,
+reports every outcome and never retries a failed check within the invocation.
+It never approves or records a person's pass. The verify batch reply is in
+`LOOP_CONTRACT.md`.
+
+All changes, decisions and results are canonical Events, preserved through
+replay, rebuild, export/import and V8 restore. Closing records the approval,
+result IDs and merges counted, preserving any ancestry proved after the pass
+for offline replay. The migration has a down path.
+Existing open epics start unapproved on rollout, so Mark must approve a plan
+before the loop serves its unstarted tasks. `fid brief` and V1's fixture
+remain 3.1b and 3.1c; RESET 3.1a and 2.5b completion marks belong to the loop.
+
+Mark authorized the local test runner's timeout change on 2026-11-28
+(3.1a acceptance criterion `AC-6e0c4e`): `make test` / `ci_tests.py test`
+passes the same `TIMEOUT` (`-timeout 20m`) as CI's shards to both package
+groups. The local check timed out in `cmd/fid` at Go's 600-second default
+(`CHK-791783`). This changes no other check behavior: race classification,
+test caching, selection and failure propagation stay as before.

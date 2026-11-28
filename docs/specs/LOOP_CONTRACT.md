@@ -240,6 +240,26 @@ is restored. Unscoped selection is unchanged.
   an individual task waits or is refused; an empty array means no tasks
   needed reconciliation. The loop must inspect every outcome.
 
+## Epic validation verification (RESET 3.1a)
+
+At `none` and each done batch, inspect `status.needs_you` for
+`epic-validation-verify` items. Their subject is the epic. Apply `LOOP_EPIC`
+when scoped; call `fid epic validation verify <epic> --actor <builder>
+--idempotency-key <key>` once per epic per loop invocation, and report every
+outcome. A failed result is never retried in that invocation. The loop never
+approves a plan or records a person's pass.
+
+Verification requires an `agent:*` or `human:*` work actor. `service:*`
+actors are refused with `authority-denied` (exit 5).
+
+The operation is `epic.validation.verify`. A completed batch exits 0 and its
+success result contains `epic_id` and `checks[]`, including each result's
+`id`, `validation_id`, `outcome` (`passed` or `failed`) and full `commit`.
+A failed check is a recorded batch outcome; the caller must inspect it.
+Admission or execution errors use failure envelopes and retain loud failure
+behavior. The empty check list is valid. These are additive fields and
+informational scheduling reasons; the version remains `fid-cli.v2`.
+
 ## Shadow merge judge (RESET 2.5b)
 
 A judge records `stream: judge`, `profiles: ["merge"]`, a `MERGE` or `HOLD`
@@ -434,6 +454,13 @@ with placeholders in goldens; journeys assert task identity and exclusivity.
       "question_id",
       "decision_id",
       "answer"
+    ],
+    "epic.validation.verify": [
+      "epic_id",
+      "checks[].id",
+      "checks[].validation_id",
+      "checks[].outcome",
+      "checks[].commit"
     ],
     "check.execute": [
       "task_id",

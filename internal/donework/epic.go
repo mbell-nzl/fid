@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/epicplan"
 	"github.com/mbell-nzl/fid/internal/epicrecord"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/persondecision"
@@ -65,6 +66,14 @@ func closeEpic(o Options, afterRead func()) (epicrecord.Result, error) {
 			}
 			return &Refusal{Code: code, Message: message, Next: "fid show " + o.TaskID, Details: map[string]any{"gate": "epic", "reason": reason, "record_ids": eligible.OpenTasks()}}
 		}
+
+		missing, err := epicplan.Missing(conn, o.TaskID, o.WorkspaceRoot)
+		if err != nil {
+			return err
+		}
+		if len(missing) > 0 {
+			return &Refusal{Code: "done-epic-evidence-required", Message: "Epic evidence is incomplete: " + strings.Join(missing, "; "), Next: "fid show " + o.TaskID, Details: map[string]any{"gate": "epic", "reason": "evidence-required", "record_ids": missing}}
+		}
 		now := time.Now()
 		if o.Clock != nil {
 			now = o.Clock()
@@ -74,6 +83,15 @@ func closeEpic(o Options, afterRead func()) (epicrecord.Result, error) {
 		if err != nil {
 			return err
 		}
+		binding, err := epicplan.CloseEvidence(conn, o.TaskID)
+		if err != nil {
+			return err
+		}
+		rawBinding, err := json.Marshal(binding)
+		if err != nil {
+			return err
+		}
+		decision.Values["binding_json"] = string(rawBinding)
 		result = epicrecord.Result{Status: "done", Revision: eligible.Revision + 1, Decision: epicrecord.Decision{ID: id, Kind: "close-epic", Actor: o.Actor, SubjectType: "epic", SubjectID: o.TaskID, BindingID: o.TaskID, Reason: o.Reason, At: now.Format(time.RFC3339)}}
 		aggregate := journal.Aggregate{Type: "epic", ID: o.TaskID}
 		aggregate.Sequence, err = journal.NextAggregateSequence(filepath.Join(config.LedgerDir(o.WorkspaceRoot), config.JournalDirName), aggregate)
@@ -81,7 +99,7 @@ func closeEpic(o Options, afterRead func()) (epicrecord.Result, error) {
 			return err
 		}
 		typ, actor, _ := strings.Cut(o.Actor, ":")
-		event := journal.Event{EventSchema: 2, EventType: "epic.closed", CommandName: "task.done", OccurredAt: now, Aggregate: aggregate, ActorV2: journal.EventActor{ActorType: typ, ActorID: actor, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}, Effects: []journal.Effect{decision, {Op: "update", Table: "issues", PK: map[string]any{"id": o.TaskID}, Values: map[string]any{"status": "done", "revision": result.Revision, "updated_at": result.Decision.At}, Preconditions: map[string]any{"status": eligible.State, "revision": eligible.Revision}}}}
+		event := journal.Event{EventSchema: 2, EventType: "epic.validated-close", CommandName: "task.done", OccurredAt: now, Aggregate: aggregate, ActorV2: journal.EventActor{ActorType: typ, ActorID: actor, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}, Effects: []journal.Effect{decision, {Op: "update", Table: "issues", PK: map[string]any{"id": o.TaskID}, Values: map[string]any{"status": "done", "revision": result.Revision, "updated_at": result.Decision.At}, Preconditions: map[string]any{"status": eligible.State, "revision": eligible.Revision}}}}
 		if o.IdempotencyKey == "" {
 			appended, err := journal.CommitEvent(lock, conn, event)
 			result.EventID = appended.EventID

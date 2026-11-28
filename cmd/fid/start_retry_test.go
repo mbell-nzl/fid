@@ -83,6 +83,7 @@ func TestStartRetryPreservesTextAndJSONAcrossRebuild(t *testing.T) {
 	created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "epic", "--title", "Planned epic", "--scheduling", "prioritised", "--actor", "human:mark", "--idempotency-key", "epic"), "issue.create")
 	epic := created["issue"].(map[string]any)["id"].(string)
 	lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--epic", epic, "--title", "Planned task", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "task"), "issue.create")
+	approveTestEpic(t, f, epic)
 	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	hold := taken["hold"].(map[string]any)["id"].(string)
 	args := []string{"start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start"}

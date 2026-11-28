@@ -77,6 +77,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newReviewCommand())
 	cmd.AddCommand(newFindingCommand())
 	cmd.AddCommand(newApproveCommandWithTerminal(nil))
+	cmd.AddCommand(newEpicCommandWithTerminal(nil))
 	cmd.AddCommand(newMergeHoldCommand())
 	cmd.AddCommand(newWaiveCommandWithTerminal(nil))
 	cmd.AddCommand(newAnswerCommand())

@@ -378,7 +378,7 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
 	}
 	assertClosureJournalBytesEqual(t, workspace, journalBefore, "maintenance vacuum")
-	decisions, _ := closureRunFID(t, binary, workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
+	decisions, _ := closureRunFID(t, binary, workspace, "sql", "SELECT * FROM person_decisions ORDER BY kind,id")
 	var rows []struct {
 		ID          string `json:"id"`
 		Kind        string `json:"kind"`
@@ -391,7 +391,16 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	if err := json.Unmarshal([]byte(decisions), &rows); err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1 || !strings.HasPrefix(rows[0].ID, "PDN-") || rows[0].Kind != "cancel" || rows[0].Actor != "human:mark" || rows[0].SubjectType != "task" || rows[0].SubjectID != cancelledTaskID || rows[0].BindingID != cancelledTaskID || rows[0].Reason != "Test cancellation" {
+	if len(rows) != 3 {
+		t.Fatalf("person decision read=%s, want two plan approvals and one cancellation", decisions)
+	}
+	for _, approval := range rows[:2] {
+		if !strings.HasPrefix(approval.ID, "PDN-") || approval.Kind != "approve-epic" || approval.Actor != "human:mark" || approval.SubjectType != "epic" || !strings.HasPrefix(approval.BindingID, "sha256:") || approval.Reason != "Approve fixture plan" {
+			t.Fatalf("person decision read=%s, want the person's epic plan approvals", decisions)
+		}
+	}
+	cancellation := rows[2]
+	if !strings.HasPrefix(cancellation.ID, "PDN-") || cancellation.Kind != "cancel" || cancellation.Actor != "human:mark" || cancellation.SubjectType != "task" || cancellation.SubjectID != cancelledTaskID || cancellation.BindingID != cancelledTaskID || cancellation.Reason != "Test cancellation" {
 		t.Fatalf("person decision read=%s, want the person's task-bound cancellation", decisions)
 	}
 

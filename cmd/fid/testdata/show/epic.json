@@ -97,6 +97,17 @@
     ],
     "completion": null,
     "epic": null,
+    "epic_approval": {
+      "state": "current",
+      "decision_id": "PDN-fixture-FID-e3a1c0",
+      "actor": "human:planner",
+      "at": "2026-10-31T01:00:00Z",
+      "reason": "Approved fixture plan",
+      "binding": {
+        "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "generation": 0
+      }
+    },
     "floor": null,
     "handoff": null,
     "issue": {
@@ -121,6 +132,96 @@
     },
     "kept": null,
     "no_other_model_review": null,
+    "plan": [
+      {
+        "id": "FID-aa01b2",
+        "kind": "subtask",
+        "title": "Check the manifest schema",
+        "state": "done",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-aa02b3",
+        "kind": "subtask",
+        "title": "Validate member digests",
+        "state": "in_progress",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-aa03b4",
+        "kind": "subtask",
+        "title": "Refuse a truncated archive",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-1a2b3c",
+        "kind": "task",
+        "title": "Escape controls in status",
+        "state": "done",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-2b3c4d",
+        "kind": "task",
+        "title": "Port the display package",
+        "state": "done",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-71a0c2",
+        "kind": "task",
+        "title": "Export validation",
+        "state": "in_progress",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-3b9e01",
+        "kind": "task",
+        "title": "Tidy resume output",
+        "state": "in_review",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-9f13aa",
+        "kind": "task",
+        "title": "Harden login rate limiting",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-c2d4e5",
+        "kind": "task",
+        "title": "Retry a rejected backup push",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-0d4e8b",
+        "kind": "task",
+        "title": "Document backup age",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-4c5d6e",
+        "kind": "task",
+        "title": "Drop the V1 resume view",
+        "state": "cancelled",
+        "revision": 1,
+        "accept": false
+      }
+    ],
     "progress": {
       "done": 2,
       "total": 7
@@ -129,6 +230,7 @@
     "scheduling": "sequential",
     "state": "in-progress",
     "task": null,
+    "validations": [],
     "warnings": [],
     "working": null
   }

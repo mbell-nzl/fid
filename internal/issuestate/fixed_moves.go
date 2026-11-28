@@ -92,5 +92,5 @@ const FinishedWorkMessage = "finished work stays done; undoing merged work is a 
 // OwnsMove includes the two admitted causes returning a task for rework.
 func OwnsMove(family, kind, from, to string) bool {
 	owner, ok := MoveOwner(kind, from, to)
-	return ok && (owner == family || owner == FamilyRework && family == "task.default-conflict")
+	return ok && (owner == FamilyEpicDone && family == "epic.validated-close" || owner == family || owner == FamilyRework && family == "task.default-conflict")
 }

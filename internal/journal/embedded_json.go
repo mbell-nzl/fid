@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/completionrecord"
 	"github.com/mbell-nzl/fid/internal/defaultconflict"
+	"github.com/mbell-nzl/fid/internal/epicplan"
 	"github.com/mbell-nzl/fid/internal/epicrecord"
 	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
@@ -53,6 +54,7 @@ func validateEmbeddedJSON(event Event) error {
 // still check their complete records. Structs fold keys like encoding/json;
 // map/interface destinations keep exact keys at every nested map boundary.
 var embeddedJSONTypes = map[string]reflect.Type{
+	"epic_validation_results.record_json":            reflect.TypeFor[epicplan.Pass](),
 	"usage_sessions.record_json":                     reflect.TypeFor[usagerecord.Record](),
 	"finding_responses.record_json":                  reflect.TypeFor[reviewrecord.Response](),
 	"default_conflicts.record_json":                  reflect.TypeFor[defaultconflict.Record](),
@@ -73,6 +75,15 @@ var embeddedJSONTypes = map[string]reflect.Type{
 }
 
 func embeddedJSONType(event Event, table, column string) reflect.Type {
+	if table == "person_decisions" && column == "binding_json" && event.EventType == "epic.validated-close" {
+		return reflect.TypeFor[epicplan.CloseBinding]()
+	}
+	if table == "person_decisions" && column == "binding_json" && event.EventType == "epic.approve" {
+		return reflect.TypeFor[epicplan.Binding]()
+	}
+	if table == "person_decisions" && column == "binding_json" && event.EventType == "epic.validation.pass" {
+		return reflect.TypeFor[epicplan.Pass]()
+	}
 	if table == "person_decisions" && column == "binding_json" && event.EventType == "task.waived" {
 		return reflect.TypeFor[waiverrecord.Binding]()
 	}
@@ -93,7 +104,9 @@ func embeddedJSONType(event Event, table, column string) reflect.Type {
 		return reflect.TypeFor[waiverrecord.Result]()
 	case "task.approved":
 		return reflect.TypeFor[approvalrecord.Result]()
-	case "epic.closed":
+	case "epic.approve", "epic.validation.add", "epic.validation.update", "epic.validation.remove", "epic.validation.pass", "epic.validation.verify":
+		return reflect.TypeFor[epicplan.Result]()
+	case "epic.closed", "epic.validated-close":
 		return reflect.TypeFor[epicrecord.Result]()
 	case "finding.closed":
 		return reflect.TypeFor[findingCloseResult]()

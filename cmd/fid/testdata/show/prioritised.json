@@ -55,6 +55,17 @@
     ],
     "completion": null,
     "epic": null,
+    "epic_approval": {
+      "state": "current",
+      "decision_id": "PDN-fixture-FID-e3a1c0",
+      "actor": "human:planner",
+      "at": "2026-10-31T01:00:00Z",
+      "reason": "Approved fixture plan",
+      "binding": {
+        "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "generation": 0
+      }
+    },
     "floor": null,
     "handoff": null,
     "issue": {
@@ -77,6 +88,40 @@
     },
     "kept": null,
     "no_other_model_review": null,
+    "plan": [
+      {
+        "id": "FID-0d4e8b",
+        "kind": "task",
+        "title": "Document backup age",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-71a0c2",
+        "kind": "task",
+        "title": "Export validation",
+        "state": "in_progress",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-9f13aa",
+        "kind": "task",
+        "title": "Harden login rate limiting",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-c2d4e5",
+        "kind": "task",
+        "title": "Retry a rejected backup push",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      }
+    ],
     "progress": {
       "done": 0,
       "total": 4
@@ -85,6 +130,7 @@
     "scheduling": "prioritised",
     "state": "in-progress",
     "task": null,
+    "validations": [],
     "warnings": [],
     "working": null
   }

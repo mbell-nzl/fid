@@ -126,7 +126,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 48 || len(groups) != 15 {
+	if len(leaves) != 54 || len(groups) != 17 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -191,6 +191,12 @@ func grammarClassRows(t *testing.T) []grammarRow {
 			}
 		} else {
 			switch strings.Join(parts, " ") {
+			case "epic approve", "epic validation pass":
+				required = []string{"actor", "reason"}
+			case "epic validation add", "epic validation update":
+				required = []string{"actor", "idempotency-key", "claim", "verifier"}
+			case "epic validation remove", "epic validation verify":
+				required = []string{"actor", "idempotency-key"}
 			case "usage record":
 				required = []string{"hold", "actor", "tool", "tool-output", "idempotency-key"}
 			case "done":

@@ -245,6 +245,9 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 	link(middle, "blocked_by", head)
 	link(middle, "blocks", end)
 	tasks = append(tasks, blocker, blocked, head, middle, end, create("--kind", "task", "--title", "Standalone"))
+	for _, epic := range []string{prioritised, sequential, linked, branching} {
+		approveTestEpic(t, &statusFixture{workspace: main}, epic)
+	}
 	isSequential := map[string]bool{sequential: true, linked: true, branching: true}
 
 	served := map[string]int{}

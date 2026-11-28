@@ -43,6 +43,17 @@
     ],
     "completion": null,
     "epic": null,
+    "epic_approval": {
+      "state": "current",
+      "decision_id": "PDN-fixture-FID-8a1b2c",
+      "actor": "human:planner",
+      "at": "2026-10-31T06:00:00Z",
+      "reason": "Approved fixture plan",
+      "binding": {
+        "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "generation": 0
+      }
+    },
     "floor": null,
     "handoff": null,
     "issue": {
@@ -65,6 +76,32 @@
     },
     "kept": null,
     "no_other_model_review": null,
+    "plan": [
+      {
+        "id": "FID-1f2e3d",
+        "kind": "task",
+        "title": "Contract fields and exit codes",
+        "state": "in_progress",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-2f2e3d",
+        "kind": "task",
+        "title": "Golden tests for the contract",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      },
+      {
+        "id": "FID-3f2e3d",
+        "kind": "task",
+        "title": "Scenario test for rework",
+        "state": "todo",
+        "revision": 1,
+        "accept": false
+      }
+    ],
     "progress": {
       "done": 0,
       "total": 3
@@ -73,6 +110,7 @@
     "scheduling": "sequential",
     "state": "in-progress",
     "task": null,
+    "validations": [],
     "warnings": [],
     "working": null
   }

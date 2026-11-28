@@ -52,11 +52,13 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
 	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
 	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--reason", "Test cancellation", "--actor", "human:mark")
+	approveJourneyEpic(t, workspace, seqEpicID)
 	assertClosureNextTaskInEpic(t, binary, workspace, seqEpicID, seqNextID)
 
 	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)
 	closureCreateIssue(t, binary, workspace, "task", "Lower priority", nil, stringPointer(priorityEpicID), nil, "--priority", "3")
 	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
+	approveJourneyEpic(t, workspace, priorityEpicID)
 	assertClosureNextTaskInEpic(t, binary, workspace, priorityEpicID, priorityHighID)
 
 	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace,

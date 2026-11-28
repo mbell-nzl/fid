@@ -99,6 +99,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20AssertRelations(t, p20Objects(t, linkList["links"]), []string{"discovered_from", "relates_to", "relates_to"})
 	p20AssertCount(t, linkList, 3)
 
+	approveJourneyEpic(t, workspace, epicID)
 	ready := p20JourneyRead(t, workspace, "next")
 	if got := p20Object(t, ready["task"])["id"]; got != taskID {
 		t.Fatalf("next task id = %q, want %q", got, taskID)

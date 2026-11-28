@@ -17,6 +17,7 @@ func TestEpicDoneDecisionRetryAndReplay(t *testing.T) {
 			t.Parallel()
 			f, epic := newEpicCancellationFixture(t)
 			f.clock = time.Now
+			approveTestEpic(t, f, epic)
 			args := []string{"--json", "done", epic, "--actor", "human:mark", "--reason", "All work finished"}
 			if key != "" {
 				args = append(args, "--idempotency-key", key)
@@ -108,6 +109,7 @@ func TestEpicDoneAllCancelledNeedsYouAndText(t *testing.T) {
 	assertEpicNeedsYou(t, f, epic, false)
 	lifecycleResult(t, f.run("--json", "issue", "transition", child, "--to", "cancelled", "--actor", "human:mark", "--reason", "Not needed"), "issue.transition")
 	assertEpicNeedsYou(t, f, epic, true)
+	approveTestEpic(t, f, epic)
 	before := startEventCount(t, f.workspace)
 	text := f.run("status")
 	if text.err != nil || !strings.Contains(text.stdout, "fid done "+epic) {
@@ -187,6 +189,7 @@ func TestEpicDoneKeyBindsSubjectReasonAndActor(t *testing.T) {
 	t.Parallel()
 	f, epic := newEpicCancellationFixture(t)
 	f.clock = time.Now
+	approveTestEpic(t, f, epic)
 	args := []string{"--json", "done", epic, "--actor", "human:mark", "--reason", "Finished", "--idempotency-key", "close"}
 	lifecycleResult(t, f.run(args...), "task.done")
 	for _, field := range []int{2, 4, 6} {

@@ -20,6 +20,7 @@ func TestStartSecondTaskKeepsStartedEpicRevisionAcrossReplay(t *testing.T) {
 		created, _ := lifecycleResult(t, f.run("--json", "issue", "create", "--kind", "task", "--epic", epic, "--title", title, "--lane", "standard", "--actor", "human:mark", "--idempotency-key", title), "issue.create")
 		tasks[created["issue"].(map[string]any)["id"].(string)] = false
 	}
+	approveTestEpic(t, f, epic)
 	main := f.workspace
 	for _, workspace := range []string{main, gittest.AddWorktree(t, main)} {
 		f.workspace = workspace

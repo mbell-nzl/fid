@@ -5,6 +5,7 @@ func init() {
 		"done-task-not-in-review",
 		"done-epic-not-open",
 		"done-epic-open-tasks",
+		"done-epic-evidence-required",
 		"done-checks-unsatisfied",
 		"done-kept-artifact-unavailable",
 		"done-open-major",

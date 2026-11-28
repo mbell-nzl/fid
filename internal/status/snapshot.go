@@ -44,6 +44,9 @@ func readWork(options Options, afterOverview func()) (issues.Overview, next.Resu
 		return issues.Overview{}, next.Result{}, nil, err
 	}
 	result := &Result{NeedsYou: []NeedsYouItem{}, Warnings: []Warning{}, merges: map[string]*mergerecord.ReviewState{}, approvals: map[string]decisionview.Approval{}, judges: map[string][]reviewrecord.RoundView{}}
+	if err := result.addEpicPlans(tx, options.WorkspaceRoot); err != nil {
+		return issues.Overview{}, next.Result{}, nil, err
+	}
 	if err := result.addUnaccepted(tx); err != nil {
 		return issues.Overview{}, next.Result{}, nil, err
 	}

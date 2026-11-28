@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "task.hold" || operation == "usage.record" || operation == "task.done" || (operation == "task.approve" || operation == "task.waive") || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := strings.HasPrefix(operation, "epic.") || operation == "task.hold" || operation == "usage.record" || operation == "task.done" || (operation == "task.approve" || operation == "task.waive") || operation == "finding.close" || operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -89,6 +89,18 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			}
 		} else {
 			for i, arg := range changed {
+				if strings.HasPrefix(operation, "epic.") && arg == "epic" {
+					offset := 2
+					if strings.HasPrefix(operation, "epic.validation.") {
+						offset = 3
+					}
+					if name == "id" {
+						offset++
+					}
+					if (name == "id" || name == "epic") && i+offset < len(changed) {
+						changed[i+offset] += "-changed"
+					}
+				}
 				if operation == "task.done" && arg == "done" && name == "task" {
 					changed[i+1] += "-changed"
 				}
@@ -125,7 +137,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 
 // p24PositionalNames lists the positional arguments each keyed command stores
 // under a field name, for p24AssertStoredFieldNames.
-var p24PositionalNames = map[string][]string{"check.execute": {"names"},
+var p24PositionalNames = map[string][]string{"epic.approve": {"epic"}, "epic.validation.add": {"epic"}, "epic.validation.update": {"epic", "id"}, "epic.validation.remove": {"epic", "id"}, "epic.validation.pass": {"epic", "id"}, "epic.validation.verify": {"epic"}, "check.execute": {"names"},
 	"review.record": {"task"},
 	"task.done":     {"task"},
 	"task.approve":  {"task"},
@@ -364,7 +376,7 @@ func p24ReverseJSON(request map[string]any) []byte {
 
 func p24RunCaptured(t *testing.T, workspace, binary, operation string, args ...string) (string, string, error) {
 	t.Helper()
-	if operation == "task.approve" || operation == "task.waive" {
+	if operation == "task.approve" || operation == "task.waive" || operation == "epic.approve" {
 		return approvalCorpusCommand(t, workspace, binary, args...)
 	}
 	return closureRunCommand(workspace, binary, args...)

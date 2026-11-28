@@ -51,7 +51,7 @@ def stub(name):
     assert args.pop(0) == "--json", args
     command = args[0]
     operation = {"next": "next.claim" if "--claim" in args else "next.get",
-                 "done": "task.done", "start": "task.start",
+                 "done": "task.done", "start": "task.start", "epic":"epic.validation.verify",
                  "heartbeat": "hold.heartbeat", "park": "hold.park",
                  "show": "issue.show", "status": "project.status", "backup": "project.backup",
                  "review": "review." + (args[1] if command == "review" else ""), "usage": "usage.record", "finding": "finding." + (args[1] if command == "finding" else ""), "check": "check.execute"}[command]
@@ -101,6 +101,10 @@ def stub(name):
         result = {"issue": {"id": "FID-123abc", "title": "Test task", "spec_md_path": None, "acceptance_criteria": []}, "handoff": None}
     if command == "status":
         result = {"needs_you": []}
+        if scenario == "epic-verify":
+            result["needs_you"] = [{"kind":"epic-validation-verify","subject":{"type":"epic","id":epic}} for epic in ("FID-epic","FID-epic","FID-other")]
+    if command == "epic":
+        result = {"epic_id":args[3],"checks":[{"id":"EVR-123abc","validation_id":"V1","outcome":"failed","commit":"a"*40}]}
     if command == "review":
         result = {"task_id": "FID-123abc", "rounds": []}
         if scenario in ANSWER_SCENARIOS:
@@ -233,6 +237,8 @@ class Selftest(unittest.TestCase):
                 env["LOOP_REVIEWER_ACTOR"] = env["LOOP_BUILDER_ACTOR"] = "agent:same"
             if scenario == "epic":
                 env["LOOP_EPIC"] = "FID-abcdef"
+            if scenario == "epic-verify":
+                env["LOOP_EPIC"] = "FID-epic"
             result = subprocess.run(["python3", str(SOURCE / "loop.py")], cwd=root, env=env,
                                     capture_output=True, text=True, timeout=15)
             calls_path = root / ".git" / "calls"
@@ -301,6 +307,15 @@ class Selftest(unittest.TestCase):
         self.assertIn("usage record failed", result.stderr)
         self.assertIn("agent failed", result.stderr)
         self.assertEqual([c[2][1] for c in calls if c[0] == "fid"][-2:], ["park", "backup"])
+
+    def test_epic_verify_once_and_in_scope(self):
+        result, calls = self.run_loop("epic-verify")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        attempts = [c for c in calls if c[0] == "fid" and "epic" in c[2]]
+        self.assertEqual(len(attempts), 1, attempts)
+        self.assertIn("FID-epic", attempts[0][2])
+        self.assertIn("agent:sol-builder", attempts[0][2])
+        self.assertIn("failed", result.stdout)
 
     def test_none_and_every_done_outcome(self):
         result, calls = self.run_loop("none")

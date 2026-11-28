@@ -18,7 +18,8 @@ RACE_HELPER = Path(__file__).with_name("race_packages.go")
 # Race implies atomic coverage, so every package uses it and shard profiles merge.
 COVER = ["-covermode=atomic"]
 # Go's ten-minute default was too short for a shard's cmd/fid tests under race
-# (1.1c1). 0.7 dropped race there and balanced shards by measured time; the
+# (1.1c1), and for local cmd/fid tests (3.1a). Both use this timeout.
+# 0.7 dropped race there and balanced shards by measured time; the
 # rest of that entry stays on the later list in
 # docs/reset/2026-10-31-reset-decisions.md.
 TIMEOUT = ["-timeout", "20m"]
@@ -287,7 +288,7 @@ def write_github(variable, text):
 def local_test():
     packages, race = classify()
     print(f"Race detector on {', '.join(race) or 'no packages'}: their non-test code starts goroutines", flush=True)
-    codes = [subprocess.run(["go", "test", *flags, *group]).returncode for flags, group in package_groups(packages, race)]
+    codes = [subprocess.run(["go", "test", *flags, *TIMEOUT, *group]).returncode for flags, group in package_groups(packages, race)]
     return 1 if any(codes) else 0
 
 

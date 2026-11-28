@@ -5,6 +5,7 @@ import subprocess as sp
 
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE.parent / "docs/specs/LOOP_CONTRACT.md").read_text().split("```json loop-contract\n")[1].split("\n```")[0])
+VERIFIED_EPICS = set()
 ACTIVE, REPO = None, os.getenv("LOOP_GH_REPO", "mbell-nzl/fid")
 OPERATIONS = dict(next="next.get", start="task.start", heartbeat="hold.heartbeat", park="hold.park", show="issue.show", status="project.status", backup="project.backup", done="task.done", check="check.execute", handoff="task.handoff", usage="usage.record")
 def run(cwd, *args, allowed=(0,)):
@@ -23,7 +24,7 @@ def fid(cwd, *args):
     try:
         if not raw.strip(): raise ValueError("empty output")
         reply = json.loads(raw)
-        expected = args[0] + "." + args[1] if args[0] in ("review", "finding") else "next.claim" if args[0] == "next" and "--claim" in args else OPERATIONS[args[0]]
+        expected = "epic.validation.verify" if args[0] == "epic" else args[0] + "." + args[1] if args[0] in ("review", "finding") else "next.claim" if args[0] == "next" and "--claim" in args else OPERATIONS[args[0]]
         if reply["operation"] != expected: raise ValueError("unexpected operation")
         if reply["contract_version"] != "fid-cli.v2" or p.returncode != 0 or reply["ok"] is not True:
             raise ValueError(f"unsupported contract or command failure (exit {p.returncode})")
@@ -86,11 +87,23 @@ def record_answers(cwd, actor, task_id, path):
         response = fid(cwd, "finding", verb, finding_id, "--actor", actor, "--text" if verb == "answer" else "--title", text)
         print("finding:", json.dumps(response), flush=True)
     print_pending(cwd)
+def verify_epics(cwd, actor, status):
+    for item in status["needs_you"]:
+        if item["kind"] != "epic-validation-verify": continue
+        epic = item["subject"]["id"]
+        if os.getenv("LOOP_EPIC") and epic != os.environ["LOOP_EPIC"]: continue
+        if epic in VERIFIED_EPICS: continue
+        VERIFIED_EPICS.add(epic)
+        result = fid(cwd, "epic", "validation", "verify", epic, "--actor", actor, "--idempotency-key", "loop-validation-" + uuid.uuid4().hex)
+        print("epic validation:", json.dumps(result), flush=True)
+
 def done(cwd, actor):
     for outcome in fid(cwd, "done", "--actor", actor)["outcomes"]:
         if outcome["status"] not in ("completed", "waiting", "refused", "github-unavailable"): raise RuntimeError(f"unknown done outcome: {outcome!r}")
         print("done:", json.dumps(outcome), flush=True)
-    for item in print_pending(cwd)["needs_you"]:
+    status = print_pending(cwd)
+    verify_epics(cwd, actor, status)
+    for item in status["needs_you"]:
         if item["kind"] in ("merge", "approval"):
             pr = fid(cwd, "show", item["subject"]["id"])["handoff"]["pr"]
             if json.loads(run(cwd, "gh", "pr", "view", pr, "--repo", REPO, "--json", "isDraft"))["isDraft"]:

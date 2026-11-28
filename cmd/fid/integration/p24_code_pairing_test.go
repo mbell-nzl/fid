@@ -78,6 +78,7 @@ var p24SpecialCodePairs = map[string]func(*testing.T){
 	"waiver-not-lower":               waiverCodePair("waiver-not-lower"),
 	"waiver-hard-floor":              waiverCodePair("waiver-hard-floor"),
 	"done-epic-not-open":             epicDoneCodePair("done-epic-not-open"),
+	"done-epic-evidence-required":    epicDoneCodePair("done-epic-evidence-required"),
 	"done-epic-open-tasks":           epicDoneCodePair("done-epic-open-tasks"),
 	"done-task-not-in-review":        doneCodePair("done-task-not-in-review"),
 	"done-checks-unsatisfied":        doneCodePair("done-checks-unsatisfied"),

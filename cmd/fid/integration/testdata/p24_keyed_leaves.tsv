@@ -21,3 +21,9 @@ done	task
 waive	--reason
 usage record	--tool-version
 hold	--reason
+epic approve	--reason
+epic validation add	--claim
+epic validation update	--claim
+epic validation remove	id
+epic validation pass	--reason
+epic validation verify	epic

@@ -45,7 +45,7 @@ func validateSemanticMap(tableName string, table semanticTable, values map[strin
 
 func semanticBooleanColumn(table, column string) bool {
 	switch table + "." + column {
-	case "holds.kept":
+	case "holds.kept", "epic_validation_changes.removed":
 		return true
 	default:
 		return false

@@ -17,6 +17,7 @@ func TestEpicDoneOfflineJourney(t *testing.T) {
 	root, binary := handoffJourneyRepoWithArtifacts(t, true, true)
 	created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "epic", "--scheduling", "prioritised", "--title", "Close locally", "--actor", "human:mark", "--idempotency-key", "epic")
 	epic := p21PathString(t, created, "result", "issue", "id")
+	approveJourneyEpic(t, root, epic)
 	created = p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--epic", epic, "--title", "Finished child", "--actor", "human:mark", "--idempotency-key", "child")
 	child := p21PathString(t, created, "result", "issue", "id")
 	p21Run(t, binary, root, "--json", "issue", "transition", child, "--to", "cancelled", "--actor", "human:mark", "--reason", "Not needed")
@@ -75,9 +76,12 @@ func epicDoneCodePair(code string) func(*testing.T) {
 		p21Run(t, binary, root, "init", "--prefix", "FID", "--json")
 		created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "epic", "--scheduling", "prioritised", "--title", "Epic", "--actor", "human:mark", "--idempotency-key", "epic")
 		epic := p21PathString(t, created, "result", "issue", "id")
+		if code != "done-epic-evidence-required" {
+			approveJourneyEpic(t, root, epic)
+		}
 		if code == "done-epic-not-open" {
 			p21Run(t, binary, root, "--json", "done", epic, "--actor", "human:mark", "--reason", "Finished")
-		} else {
+		} else if code == "done-epic-open-tasks" {
 			p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--epic", epic, "--title", "Open task", "--actor", "human:mark", "--idempotency-key", "child")
 		}
 		args := []string{"done", epic, "--actor", "human:mark", "--reason", "Finished"}

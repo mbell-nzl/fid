@@ -21,7 +21,7 @@ func Accept(options Options) (Result, error) {
 		}
 		fields := map[string]any{"issue_id": options.TaskID, "accepted": true}
 		var id string
-		err := ctx.conn.QueryRow(`SELECT id FROM person_decisions WHERE kind='accept' AND subject_id=? ORDER BY rowid LIMIT 1`, options.TaskID).Scan(&id)
+		err := ctx.conn.QueryRow(`SELECT id FROM person_decisions WHERE kind='accept' AND subject_id=? UNION ALL SELECT decision_id FROM epic_plan_acceptances WHERE issue_id=? LIMIT 1`, options.TaskID, options.TaskID).Scan(&id)
 		if err == nil {
 			fields["decision_id"] = id
 			return journal.Event{}, fields, nil

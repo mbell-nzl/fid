@@ -89,11 +89,11 @@ func TestSchema43ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archivePath}); err != nil {
 		t.Fatal(err)
 	}
-	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(44) {
-		t.Fatalf("manifest projection_schema = %v, want 44", got)
+	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(45) {
+		t.Fatalf("manifest projection_schema = %v, want 45", got)
 	}
 	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsFS: testMigrationsFS(t)}); err != nil {
-		t.Fatalf("validate schema-44 archive: %#v", err)
+		t.Fatalf("validate schema-45 archive: %#v", err)
 	}
 	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsFS: testMigrationsFS(t), IdempotencyKey: "schema43"}); err != nil {
 		t.Fatal(err)

@@ -22,6 +22,10 @@ import (
 func approvalCorpusCommand(t *testing.T, workspace, binary string, args ...string) (string, string, error) {
 	t.Helper()
 	task, action := "", "approve"
+	epic := false
+	for _, arg := range args {
+		epic = epic || arg == "epic"
+	}
 	for i, arg := range args {
 		if (arg == "approve" || arg == "waive") && i+1 < len(args) {
 			action = arg
@@ -85,7 +89,7 @@ func approvalCorpusCommand(t *testing.T, workspace, binary string, args ...strin
 	prompt := string(bytes.ReplaceAll(<-reached, []byte("\r\n"), []byte("\n")))
 	stderr := prompt
 	if err == nil {
-		if prompt != "" && ((action == "approve" && !strings.Contains(prompt, "Diffstat:")) || !strings.Contains(prompt, "Type "+task+" to "+action+": ")) {
+		if prompt != "" && ((action == "approve" && !epic && !strings.Contains(prompt, "Diffstat:")) || !strings.Contains(prompt, "Type "+task+" to "+action+": ")) {
 			t.Fatalf("unexpected approval prompt: %q", prompt)
 		}
 		// The prompt is a person's terminal output, separate from the JSON envelope

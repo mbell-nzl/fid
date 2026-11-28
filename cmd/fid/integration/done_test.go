@@ -15,14 +15,14 @@ import (
 )
 
 type doneJourney struct {
-	root, binary, task, hold, bin, responses, log string
-	pr                                            map[string]any
-	ci                                            []any
-	requests                                      map[string]any
-	action                                        []string
+	root, binary, task, hold, bin, responses, log, epic string
+	pr                                                  map[string]any
+	ci                                                  []any
+	requests                                            map[string]any
+	action                                              []string
 }
 
-func newDoneJourney(t *testing.T, lane string) *doneJourney {
+func newDoneJourney(t *testing.T, lane string, inEpic ...bool) *doneJourney {
 	t.Helper()
 	root, binary := handoffJourneyRepoWithArtifacts(t, true, true)
 	file := filepath.Join(root, ".fid.toml")
@@ -33,11 +33,27 @@ func newDoneJourney(t *testing.T, lane string) *doneJourney {
 	if err := os.WriteFile(file, append(raw, []byte("\n[lanes.assured]\nchecks=['test']\n")...), 0o600); err != nil {
 		t.Fatal(err)
 	}
+
+	if len(inEpic) > 0 && inEpic[0] {
+		if err := os.WriteFile(filepath.Join(root, "recipe.md"), []byte("Inspect the completed fixture.\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	closureRun(t, root, "git", "add", ".")
 	closureRun(t, root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Assured test policy")
 	closureRun(t, root, "git", "update-ref", "refs/remotes/origin/trunk", "HEAD")
-	created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--title", "Finish the task", "--lane", lane, "--actor", "agent:builder", "--idempotency-key", "create")
+	epic := ""
+	args := []string{"--json", "issue", "create", "--kind", "task", "--title", "Finish the task", "--lane", lane, "--actor", "agent:builder", "--idempotency-key", "create"}
+	if len(inEpic) > 0 && inEpic[0] {
+		e := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "epic", "--scheduling", "prioritised", "--title", "Validated epic", "--actor", "human:mark", "--idempotency-key", "epic")
+		epic = p21PathString(t, e, "result", "issue", "id")
+		args = append(args, "--epic", epic)
+	}
+	created := p21Run(t, binary, root, args...)
 	task := p21PathString(t, created, "result", "issue", "id")
+	if epic != "" {
+		approveJourneyEpic(t, root, epic)
+	}
 	p21Run(t, binary, root, "--json", "accept", task, "--actor", "human:mark")
 	took := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	hold := p21PathString(t, took, "result", "hold", "id")
@@ -49,7 +65,9 @@ func newDoneJourney(t *testing.T, lane string) *doneJourney {
 	closureRun(t, root, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Task change")
 	p21Run(t, binary, root, "--json", "check", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "check")
 	h := p21Run(t, binary, root, "--json", "handoff", "--hold", hold, "--actor", "agent:builder", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "handoff")
-	return newDoneObservation(t, root, binary, task, hold, h)
+	j := newDoneObservation(t, root, binary, task, hold, h)
+	j.epic = epic
+	return j
 }
 
 func newDoneObservation(t *testing.T, root, binary, task, hold string, h map[string]any) *doneJourney {

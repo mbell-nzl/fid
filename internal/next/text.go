@@ -224,6 +224,8 @@ func countText(kind string, count int) string {
 		return fmt.Sprintf("%d for rework in %s", count, directory)
 	case "review":
 		return plural(count, "in review", "in review")
+	case ReasonEpicNotApproved:
+		return plural(count, "waiting for epic approval", "waiting for epic approval")
 	case ReasonNotAccepted:
 		return plural(count, "waiting for acceptance", "waiting for acceptance")
 	case ReasonWaitingForYou:
@@ -289,6 +291,8 @@ func Verdict(entry Entry, served bool) (string, display.Role) {
 		return "ready", display.RoleMuted
 	}
 	switch *entry.Reason {
+	case ReasonEpicNotApproved:
+		return "epic plan not approved", display.RoleWarning
 	case ReasonNotAccepted:
 		return "not accepted", display.RoleWarning
 	case ReasonBuiltByActor:
