@@ -2063,8 +2063,9 @@ A kept hold or review reservation still occupies its worktree. Started resume,
 rework, review and judge work continues. Tasks without epics are unaffected.
 An agent-created task or subtask needs no acceptance while its own epic has
 current approval and it blocks an open task in that same epic (`blocks` or
-its inverse). Its lane and `discovered_from` link remain unchanged. The
-exception affects subtasks' acceptance only: `next`, `start` and `check`
+its inverse). Once the task has started, validation edits making approval
+stale do not revoke that exception. Its lane and `discovered_from` link remain
+unchanged. The exception affects subtasks' acceptance only: `next`, `start` and `check`
 remain task-only, subtasks get no lane and are never served (Mark's answer
 `PDN-8fdd14`).
 

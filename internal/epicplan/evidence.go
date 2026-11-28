@@ -77,8 +77,10 @@ func Views(q Queryer, epic string, roots ...string) ([]View, error) {
 }
 
 // BlockerExceptions affects acceptance only; subtasks never enter scheduling.
+// Validation edits gate unstarted work, but do not strand a started blocker.
 func BlockerExceptions(q db.Queryer) (map[string]bool, error) {
-	rows, err := q.Query(`SELECT DISTINCT b.id,CASE WHEN b.kind='subtask' THEN p.parent_id ELSE b.parent_id END
+	rows, err := q.Query(`SELECT DISTINCT b.id,CASE WHEN b.kind='subtask' THEN p.parent_id ELSE b.parent_id END,
+ b.kind='task' AND b.status IN ('in_progress','in_review')
  FROM issues b LEFT JOIN issues p ON p.id=b.parent_id
  JOIN links l ON ((l.from_id=b.id AND l.relation='blocks') OR (l.to_id=b.id AND l.relation='blocked_by')) AND l.from_type='issue' AND l.to_type='issue'
  JOIN issues t ON t.id=CASE WHEN l.relation='blocks' THEN l.to_id ELSE l.from_id END AND t.kind='task' AND t.status NOT IN ('done','cancelled')
@@ -86,11 +88,14 @@ func BlockerExceptions(q db.Queryer) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	type candidate struct{ id, epic string }
+	type candidate struct {
+		id, epic string
+		started  bool
+	}
 	candidates := []candidate{}
 	for rows.Next() {
 		var c candidate
-		if err := rows.Scan(&c.id, &c.epic); err != nil {
+		if err := rows.Scan(&c.id, &c.epic, &c.started); err != nil {
 			_ = rows.Close()
 			return nil, err
 		}
@@ -107,7 +112,7 @@ func BlockerExceptions(q db.Queryer) (map[string]bool, error) {
 		if err != nil {
 			return nil, err
 		}
-		result[c.id] = a.State == "current"
+		result[c.id] = a.State == "current" || a.State == "stale" && c.started
 	}
 	return result, nil
 }

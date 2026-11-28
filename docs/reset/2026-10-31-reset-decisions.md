@@ -4510,7 +4510,10 @@ approved. Any later validation change invalidates approval; a fresh approval
 restores it. The CLI and JSON remain `fid-cli.v2`.
 
 D6's discovered-blocker exception applies only in a currently approved epic
-and only for an open task in the same epic. The work keeps its lane and
+and only for an open task in the same epic. Once the blocker task has started,
+validation edits making approval stale do not revoke its exception; resume,
+rework, review and judge selection continue. Unstarted blockers still require
+current approval. The work keeps its lane and
 `discovered_from` link. Mark clarified in answer `PDN-8fdd14` that subtasks
 use their parent task's epic for acceptance only. They get no lane and are
 never served; `next`, `start` and `check` stay task-only.
