@@ -529,7 +529,7 @@ class RacePackagesTests(unittest.TestCase):
 class LocalTestCommandTests(unittest.TestCase):
     """`make test` runs `ci_tests.py test`; its exit status is the local check's verdict."""
 
-    def local_test(self, failing=None):
+    def local_test(self, failing=None, check_timeout=False):
         def body(package):
             return f't.Fatal("{package} failed")' if package == failing else ""
         with tempfile.TemporaryDirectory(prefix="fid-ci-local-") as directory:
@@ -545,7 +545,24 @@ class LocalTestCommandTests(unittest.TestCase):
                 "raceonly/raceonly.go": spawning("raceonly", tag="race"),
                 "raceonly/raceonly_test.go": go_test("raceonly", "TestRaceOnly", body("raceonly"), tag="race"),
             })
+            if check_timeout:
+                for package in ("plain", "spawn", "raceonly"):
+                    tag = "//go:build race\n" if package == "raceonly" else ""
+                    (root / package / "timeout_test.go").write_text(tag + f'''package {package}
+import ("flag"; "testing")
+func TestTimeout(t *testing.T) {{
+    if got := flag.Lookup("test.timeout").Value.String(); got != "20m0s" {{
+        t.Fatalf("test timeout = %s, want 20m0s", got)
+    }}
+}}
+''')
             return subprocess.run([sys.executable, SCRIPT, "test"], cwd=root, capture_output=True, text=True)
+
+    def test_every_group_has_the_twenty_minute_ci_timeout(self):
+        result = self.local_test(check_timeout=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for package in ("plain", "spawn", "raceonly"):
+            self.assertRegex(result.stdout, rf"ok\s+fixture/{package}\b")
 
     def test_it_passes_when_every_package_passes_in_its_mode(self):
         result = self.local_test()

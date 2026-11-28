@@ -4531,3 +4531,10 @@ for offline replay. The migration has a down path.
 Existing open epics start unapproved on rollout, so Mark must approve a plan
 before the loop serves its unstarted tasks. `fid brief` and V1's fixture
 remain 3.1b and 3.1c; RESET 3.1a and 2.5b completion marks belong to the loop.
+
+Mark authorized the local test runner's timeout change on 2026-11-28
+(3.1a acceptance criterion `AC-6e0c4e`): `make test` / `ci_tests.py test`
+passes the same `TIMEOUT` (`-timeout 20m`) as CI's shards to both package
+groups. The local check timed out in `cmd/fid` at Go's 600-second default
+(`CHK-791783`). This changes no other check behavior: race classification,
+test caching, selection and failure propagation stay as before.
