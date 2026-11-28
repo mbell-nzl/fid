@@ -4489,10 +4489,12 @@ recipe, Standard).
    exist when planning. Check names come from default-branch policy (V7);
    review profiles must be known to fid.
 3. fid executes check claims on a clean default-branch commit containing all
-   completed-task merges. Any actor in the work set can invoke verification;
-   open tasks refuse. Checks use the existing executor, timeouts, environment
-   and Artifacts, even when no lane names them. People record review and
-   human passes, with profile rounds or recipe evidence; a recipe must exist
+   completed-task merges. Any actor in the work set can invoke verification:
+   `agent:*` or `human:*`, never `service:*`. Mark confirmed in answer
+   `PDN-112703` that the brief's "any actor" meant any work actor, per
+   ADR-0014. Open tasks refuse. Checks use the existing executor, timeouts,
+   environment and Artifacts, even when no lane names them. People record
+   review and human passes, with profile rounds or recipe evidence; a recipe must exist
    in the recorded default-branch commit. A validation edit or an epic merge
    outside the pass commit makes it stale; delayed completion recording for
    a merge already in that commit does not. Closing an epic requires current approval and

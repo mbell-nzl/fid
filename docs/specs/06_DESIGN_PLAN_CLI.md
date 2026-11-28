@@ -1379,7 +1379,8 @@ action `fid accept <id> --actor human:<name>` or `fid issue transition <id>
 --to cancelled --actor human:<name> --reason <text> --idempotency-key <key>`.
 The cancellation suggestion includes the retry key required for subtasks and
 accepted by tasks. Acceptance or cancellation clears the item. The
-approved-epic discovered-blocker exception is deferred to 3.1's epic approval.
+approved-epic discovered-blocker exception and plan acceptance are described
+under Epic approval and validations (RESET 3.1a) below.
 
 Acceptance records one immutable person decision of kind `accept` per issue,
 bound to that task/subtask. Its optional reason defaults to `Accepted for
@@ -2067,6 +2068,8 @@ exception affects subtasks' acceptance only: `next`, `start` and `check`
 remain task-only, subtasks get no lane and are never served (Mark's answer
 `PDN-8fdd14`).
 
+Verification requires a work actor (`agent:*` or `human:*`); `service:*`
+actors have no permissions, as ADR-0014 requires (Mark's answer `PDN-112703`).
 Verification refuses open tasks and resolves the locally known default-branch
 commit without fetching. It checks that this commit contains every completed
 task's recorded merge, creates a clean detached worktree, executes each

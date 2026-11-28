@@ -44,6 +44,7 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 	p22FaultOK(t, connArtifact.Close())
 	input := p21Input(t, workspace, "single-verify", map[string]any{"artifact_id": artifactID})
 	call("artifact", "verify", "--input", input, "--actor", "human:mark", "--idempotency-key", "single-verify")
+	p24EpicCommands(t, workspace, binary, "pass")
 	captured := p24EndKeyedCapture(workspace)
 	want := retainedKeyedLeaves(t)
 	got := p24CapturedNames(captured)
@@ -65,6 +66,9 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 		}
 		if field == "" {
 			field = p24HoldFields[operation]
+		}
+		if field == "" {
+			field = p24EpicFields[operation]
 		}
 		if operation == "artifact.verify" {
 			field = "artifact_id"
@@ -118,8 +122,8 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 23 {
-		t.Fatalf("retained keyed leaves=%v, want all 23 retained keyed leaves", want)
+	if len(want) != 29 {
+		t.Fatalf("retained keyed leaves=%v, want all 29 retained keyed leaves", want)
 	}
 	return want
 }

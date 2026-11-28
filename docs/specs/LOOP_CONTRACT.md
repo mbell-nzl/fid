@@ -249,6 +249,9 @@ when scoped; call `fid epic validation verify <epic> --actor <builder>
 outcome. A failed result is never retried in that invocation. The loop never
 approves a plan or records a person's pass.
 
+Verification requires an `agent:*` or `human:*` work actor. `service:*`
+actors are refused with `authority-denied` (exit 5).
+
 The operation is `epic.validation.verify`. A completed batch exits 0 and its
 success result contains `epic_id` and `checks[]`, including each result's
 `id`, `validation_id`, `outcome` (`passed` or `failed`) and full `commit`.

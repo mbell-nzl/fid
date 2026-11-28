@@ -155,6 +155,7 @@ func TestLoopScopeKeepsOrderingAndBlockers(t *testing.T) {
 			}
 			first := w.create("task", "Ordered first", scope, order, "1")
 			second := w.create("task", "Ordered second", scope, order, "2")
+			approveJourneyEpic(t, root, scope)
 			blocker := w.create("task", "External blocker", "")
 			w.call("link", "add", blocker, "blocks", first, "--from-type", "issue", "--to-type", "issue", "--actor", "human:planner", "--idempotency-key", "block")
 			kind, served := "new", second
