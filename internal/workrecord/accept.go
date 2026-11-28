@@ -4,6 +4,8 @@ package workrecord
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/mbell-nzl/fid/internal/epicplan"
 )
 
 type Queryer interface {
@@ -16,7 +18,7 @@ func Unaccepted(conn Queryer) (map[string]string, error) {
 	rows, err := conn.Query(`SELECT i.id,c.actor FROM issues i JOIN issue_creators c ON c.issue_id=i.id
  JOIN workflow_states s ON s.workflow_id=i.workflow_id AND s.state=i.status
  WHERE i.kind IN ('task','subtask') AND s.category NOT IN ('completed','cancelled')
- AND c.actor LIKE 'agent:%' AND NOT EXISTS(SELECT 1 FROM person_decisions d WHERE d.kind='accept' AND d.subject_id=i.id) ORDER BY i.id`)
+ AND c.actor LIKE 'agent:%' AND NOT EXISTS(SELECT 1 FROM person_decisions d WHERE d.kind='accept' AND d.subject_id=i.id) AND NOT EXISTS(SELECT 1 FROM epic_plan_acceptances a WHERE a.issue_id=i.id) ORDER BY i.id`)
 	if err != nil {
 		return nil, fmt.Errorf("read unaccepted work: %w", err)
 	}
@@ -29,5 +31,18 @@ func Unaccepted(conn Queryer) (map[string]string, error) {
 		}
 		result[id] = actor
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	_ = rows.Close()
+	exceptions, err := epicplan.BlockerExceptions(conn)
+	if err != nil {
+		return nil, err
+	}
+	for id, allowed := range exceptions {
+		if allowed {
+			delete(result, id)
+		}
+	}
+	return result, nil
 }

@@ -4,6 +4,12 @@
 
   Progress    ░░░░░░░░░░  0/4 tasks done
   Scheduling  by priority
+  Approval    current · human:planner · 2026-10-31T01:00:00Z
+  Plan        FID-0d4e8b Document backup age · todo · not set;
+              FID-71a0c2 Export validation · in_progress · not set;
+              FID-9f13aa Harden login rate limiting · todo · not set;
+              FID-c2d4e5 Retry a rejected backup push · todo · not set
+  VALIDATIONS
 
   TASKS
   ● FID-71a0c2  Export validation                          in progress

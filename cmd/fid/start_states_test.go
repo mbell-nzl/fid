@@ -53,6 +53,7 @@ func TestStartUsesCurrentHoldAndIsHarmlessToRepeat(t *testing.T) {
 	f.clock = func() time.Time { return now }
 	f.seed([]readyCommandRow{statusEpic("FID-e3a1c0", "Planned epic", "todo", nil), statusTask("FID-9f13aa", "Planned task", "todo", stringPointer("FID-e3a1c0"), nil, nil)}, nil)
 	lifecycleResult(t, f.run("--json", "issue", "update", "FID-9f13aa", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "lane"), "issue.update")
+	approveTestEpic(t, f, "FID-e3a1c0")
 	// The planned task is held through the same scheduler used by the loop.
 	taken, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	id := taken["task"].(map[string]any)["id"].(string)

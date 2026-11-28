@@ -28,6 +28,7 @@ func TestFinishedWorkCannotBeCancelled(t *testing.T) {
 			if kind == "epic" {
 				f, subject = newEpicCancellationFixture(t)
 				f.clock = time.Now
+				approveTestEpic(t, f, subject)
 				lifecycleResult(t, f.run("--json", "done", subject, "--actor", "human:mark", "--reason", "All work finished"), "task.done")
 			} else {
 				var hold string

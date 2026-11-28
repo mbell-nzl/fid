@@ -60,8 +60,8 @@ func assertEveryProjectCommandRefuses(t *testing.T, start string, want repositor
 	t.Helper()
 	inputs := t.TempDir()
 	cases := projectCommandRefusalCases(t, start, inputs)
-	if len(cases) != 48 {
-		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (48)", len(cases))
+	if len(cases) != 54 {
+		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (54)", len(cases))
 	}
 	before := make([]map[string]workspaceSnapshotEntry, len(watched))
 	for index, directory := range watched {
@@ -162,6 +162,10 @@ func projectCommandPositionals(key, inputs string, count int) []string {
 // projectCommandFlags supplies the required flags of leaves without --input.
 func projectCommandFlags(key, outside string) []string {
 	switch key {
+	case "epic validation add", "epic validation update":
+		return []string{"--claim", "Claim", "--verifier", "review:code"}
+	case "epic validation pass":
+		return []string{"--reason", "Reviewed"}
 	case "usage record":
 		return []string{"--hold", "HLD-aaaaaa", "--tool", "codex", "--tool-output", filepath.Join(outside, "agent.stdout")}
 	case "handoff":
@@ -182,7 +186,7 @@ func projectCommandFlags(key, outside string) []string {
 		return []string{"--actor", "agent:finisher"}
 	case "waive":
 		return []string{"--actor", "human:mark", "--reason", "Refusal", "--lane", "routine"}
-	case "approve", "hold":
+	case "approve", "hold", "epic approve":
 		return []string{"--actor", "human:mark", "--reason", "Refusal"}
 	case "takeover", "finding close":
 		return []string{"--reason", "Refusal"}

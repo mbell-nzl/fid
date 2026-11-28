@@ -36,6 +36,13 @@ func currentEffectKey(table, op string) string { return table + "/" + op }
 // Retained Event-v2 families keep their accepted Effect grammar. Lean families
 // check every stage in order; older Issue writers also retain SQL guards.
 var retainedCurrentRules = map[string]currentEventRule{
+	"epic.validation.pass":   currentRule("epic", personActors, currentStage(1, currentEffectKey("person_decisions", "insert")), currentStage(1, currentEffectKey("epic_validation_results", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"epic.validation.verify": currentRule("epic", workActors, currentStage(0, currentEffectKey("epic_validation_results", "insert"), currentEffectKey("referenced_artifacts", "insert"), currentEffectKey("referenced_artifacts", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
+	"epic.validation.add":    currentRule("epic", workActors, currentStage(1, currentEffectKey("epic_validation_changes", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"epic.validation.update": currentRule("epic", workActors, currentStage(1, currentEffectKey("epic_validation_changes", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"epic.validation.remove": currentRule("epic", workActors, currentStage(1, currentEffectKey("epic_validation_changes", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"epic.approve":           currentRule("epic", personActors, currentStage(1, currentEffectKey("person_decisions", "insert")), currentStage(0, currentEffectKey("epic_plan_acceptances", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+
 	"usage.recorded":                 currentRule("usage", workActors, currentStage(1, currentEffectKey("usage_sessions", "insert")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 	"review.posted":                  currentRule("review-post", fidActors, currentStage(1, currentEffectKey("review_posts", "insert"))),
 	"finding.answered":               currentRule("finding-response", workActors, currentStage(1, currentEffectKey("finding_responses", "insert"))),
@@ -45,6 +52,7 @@ var retainedCurrentRules = map[string]currentEventRule{
 	"work.accepted":                  currentRule("issue", personActors, currentStage(1, currentEffectKey("person_decisions", "insert"))),
 	"review.claimed":                 currentRule("review-claim", workActors, currentStage(0, currentEffectKey("review_claims", "update")), currentStage(1, currentEffectKey("review_claims", "insert"))),
 	"review.heartbeat":               currentRule("review-claim", workActors, currentStage(1, currentEffectKey("review_claims", "update"))),
+	"epic.validated-close":           currentRule("epic", personActors, currentStage(1, currentEffectKey("person_decisions", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"epic.closed":                    currentRule("epic", personActors, currentStage(1, currentEffectKey("person_decisions", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"task.finished":                  currentRule("task", workActors, currentStage(1, currentEffectKey("completions", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("holds", "update")), currentStage(0, currentEffectKey("questions", "update")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"task.held":                      currentRule("decision", personActors, currentStage(1, currentEffectKey("merge_holds", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),

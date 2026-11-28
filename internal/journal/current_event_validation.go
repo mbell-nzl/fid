@@ -142,7 +142,10 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if event.EventType == "merge.observed" || event.EventType == "ci.result-recorded" {
 		return validateMergeCI(tx, event)
 	}
-	if event.EventType == "epic.closed" {
+	if strings.HasPrefix(event.EventType, "epic.") && event.EventType != "epic.closed" && event.EventType != "epic.validated-close" {
+		return validateEpicPlan(tx, event)
+	}
+	if event.EventType == "epic.closed" || event.EventType == "epic.validated-close" {
 		return validateEpicClose(tx, event)
 	}
 	if event.EventType == "task.finished" {

@@ -1,0 +1,21 @@
+{
+  "contract_version": "fid-cli.v2",
+  "exit": 0,
+  "ok": true,
+  "operation": "epic.validation.verify",
+  "result": {
+    "checks[].commit": [
+      "\u003ccommit\u003e"
+    ],
+    "checks[].id": [
+      "\u003cEVR\u003e"
+    ],
+    "checks[].outcome": [
+      "passed"
+    ],
+    "checks[].validation_id": [
+      "V2"
+    ],
+    "epic_id": "\u003cFID\u003e"
+  }
+}

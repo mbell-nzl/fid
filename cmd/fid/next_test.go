@@ -220,6 +220,8 @@ func TestNextJSONNamesTheEpic(t *testing.T) {
 		return parseCreatedIssueID(t, created)
 	}
 	served, waiting := create("--kind", "epic", "--title", "Served epic", "--scheduling", "prioritised"), create("--kind", "epic", "--title", "Waiting epic", "--scheduling", "prioritised")
+	approveTestEpic(t, &statusFixture{workspace: workspace}, served)
+	approveTestEpic(t, &statusFixture{workspace: workspace}, waiting)
 	blocker := create("--kind", "task", "--title", "Blocks the waiting epic", "--epic", served)
 	waits := create("--kind", "task", "--title", "Waits through its epic", "--epic", waiting)
 	runFIDCommand(t, workspace, "link", "add", blocker, "blocks", waiting, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")

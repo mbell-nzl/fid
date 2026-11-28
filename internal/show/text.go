@@ -136,6 +136,7 @@ func (text textWriter) rows(result Result) []string {
 	if issue.SpecMDPath != nil {
 		lines = append(lines, text.value("Spec", *issue.SpecMDPath)...)
 	}
+	lines = append(lines, text.epic(result.EpicPlan)...)
 	if issue.Kind == "task" {
 		lane := "not set"
 		if issue.Lane != nil {

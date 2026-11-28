@@ -4,6 +4,11 @@
 
   Progress    ░░░░░░░░░░  0/2 tasks done
   Scheduling  by priority
+  Approval    current · human:planner · 2026-10-31T13:00:00Z
+  Plan        FID-1f2e3d Contract fields and exit codes · in_progress
+              · not set; FID-2f2e3d Golden tests for the contract and
+              every exit code it names · todo · not set
+  VALIDATIONS
 
   TASKS
   ● FID-1f2e3d  Contract fields and exit codes             in progress

@@ -21,6 +21,7 @@ func TestEpicDoneEventSizeBudget(t *testing.T) {
 			t.Parallel()
 			f, epic := newEpicCancellationFixture(t)
 			f.clock = time.Now
+			approveTestEpic(t, f, epic)
 			args := []string{"--json", "done", epic, "--actor", "human:mark", "--reason", tc.reason}
 			if tc.key != "" {
 				args = append(args, "--idempotency-key", tc.key)

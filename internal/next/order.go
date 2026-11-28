@@ -31,6 +31,7 @@ const (
 )
 
 const ReasonNotAccepted = "not-accepted"
+const ReasonEpicNotApproved = "epic-not-approved"
 
 const ReasonWaitingForYou = "waiting-for-you"
 const ReasonBuiltByActor = "built-by-actor"
@@ -153,6 +154,9 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 		if planned.reviews[task.ID].capped {
 			entry.Reason = pointer(ReasonReworkCapReached)
 		}
+		if task.StatusCategory == "unstarted" && work.Epics[epicOf(task.OverviewTask)].Unapproved {
+			entry.Reason = pointer(ReasonEpicNotApproved)
+		}
 		if task.UnacceptedBy != "" {
 			entry.Reason = pointer(ReasonNotAccepted)
 		}
@@ -166,7 +170,7 @@ func planInScope(work issues.Work, open []holds.Hold, worktreeID string, now tim
 	}
 	for _, task := range work.Tasks {
 		owned := planned.own != nil && task.ID == planned.own.TaskID || planned.ownReview != nil && task.ID == planned.ownReview.TaskID
-		if owned && task.UnacceptedBy != "" {
+		if owned && (task.UnacceptedBy != "" || task.ID == resume && task.StatusCategory == "unstarted" && work.Epics[epicOf(task.OverviewTask)].Unapproved) {
 			planned.kind, planned.served = KindNone, -1
 			return planned
 		}

@@ -19,6 +19,8 @@ func addV8Epics(t *testing.T, root string) []string {
 			lifecycleResult(t, f.run("--json", "issue", "transition", child, "--to", "cancelled", "--actor", "human:mark", "--reason", "Finished without delivery"), "issue.transition")
 		}
 		if state == "closed" {
+			addV8EpicValidations(t, f, epic, child)
+			approveTestEpic(t, f, epic)
 			lifecycleResult(t, f.run("--json", "done", epic, "--actor", "human:mark", "--reason", "Epic finished", "--idempotency-key", "v8-epic-close"), "task.done")
 		}
 		assertEpicNeedsYou(t, f, epic, state == "needs-you")

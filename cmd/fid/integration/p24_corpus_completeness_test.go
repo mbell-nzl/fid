@@ -50,7 +50,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		rows[name] = field
 	}
-	for _, group := range []map[string]string{p24LifecycleFields, {"task.done": "task"}, p24FlagFields, {"issue.create": "--title"}, p24ArtifactFields, p24UsageFields, p24HoldFields} {
+	for _, group := range []map[string]string{p24LifecycleFields, {"task.done": "task"}, p24FlagFields, {"issue.create": "--title"}, p24ArtifactFields, p24UsageFields, p24HoldFields, p24EpicFields} {
 		for operation, field := range group {
 			add(operation, field)
 		}
@@ -67,7 +67,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 23 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 29 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }

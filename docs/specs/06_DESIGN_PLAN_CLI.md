@@ -2013,6 +2013,106 @@ refusals use `invalid-argument` (exit 2) and change nothing. Existing project,
 lock and journal refusal envelopes still apply.
 
 
+### Epic approval and validations (RESET 3.1a)
+
+```text
+fid epic validation add <epic> --claim <text> --verifier <verifier> [--recipe <path>] --actor <actor> --idempotency-key <key>
+fid epic validation update <epic> <id> --claim <text> --verifier <verifier> [--recipe <path>] --actor <actor> --idempotency-key <key>
+fid epic validation remove <epic> <id> --actor <actor> --idempotency-key <key>
+fid epic approve <epic> --actor human:<name> --reason <why> [--idempotency-key <key>]
+fid epic validation verify <epic> --actor <actor> --idempotency-key <key>
+fid epic validation pass <epic> <id> --actor human:<name> --reason <why> [--idempotency-key <key>]
+```
+
+All accept `--project` and `--json`; operations follow the dotted command
+names. Validations belong only to epics. Tasks and subtasks retain acceptance
+criteria. Validation IDs are epic-local `V1`, `V2`, and so on, monotonically
+allocated and never reused after removal. Claims must be nonblank. Verifiers
+are `check:<name>`, `review:<profile>`, or `human`. Check names come only from
+the effective default-branch policy, never working-tree or index changes.
+Known built-in review profiles are `code`, `test-adequacy` and `merge`;
+additional profiles become known when recorded in a review. Human validations
+require a project-relative recipe path, trimmed and cleaned, without escaping
+the project. A recipe may be written in a later PR. An eleventh active
+validation adds a warning recommending an epic split and still succeeds.
+Agents and people may maintain the list; services cannot.
+
+Epic approval is person-only. Both input and error streams must be terminals,
+including keyed retries. The preview lists tasks and subtasks, states, task
+lanes, validations and verifiers, recipes, and every agent-created issue
+that approval will accept. The person types the exact epic ID. A different
+line or EOF cancels with exit 0, no success envelope and no Event. There is
+no `--yes`. The journal write lock is taken only after confirmation. Under
+that lock fid refreshes and compares the complete preview; any changed plan
+refuses with a retry message and no approval or acceptance. A keyed identical
+retry returns the original decision and Event without prompting again.
+
+One immutable `approve-epic` person decision binds to the validation list's
+digest (IDs, claims, verifiers and recipe paths) and revision. The same Event
+accepts all then-unaccepted agent-created tasks and subtasks in that epic,
+using the parent task's epic for subtasks. The empty list may be approved.
+Any later add, update or removal makes approval stale, including edits later
+reversed. Task, brief and spec edits do not stale it. Approving again makes
+it current. A later human-created task needs no acceptance; a later agent task
+still waits unless the discovered-blocker exception applies.
+
+`next` skips an epic's unstarted tasks with `epic-not-approved` while approval
+is missing or stale. No served task means `kind: none` and `waiting: null`.
+A kept hold or review reservation still occupies its worktree. Started resume,
+rework, review and judge work continues. Tasks without epics are unaffected.
+An agent-created task or subtask needs no acceptance while its own epic has
+current approval and it blocks an open task in that same epic (`blocks` or
+its inverse). Its lane and `discovered_from` link remain unchanged. The
+exception affects subtasks' acceptance only: `next`, `start` and `check`
+remain task-only, subtasks get no lane and are never served (Mark's answer
+`PDN-8fdd14`).
+
+Verification refuses open tasks and resolves the locally known default-branch
+commit without fetching. It checks that this commit contains every completed
+task's recorded merge, creates a clean detached worktree, executes each
+`check:` definition with the check executor's timeout, environment, output
+capture and Artifact retention, records both passing and failing outcomes,
+and removes the worktree. It never modifies the caller's tree or index.
+Checks need not appear in a lane. An identical keyed retry returns stored
+results without executing again. The reply is the batch result: `epic_id`
+and `checks[]`, each with `id`, `validation_id`, `generation`, `commit`,
+`merges`, `actor`, `at`, `outcome`, definition and execution evidence. A
+completed batch exits 0 even if individual checks failed; callers inspect
+every outcome. Admission/execution errors use failure envelopes.
+
+A person's pass is only for `review:` and `human` validations. It records
+one person decision and validation result, with the local default-branch
+commit and completed-task merges. A human recipe must be a regular file in
+that commit. Review evidence lists the epic's recorded rounds containing
+that profile. A pass is current only for the same validation revision while
+its commit contains every completed-task merge. Editing the validation, or
+recording a merge outside that commit, makes the pass stale. A completion
+recorded later does not stale a pass whose commit already contains its merge. A failed verification replaces earlier
+passing evidence for that validation revision.
+
+`fid done <epic>` retains its open-task and person checks and refuses with
+`done-epic-evidence-required` (exit 4) if approval is missing/stale or any
+validation is missing, stale or failed. Its message and `record_ids` list
+every unmet validation with verifier and state, plus the approval state when
+needed. New closes use `epic.validated-close`; historical `epic.closed`
+records retain their original admission for replay compatibility. The closing
+decision records the approval, result IDs and completed-task merges it counted,
+including ancestry proved since those results were recorded. Replay preserves
+that closure evidence without consulting Git objects.
+
+`show <epic>` adds Approval, Plan and VALIDATIONS after Spec. JSON adds
+optional `epic_approval`, `plan` and `validations`. Each validation shows its
+claim, verifier, recipe, state and evidence commit; review ones include round
+IDs. NEEDS YOU adds `epic-approval` for an epic with unstarted tasks awaiting
+approval. With no open tasks it lists `epic-validation-verify` or
+`epic-validation-pass` before the existing close item, with commands. Read
+commands remain offline and append no Events. Validation revisions, results,
+approvals and acceptance membership survive replay, rebuild, export/import
+and restore. Migration `0045_epic_validations` has a down path.
+
+When this upgrade lands, every existing open epic starts unapproved. The loop
+serves no unstarted task in an epic until a person approves that epic.
+
 ### Completion and reconciliation (RESET 1.6i–1.6k)
 
 ```text

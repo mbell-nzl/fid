@@ -38,6 +38,7 @@ type Result struct {
 	Approval    decisionview.Approval
 	Completion  *Completion
 	JudgeRounds []reviewrecord.RoundView
+	EpicPlan    *EpicPlan
 	Usage       *Usage
 }
 
@@ -48,6 +49,9 @@ func Build(options Options) (Result, error) {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}
 	result := Result{IssueView: view, Now: options.Now}
+	if err := result.readEpic(options.WorkspaceRoot); err != nil {
+		return Result{}, fmt.Errorf("read epic plan: %w", err)
+	}
 	if err := result.readUsage(options.WorkspaceRoot); err != nil {
 		return Result{}, fmt.Errorf("read show usage: %w", err)
 	}
@@ -94,6 +98,11 @@ func (result Result) Fields() map[string]any {
 		"working":               result.Working,
 		"kept":                  result.Kept,
 		"scheduling":            result.Scheduling,
+	}
+	if result.EpicPlan != nil {
+		fields["epic_approval"] = result.EpicPlan.Approval
+		fields["plan"] = result.EpicPlan.Plan.Tasks
+		fields["validations"] = result.EpicPlan.Validations
 	}
 	if len(result.JudgeRounds) > 0 {
 		fields["judge_rounds"] = result.JudgeRounds

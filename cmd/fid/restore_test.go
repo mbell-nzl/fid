@@ -292,6 +292,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 	}
 	captureV8MergeReads(t, workspace, ids, &state)
 	captureV8EpicReads(t, workspace, ids, &state)
+	captureV8EpicValidations(t, workspace, &state)
 	// The holds, as the projection replayed from the journal has them. No
 	// read command lists them, and fid next's answer depends on the
 	// worktree it runs in.

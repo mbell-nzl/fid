@@ -33,7 +33,13 @@ func (w loopWorker) create(kind, title, epic string, flags ...string) string {
 	if epic != "" {
 		args = append(args, "--epic", epic)
 	}
-	return p21PathString(w.t, w.call(append(args, flags...)...), "result", "issue", "id")
+	id := p21PathString(w.t, w.call(append(args, flags...)...), "result", "issue", "id")
+	if kind == "epic" {
+		if _, stderr, err := approvalCorpusCommand(w.t, w.root, w.binary, "--json", "epic", "approve", id, "--actor", "human:planner", "--reason", "Approve worker scope", "--idempotency-key", title+"-approve"); err != nil {
+			w.t.Fatalf("approve scope: %v %s", err, stderr)
+		}
+	}
+	return id
 }
 
 func (w loopWorker) next(scope string, claim bool) map[string]any {

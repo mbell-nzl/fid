@@ -4,6 +4,12 @@
 
   Progress    ░░░░░░░░░░  0/3 tasks done
   Scheduling  one at a time, in sequence
+  Approval    current · human:planner · 2026-10-31T06:00:00Z
+  Plan        FID-1f2e3d Contract fields and exit codes · in_progress
+              · not set; FID-2f2e3d Golden tests for the contract ·
+              todo · not set; FID-3f2e3d Scenario test for rework ·
+              todo · not set
+  VALIDATIONS
 
   TASKS
   ● FID-1f2e3d  Contract fields and exit codes             in progress

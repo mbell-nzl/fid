@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/epicplan"
 	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/workrecord"
 )
@@ -26,6 +27,7 @@ type WorkEpic struct {
 	Title          string
 	Status         string
 	StatusCategory string
+	Unapproved     bool
 	Sequential     bool
 	Progress       Progress
 	BlockedBy      []string
@@ -61,8 +63,12 @@ func ReadWork(conn fiddb.Queryer) (Work, error) {
 	}
 	work := Work{Epics: map[string]WorkEpic{}, Tasks: []WorkTask{}}
 	for _, epic := range epics {
+		approval, err := epicplan.Current(conn, epic.ID)
+		if err != nil {
+			return Work{}, err
+		}
 		work.Epics[epic.ID] = WorkEpic{ID: epic.ID, Title: epic.Title, Status: epic.Status, StatusCategory: epic.StatusCategory,
-			Sequential: sequential[epic.ID], BlockedBy: append([]string{}, blockers[epic.ID]...)}
+			Unapproved: approval.State != "current", Sequential: sequential[epic.ID], BlockedBy: append([]string{}, blockers[epic.ID]...)}
 	}
 	waitedOn, begun := map[string]bool{}, map[string]bool{}
 	for _, task := range tasks {

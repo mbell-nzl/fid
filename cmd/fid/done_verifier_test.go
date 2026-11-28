@@ -195,6 +195,7 @@ func v5AgentEpicClose(t *testing.T) {
 	j.refuse(t, id, "task.done", "authority-denied", 5, func() commandExecutionResult {
 		return j.stub.run("--json", "done", id, "--actor", "agent:builder", "--reason", "All tasks finished")
 	})
+	approveTestEpic(t, j.f, id)
 	closed, _ := lifecycleResult(t, j.stub.run("--json", "done", id, "--actor", "human:mark", "--reason", "All tasks finished"), "task.done")
 	if closed["status"] != "done" || closed["decision"].(map[string]any)["kind"] != "close-epic" {
 		t.Fatalf("person's epic close=%v", closed)
